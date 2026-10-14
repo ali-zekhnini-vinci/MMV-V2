@@ -1,0 +1,57 @@
+# Registre de décisions — MMV V2, 15/10/2026
+
+**Nomenclature nouvelle :** les IDs ci-dessous remplacent les collisions des anciens documents. Toute proposition conserve le statut `PROPOSED` tant que le propriétaire ne la ratifie pas.
+
+| ID | Sujet | Choix ou règle | Statut actuel | Validation encore requise |
+|---|---|---|---|---|
+| D-000 | Rupture avec l'ancien MMV | Produit V2 neuf, aucune réutilisation ni lecture de l'ancien dépôt | **APPROVED** | Aucune |
+| D-003 | Base de données | PostgreSQL exclusivement dans tous les modes/environnements | **APPROVED** | POC technique EF+Npgsql+PG, pas revalidation métier |
+| D-004 | Topologie | Serveur .NET/PG, clients Tauri sans DB ; mono = les deux sur un PC | **APPROVED** | POC réseau et Windows |
+| D-005 | Interfaces absentes | 153 vues et 23 compléments en backlog pour phases suivantes | **APPROVED** | Peut changer par dépendance critique |
+| D-006 | Gouvernance | Phase 00 documentaire ; aucune initialisation avant GO P01 explicite | **APPROVED** | Accord GO P01 futur |
+| ADR-001 | Architecture applicative | Tauri 2/React + API ASP.NET Core centralisée, monolithe modulaire | **PROPOSED** | Évaluer POC |
+| ADR-002 | Versions socle | .NET 10 LTS, EF Core 10, Npgsql 10, PostgreSQL 18.x | **PROPOSED** | Versions patch épinglées / build Windows |
+| ADR-003 | Provider unique | PostgreSQL seul (aucun SQLite/InMemory provider persistance) | **APPROVED** | POC de conformité |
+| ADR-004 | Connexion LAN | DNS/IP/port manuel obligatoire, découverte facultative, identité serveur | **PROPOSED** | POC TLS/DNS/découverte |
+| ADR-005 | Déploiement | Sélection Serveur/Poste ; un launcher unifié, fallback deux packages | **PROPOSED** pour packaging ; modes **APPROVED** | POC installateur, rollback |
+| ADR-006 | Sécurité transport | TLS validé ; CA privée contrôlée vs domaine + CA publique | **OPEN DECISION** | Choisir modèle de confiance/renouvellement |
+| ADR-007 | Identités/sessions | Identity côté serveur + permissions par opération ; session révocable en coffre OS | **PROPOSED** | POC token vs cookie/WebView2 ; droits par rôle à définir |
+| ADR-008 | Continuité | Backup PG cohérent chiffré, restauration testée, copie hors serveur | **PROPOSED** | RPO/RTO, protection et procédure |
+| ADR-009 | Compatibilité cible | Windows 11 x64 supporté en premier ; Windows 10 cas par cas | **PROPOSED** | Inventaire OS réel ; coûts |
+| ADR-010 | Fiscalité/métier | MAD/FR comme UX ; calculs, taxes, documents et réglementations à définir neuf | **OPEN DECISION** | Pays et obligations avant module ventes |
+| ADR-011 | Parcours multi-postes | version API, concurrence, idempotence, intégrité du stock et paiement | **PROPOSED** | tests transactionnels P01/lot métier |
+| ADR-012 | Outils agent | Graphify + Serena en local, appels vérifiés ; pas de fake usage | **APPROVED en principe** | Préflight environnement & symboles en P01 |
+| ADR-013 | Périmètre V1 | Démarrer socle puis lots design ; extensions différées | **PROPOSED** | GO sur chaque lot, règles à valider |
+| ADR-014 | Licence dépendances | FullCalendar Standard uniquement sauf licence premium ; Serena outil dev seulement | **PROPOSED** | SBOM et vérification des licences P01 |
+
+## Critères d'arbitrage opérationnel
+
+**ADR-005 installer**
+- A : 1 launcher NSIS avec rôle Serveur ou Poste ; expérience utilisateur optimale, fort coût de provisioning.
+- B : installer Serveur distinct et installer Client Tauri ; plus simple à tester et mettre à jour.
+- Recommandation : un parcours unifié **comme UX cible**, B comme option initiale viable si le POC A est risqué. Ne pas déclarer un .exe unique possible sans installation réussie de PG, service et WebView2.
+
+**ADR-006 identité TLS**
+- A : autorité de certification privée propre au magasin, ancrage root sur chaque poste par procédure contrôlée ; renouvellement/revocation à administrer.
+- B : domaine contrôlé et certificat public à renouvellement automatisable + DNS local ; dépend de la possession d'un domaine et de sa maintenance.
+- Recommandation : **ne pas préjuger**. L'authentification d'un serveur n'est jamais la simple présence d'une IP. POC WebView2 requis pour chaque option.
+
+**ADR-007 sessions**
+- A : jetons d'accès à courte durée + renouvellement révocable dans coffre Windows.
+- B : cookies HttpOnly + session serveur ; vérifier same-site/CORS/CSRF dans origine Tauri.
+- Recommandation : comparer sur vrai runtime Tauri/WebView2. Ne pas stocker les tokens persistants dans localStorage.
+
+**ADR-009 parc Windows**
+- Windows 11 x64 recommandation de maintenance. Windows 10 fin de support standard ; extension ou environnement LTSC/ESU à étudier uniquement si matériel ancien attesté.
+
+## Questions réellement bloquantes, sans reposer les choix acquis
+
+1. **Pour le POC d'installation :** le parc cible sera-t-il Windows 11 x64, ou Windows 10 est-il impératif ?
+2. **Pour choisir TLS :** le magasin possède-t-il un nom de domaine gérable, ou faut-il privilégier une CA privée administrée par MMV ? Si inconnu, mettre les deux au POC.
+3. **Pour le modèle d'exploitation :** le serveur sera-t-il un PC dédié, ou aussi un poste de caisse ? L'architecture supporte les deux ; seule la recette d'installation change.
+
+Question importante mais différable jusqu'au lot Vente : pays d'exploitation/règles fiscales et documents légaux.
+
+## Registre des décisions résolues séparément
+
+Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les propositions métier tirées du dossier maître avec mention de classes C# historiques sont irrecevables. Le backlog des 153 + 23 reste préservé.

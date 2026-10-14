@@ -1,0 +1,7 @@
+﻿lot,source_archive_zip,path_dans_zip,sha256,octets,groupes_de_design,etats_metier,approbation
+1,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot1.dc.html,04e0f3df91b1dd5087245e8bc2c98e88acd1cf20f1f20a7e3e154b0488bbec76,64717,11,22,DRAFT_NON_APPROVED
+2,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot2-Clients-RendezVous.dc.html,26df60b6a1ed7422830df493adcf7b4665ca920b6525d8cc6a7ade417b0ec0a1,100064,21,47,DRAFT_NON_APPROVED
+3,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot3-Ordonnances.dc.html,c103df9e434245cdcba5b6246c5ec3032301e323c6ec1797826deaf8fd06c213,93625,17,36,DRAFT_NON_APPROVED
+4,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot4-Ventes-Paiements.dc.html,9dec477b2170c8170333dfdc3589f79de5aef5fe925663a9da5f949e4691701c,115742,15,31,DRAFT_NON_APPROVED
+5,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot5-Commandes-Atelier.dc.html,6e7b66d382e368dd4019f1f9cf4c40a17a8b380f4907e0a0c8211ccda4a08bdd,145871,33,81,DRAFT_NON_APPROVED
+6,MMV_V2_Dossier_Maitre_PostgreSQL_Only(1).zip,sources/claude-design/MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html,6ca2cec033b8aa35b4ec4188c2bc95ab3cd5aaaa8c469e82a4a7e04b8bbc35e7,175994,37,107,DRAFT_NON_APPROVED
