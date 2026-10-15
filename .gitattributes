@@ -1,0 +1,5 @@
+# Normalisation des fins de ligne dans Git (LF), quel que soit le générateur Windows.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary

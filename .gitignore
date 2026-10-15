@@ -1,0 +1,27 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Node / Vite (apps/desktop a aussi son propre .gitignore)
+node_modules/
+dist/
+
+# Rust / Tauri
+target/
+
+# Graphify : graphe local régénérable, non versionné
+graphify-out/
+
+# Paramètres et caches locaux des outils agent (configurations partagées non concernées)
+.claude/settings.local.json
+.serena/cache/
+.serena/project.local.yml
+
+# Secrets locaux
+.env
+.env.*
+*.pfx
+*.key

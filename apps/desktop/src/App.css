@@ -1,0 +1,88 @@
+/* Jetons provisoires issus du cadrage (design DRAFT). Polices non embarquées en 01A :
+   Inter / Source Sans 3 utilisées si présentes sur le poste, sinon repli système. */
+:root {
+  --mmv-blue: #0066ff;
+  --mmv-night: #0b1d3a;
+  --mmv-teal: #00c2a8;
+  --mmv-surface: #ffffff;
+  --mmv-text: #0b1d3a;
+  --mmv-muted: #4a5a75;
+  --mmv-border: #d6deeb;
+
+  font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--mmv-text);
+  background-color: #f4f7fb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mmv-surface: #11264a;
+    --mmv-text: #e8eef8;
+    --mmv-muted: #a9b8d1;
+    --mmv-border: #23406e;
+    background-color: var(--mmv-night);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.socle {
+  width: min(560px, calc(100vw - 32px));
+  padding: 32px;
+  background: var(--mmv-surface);
+  border: 1px solid var(--mmv-border);
+  border-radius: 8px;
+}
+
+.socle__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.socle__title {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--mmv-blue);
+}
+
+.socle__badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mmv-night);
+  background: var(--mmv-teal);
+}
+
+.socle__lead {
+  color: var(--mmv-muted);
+}
+
+.socle__facts {
+  margin: 24px 0 0;
+  display: grid;
+  gap: 12px;
+}
+
+.socle__facts dt {
+  font-weight: 600;
+}
+
+.socle__facts dd {
+  margin: 0;
+  color: var(--mmv-muted);
+}

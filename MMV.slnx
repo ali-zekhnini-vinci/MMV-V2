@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MMV.Api/MMV.Api.csproj" />
+    <Project Path="src/MMV.Application/MMV.Application.csproj" />
+    <Project Path="src/MMV.Domain/MMV.Domain.csproj" />
+    <Project Path="src/MMV.Infrastructure/MMV.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MMV.Api.Tests/MMV.Api.Tests.csproj" />
+  </Folder>
+</Solution>

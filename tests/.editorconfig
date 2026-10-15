@@ -1,0 +1,3 @@
+# Convention de nommage des tests Méthode_Scénario_Résultat : underscores autorisés.
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none
