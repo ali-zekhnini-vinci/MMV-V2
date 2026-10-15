@@ -1,0 +1,24 @@
+# P01-04 / O-B02 ecriture ephemere + ROLLBACK, mmv_v2_test uniquement, 20261015T211820Z UTC
+Série de tests pour <REPO>\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+<REPO>\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll
+  Réussi MMV.PostgreSql.Tests.TransactionalRollbackTests.TestDatabase_TemporaryWriteIsRolledBackWithoutResidue [277 ms]
+  Messages de sortie standard :
+ db=mmv_v2_test role=mmv_v2_test port=5433 version_num=180006 owner=True super=False createdb=False createrole=False replication=False bypassrls=False public_connect=False
+ table temporaire : mmv_ob02_probe_5bbc5b7732134b53960418a9c7f47944
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (0) : —
+ relations (2) : public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ routines (0) : —
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (0) : —
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (1) : 20261015125000_InitialBaseline 10.0.4
+Série de tests réussie.
+Nombre total de tests : 1
+     Réussi(s) : 1
+ Durée totale : 0,9483 Secondes
+# controle residus post-ecriture (lecture seule)
+Réussi!  - échec :     0, réussite :     4, ignorée(s) :     0, total :     4, durée : 657 ms - MMV.PostgreSql.Tests.dll (net10.0)

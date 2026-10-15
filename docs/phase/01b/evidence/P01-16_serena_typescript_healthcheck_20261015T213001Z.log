@@ -1,0 +1,20 @@
+# P01-16 Serena TypeScript : 'serena project health-check .' (CLI, nouvelle instance) 2026-10-15 23:30 locale
+# extrait de .serena/logs/health-checks/health_check_20261015-233001.log (non versionne) ; la trace finale UnicodeEncodeError (emoji en cp1252) survient APRES 'Health check completed successfully'
+INFO  2026-10-15 23:30:01,020 serena.cli:health_check:949 - Starting health check for project: ~\Documents\GitHub\MMV V2
+INFO  2026-10-15 23:30:01,020 serena.cli:health_check:953 - Creating SerenaAgent with disabled dashboard...
+INFO  2026-10-15 23:30:01,217 sensai.util.logging:start:329 - Language server startup (language=csharp) starting ...
+INFO  2026-10-15 23:30:01,217 sensai.util.logging:start:329 - Language server startup (language=typescript) starting ...
+INFO  2026-10-15 23:30:01,401 sensai.util.logging:stop:336 - Language server startup (language=typescript) completed in 0.184 seconds
+INFO  2026-10-15 23:30:01,916 serena.cli:health_check:956 - SerenaAgent created successfully
+INFO  2026-10-15 23:30:01,917 serena.cli:health_check:959 - Searching for analyzable files...
+INFO  2026-10-15 23:30:01,953 serena.cli:health_check:968 - Found analyzable file: apps\desktop\src\App.tsx
+INFO  2026-10-15 23:30:01,953 serena.cli:health_check:982 - Testing GetSymbolsOverviewTool on file: apps\desktop\src\App.tsx
+INFO  2026-10-15 23:30:04,074 sensai.util.logging:stop:336 - Language server startup (language=csharp) completed in 2.858 seconds
+INFO  2026-10-15 23:30:04,448 serena.cli:health_check:984 - GetSymbolsOverviewTool returned: [{'name': 'App', 'kind': 'Function'}, {'name': 'default', 'kind': 'Constant'}, {'name': 'useTechnicalStatus', 'kind': 'Function'}]
+INFO  2026-10-15 23:30:04,448 serena.cli:health_check:1004 - Using symbol for testing: App (kind: Function)
+INFO  2026-10-15 23:30:04,448 serena.cli:health_check:1007 - Testing FindSymbolTool for symbol: App
+INFO  2026-10-15 23:30:04,550 serena.cli:health_check:1013 - FindSymbolTool found 1 matches for symbol App
+INFO  2026-10-15 23:30:04,550 serena.cli:health_check:1016 - Testing FindReferencingSymbolsTool for symbol: App
+INFO  2026-10-15 23:30:05,325 serena.cli:health_check:1021 - FindReferencingSymbolsTool found 3 references for symbol App
+INFO  2026-10-15 23:30:05,325 serena.cli:health_check:1029 - Health check completed successfully
+# session MCP Serena de Claude Code (meme jour) : get_symbols_overview(apps/desktop/src/api/health.ts) -> "Active language servers: ['csharp']" : reconnexion MCP requise

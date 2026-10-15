@@ -6,7 +6,7 @@ namespace MMV.Api.Health;
 
 /// <summary>
 /// Vivacité du processus API uniquement. Ne vérifie PAS PostgreSQL et ne prouve pas
-/// la disponibilité de la base : un futur endpoint de disponibilité (readiness) le fera.
+/// la disponibilité de la base : c'est le rôle de <see cref="ReadinessEndpoint"/> (/health/ready).
 /// </summary>
 internal static class LivenessEndpoint
 {
@@ -20,15 +20,12 @@ internal static class LivenessEndpoint
         return services;
     }
 
-    public static IEndpointRouteBuilder MapLiveness(this IEndpointRouteBuilder endpoints)
-    {
+    public static IEndpointConventionBuilder MapLiveness(this IEndpointRouteBuilder endpoints) =>
         endpoints.MapHealthChecks(Path, new HealthCheckOptions
         {
             Predicate = registration => registration.Tags.Contains(Tag),
             ResponseWriter = WriteResponseAsync,
         });
-        return endpoints;
-    }
 
     private static Task WriteResponseAsync(HttpContext context, HealthReport report)
     {

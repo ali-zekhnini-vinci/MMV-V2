@@ -1,3 +1,4 @@
+using MMV.Api.Cors;
 using MMV.Api.Health;
 using MMV.Infrastructure;
 
@@ -6,12 +7,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 builder.Services.AddLivenessCheck();
+builder.Services.AddReadinessCheck();
+builder.Services.AddDesktopCors(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -19,7 +23,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapLiveness();
+app.MapLiveness().RequireCors(DesktopCors.PolicyName);
+app.MapReadiness().RequireCors(DesktopCors.PolicyName);
 
 app.Run();
 

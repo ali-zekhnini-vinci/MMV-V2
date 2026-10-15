@@ -1,0 +1,18 @@
+# P01-15 Graphify CLI graphify 0.9.77 ; graphify update . -> 628 noeuds / 837 aretes / 40 communautes (AST local, aucun LLM/cloud) ; MCP NOT_CONFIGURED
+== graphify path "Program.cs" "DatabaseProbe"
+Shortest path (5 hops):
+  Program.cs --imports [EXTRACTED]--> MMV.Api.Health <--contains [EXTRACTED]-- ReadinessEndpoint.cs --imports [EXTRACTED]--> MMV.Infrastructure.Persistence <--contains [EXTRACTED]-- DatabaseProbe.cs --contains [EXTRACTED]--> DatabaseProbe
+== graphify path "ReadinessEndpoint.cs" "MmvDbContext"
+Shortest path (3 hops):
+  ReadinessEndpoint.cs --imports [EXTRACTED]--> MMV.Infrastructure.Persistence <--contains [EXTRACTED]-- MmvDbContext.cs --contains [EXTRACTED]--> MmvDbContext
+== graphify path "DatabaseProbe" "Npgsql"
+Shortest path (2 hops):
+  DatabaseProbe <--contains [EXTRACTED]-- DatabaseProbe.cs --imports [EXTRACTED]--> npgsql
+== graphify path "App.tsx" "getJson"
+Shortest path (2 hops):
+  App.tsx --imports_from [EXTRACTED]--> health.ts --imports [EXTRACTED]--> getJson()
+== graphify path "technicalStatusView.ts" "health.ts"
+Shortest path (1 hops):
+  technicalStatusView.ts --imports_from [EXTRACTED]--> health.ts
+== graphify path "client.ts" "ReadinessEndpoint.cs"
+No directed path found between 'client.ts' and 'ReadinessEndpoint.cs'. Re-run with --undirected to search ignoring edge direction.
