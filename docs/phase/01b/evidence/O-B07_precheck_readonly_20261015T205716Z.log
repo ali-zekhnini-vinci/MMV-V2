@@ -1,10 +1,9 @@
 ﻿# O-B07 pre-check (lecture seule) 20261015T205716Z UTC
 # SHA-256 script: 9C8077A5F016002E3E2E69373CBBAF8AC86DA1B14D1EE16E90678564C657C784
 
-Série de tests pour C:\Users\Ali Zekhnini\Documents\GitHub\MMV 
-V2\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll (.NETCoreApp,Version=v10.0)
+Série de tests pour <REPO>\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll (.NETCoreApp,Version=v10.0)
 Au total, 1 fichiers de test ont correspondu au modèle spécifié.
-C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll
+<REPO>\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll
 [xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.13)
 [xUnit.net 00:00:00.07]   Discovering: MMV.PostgreSql.Tests
 [xUnit.net 00:00:00.14]   Discovered:  MMV.PostgreSql.Tests

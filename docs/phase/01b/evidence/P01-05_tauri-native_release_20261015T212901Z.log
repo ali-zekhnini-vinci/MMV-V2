@@ -1,8 +1,17 @@
 ﻿# Tauri release (--no-bundle, custom-protocol, CSP de production, sans .env.development), 20261015T212901Z UTC
-executable : C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\release\mmv-desktop.exe ; 4.07 Mo ; SHA-256 CF9656D96BE9E1DEC3E3E5F4750290565C31CB012E72A621309D54A0F74B26FF
+executable : <REPO>\apps\desktop\src-tauri\target\release\mmv-desktop.exe ; 4.07 Mo ; SHA-256 CF9656D96BE9E1DEC3E3E5F4750290565C31CB012E72A621309D54A0F74B26FF
 PE : signature=PE machine=0x8664 (8664 = x64) subsystem=2 (2 = GUI Windows) ; description 'MMV V2 Dev'
 started tauri-release pid=34344
-capture C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\docs\phase\01b\evidence\P01-05_tauri-native_release_not-configured_20261015T212901Z.png pid=39868 title='MMV V2 — socle technique' path=C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\release\mmv-desktop.exe 1282x832
+capture <REPO>\docs\phase\01b\evidence\P01-05_tauri-native_release_not-configured_20261015T212901Z.png pid=39868 title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\release\mmv-desktop.exe 1282x832
 requetes recues par MMV.Api depuis l'executable release : 0 (attendu 0 : URL d'API non configuree en production, 01B)
 chaine localhost:7267 dans l'executable : True
   contexte : ...t-src 'self'; connect-src ipc: http://ipc.localhost https://localhost:7267http://localhost... (configuration Tauri embarquee : champ devCsp, inutilise en release ; aucun asset frontend ne contient l'URL)
+
+# CORRECTION 20261015T214925Z UTC (audit externe 01B)
+constat : la capture P01-05_tauri-native_release_not-configured_20261015T212901Z.png montrait VS Code et non la fenetre MMV (PID capture 39868 different du PID lance 34344) ; preuve invalide, fichier retire de l'arbre (reste dans l'historique Git)
+executable relance : <REPO>\apps\desktop\src-tauri\target\release\mmv-desktop.exe ; SHA-256 CF9656D96BE9E1DEC3E3E5F4750290565C31CB012E72A621309D54A0F74B26FF (identique au build ci-dessus, non reconstruit)
+started pid=14292 ; fenetre principale hwnd=292752514 owner_pid=14292 (= PID lance) title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\release\mmv-desktop.exe
+methode : PrintWindow(hwnd, PW_RENDERFULLCONTENT) sur le handle de la fenetre du PID lance (rendu de la fenetre cible elle-meme, insensible aux fenetres au premier plan)
+capture P01-05_tauri-native_release_not-configured_20261015T214925Z.png printwindow=True 1296x839 ; SHA-256 69804CF343510BEF66612BA3CEE94A54BAA70EE772F7BAA0F6A172772124B1FD
+contenu verifie visuellement : bandeau 'Serveur MMV non configure' ; 'VITE_MMV_API_BASE_URL absente.' ; base de donnees 'Non verifiee (serveur injoignable)'
+arret : Stop-Process 14292 ; processus mmv-desktop restants = 0

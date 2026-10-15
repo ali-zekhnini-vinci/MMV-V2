@@ -93,3 +93,11 @@ Dépendance npm ajoutée : `vitest` **5.0.3** (devDependency épinglée, MIT) + 
 | Serena | MCP + CLI | C# MCP PASS ; TypeScript PASS via `serena project health-check` ; MCP TS à reconnecter (Q-B26) |
 | Graphify | CLI 0.9.77 | `graphify update .` + 6 `graphify path` (Q-B27). MCP `NOT_CONFIGURED` |
 | `psql` | — | non utilisé par l'agent (migration appliquée par le propriétaire) |
+
+## Amendement daté — 15/10/2026 (nuit) : corrections après audit externe
+
+| Élément | Chemin | Statut | Preuve |
+|---|---|---|---|
+| Preuve native release | `docs/phase/01b/evidence/P01-05_tauri-native_release_not-configured_20261015T214925Z.png` (remplace la capture `…212901Z.png`, invalide, retirée) | PASS | Q-B23-C |
+| Journaux de preuve anonymisés | `docs/phase/01b/evidence/*.log` (`<REPO>`, `<SCRATCHPAD>`) | PASS | Q-B29 |
+| Outil local `dotnet-ef` | `.config/dotnet-tools.json` (10.0.4, versionné ; remplace l'usage du CLI global 10.0.2 noté plus haut, qui reste installé) | PASS | Q-B30 |

@@ -1,55 +1,35 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-**État au 15 octobre 2026 (soir, terminaison 01B) :** phase 00 (cadrage) livrée ; **phase 01A MERGED** dans `main` (commit `4ed20a8e38b9db7519c0f56e24afaaaa4d6556ed`) ; **phase 01B `IMPLEMENTED — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-01b-integration` (commits locaux, non poussée, non mergée) : chaîne **fenêtre Tauri → HTTPS → MMV.Api → PostgreSQL 18** démontrée en **développement local monoposte**. Phase 02 `NOT_STARTED`. Les ADR réseau (ADR-004/006/007) restent **non ratifiés**.
+## Statut actuel — phase 01B (15/10/2026)
 
-> Historique : avant le merge, ce paragraphe indiquait « 01A implémentée sur `feat/phase-01-socle`, publiée, non fusionnée ; 01B non commencée (aucun GO) » ; puis, jusqu'à la terminaison, « 01B `IN_PROGRESS` ».
+**`01B IMPLEMENTED — OWNER_REVIEW_REQUIRED`** sur la branche `feat/phase-01b-integration` (publiée sur `origin` jusqu'à `6cf6e88` ; commit de corrections d'audit local, non poussé ; aucune PR, non mergée). Audit externe : socle technique **conforme pour le développement local monoposte** ; corrections d'audit appliquées (preuve release native, confidentialité des journaux, outil `dotnet-ef` local).
 
-**Nature du code :** socle technique minimal, **non** destiné à la production. Aucun module métier, aucune donnée de magasin.
-
-## Ce que contient le dépôt (01A)
-
-| Élément | Chemin | État |
-|---|---|---|
-| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) | `apps/desktop/` | écran « socle technique » sans donnée ni appel réseau |
-| Solution .NET 10 | `MMV.slnx`, `src/MMV.Domain`, `src/MMV.Application`, `src/MMV.Infrastructure`, `src/MMV.Api` | Domain/Application vides ; Infrastructure : `MmvDbContext` sans entité (Npgsql) |
-| Endpoint de vivacité | `GET /health/live` | état du **processus** uniquement, pas de PostgreSQL |
-| Tests automatiques | `tests/MMV.Api.Tests/` | xUnit, 10 tests (vivacité, règles de références, fournisseur Npgsql) |
-| Documentation de phase | `docs/phase/00.md`, `docs/phase/01.md`, `docs/phase/01/` | gates, spécification, matrice QA, preuves |
-
-Résultats rapportés (détail et extraits : [`docs/phase/01/QA_MATRIX.md`](docs/phase/01/QA_MATRIX.md)) : `npm run lint` / `npm run build` PASS, build Tauri debug et fenêtre native PASS (capture), `dotnet build` 0 avertissement, `dotnet test` 10/10, `GET /health/live` en **HTTP local** → 200.
-
-## Ajouts 01B en cours (branche locale `feat/phase-01b-integration`, non mergée)
-
-| Élément | Chemin | État au 15/10/2026 |
-|---|---|---|
-| Disponibilité base | `GET /health/ready` (`src/MMV.Api/Health/ReadinessEndpoint.cs`) | 503 vérifié sans base ; 200 sur PG18 réel `NOT_TESTED` |
-| CORS restreint (dev) | `src/MMV.Api/Cors/DesktopCors.cs` | testé (préflight autorisé/refusé) |
-| Client API Tauri typé | `apps/desktop/src/api/` | tests `node --test` 17/17 ; fenêtre native `NOT_TESTED` |
-| Garde de cible PostgreSQL | `tests/MMV.PostgreSql.Tests/` | garde PASS ; identité réelle `NOT_TESTED` (secrets non saisis) |
-| Migration initiale vide | `src/MMV.Infrastructure/Persistence/Migrations/`, script `docs/phase/01b/sql/` | **générée, non appliquée** — revue propriétaire (O-B07) |
-
-**Mise à jour 15/10/2026 (soir, terminaison 01B)** — le tableau ci-dessus reste l'état intermédiaire ; état final (détail : [`docs/phase/01b/QA_MATRIX.md`](docs/phase/01b/QA_MATRIX.md) Q-B18..Q-B28) :
+Chaîne démontrée en développement local : **fenêtre Tauri → HTTPS → MMV.Api → PostgreSQL 18**.
 
 | Élément | État final 01B |
 |---|---|
-| PostgreSQL 18.6 `localhost:5433` | bases/rôles `mmv_v2_dev` et `mmv_v2_test` créés par le propriétaire ; identité, version, port et privilèges vérifiés en lecture seule |
-| Migration baseline | **appliquée par le propriétaire** sur les deux bases ; 1 ligne d'historique par base, cohérente avec EF Core (`pending=[]`) ; jamais au démarrage |
-| Tests PostgreSQL réels | 12/12 : identité, schéma, écriture éphémère + `ROLLBACK` sur `mmv_v2_test` uniquement |
+| PostgreSQL 18.6 `localhost:5433` | bases/rôles `mmv_v2_dev` et `mmv_v2_test` (créés par le propriétaire) ; migration baseline appliquée par le propriétaire, cohérente avec EF Core ; jamais au démarrage |
+| Tests | .NET : `MMV.Api.Tests` 26/26, `MMV.PostgreSql.Tests` 12/12 (identité, schéma, écriture éphémère + `ROLLBACK` sur `mmv_v2_test`) ; frontend : Vitest 5.0.3, 25/25 |
 | `GET /health/live` / `/health/ready` | HTTPS réel : 200 / 200 avec PG18 ; 200 / 503 si PG injoignable ou muet (borné ~2,3 s) ; aucune fuite |
-| Fenêtre Tauri native | 4 états réels capturés (ready, base indisponible, CORS refusé, API arrêtée) ; Origin WebView2 `http://localhost:1420` ; exécutable release x64 construit (sans installateur) |
-| Tests frontend | **Vitest 5.0.3**, 25/25 (client HTTP + états de l'écran) |
+| Fenêtre Tauri native | 4 états réels (ready, base indisponible, CORS refusé, API arrêtée) ; exécutable release x64 sans installateur : « Serveur MMV non configuré » (aucune adresse de production) |
+| Outillage | `dotnet-ef` 10.0.4 en outil local (`.config/dotnet-tools.json`, `dotnet tool restore`) |
 
-## Limites — non validé à ce jour
+**Non validé :** TLS LAN/CA/rotation (ADR-006 ouvert), adresse du serveur en production (O-B11), multi-postes, installateur, Windows Service, sauvegardes, rôle applicatif séparé (O-B04). Session MCP Serena TypeScript à reconnecter ; Graphify MCP `NOT_CONFIGURED`. ADR-004/006/007 non ratifiés. Phase 02 `NOT_STARTED`.
 
-> Mis à jour le 15/10/2026 au soir (terminaison 01B) : HTTPS local depuis Tauri, PostgreSQL réel, migration et parcours client → API → PG sont désormais **vérifiés en développement local** (voir tableau ci-dessus). Les puces suivantes restent l'état intermédiaire du 15/10/2026, à lire avec ces corrections. Restent non validés : TLS LAN/CA/rotation (ADR-006 OPEN), adresse du serveur pour un poste en production (O-B11), multi-postes, installateur, Windows Service, sauvegardes, rôle applicatif séparé du rôle de migration (O-B04). Outils : Serena TypeScript PASS via `serena project health-check`, session MCP à reconnecter (`/mcp`) ; Graphify CLI PASS, MCP `NOT_CONFIGURED`.
+Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md), [`docs/phase/01b/QA_MATRIX.md`](docs/phase/01b/QA_MATRIX.md), [`docs/phase/01b/GATES_AND_DECISIONS.md`](docs/phase/01b/GATES_AND_DECISIONS.md). Phases antérieures : 00 (cadrage) livrée ; 01A **MERGED** dans `main` (`4ed20a8e38b9db7519c0f56e24afaaaa4d6556ed`), voir [`docs/phase/01/QA_MATRIX.md`](docs/phase/01/QA_MATRIX.md).
 
-> Mis à jour le 15/10/2026 (01B). Historique : jusqu'à cette date, HTTPS était `NOT_VERIFIED`, aucune base V2 n'existait et le client n'appelait aucune API.
+**Nature du code :** socle technique minimal, **non** destiné à la production. Aucun module métier, aucune donnée de magasin.
 
-- **HTTPS / TLS** : HTTPS **local** `https://localhost:7267` vérifié sans contournement (certificat de dev approuvé par le propriétaire, Q-B13) ; depuis la fenêtre Tauri `NOT_TESTED` ; TLS LAN et appairage non commencés (ADR-006 ouvert).
-- **PostgreSQL réel** : bases/rôles `mmv_v2_dev` / `mmv_v2_test` créés par le propriétaire sur PG18:5433 (O-B01, déclaré) ; vérification d'identité par l'agent, migration et aller-retour transactionnel : `NOT_TESTED` / en attente des GO O-B07 et O-B02.
-- **Connexion client → API** : client implémenté (`devCsp` limité à `https://localhost:7267`, développement uniquement) ; parcours réel Tauri → API → PG18 `NOT_TESTED`. Le bundle de production ne contient aucune adresse de serveur.
-- **Installateur, Windows Service, multi-postes, sauvegardes** : non commencés (01B+). Aucun fonctionnement multi-postes n'est revendiqué.
-- **Outils agent** (détail : [`docs/phase/01/GATES_AND_DECISIONS.md`](docs/phase/01/GATES_AND_DECISIONS.md)) : Serena MCP PASS pour la **navigation symbolique C# uniquement** (TypeScript : autorisé et déclaré localement le 15/10/2026, `BLOCKED` jusqu'au redémarrage du serveur MCP — Q-B16 de [`docs/phase/01b/QA_MATRIX.md`](docs/phase/01b/QA_MATRIX.md)) ; Graphify CLI + graphe AST local PASS ; Graphify MCP `NOT_CONFIGURED`.
+## Contenu du dépôt
+
+| Élément | Chemin |
+|---|---|
+| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) | `apps/desktop/` (client API : `apps/desktop/src/api/`) |
+| Solution .NET 10 | `MMV.slnx`, `src/MMV.Domain`, `src/MMV.Application`, `src/MMV.Infrastructure`, `src/MMV.Api` |
+| Santé (`/health/live`, `/health/ready`), CORS restreint | `src/MMV.Api/Health/`, `src/MMV.Api/Cors/DesktopCors.cs` |
+| Migration baseline vide et script SQL relu | `src/MMV.Infrastructure/Persistence/Migrations/`, `docs/phase/01b/sql/` |
+| Tests | `tests/MMV.Api.Tests/`, `tests/MMV.PostgreSql.Tests/`, `apps/desktop/src/**/*.test.ts` |
+| Documentation de phase | `docs/phase/`, preuves dans `docs/phase/01/` et `docs/phase/01b/evidence/` |
 
 ## Exécuter localement
 
@@ -57,6 +37,7 @@ Prérequis (versions exactes : [`docs/phase/01/IMPLEMENTATION_SPEC.md`](docs/pha
 
 ```sh
 # Backend (racine du dépôt)
+dotnet tool restore                    # dotnet-ef 10.0.4 local
 dotnet restore MMV.slnx --locked-mode
 dotnet build MMV.slnx
 dotnet test MMV.slnx
@@ -95,7 +76,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
-- `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
+- `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).

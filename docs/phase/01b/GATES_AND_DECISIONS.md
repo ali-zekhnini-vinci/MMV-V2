@@ -198,3 +198,17 @@ Source : [`prompts/PHASE01B_GO_FINAL_TERMINAISON.md`](../../../prompts/PHASE01B_
 | O-B12 | Planification des éléments de « Phase 01 » de `docs/PERIMETRE_ET_SEQUENCE.md` non couverts par 01A/01B : réseau sécurisé LAN/TLS, Windows Service | à placer avant ou pendant 02 (décision propriétaire) |
 
 ADR-004, ADR-006, ADR-007 restent non ratifiés ; 01B ne les approuve pas.
+
+## Corrections après audit externe — 15/10/2026 (nuit, amendement daté)
+
+Décision d'audit : socle technique 01B **conforme pour le développement local monoposte** ; seules des corrections de preuve, de confidentialité, d'outillage et de documentation sont demandées (aucune refonte, aucune fonctionnalité). Les tableaux ci-dessus restent l'historique.
+
+| Élément | Correction | Preuve |
+|---|---|---|
+| Q-B23 (P01-05) | Capture release invalide (VS Code) retirée ; nouvelle capture native de l'exécutable release existant, PID et chemin vérifiés. Le gate P01-05 reste **PASS (développement local)** ; sa preuve release est désormais réelle | QA_MATRIX Q-B23-C |
+| Confidentialité | Chemins Windows nominatifs et temporaires remplacés par `<REPO>` / `<SCRATCHPAD>` dans `evidence/*.log` | Q-B29 |
+| O-B09 | **Clos** : `.config/dotnet-tools.json` (`dotnet-ef` 10.0.4 seul) versionné à la demande du propriétaire (audit) ; outil global inchangé | Q-B30 |
+
+Limites toujours ouvertes (inchangées) : O-B04, O-B10, O-B11, O-B12 ; TLS LAN/CA/rotation, multi-postes, installateur, Windows Service, refus d'un certificat non approuvé depuis WebView2, Serena TypeScript dans la session MCP. ADR-004/006/007 non ratifiés.
+
+**Statut de phase proposé (inchangé) : `01B IMPLEMENTED — OWNER_REVIEW_REQUIRED`** ; corrections d'audit appliquées, en attente de la revue de push par le propriétaire (aucun push, PR ni merge).

@@ -157,3 +157,9 @@ Les sections précédentes restent historiques (dont « Non appliqués » et `no
 ### Build Windows
 
 - `npx tauri build --no-bundle` (via `npm run tauri build -- --no-bundle`) produit `src-tauri/target/release/mmv-desktop.exe` sans installateur (installateur hors 01B).
+
+## Amendement daté — 15/10/2026 (nuit) : corrections après audit externe
+
+- Outillage : `dotnet-ef` **10.0.4** épinglé en outil local par `.config/dotnet-tools.json` (versionné, O-B09 clos). Restauration sur un nouveau poste : `dotnet tool restore`, puis `dotnet ef …` depuis la racine. L'outil global 10.0.2 n'est pas modifié.
+- Preuves : journaux sans chemin personnel (alias `<REPO>`, `<SCRATCHPAD>`) ; captures natives par `PrintWindow` sur le handle de la fenêtre du PID lancé (Q-B23-C).
+- Aucun changement de code, de migration, de certificat ni de configuration d'exécution.

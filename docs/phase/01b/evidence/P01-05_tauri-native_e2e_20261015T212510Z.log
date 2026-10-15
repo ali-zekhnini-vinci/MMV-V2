@@ -1,21 +1,21 @@
 ﻿# P01-05 Tauri natif (debug, devUrl http://localhost:1420, devCsp) -> HTTPS -> MMV.Api -> PostgreSQL 18, 20261015T212510Z UTC
-# executable : C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\debug\mmv-desktop.exe
-vite dev : C:\Users\Ali Zekhnini\AppData\Local\Temp\claude\C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2\35215338-3c8f-4bff-86e8-890a28536f7c\scratchpad\vite.out:8:  ➜  Local:   http://localhost:1420/
+# executable : <REPO>\apps\desktop\src-tauri\target\debug\mmv-desktop.exe
+vite dev : <SCRATCHPAD>\vite.out:8:  ➜  Local:   http://localhost:1420/
 ## ready : API + PostgreSQL 18 disponibles
 started tauri-ready pid=37852
-capture C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\docs\phase\01b\evidence\P01-05_tauri-native_ready_20261015T212510Z.png pid=34872 title='MMV V2 — socle technique' path=C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
+capture <REPO>\docs\phase\01b\evidence\P01-05_tauri-native_ready_20261015T212510Z.png pid=34872 title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
   WebView2 (msedgewebview2.exe, user-data com.mmv.v2.dev) : 6 processus
 ## db-down : API joignable, PostgreSQL injoignable (port 5434 ferme)
 started tauri-db-down pid=38984
-capture C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\docs\phase\01b\evidence\P01-05_tauri-native_db-down_20261015T212510Z.png pid=39052 title='MMV V2 — socle technique' path=C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
+capture <REPO>\docs\phase\01b\evidence\P01-05_tauri-native_db-down_20261015T212510Z.png pid=39052 title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
   WebView2 (msedgewebview2.exe, user-data com.mmv.v2.dev) : 6 processus
 ## cors-refused : origine WebView2 retiree de Cors:AllowedOrigins
 started tauri-cors pid=3716
-capture C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\docs\phase\01b\evidence\P01-05_tauri-native_cors-refused_20261015T212510Z.png pid=39836 title='MMV V2 — socle technique' path=C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
+capture <REPO>\docs\phase\01b\evidence\P01-05_tauri-native_cors-refused_20261015T212510Z.png pid=39836 title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
   WebView2 (msedgewebview2.exe, user-data com.mmv.v2.dev) : 6 processus
 ## api-down : API arretee (aucune ecoute sur 7267)
   ecoute 7267 : 0
-capture C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\docs\phase\01b\evidence\P01-05_tauri-native_api-down_20261015T212510Z.png pid=31952 title='MMV V2 — socle technique' path=C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
+capture <REPO>\docs\phase\01b\evidence\P01-05_tauri-native_api-down_20261015T212510Z.png pid=31952 title='MMV V2 — socle technique' path=<REPO>\apps\desktop\src-tauri\target\debug\mmv-desktop.exe 1282x832
   WebView2 (msedgewebview2.exe, user-data com.mmv.v2.dev) : 6 processus
 ### journal MMV.Api (tauri-ready) : origine et CORS (Microsoft.AspNetCore.Cors=Debug)
   2 x The request has an origin header: 'http://localhost:1420'.
