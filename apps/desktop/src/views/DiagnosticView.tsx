@@ -1,6 +1,7 @@
 // Diagnostic technique : écran de socle de la phase 01B conservé (mêmes libellés et mêmes
 // endpoints anonymes /health/live et /health/ready), désormais monté dans le shell.
 import type { ApiBaseUrlResult } from "../api/config.ts";
+import { Button } from "../components/ui/button.tsx";
 import type { ServerHealth } from "../shell/useServerHealth.ts";
 import { describeLive, describeReady, type ScreenStatus, SUMMARY } from "../technicalStatusView.ts";
 
@@ -44,14 +45,9 @@ export function DiagnosticView({ baseUrl, health }: DiagnosticViewProps) {
           )}
         </dl>
 
-        <button
-          type="button"
-          className="button button--secondary"
-          onClick={() => void health.reload()}
-          disabled={health.checking || !baseUrl.ok}
-        >
+        <Button onClick={() => void health.reload()} disabled={health.checking || !baseUrl.ok}>
           Revérifier
-        </button>
+        </Button>
       </div>
     </section>
   );

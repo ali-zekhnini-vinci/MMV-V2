@@ -1,5 +1,7 @@
 // Règles de l'écran de connexion (références : MMV-Login-states.md §2, §3, §6, §7, §13).
-// Module pur, sans React ni réseau : testé par loginForm.test.ts.
+// Module pur, sans React ni réseau : testé par loginForm.test.ts. Le schéma Zod est la source unique de
+// validation du formulaire (React Hook Form via zodResolver, LoginScreen.tsx).
+import { z } from "zod";
 import type { ApiError } from "../api/client.ts";
 
 export interface LoginFieldErrors {
@@ -12,10 +14,23 @@ export const FIELD_MESSAGES = {
   passwordRequired: "Veuillez saisir votre mot de passe.",
 } as const;
 
+/** Identifiant rogné (un identifiant fait d'espaces est vide) ; mot de passe transmis tel quel, jamais rogné. */
+export const loginSchema = z.object({
+  userName: z.string().trim().min(1, FIELD_MESSAGES.userNameRequired),
+  password: z.string().min(1, FIELD_MESSAGES.passwordRequired),
+});
+
+export type LoginFormInput = z.input<typeof loginSchema>;
+export type LoginFormValues = z.output<typeof loginSchema>;
+
 export function validateLogin(userName: string, password: string): LoginFieldErrors {
+  const result = loginSchema.safeParse({ userName, password });
+  if (result.success) return {};
   const errors: LoginFieldErrors = {};
-  if (!userName.trim()) errors.userName = FIELD_MESSAGES.userNameRequired;
-  if (!password) errors.password = FIELD_MESSAGES.passwordRequired;
+  for (const issue of result.error.issues) {
+    const field = issue.path[0];
+    if ((field === "userName" || field === "password") && errors[field] === undefined) errors[field] = issue.message;
+  }
   return errors;
 }
 

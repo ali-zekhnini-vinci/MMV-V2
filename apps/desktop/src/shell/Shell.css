@@ -19,35 +19,7 @@
   grid-template-columns: var(--sidebar-width-collapsed) minmax(0, 1fr);
 }
 
-/* --- Commun --- */
-.icon-button {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.icon-button--large {
-  width: 42px;
-  height: 42px;
-}
-
-.icon-button:hover:not(:disabled) {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.icon-button:disabled {
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
+/* --- Commun --- (boutons : composant Button, components/ui/button.tsx) */
 .shell :focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
@@ -131,10 +103,6 @@
   gap: var(--space-2);
 }
 
-.topbar__profile {
-  position: relative;
-}
-
 .profile-chip {
   display: inline-flex;
   align-items: center;
@@ -152,70 +120,7 @@
   background: var(--surface-hover);
 }
 
-/* --- Menu profil --- */
-.profile-menu {
-  position: absolute;
-  z-index: 20;
-  min-width: 240px;
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-raised);
-  box-shadow: var(--shadow-3);
-}
-
-.profile-menu--topbar {
-  top: calc(100% + 6px);
-  right: 0;
-}
-
-.profile-menu--sidebar {
-  bottom: 0;
-  left: calc(100% + 10px);
-}
-
-.profile-menu__identity {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-2) var(--space-3) var(--space-3);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: var(--space-2);
-}
-
-.profile-menu__name {
-  font-weight: var(--weight-semibold);
-  color: var(--text-primary);
-}
-
-.profile-menu__meta {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-}
-
-.profile-menu__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 100%;
-  height: 40px;
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  cursor: pointer;
-}
-
-.profile-menu__item:hover,
-.profile-menu__item:focus-visible {
-  background: var(--surface-hover);
-}
-
-.profile-menu__item--danger:hover {
-  color: var(--error);
-}
+/* --- Menu profil : composants DropdownMenu (components/ui/dropdown-menu.tsx), ProfileMenu.tsx. --- */
 
 /* --- Sidebar --- */
 .sidebar {
@@ -644,36 +549,6 @@
 
 .diagnostic__facts {
   margin-bottom: var(--space-5);
-}
-
-.button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 40px;
-  padding: 0 var(--space-4);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-card);
-  color: var(--text-primary);
-  font: inherit;
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-}
-
-.button:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
-.button:disabled {
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-.button--small {
-  height: 32px;
-  padding: 0 var(--space-3);
-  font-size: var(--text-sm);
 }
 
 .inline-alert {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { PERMISSION_SYSTEM_ADMIN } from "../api/auth.ts";
-import { initialOf, NAV_SECTIONS, roleLabel, viewAccess, visibleSections } from "./navigation.ts";
+import { findNavItemByPath, initialOf, NAV_ITEMS, NAV_SECTIONS, roleLabel, viewAccess, visibleSections } from "./navigation.ts";
 
 const ADMIN = [PERMISSION_SYSTEM_ADMIN];
 const USER: string[] = [];
@@ -36,6 +36,15 @@ describe("navigation et garde UI", () => {
     assert.equal(viewAccess("clients", ADMIN), "later");
     assert.equal(viewAccess("accounts", USER), "forbidden");
     assert.equal(viewAccess("accounts", ADMIN), "allowed");
+  });
+
+  test("routes React Router : une route unique par entrée, Accueil à la racine, route inconnue sans entrée", () => {
+    const paths = NAV_ITEMS.map((item) => item.path);
+    assert.equal(new Set(paths).size, paths.length);
+    assert.equal(findNavItemByPath("/")?.id, "home");
+    assert.equal(findNavItemByPath("/comptes")?.id, "accounts");
+    assert.equal(findNavItemByPath("/diagnostic")?.id, "diagnostic");
+    assert.equal(findNavItemByPath("/inexistant"), undefined);
   });
 
   test("libellés de rôle et initiale", () => {

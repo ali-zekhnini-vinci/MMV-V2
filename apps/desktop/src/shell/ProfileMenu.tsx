@@ -1,56 +1,50 @@
 // Menu utilisateur : seules des informations réelles de la session (nom, identifiant, rôle technique)
 // et la déconnexion. Aucun lien « profil » ou « préférences » inventé (MMV-Shell-handoff §12, §18).
+// Primitive Radix DropdownMenu (composant shadcn/ui components/ui/dropdown-menu.tsx) : ouverture au
+// clic, à Entrée ou Espace, navigation aux flèches, Échap et clic extérieur ferment le menu et rendent
+// le focus au déclencheur.
 import { LogOut } from "lucide-react";
-import { useEffect, useRef } from "react";
+import type { ReactElement } from "react";
 import type { SessionUser } from "../api/auth.ts";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu.tsx";
 import { roleLabel } from "./navigation.ts";
 
 interface ProfileMenuProps {
-  id: string;
   user: SessionUser;
+  /** Barre supérieure : sous le déclencheur ; sidebar réduite : à droite de l'avatar (handoff §12). */
   placement: "topbar" | "sidebar";
-  onClose: (restoreFocus: boolean) => void;
   onSignOut: () => void;
+  /** Bouton déclencheur (reçoit les attributs ARIA du menu). */
+  children: ReactElement;
 }
 
-export function ProfileMenu({ id, user, placement, onClose, onSignOut }: ProfileMenuProps) {
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    menuRef.current?.querySelector<HTMLElement>("[role='menuitem']")?.focus();
-    const onPointerDown = (event: PointerEvent) => {
-      const anchor = document.querySelector(`[aria-controls='${id}']`);
-      const target = event.target as Node;
-      if (!menuRef.current?.contains(target) && !anchor?.contains(target)) onClose(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [id, onClose]);
-
+export function ProfileMenu({ user, placement, onSignOut, children }: ProfileMenuProps) {
   return (
-    <div
-      ref={menuRef}
-      id={id}
-      className={`profile-menu profile-menu--${placement}`}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.stopPropagation();
-          onClose(true);
-        }
-        if (event.key === "Tab") onClose(false);
-      }}
-    >
-      <div className="profile-menu__identity">
-        <span className="profile-menu__name">{user.displayName}</span>
-        <span className="profile-menu__meta">{user.userName}</span>
-        <span className="profile-menu__meta">{roleLabel(user.permissions)}</span>
-      </div>
-      <div role="menu" aria-label="Menu utilisateur">
-        <button type="button" role="menuitem" className="profile-menu__item profile-menu__item--danger" onClick={onSignOut}>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
+      <DropdownMenuContent
+        side={placement === "topbar" ? "bottom" : "right"}
+        align="end"
+        sideOffset={placement === "topbar" ? 6 : 10}
+      >
+        <DropdownMenuLabel>
+          <span className="font-semibold text-text-primary">{user.displayName}</span>
+          <span className="text-xs text-text-secondary">{user.userName}</span>
+          <span className="text-xs text-text-secondary">{roleLabel(user.permissions)}</span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onSelect={onSignOut}>
           <LogOut size={16} aria-hidden="true" />
           Se déconnecter
-        </button>
-      </div>
-    </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

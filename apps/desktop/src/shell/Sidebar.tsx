@@ -4,6 +4,7 @@ import logoHorizontal from "../assets/brand/logo-horizontal.png";
 import logoHorizontalDark from "../assets/brand/logo-horizontal-dark-sidebar.png";
 import logoMonogram from "../assets/brand/logo-monogram.png";
 import type { SessionUser } from "../api/auth.ts";
+import { Button } from "../components/ui/button.tsx";
 import { initialOf, LATER_MESSAGE, type NavSection, roleLabel, type ViewId } from "./navigation.ts";
 import { ProfileMenu } from "./ProfileMenu.tsx";
 import type { Theme } from "./theme.ts";
@@ -14,29 +15,12 @@ interface SidebarProps {
   collapsed: boolean;
   theme: Theme;
   user: SessionUser;
-  profileMenuOpen: boolean;
   onNavigate: (id: ViewId) => void;
   onToggleCollapsed: () => void;
-  onToggleProfileMenu: () => void;
-  onCloseProfileMenu: (restoreFocus: boolean) => void;
   onSignOut: () => void;
 }
 
-export const SIDEBAR_MENU_ID = "sidebar-profile-menu";
-
-export function Sidebar({
-  sections,
-  current,
-  collapsed,
-  theme,
-  user,
-  profileMenuOpen,
-  onNavigate,
-  onToggleCollapsed,
-  onToggleProfileMenu,
-  onCloseProfileMenu,
-  onSignOut,
-}: SidebarProps) {
+export function Sidebar({ sections, current, collapsed, theme, user, onNavigate, onToggleCollapsed, onSignOut }: SidebarProps) {
   const initial = initialOf(user.displayName);
 
   return (
@@ -52,9 +36,10 @@ export function Sidebar({
             height={30}
           />
         )}
-        <button
-          type="button"
-          className="icon-button sidebar__toggle"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="sidebar__toggle"
           aria-label={collapsed ? "Ouvrir le menu" : "Réduire le menu"}
           aria-expanded={!collapsed}
           data-tooltip={collapsed ? "Ouvrir le menu" : undefined}
@@ -62,7 +47,7 @@ export function Sidebar({
           onClick={onToggleCollapsed}
         >
           {collapsed ? <PanelLeftOpen size={18} aria-hidden="true" /> : <PanelLeftClose size={18} aria-hidden="true" />}
-        </button>
+        </Button>
       </div>
 
       <nav className="sidebar__nav" aria-label="Navigation">
@@ -103,27 +88,16 @@ export function Sidebar({
       <div className="sidebar__user">
         {collapsed ? (
           <div className="sidebar__user-anchor">
-            <button
-              type="button"
-              className="avatar avatar--button"
-              aria-label={`Menu utilisateur — ${user.displayName}`}
-              aria-haspopup="true"
-              aria-expanded={profileMenuOpen}
-              aria-controls={SIDEBAR_MENU_ID}
-              data-tooltip={user.displayName}
-              onClick={onToggleProfileMenu}
-            >
-              {initial}
-            </button>
-            {profileMenuOpen && (
-              <ProfileMenu
-                id={SIDEBAR_MENU_ID}
-                user={user}
-                placement="sidebar"
-                onClose={onCloseProfileMenu}
-                onSignOut={onSignOut}
-              />
-            )}
+            <ProfileMenu user={user} placement="sidebar" onSignOut={onSignOut}>
+              <button
+                type="button"
+                className="avatar avatar--button"
+                aria-label={`Menu utilisateur — ${user.displayName}`}
+                data-tooltip={user.displayName}
+              >
+                {initial}
+              </button>
+            </ProfileMenu>
           </div>
         ) : (
           <>
@@ -134,15 +108,16 @@ export function Sidebar({
               <span className="sidebar__user-name">{user.displayName}</span>
               <span className="sidebar__user-role">{roleLabel(user.permissions)}</span>
             </div>
-            <button
-              type="button"
-              className="icon-button icon-button--small sidebar__logout"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sidebar__logout"
               aria-label="Se déconnecter"
               title="Se déconnecter"
               onClick={onSignOut}
             >
               <LogOut size={18} aria-hidden="true" />
-            </button>
+            </Button>
           </>
         )}
       </div>

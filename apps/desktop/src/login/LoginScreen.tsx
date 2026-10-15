@@ -1,10 +1,15 @@
 // Écran de connexion (référence visuelle DRAFT : MMV-Login-1920x1080.png, MMV-Login-handoff.md,
 // MMV-Login-states.md). Aucune inscription, aucun « mot de passe oublié », aucune mémorisation.
+// Formulaire : React Hook Form + schéma Zod (loginForm.ts) ; étiquettes et bouton : shadcn/ui adaptés MMV.
+import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, ArrowRight, Check, Eye, EyeOff, Lock, ShieldCheck, User, WifiOff } from "lucide-react";
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import logoLogin from "../assets/brand/logo-login.png";
 import { useAuth } from "../auth/authContext.ts";
-import { BANNERS, bannerForLoginError, type LoginBanner, type LoginFieldErrors, validateLogin } from "./loginForm.ts";
+import { Button } from "../components/ui/button.tsx";
+import { Label } from "../components/ui/label.tsx";
+import { BANNERS, bannerForLoginError, type LoginBanner, type LoginFormInput, type LoginFormValues, loginSchema } from "./loginForm.ts";
 import "./LoginScreen.css";
 
 const ARGUMENTS = [
@@ -17,48 +22,54 @@ export function LoginScreen() {
   const { state, baseUrl, signIn } = useAuth();
   const notice = state.status === "anonymous" ? state.notice : null;
 
-  const [userName, setUserName] = useState("");
-  const [password, setPassword] = useState("");
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    setFocus,
+    formState: { errors, isSubmitting: submitting },
+  } = useForm<LoginFormInput, unknown, LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { userName: "", password: "" },
+    // Saisie invalide : focus sur le premier champ en erreur (Identifiant, sinon Mot de passe).
+    shouldFocusError: true,
+  });
   const [showPassword, setShowPassword] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const [banner, setBanner] = useState<LoginBanner | null>(() =>
     !baseUrl.ok ? BANNERS["not-configured"] : notice === "session-expired" ? BANNERS["session-expired"] : null,
   );
 
-  const userNameRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
   const ids = useId();
   const userNameErrorId = `${ids}-user-error`;
   const passwordErrorId = `${ids}-password-error`;
   const bannerId = `${ids}-banner`;
+  const fieldErrors = { userName: errors.userName?.message, password: errors.password?.message };
 
+  // Focus initial synchrone sur Identifiant (setFocus de React Hook Form est différé) : référence locale
+  // fusionnée avec celle de register.
+  const userNameField = register("userName");
+  const userNameRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     userNameRef.current?.focus();
   }, []);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (submitting) return;
-
-    const errors = validateLogin(userName, password);
-    setFieldErrors(errors);
-    if (errors.userName || errors.password) {
-      setBanner(null);
-      (errors.userName ? userNameRef : passwordRef).current?.focus();
-      return;
-    }
-
+  async function onValid({ userName, password }: LoginFormValues) {
     setBanner(null);
-    setSubmitting(true);
-    const error = await signIn(userName.trim(), password);
+    const error = await signIn(userName, password);
     if (error === null) return; // l'application bascule sur le shell ; ce composant est démonté.
 
-    setSubmitting(false);
     setBanner(bannerForLoginError(error));
     // Identifiant conservé, mot de passe vidé (MMV-Login-states §13, variante recommandée).
-    setPassword("");
-    window.setTimeout(() => passwordRef.current?.focus(), 0);
+    setValue("password", "");
+    window.setTimeout(() => setFocus("password"), 0);
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    if (submitting) {
+      event.preventDefault();
+      return;
+    }
+    void handleSubmit(onValid, () => setBanner(null))(event);
   }
 
   const markBoth = banner?.markFields === true;
@@ -88,7 +99,7 @@ export function LoginScreen() {
       </section>
 
       <main className="login__panel">
-        <form className="login__form" onSubmit={(event) => void handleSubmit(event)} noValidate aria-busy={submitting}>
+        <form className="login__form" onSubmit={onSubmit} noValidate aria-busy={submitting}>
           <header>
             <h1 className="login__title">Bienvenue,</h1>
             <p className="login__subtitle">Veuillez entrer vos identifiants pour continuer.</p>
@@ -106,25 +117,23 @@ export function LoginScreen() {
           )}
 
           <div className="login__field">
-            <label htmlFor={`${ids}-user`}>Identifiant</label>
+            <Label htmlFor={`${ids}-user`}>Identifiant</Label>
             <div className={`login__input${userNameInvalid ? " login__input--invalid" : ""}`}>
               <User size={18} aria-hidden="true" />
               <input
-                ref={userNameRef}
+                {...userNameField}
+                ref={(element) => {
+                  userNameField.ref(element);
+                  userNameRef.current = element;
+                }}
                 id={`${ids}-user`}
-                name="username"
                 type="text"
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
-                value={userName}
                 readOnly={submitting}
                 aria-invalid={userNameInvalid}
                 aria-describedby={describedBy(userNameErrorId, Boolean(fieldErrors.userName))}
-                onChange={(event) => {
-                  setUserName(event.target.value);
-                  if (fieldErrors.userName) setFieldErrors((current) => ({ ...current, userName: undefined }));
-                }}
               />
             </div>
             {fieldErrors.userName && (
@@ -135,24 +144,18 @@ export function LoginScreen() {
           </div>
 
           <div className="login__field">
-            <label htmlFor={`${ids}-password`}>Mot de passe</label>
+            <Label htmlFor={`${ids}-password`}>Mot de passe</Label>
             <div className={`login__input${passwordInvalid ? " login__input--invalid" : ""}`}>
               <Lock size={18} aria-hidden="true" />
               <input
-                ref={passwordRef}
+                {...register("password")}
                 id={`${ids}-password`}
-                name="password"
                 type={showPassword ? "text" : "password"}
                 className={showPassword ? undefined : "login__secret"}
                 autoComplete="current-password"
-                value={password}
                 readOnly={submitting}
                 aria-invalid={passwordInvalid}
                 aria-describedby={describedBy(passwordErrorId, Boolean(fieldErrors.password))}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  if (fieldErrors.password) setFieldErrors((current) => ({ ...current, password: undefined }));
-                }}
               />
               <button
                 type="button"
@@ -172,7 +175,7 @@ export function LoginScreen() {
             )}
           </div>
 
-          <button type="submit" className="login__submit" disabled={submitting || !baseUrl.ok}>
+          <Button type="submit" variant="primary" size="lg" className="w-full" disabled={submitting || !baseUrl.ok}>
             {submitting ? (
               <>
                 <span className="login__spinner" aria-hidden="true" />
@@ -184,7 +187,7 @@ export function LoginScreen() {
                 <ArrowRight size={16} aria-hidden="true" />
               </>
             )}
-          </button>
+          </Button>
 
           <p className="login__secure">
             <ShieldCheck size={16} aria-hidden="true" />

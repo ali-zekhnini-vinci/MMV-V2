@@ -1,4 +1,5 @@
-/* Base globale (phase 02). Composants : login/LoginScreen.css, shell/Shell.css ; jetons : styles/tokens.css. */
+/* Base globale (phase 02). Entrée Tailwind + polices + jetons : styles/index.css ; composants :
+   login/LoginScreen.css, shell/Shell.css, components/ui/ (shadcn/ui adaptés aux jetons MMV). */
 *,
 *::before,
 *::after {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { type AccountSummary, fetchAccounts, PERMISSION_SYSTEM_ADMIN } from "../api/auth.ts";
 import type { ApiError } from "../api/client.ts";
 import { useAuth } from "../auth/authContext.ts";
+import { Button } from "../components/ui/button.tsx";
 import { ForbiddenView } from "./ForbiddenView.tsx";
 
 type AccountsState =
@@ -53,9 +54,7 @@ export function AccountsView() {
         {state.state === "error" && (
           <div role="alert" className="inline-alert">
             <span>{state.error.message}</span>
-            <button type="button" className="button button--secondary" onClick={() => void load()}>
-              Réessayer
-            </button>
+            <Button onClick={() => void load()}>Réessayer</Button>
           </div>
         )}
         {state.state === "loaded" && (

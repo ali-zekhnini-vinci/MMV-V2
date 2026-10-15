@@ -34,6 +34,8 @@ export type ViewId =
 
 export interface NavItem {
   id: ViewId;
+  /** Route React Router du shell (routeur mémoire, Shell.tsx). */
+  path: string;
   label: string;
   icon: LucideIcon;
   /** `later` : module d'une phase suivante, aucun écran ni donnée. */
@@ -55,34 +57,39 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     id: "main",
     label: "Principal",
     items: [
-      { id: "home", label: "Accueil", icon: LayoutDashboard, availability: "available" },
-      { id: "clients", label: "Clients", icon: Users, availability: "later" },
-      { id: "products", label: "Produits", icon: Package, availability: "later" },
-      { id: "prescriptions", label: "Ordonnances", icon: ClipboardList, availability: "later" },
-      { id: "orders", label: "Commandes", icon: ShoppingBag, availability: "later" },
-      { id: "sales", label: "Ventes", icon: ShoppingCart, availability: "later" },
-      { id: "inventory", label: "Inventaire", icon: Boxes, availability: "later" },
-      { id: "notifications", label: "Notifications", icon: Bell, availability: "later" },
+      { id: "home", path: "/", label: "Accueil", icon: LayoutDashboard, availability: "available" },
+      { id: "clients", path: "/clients", label: "Clients", icon: Users, availability: "later" },
+      { id: "products", path: "/produits", label: "Produits", icon: Package, availability: "later" },
+      { id: "prescriptions", path: "/ordonnances", label: "Ordonnances", icon: ClipboardList, availability: "later" },
+      { id: "orders", path: "/commandes", label: "Commandes", icon: ShoppingBag, availability: "later" },
+      { id: "sales", path: "/ventes", label: "Ventes", icon: ShoppingCart, availability: "later" },
+      { id: "inventory", path: "/inventaire", label: "Inventaire", icon: Boxes, availability: "later" },
+      { id: "notifications", path: "/notifications", label: "Notifications", icon: Bell, availability: "later" },
     ],
   },
   {
     id: "admin",
     label: "Administration",
     items: [
-      { id: "reports", label: "Rapports", icon: BarChart3, availability: "later" },
-      { id: "settings", label: "Paramètres", icon: Settings, availability: "later" },
-      { id: "accounts", label: "Comptes", icon: UserCog, availability: "available", requires: PERMISSION_SYSTEM_ADMIN },
-      { id: "diagnostic", label: "Diagnostic technique", icon: Activity, availability: "available" },
+      { id: "reports", path: "/rapports", label: "Rapports", icon: BarChart3, availability: "later" },
+      { id: "settings", path: "/parametres", label: "Paramètres", icon: Settings, availability: "later" },
+      { id: "accounts", path: "/comptes", label: "Comptes", icon: UserCog, availability: "available", requires: PERMISSION_SYSTEM_ADMIN },
+      { id: "diagnostic", path: "/diagnostic", label: "Diagnostic technique", icon: Activity, availability: "available" },
     ],
   },
 ];
 
-const ALL_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);
+export const NAV_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);
 
 export function findNavItem(id: ViewId): NavItem {
-  const item = ALL_ITEMS.find((candidate) => candidate.id === id);
+  const item = NAV_ITEMS.find((candidate) => candidate.id === id);
   if (!item) throw new Error(`Entrée de navigation inconnue : ${id}`);
   return item;
+}
+
+/** Entrée correspondant à une route du shell ; `undefined` pour une route inconnue (redirigée vers l'Accueil). */
+export function findNavItemByPath(pathname: string): NavItem | undefined {
+  return NAV_ITEMS.find((candidate) => candidate.path === pathname);
 }
 
 export function hasPermission(permissions: readonly string[], permission: string | undefined): boolean {

@@ -2,8 +2,9 @@
    MMV V2 — Design tokens (phase 02)
    Provenance : references/phase02/sources/claude-design/_ds/mmv-managemyvision-design-system-90800da0-…/tokens/
    (colors.css, radii.css, shadows.css, spacing.css, typography.css). Valeurs reprises sans
-   modification ; seuls changements : import Google Fonts retiré (aucune ressource distante) et
-   jetons de mise en page du shell/login regroupés ici. Voir docs/phase/02/SOURCE_MAP.md.
+   modification ; seuls changements : import Google Fonts retiré (polices embarquées localement,
+   styles/fonts.css), jetons de mise en page du shell/login regroupés ici, --accent-disabled.
+   Exposés à Tailwind CSS 4 par styles/index.css (@theme), sans les dupliquer. Voir docs/phase/02/SOURCE_MAP.md.
    Thème sombre : <html data-theme="dark">.
    ============================================================ */
 :root {
@@ -24,6 +25,7 @@
   --accent-contrast: #ffffff;
   --accent-soft: #e6f0ff;
   --accent-soft-border: #cbdfff;
+  --accent-disabled: #6f9fe6; /* accent atténué du bouton désactivé (MMV-Login-states §9) */
   --brand-secondary: #24b6ff;
   --brand-teal: #00c2a8;
 
@@ -100,10 +102,11 @@
   --content-max: 1280px;
 
   /* --- Typographie ---
-     Inter / Source Sans 3 ne sont PAS embarquées (licence et embarquement à valider, O-02-05) :
-     la pile retombe sur Segoe UI (police système Windows). Aucune police distante. */
-  --font-heading: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+     Inter et Source Sans 3 (SIL OFL 1.1) sont EMBARQUÉES localement depuis la phase 02 (paquets npm
+     @fontsource-variable/*, fichiers woff2 intégrés au bundle par Vite, styles/fonts.css) : aucune
+     ressource distante, aucun Google Fonts à l'exécution. Segoe UI reste le repli système. */
+  --font-heading: "Inter Variable", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-body: "Source Sans 3 Variable", "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Consolas", monospace;
 
   --text-display: 32px;
