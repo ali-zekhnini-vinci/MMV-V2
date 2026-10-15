@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Cas d'usage V2 : dépend uniquement du Domain. Vide en 01A (aucun module métier). -->
+  <ItemGroup>
+    <ProjectReference Include="..\MMV.Domain\MMV.Domain.csproj" />
+  </ItemGroup>
+</Project>

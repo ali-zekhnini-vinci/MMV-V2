@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Noyau métier V2 : aucune dépendance vers Application, Infrastructure ou Api. Vide en 01A. -->
+</Project>

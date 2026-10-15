@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <ProjectReference Include="..\MMV.Application\MMV.Application.csproj" />
+    <ProjectReference Include="..\MMV.Infrastructure\MMV.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MMV.Api.Tests" />
+  </ItemGroup>
+</Project>
