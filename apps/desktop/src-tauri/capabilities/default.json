@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Capacités minimales de la fenêtre principale (socle 01A)",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

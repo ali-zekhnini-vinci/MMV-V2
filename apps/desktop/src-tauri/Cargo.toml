@@ -1,0 +1,25 @@
+[package]
+name = "mmv-desktop"
+version = "0.1.0"
+description = "MMV V2 - client Windows (socle technique phase 01A)"
+authors = ["MMV V2"]
+edition = "2024"
+publish = false
+
+[lib]
+# Suffixe `_lib` requis sous Windows pour éviter le conflit de nom avec le binaire (cargo#8519).
+name = "mmv_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true
