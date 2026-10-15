@@ -1,6 +1,8 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-**État au 15 octobre 2026 :** phase 00 (cadrage) livrée ; **phase 01A (socle technique et POC) implémentée** sur la branche `feat/phase-01-socle` (publiée, non fusionnée) — **audit externe, revue propriétaire et merge vers `main` en attente** ; **phase 01B non commencée** (aucun GO).
+**État au 15 octobre 2026 (mis à jour après le merge de 01A) :** phase 00 (cadrage) livrée ; **phase 01A MERGED** dans `main` par le propriétaire — commit de merge `4ed20a8e38b9db7519c0f56e24afaaaa4d6556ed` (parents `bbf1749` + `79aa226`, arbre identique à `79aa226`, constaté sur `origin/main`) ; **phase 01B `IN_PROGRESS`** (GO du 15/10/2026) sur la branche locale `feat/phase-01b-integration` : PostgreSQL 18 réel, `GET /health/ready`, HTTPS local et appel réel depuis Tauri. Les ADR réseau (ADR-004/006/007) restent **non ratifiés**.
+
+> Historique : avant le merge, ce paragraphe indiquait « 01A implémentée sur `feat/phase-01-socle`, publiée, non fusionnée ; 01B non commencée (aucun GO) ».
 
 **Nature du code :** socle technique minimal, **non** destiné à la production. Aucun module métier, aucune donnée de magasin.
 
@@ -65,6 +67,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
+- `docs/phase/01b/` : phase 01B (IN_PROGRESS) — source-map, spécification, QA, gates et autorisations ciblées SQL/TLS.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).
