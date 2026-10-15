@@ -15,6 +15,11 @@ target/
 # Graphify : graphe local régénérable, non versionné
 graphify-out/
 
+# Paramètres et caches locaux des outils agent (configurations partagées non concernées)
+.claude/settings.local.json
+.serena/cache/
+.serena/project.local.yml
+
 # Secrets locaux
 .env
 .env.*

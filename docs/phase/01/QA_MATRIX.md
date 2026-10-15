@@ -2,6 +2,8 @@
 
 Exécutions réelles du 15/10/2026, poste Windows 11 Home 10.0.26200 x64. Aucun résultat simulé.
 
+Q-01 à Q-23 : livraison initiale de 01A, **PASS/FAIL selon exécution rapportée** à cette date ; ils sont conservés tels quels comme historique. Les entrées Q-24 et suivantes ont été ajoutées après la publication de la branche.
+
 | ID | Vérification | Commande / méthode | Résultat | Extrait |
 |---|---|---|---|---|
 | Q-01 | Dépôt neuf | `git rev-parse --show-toplevel`, remote, SHA | PASS | `MMV V2`, `origin ali-zekhnini-vinci/MMV-V2`, base `bbf1749` |
@@ -27,6 +29,16 @@ Exécutions réelles du 15/10/2026, poste Windows 11 Home 10.0.26200 x64. Aucun 
 | Q-21 | Graphify | `graphify update .` puis `query`, `path`, `explain` | PASS | 292 nœuds, 298 arêtes, 30 communautés ; `Program.cs → MMV.Infrastructure → DependencyInjection → .AddInfrastructure() → MmvDbContext` |
 | Q-22 | Serena | `claude mcp list` | BLOCKED | `serena: ... ⏸ Pending approval` ; aucun appel MCP réel possible |
 | Q-23 | npm audit | `npm audit --omit=dev` | PASS | `found 0 vulnerabilities` |
+
+### Vérifications ajoutées le 15/10/2026 (session de corrections, après publication de `f111dc0`)
+
+| ID | Vérification | Commande / méthode | Résultat | Extrait |
+|---|---|---|---|---|
+| Q-24 | Serena MCP — navigation symbolique C# | `mcp__serena__find_symbol(name_path_pattern="MmvDbContext", max_matches=3)` ; `mcp__serena__get_symbols_overview(relative_path="src/MMV.Infrastructure/DependencyInjection.cs")` ; `mcp__serena__list_memories()` | PASS (C# seulement) | `find_symbol` → `MMV.Infrastructure.Persistence/MmvDbContext` (Class) dans `src\MMV.Infrastructure\Persistence\MmvDbContext.cs` ; `get_symbols_overview` → `{"Namespace": ["MMV.Infrastructure"]}` ; `list_memories` → `{}`. Limites : `get_current_config` et `list_dir` non exposés dans le contexte `claude-code` (non appelés) ; TypeScript `NOT_VERIFIED`. Remplace Q-22 pour le statut courant ; appels non rejoués depuis |
+| Q-25 | Graphify CLI / MCP | `graphify --version` ; `graphify path "Program.cs" "MmvDbContext"` sur le graphe AST local existant | CLI PASS ; MCP `NOT_CONFIGURED` | `graphify 0.9.77` ; chemin en 5 étapes `Program.cs → MMV.Infrastructure → DependencyInjection.cs → DependencyInjection → .AddInfrastructure() → MmvDbContext`. Aucune extraction LLM/cloud. `.mcp.json` ne déclare que `serena` |
+| Q-26 | Rejeu backend | `dotnet restore MMV.slnx --locked-mode`, `dotnet build MMV.slnx`, `dotnet test MMV.slnx` | PASS (rejoué) | exit 0 ×3 ; `0 Avertissement(s)`, `0 Erreur(s)` ; `échec : 0, réussite : 10, total : 10` |
+| Q-27 | Rejeu frontend | `npm ci`, `npm run lint`, `npm run build` (depuis `apps/desktop`) | PASS (rejoué) | exit 0 ×3 ; `found 0 vulnerabilities` ; `dist/assets/index-*.js 220.78 kB` |
+| Q-28 | Build Tauri, fenêtre native, `/health/live`, OpenAPI, `npm audit` (Q-07, Q-08, Q-13, Q-15, Q-23) | — | `NOT_RERUN` | aucun code applicatif ni configuration de build modifié depuis ; résultats initiaux conservés |
 
 ## Non testé dans 01A (volontairement)
 
