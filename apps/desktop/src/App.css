@@ -86,3 +86,40 @@ body {
   margin: 0;
   color: var(--mmv-muted);
 }
+
+.socle__status {
+  margin: 20px 0 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--mmv-border);
+  font-weight: 600;
+}
+
+.socle__status--ok {
+  border-color: var(--mmv-teal);
+}
+
+.socle__status--warning {
+  border-color: #e0a100;
+}
+
+.socle__status--error {
+  border-color: #d93025;
+}
+
+.socle__reload {
+  margin-top: 24px;
+  padding: 8px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--mmv-blue);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.socle__reload:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

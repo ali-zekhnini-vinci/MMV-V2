@@ -23,5 +23,7 @@ graphify-out/
 # Secrets locaux
 .env
 .env.*
+# Exception explicite : origine HTTPS de dev de MMV.Api, NON secrète (aucun mot de passe ni jeton autorisé).
+!apps/desktop/.env.development
 *.pfx
 *.key

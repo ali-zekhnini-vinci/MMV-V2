@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "npm run check && vite build",
     "preview": "vite preview",
-    "check": "tsc -p tsconfig.json && tsc -p tsconfig.node.json",
+    "check": "tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json",
     "lint": "eslint .",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -29,6 +30,10 @@
     "globals": "^17.13.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.2",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "5.0.3"
+  },
+  "overrides": {
+    "vitest": "5.0.3"
   }
 }
