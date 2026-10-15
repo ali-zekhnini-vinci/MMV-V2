@@ -4,7 +4,9 @@
 
 **Phase 02 `IN_PROGRESS`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge). **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
 
-Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **Migration d'identité générée, non appliquée** : GO unique du propriétaire attendu (O-02-01) avant application aux bases et bootstrap du premier administrateur. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
+Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **Migration d'identité générée, non appliquée** : GO unique du propriétaire attendu (O-02-01) avant application aux bases et bootstrap du premier administrateur.
+
+**Corrections finales (16/10/2026) : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED`.** Architecture d'authentification jugée conforme par la revue et conservée ; `MMV.Maintenance bootstrap-admin` refuse (code 5, sans modification) toute cible autre que `mmv_v2_dev` / rôle `mmv_v2_dev` / port 5433 / PostgreSQL 18 / connexion locale ; pile frontend **installée et utilisée** : Tailwind CSS 4 (Vite), shadcn/ui adaptés aux jetons MMV, Radix (Slot, Label, DropdownMenu), React Hook Form + Zod (Login), React Router (Shell), Lucide React, polices Inter et Source Sans 3 locales (OFL). Tests : .NET 70 + 38 + 13 (avant GO), frontend 81/81 ; non-régression visuelle et natif sans base PASS. Dossier de migration : `docs/phase/02/O-02-01_MANIFEST.sha256`. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
 
 ## Statut phase 01B (15/10/2026, historique)
 
@@ -31,16 +33,17 @@ Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md),
 
 | Élément | Chemin |
 |---|---|
-| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) | `apps/desktop/` (client API : `apps/desktop/src/api/`) |
+| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) ; Tailwind CSS 4, shadcn/ui + Radix, React Hook Form + Zod, React Router, Lucide (détail : `apps/desktop/README.md`) | `apps/desktop/` (client API : `apps/desktop/src/api/`, composants : `apps/desktop/src/components/ui/`) |
 | Solution .NET 10 | `MMV.slnx`, `src/MMV.Domain`, `src/MMV.Application`, `src/MMV.Infrastructure`, `src/MMV.Api` |
 | Santé (`/health/live`, `/health/ready`), CORS restreint | `src/MMV.Api/Health/`, `src/MMV.Api/Cors/DesktopCors.cs` |
 | Migration baseline vide et script SQL relu | `src/MMV.Infrastructure/Persistence/Migrations/`, `docs/phase/01b/sql/` |
-| Tests | `tests/MMV.Api.Tests/`, `tests/MMV.PostgreSql.Tests/`, `apps/desktop/src/**/*.test.ts` |
+| Commandes de maintenance locales (état, bootstrap administrateur à cible stricte) | `src/MMV.Maintenance/` |
+| Tests | `tests/MMV.Api.Tests/`, `tests/MMV.Maintenance.Tests/`, `tests/MMV.PostgreSql.Tests/`, `apps/desktop/src/**/*.test.{ts,tsx}` |
 | Documentation de phase | `docs/phase/`, preuves dans `docs/phase/01/` et `docs/phase/01b/evidence/` |
 
 ## Exécuter localement
 
-Prérequis (versions exactes : [`docs/phase/01/IMPLEMENTATION_SPEC.md`](docs/phase/01/IMPLEMENTATION_SPEC.md)) : Windows 11 x64, SDK .NET 10.0.402, Node 22 / npm 10, Rust stable MSVC x64, WebView2.
+Prérequis (versions exactes : [`docs/phase/01/IMPLEMENTATION_SPEC.md`](docs/phase/01/IMPLEMENTATION_SPEC.md)) : Windows 11 x64, SDK .NET 10.0.402, Node 22 (≥ 22.22 depuis l'ajout de React Router 8) / npm 10, Rust stable MSVC x64, WebView2.
 
 ```sh
 # Backend (racine du dépôt)
@@ -49,14 +52,15 @@ dotnet restore MMV.slnx --locked-mode
 dotnet build MMV.slnx
 dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"   # avant application de la migration d'identité (phase 02)
 dotnet test MMV.slnx                                                          # après O-02-01 : suite complète
-dotnet run --project src/MMV.Maintenance -- status                            # état de la base cible (lecture seule)
+dotnet run --project src/MMV.Maintenance -- status                            # état et conformité de la base cible (session en lecture seule)
+# bootstrap-admin : uniquement après GO O-02-01, par le propriétaire ; cible imposée mmv_v2_dev/5433/PG18/locale (sinon code 5)
 dotnet run --project src/MMV.Api --launch-profile http   # puis http://localhost:5022/health/live
 dotnet run --project src/MMV.Api --launch-profile https  # puis https://localhost:7267/health/live et /health/ready (01B)
 
 # Client (depuis apps/desktop)
 npm ci
 npm run lint
-npm test                               # Vitest : client API contre un serveur HTTP local + états de l'écran (01B)
+npm test                               # Vitest : client API contre un serveur HTTP local, écrans Login/Shell, conformité de style
 npm run build
 npx tauri dev                          # fenêtre native en développement
 npx tauri build --debug --no-bundle    # binaire debug, sans installateur
@@ -86,7 +90,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (IN_PROGRESS) — spécification, source-map (provenance des références et logos), QA, gates et décisions.
+- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (IN_PROGRESS, `OWNER_SQL_GO_REQUIRED`) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).

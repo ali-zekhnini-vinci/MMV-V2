@@ -1,0 +1,86 @@
+# 2026-10-15T23:42:52Z Non-régression visuelle : Edge headless 155 (Chromium, moteur de WebView2), 1920x1080 et 1440x900, double MMV.Api local (src/test/fakeMmvApi.ts)
+# AVANT = HEAD c8d226c (polices non embarquées -> repli Segoe UI) ; APRÈS = Tailwind 4 + shadcn/ui + Radix + RHF/Zod + React Router + polices locales
+# Écarts géométriques > 1 px ou de style (couleur, fond, rayon, bordure, padding, taille/graisse) ; vide = identique
+# Avant : aucune police web chargée (repli Segoe UI) ; après : Inter Variable + Source Sans 3 Variable chargées localement.
+# Résultat : sidebar 260/72 px, barre 64 px, barre d'état 32 px, champs, boutons (48/40/42/32 px), cartes, entrées de menu : géométrie identique (<= 1 px).
+# Écarts restants listés ci-dessous : padding UA des <input>/<button> remis à 0 par le preflight Tailwind (sans effet de cote),
+# sélecteurs renommés (.login__submit -> button[type=submit], .profile-menu -> [role=menu] Radix), focus initial du menu (Radix : contenu, pas l'entrée).
+== 01_login_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .login__input input 0 {} {'pad': ('1px 2px', '0px')}
+   .login__input input 1 {} {'pad': ('1px 2px', '0px')}
+   .login__reveal 0 {} {'pad': ('1px 6px', '0px')}
+  presence .login__submit before -
+  presence form button[type=submit] - after
+   main button 0 {} {'pad': ('1px 6px', '0px')}
+== 02_login_1440 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .login__input input 0 {} {'pad': ('1px 2px', '0px')}
+   .login__input input 1 {} {'pad': ('1px 2px', '0px')}
+   .login__reveal 0 {} {'pad': ('1px 6px', '0px')}
+  presence .login__submit before -
+  presence form button[type=submit] - after
+   main button 0 {} {'pad': ('1px 6px', '0px')}
+== 03_login_validation_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .login__input input 0 {} {'pad': ('1px 2px', '0px')}
+   .login__input input 1 {} {'pad': ('1px 2px', '0px')}
+   .login__reveal 0 {} {'pad': ('1px 6px', '0px')}
+  presence .login__submit before -
+  presence form button[type=submit] - after
+   main button 0 {} {'pad': ('1px 6px', '0px')}
+== 04_login_invalid_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .login__input input 0 {} {'pad': ('1px 2px', '0px')}
+   .login__input input 1 {} {'pad': ('1px 2px', '0px')}
+   .login__reveal 0 {} {'pad': ('1px 6px', '0px')}
+  presence .login__submit before -
+  presence form button[type=submit] - after
+   main button 0 {} {'pad': ('1px 6px', '0px')}
+== 05_shell_home_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 06_shell_home_1440 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 07_shell_profile_menu_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+  presence .profile-menu before -
+   .sidebar__toggle 0 {} {}
+  count .topbar__actions button 4 3
+   [role=menu] 0 {'x': (1665, 1656), 'y': (158, 59), 'w': (222, 240), 'h': (40, 148)} {'bg': ('rgba(0, 0, 0, 0)', 'rgb(25, 34, 52)'), 'radius': ('0px', '12px'), 'border': ('0px rgb(230, 236, 245)', '1px rgb(36, 48, 68)'), 'pad': ('0px', '8px')}
+   [role=menuitem] 0 {} {'bg': ('rgb(24, 33, 48)', 'rgba(0, 0, 0, 0)')}
+== 08_shell_accounts_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .table 0 {} {'border': ('0px rgb(230, 236, 245)', '0px rgb(36, 48, 68)')}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 09_shell_diagnostic_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 10_shell_later_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 11_shell_collapsed_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .avatar 1 {} {'pad': ('1px 6px', '0px')}
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}
+== 12_shell_dark_1920 fonts before: [] after: ['Inter Variable 100 900', 'Source Sans 3 Variable 200 900'] scroll False False
+   .profile-chip 0 {} {}
+   .sidebar__toggle 0 {} {}
+   .topbar__actions button 0 {} {}
+   .topbar__actions button 1 {} {}
+   .topbar__actions button 2 {} {}

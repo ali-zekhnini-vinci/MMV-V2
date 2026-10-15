@@ -1,0 +1,3 @@
+# 2026-10-15T23:42:51Z Contrôle natif WebView2 — binaire debug (npx tauri build --debug --no-bundle), sans adresse serveur (build hors mode dev)
+# Script local : CDP (e2e/cdp.mjs) ; polices chargées, couches Tailwind, ressources non locales
+{"url":"http://tauri.localhost/","fonts":["Inter Variable","Source Sans 3 Variable"],"heading":"\"Inter Variable\", Inter, \"Segoe UI\", system-ui, -apple-system, sans-serif","body":"\"Source Sans 3 Variable\", \"Source Sans 3\", \"Segoe UI\", system-ui, -apple-system, sans-serif","submit":["Se connecter",48,"rgb(111, 159, 230)",true],"banner":"Serveur MMV non configuré sur ce poste.","tailwindLayers":5,"remote":[]}

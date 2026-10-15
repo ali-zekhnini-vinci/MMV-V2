@@ -9,10 +9,10 @@
 
 | Gate | Critère | État |
 |---|---|---|
-| G-02-A | Login/Shell conformes aux références, états, clavier, thème, tests | implémenté ; tests DOM PASS ; preuve native `NOT_TESTED` (02-C) |
-| G-02-B | Identité serveur, hachage Identity, policies, 401/403, bootstrap local refusé la 2e fois | implémenté ; tests sur doubles non persistants PASS ; partie PostgreSQL `BLOCKED_OWNER_APPROVAL` (O-02-01) |
+| G-02-A | Login/Shell conformes aux références, états, clavier, thème, tests | implémenté ; tests DOM PASS ; preuve native `NOT_TESTED` (02-C). **16/10/2026 (corrections finales)** : pile Tailwind CSS 4 / shadcn/ui + Radix / React Hook Form + Zod / React Router / polices locales intégrée ; 81/81 PASS ; non-régression visuelle PASS (Q-02-40) ; natif sans base PASS (Q-02-41) |
+| G-02-B | Identité serveur, hachage Identity, policies, 401/403, bootstrap local refusé la 2e fois | implémenté ; tests sur doubles non persistants PASS ; partie PostgreSQL `BLOCKED_OWNER_APPROVAL` (O-02-01). **16/10/2026** : architecture jugée conforme par la revue ; contrôle strict de cible de `bootstrap-admin` PASS (Q-02-28 à Q-02-30) |
 | G-02-C | Tauri → HTTPS → API → PG réel, login/logout/révocation natifs, captures, résilience | banc natif prêt ; login natif (états sans base) PASS ; parcours authentifié `BLOCKED_OWNER_APPROVAL` (O-02-01) |
-| G-02-DOC | DOCUMENTATION GATE | en cours |
+| G-02-DOC | DOCUMENTATION GATE | synchronisé le 16/10/2026 (corrections finales) ; à reprendre après O-02-01 |
 
 ## Décisions ouvertes
 
@@ -24,12 +24,25 @@
 | O-02-02 | Variante de session dev (jeton opaque volatile) — ADR-007 | PROPOSED (voir ci-dessous) | ratification ADR-007, distribution |
 | O-02-03 | Login : mot de passe vidé après échec (variante recommandée §13) ; bandeau sous le sous-titre ; validation non « live » | PROPOSED | aucune (réversible) |
 | O-02-04 | Bouton « Afficher le mot de passe » dans l'ordre de tabulation (écart à §11 du handoff) | PROPOSED | aucune |
-| O-02-05 | Embarquement des polices Inter / Source Sans 3 (fichiers OFL locaux) | OPEN — non embarquées, repli Segoe UI | fidélité typographique |
+| O-02-05 | Embarquement des polices Inter / Source Sans 3 (fichiers OFL locaux) | **RESOLVED 16/10/2026** (consigne du propriétaire, corrections finales) : embarquées localement, SIL OFL 1.1, paquets `@fontsource-variable/inter` 5.3.0 et `…/source-sans-3` 5.3.1, licences dans `apps/desktop/public/licenses/`. Historique : OPEN, non embarquées (repli Segoe UI) jusqu'au 16/10/2026 | — |
 | O-02-06 | Versionnement des 4 logos officiels dans `apps/desktop/src/assets/brand/` (droits de redistribution) | OPEN — versionnés localement, non poussés | push |
 | O-02-07 | Recherche globale et notifications : contrôles visibles mais désactivés (« Disponible dans une phase suivante ») | PROPOSED | aucune |
+| O-02-11 | Navigation du shell par React Router en **routeur mémoire** (client de bureau sans barre d'adresse ; chaque session démarre sur l'Accueil ; aucune route restaurée ; pas de lien profond) | PROPOSED (16/10/2026) | aucune (réversible : `createHashRouter`) |
+| O-02-12 | Menu profil sur Radix DropdownMenu : flèches/Entrée/Échap/clic extérieur ; Tab ne quitte plus le menu (comportement Radix ; avant : Tab fermait le menu) ; ouverture à la souris = focus sur le menu, au clavier = sur « Se déconnecter » | PROPOSED (16/10/2026) | aucune |
+| O-02-13 | Bundle JS 516 kB (> seuil indicatif Vite de 500 kB) : accepté pour un client local chargé depuis le disque ; découpage à réévaluer avec les modules métier | PROPOSED (16/10/2026) | aucune |
 | O-02-08 | Libellé « Accueil » (au lieu de « Tableau de bord ») tant qu'aucun tableau de bord réel n'existe ; 5 variantes Lot 1 au backlog | PROPOSED | aucune |
 
 Héritées de 01B, inchangées : O-B04 (rôle unique propriétaire), O-B10 (écoute HTTP 5022), O-B11 (adresse serveur en production), O-B12 ; ADR-004/006/007 non ratifiés.
+
+## Corrections finales avant migration (16/10/2026)
+
+Revue externe du frontend **et** des sources .NET : **architecture d'authentification conforme**, conservée sans refonte (couches Domain/Application/Infrastructure/Api, authentification ASP.NET Core, schéma `auth` et ses quatre tables, sessions révocables à jeton opaque, permission `system.admin` contrôlée par l'API, bootstrap unique sans endpoint public). Corrections appliquées :
+
+1. **`MMV.Maintenance` — cible stricte avant toute écriture de `bootstrap-admin`** (`src/MMV.Maintenance/BootstrapTargetPolicy.cs`) : seule cible admise `mmv_v2_dev` / rôle `mmv_v2_dev` / port 5433 / PostgreSQL 18 / connexion locale (boucle locale TCP). Contrôle de la chaîne **avant connexion**, de l'identité relue **côté serveur** après connexion (`current_database`, `current_user`, `session_user`, `inet_server_port`, `server_version_num`, `inet_server_addr`/`inet_client_addr`), puis **à nouveau juste avant l'écriture**. Tout écart : refus sans modification, **code 5**. `status` reste en lecture seule (session `default_transaction_read_only=on`) et affiche la conformité. Tests : Q-02-28 à Q-02-30.
+2. **Frontend — pile prévue réellement intégrée** : Tailwind CSS 4 (Vite), shadcn/ui adaptés aux jetons MMV (aucun thème shadcn par défaut), primitives Radix (Slot, Label, DropdownMenu), React Hook Form + Zod (Login), React Router (Shell), Lucide React ; polices Inter et Source Sans 3 locales. Maquettes, jetons et cotes 260/72/64/32 conservés ; CSS spécifique conservé. TanStack Query et autres bibliothèques non installées (aucun cas d'usage réel). Détail : `IMPLEMENTATION_SPEC.md` § Pile frontend.
+3. **Dossier de migration** : empreintes revérifiées, scripts régénérés identiques, manifeste SHA-256 `docs/phase/02/O-02-01_MANIFEST.sha256` (voir O-02-01 ci-dessous).
+
+**État : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED`.** Aucune application SQL, aucun bootstrap réel, aucun push, aucune PR, aucun merge, aucun développement Phase 03.
 
 ## O-02-02 — Session : comparaison et variante retenue pour le POC local (PROPOSED, provisoire dev)
 
@@ -90,3 +103,10 @@ Aucune donnée insérée par le script (aucun compte, aucun mot de passe). Aucun
 - **Retour arrière** (sur décision) : `0002_AuthIdentity.rollback.sql` par le même script de contrôle (empreinte ci-dessus), puis `DROP SCHEMA auth;` (le rollback EF ne supprime pas le schéma vide). Les sessions et comptes sont supprimés avec les tables.
 - **Bootstrap raté** (saisie invalide, annulation) : aucun objet créé ; relancer. Bootstrap réussi sur un mauvais compte : suppression manuelle par le propriétaire (`DELETE FROM auth.users …; DELETE FROM auth.bootstrap_record;`) — non automatisé, volontairement.
 - Les tests `Stage=PostMigration` échouent **avant** application (constaté) et doivent passer après.
+
+### Mise à jour 16/10/2026 — corrections finales (dossier toujours NON EXÉCUTÉ)
+
+- **Empreintes revérifiées** (Q-02-34) : les trois scripts SQL ont les empreintes ci-dessus, inchangées ; régénérés hors connexion depuis la migration C# (`dotnet ef migrations script`, ×3), ils sont **octet pour octet identiques**. Migration C# et snapshot inchangés depuis `e32aee5`. Inventaire des instructions : aucune opération inattendue (Q-02-35).
+- **Étape 4 renforcée** : `bootstrap-admin` refuse désormais (code 5, sans modification) toute cible autre que `mmv_v2_dev` / `mmv_v2_dev` / 5433 / PostgreSQL 18 / boucle locale, avant connexion, après connexion et juste avant l'écriture. Codes de sortie : 0 succès, 1 usage, 2 précondition (dont migration en attente), 3 bootstrap déjà effectué, 4 saisie invalide/annulation, **5 cible non autorisée**. Le second lancement attendu reste refusé **code 3**.
+- **Dossier léger** : manifeste `docs/phase/02/O-02-01_MANIFEST.sha256` (21 fichiers : 3 scripts SQL, migration C# + Designer + snapshot, `scripts/Invoke-MmvSqlScript.ps1` `b48bc673…dbba55` inchangé, code final de `MMV.Maintenance`, `BootstrapService`, tests concernés), empreintes du contenu Git (LF, identique à `git archive`) ; vérification : `sha256sum -c` (lignes non commentées) ou `Get-FileHash`. Les fichiers sont livrés dans l'archive `git archive` de la branche.
+- La procédure « après GO » ci-dessus est inchangée ; elle n'est **pas** exécutée tant que le propriétaire n'a pas donné le GO O-02-01.
