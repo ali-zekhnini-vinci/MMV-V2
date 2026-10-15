@@ -47,11 +47,13 @@ Paramètres proposés (dev) : durée absolue **8 h**, inactivité **30 min** (gl
 
 ### Scripts SQL (générés hors connexion par `dotnet ef`, fabrique design-time sans secret)
 
+Normalisation (comme 01B) : BOM UTF-8 retiré, fins de ligne LF — empreinte identique dans Git et dans la copie de travail ; contenu SQL inchangé (ASCII).
+
 | Fichier | Rôle | SHA-256 |
 |---|---|---|
-| `docs/phase/02/sql/0002_AuthIdentity.sql` | lecture (non idempotent, `InitialBaseline` → `AuthIdentity`) | `722005C008929D1E0FAA108C175C9B45E8360FFD1903E99AF89F73E85B802150` |
-| `docs/phase/02/sql/0002_AuthIdentity.idempotent.sql` | **script à appliquer** (gardes `__EFMigrationsHistory`, une transaction) | `531AE06EBF07F14A7EC8A7D79D26B79A0511C94252C95488D9FDCB6936B133E0` |
-| `docs/phase/02/sql/0002_AuthIdentity.rollback.sql` | retour arrière (`AuthIdentity` → `InitialBaseline`) | `188F43E9A9E2EB77F7266DDDF9ED34BD504C7529204640E9319E2CAA09B41952` |
+| `docs/phase/02/sql/0002_AuthIdentity.sql` | lecture (non idempotent, `InitialBaseline` → `AuthIdentity`) | `A5F40575C04B1E25F7B356558F2203B13CCB5BF7936E0C72077132682DF10192` |
+| `docs/phase/02/sql/0002_AuthIdentity.idempotent.sql` | **script à appliquer** (gardes `__EFMigrationsHistory`, une transaction) | `67C15100A8D27FD91D4CD869B927774CC537E4275F60C3FCDCA28161495F5A41` |
+| `docs/phase/02/sql/0002_AuthIdentity.rollback.sql` | retour arrière (`AuthIdentity` → `InitialBaseline`) | `7DEAB41DD479035E7E3E8F3849E926404679B2B005C0B1463BC6748730DF682E` |
 
 Migration EF Core : `src/MMV.Infrastructure/Persistence/Migrations/20261015223849_AuthIdentity.cs` (+ `Designer`, snapshot). La migration `20261015125000_InitialBaseline` est **inchangée**.
 
@@ -76,7 +78,7 @@ Aucune donnée insérée par le script (aucun compte, aucun mot de passe). Aucun
 
 ### Procédure proposée après GO (exécutée par l'agent, sauf l'étape 4)
 
-1. `./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-api -Key ConnectionStrings:Mmv -Database mmv_v2_dev -Script docs/phase/02/sql/0002_AuthIdentity.idempotent.sql -Sha256 531AE06E…133E0`
+1. `./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-api -Key ConnectionStrings:Mmv -Database mmv_v2_dev -Script docs/phase/02/sql/0002_AuthIdentity.idempotent.sql -Sha256 67C15100…5F5A41`
 2. Idem `-SecretsId mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Database mmv_v2_test`.
 3. Tests : `dotnet test MMV.slnx` (dont `Stage=PostMigration` sur les deux bases en lecture seule, et `Stage=IdentityWrite` sur `mmv_v2_test` uniquement : transactions annulées + test HTTP avec 2 comptes éphémères supprimés en fin de test). Aucune écriture de test sur `mmv_v2_dev`.
 4. **Propriétaire**, dans son propre terminal (saisie masquée, rien en argument) : `dotnet run --project src/MMV.Maintenance -- bootstrap-admin` → confirmer le nom de la base (`mmv_v2_dev`), saisir identifiant, nom affiché, mot de passe (≥ 12 caractères) deux fois. Puis `dotnet run --project src/MMV.Maintenance -- bootstrap-admin` une seconde fois → **refus attendu, code 3** (preuve reproductible).

@@ -1,4 +1,4 @@
-﻿START TRANSACTION;
+START TRANSACTION;
 DROP TABLE auth.bootstrap_record;
 
 DROP TABLE auth.sessions;
