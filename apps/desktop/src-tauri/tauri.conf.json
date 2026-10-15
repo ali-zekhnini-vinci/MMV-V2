@@ -13,9 +13,9 @@
     "windows": [
       {
         "label": "main",
-        "title": "MMV V2 — socle technique",
-        "width": 1280,
-        "height": 800,
+        "title": "MMV — ManageMyVision (développement)",
+        "width": 1440,
+        "height": 900,
         "minWidth": 960,
         "minHeight": 600
       }

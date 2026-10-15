@@ -1,11 +1,15 @@
-// Client HTTP minimal de MMV.Api : GET JSON uniquement, timeout borné, erreurs typées et bornées.
-// Aucun accès à PostgreSQL côté client ; aucune réponse simulée.
+// Client HTTP minimal de MMV.Api : JSON uniquement, timeout borné, erreurs typées et bornées.
+// Aucun accès à PostgreSQL côté client ; aucune réponse simulée. Le jeton de session (phase 02)
+// est passé explicitement par l'appelant et n'est jamais stocké ici ni journalisé.
 
 export type ApiErrorKind =
   | "not-configured"
   | "network"
   | "timeout"
   | "aborted"
+  | "unauthorized"
+  | "forbidden"
+  | "rate-limited"
   | "http"
   | "invalid-response";
 
@@ -26,8 +30,17 @@ const MESSAGES: Record<ApiErrorKind, string> = {
   network: "Serveur MMV injoignable (réseau ou certificat HTTPS refusé).",
   timeout: "Le serveur MMV n'a pas répondu à temps.",
   aborted: "Requête annulée.",
+  unauthorized: "Session absente, expirée ou révoquée.",
+  forbidden: "Accès non autorisé pour ce compte.",
+  "rate-limited": "Trop de tentatives. Veuillez patienter avant de réessayer.",
   http: "Réponse HTTP inattendue du serveur MMV.",
   "invalid-response": "Réponse du serveur MMV illisible ou incohérente.",
+};
+
+const KIND_BY_STATUS: Partial<Record<number, ApiErrorKind>> = {
+  401: "unauthorized",
+  403: "forbidden",
+  429: "rate-limited",
 };
 
 export function apiError(kind: ApiErrorKind, status?: number): ApiError {
@@ -36,7 +49,12 @@ export function apiError(kind: ApiErrorKind, status?: number): ApiError {
     : { kind, message: MESSAGES[kind], status };
 }
 
-export interface GetJsonOptions<T> {
+export interface RequestOptions<T> {
+  method?: "GET" | "POST";
+  /** Corps JSON (POST). */
+  body?: unknown;
+  /** Jeton de session opaque, envoyé en `Authorization: Bearer`. */
+  token?: string;
   /** Valide le corps reçu ; `null` = réponse incohérente pour ce statut HTTP. */
   parse: (body: unknown, status: number) => T | null;
   /** Statuts dont le corps est un contrat attendu (ex. 503 de /health/ready). */
@@ -45,10 +63,23 @@ export interface GetJsonOptions<T> {
   signal?: AbortSignal;
 }
 
-export async function getJson<T>(
+export type GetJsonOptions<T> = Omit<RequestOptions<T>, "method" | "body">;
+
+/** Analyseur des réponses sans corps (204). */
+export const noContent = (): true => true;
+
+export async function requestJson<T>(
   baseUrl: URL,
   path: string,
-  { parse, acceptedStatuses = [200], timeoutMs = DEFAULT_TIMEOUT_MS, signal }: GetJsonOptions<T>,
+  {
+    method = "GET",
+    body,
+    token,
+    parse,
+    acceptedStatuses = [200],
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    signal,
+  }: RequestOptions<T>,
 ): Promise<ApiResult<T>> {
   const controller = new AbortController();
   let timedOut = false;
@@ -60,13 +91,19 @@ export async function getJson<T>(
   signal?.addEventListener("abort", forwardAbort, { once: true });
   if (signal?.aborted) controller.abort();
 
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (token !== undefined) headers.Authorization = `Bearer ${token}`;
+
   try {
     let response: Response;
     try {
       response = await fetch(new URL(path, baseUrl), {
-        method: "GET",
-        headers: { Accept: "application/json" },
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
         cache: "no-store",
+        // Aucun cookie : la session est portée par l'en-tête Authorization (variante dev, ADR-007 PROPOSED).
         credentials: "omit",
         // Pas de redirection silencieuse (ex. HTTPS -> HTTP).
         redirect: "error",
@@ -77,19 +114,26 @@ export async function getJson<T>(
     }
 
     if (!acceptedStatuses.includes(response.status)) {
-      return { ok: false, error: apiError("http", response.status) };
+      return { ok: false, error: apiError(KIND_BY_STATUS[response.status] ?? "http", response.status) };
     }
 
-    let body: unknown;
+    if (response.status === 204) {
+      const data = parse(null, response.status);
+      return data === null
+        ? { ok: false, error: apiError("invalid-response", response.status) }
+        : { ok: true, status: response.status, data };
+    }
+
+    let payload: unknown;
     try {
-      body = await response.json();
+      payload = await response.json();
     } catch {
       if (timedOut) return { ok: false, error: apiError("timeout") };
       if (signal?.aborted) return { ok: false, error: apiError("aborted") };
       return { ok: false, error: apiError("invalid-response", response.status) };
     }
 
-    const data = parse(body, response.status);
+    const data = parse(payload, response.status);
     return data === null
       ? { ok: false, error: apiError("invalid-response", response.status) }
       : { ok: true, status: response.status, data };
@@ -97,4 +141,8 @@ export async function getJson<T>(
     clearTimeout(timer);
     signal?.removeEventListener("abort", forwardAbort);
   }
+}
+
+export function getJson<T>(baseUrl: URL, path: string, options: GetJsonOptions<T>): Promise<ApiResult<T>> {
+  return requestJson(baseUrl, path, { ...options, method: "GET" });
 }

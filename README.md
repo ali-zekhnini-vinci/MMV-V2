@@ -1,6 +1,13 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-## Statut actuel — phase 01B (15/10/2026)
+## Statut actuel — phase 02 (16/10/2026)
+
+**Phase 02 `IN_PROGRESS`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge). **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
+
+Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
+
+## Statut phase 01B (15/10/2026, historique)
+
 
 **`01B IMPLEMENTED — OWNER_REVIEW_REQUIRED`** sur la branche `feat/phase-01b-integration` (publiée sur `origin` jusqu'à `6cf6e88` ; commit de corrections d'audit local, non poussé ; aucune PR, non mergée). Audit externe : socle technique **conforme pour le développement local monoposte** ; corrections d'audit appliquées (preuve release native, confidentialité des journaux, outil `dotnet-ef` local).
 
@@ -77,6 +84,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
+- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (IN_PROGRESS) — spécification, source-map (provenance des références et logos), QA, gates et décisions.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).

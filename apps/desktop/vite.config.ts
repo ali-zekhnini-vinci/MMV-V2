@@ -1,15 +1,21 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import process from "node:process";
+import { readFileSync } from "node:fs";
 const host = process.env.TAURI_DEV_HOST;
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8")) as { version: string };
 
 // https://vite.dev/config/
 export default defineConfig(() => ({
   plugins: [react()],
 
-  // Tests unitaires (npm test) : environnement node, aucun DOM ni service externe.
+  // Version réelle du paquet client, affichée dans la barre d'état (aucun numéro figé à la main).
+  define: { __APP_VERSION__: JSON.stringify(version) },
+
+  // Tests (npm test) : environnement node par défaut ; les tests d'écran (*.test.tsx) déclarent
+  // `@vitest-environment jsdom`. Aucun service externe : doubles node:http locaux (src/test/).
   test: {
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
     environment: "node",
   },
 
