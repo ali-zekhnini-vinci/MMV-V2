@@ -13,6 +13,7 @@ public sealed class ProjectReferenceRulesTests
         ["MMV.Application"] = ["MMV.Domain"],
         ["MMV.Infrastructure"] = ["MMV.Application"],
         ["MMV.Api"] = ["MMV.Application", "MMV.Infrastructure"],
+        ["MMV.Maintenance"] = ["MMV.Application", "MMV.Infrastructure"],
     };
 
     [Theory]
@@ -20,6 +21,7 @@ public sealed class ProjectReferenceRulesTests
     [InlineData("MMV.Application")]
     [InlineData("MMV.Infrastructure")]
     [InlineData("MMV.Api")]
+    [InlineData("MMV.Maintenance")]
     public void ProjectReferencesFollowAllowedDirection(string project)
     {
         var actual = ReadProjectReferences(project);

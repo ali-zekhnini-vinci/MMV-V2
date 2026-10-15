@@ -1,0 +1,13 @@
+﻿# P02 Serena TypeScript : 'serena project health-check .' (CLI, nouvelle instance) 2026-10-16 00:46 locale
+# extrait de .serena/logs/health-checks/health_check_20261016-004658.log (non versionne) ; session MCP Claude Code : get_symbols_overview(apps/desktop/src/api/health.ts) -> 'Active language servers: [csharp]' (reconnexion MCP requise)
+INFO  2026-10-16 00:46:58,273 sensai.util.logging:start:329 - Language server startup (language=typescript) starting ...
+INFO  2026-10-16 00:46:58,451 sensai.util.logging:stop:336 - Language server startup (language=typescript) completed in 0.178 seconds
+INFO  2026-10-16 00:46:58,800 serena.cli:health_check:968 - Found analyzable file: apps\desktop\vite.config.ts
+INFO  2026-10-16 00:46:58,801 serena.cli:health_check:982 - Testing GetSymbolsOverviewTool on file: apps\desktop\vite.config.ts
+INFO  2026-10-16 00:47:01,513 serena.cli:health_check:984 - GetSymbolsOverviewTool returned: [{'name': 'default', 'kind': 'Constant'}, {'name': 'host', 'kind': 'Constant'}, {'name': 'version', 'kind': 'Constant'}]
+INFO  2026-10-16 00:47:01,513 serena.cli:health_check:1004 - Using symbol for testing: default (kind: Constant)
+INFO  2026-10-16 00:47:01,513 serena.cli:health_check:1007 - Testing FindSymbolTool for symbol: default
+INFO  2026-10-16 00:47:01,615 serena.cli:health_check:1013 - FindSymbolTool found 1 matches for symbol default
+INFO  2026-10-16 00:47:01,615 serena.cli:health_check:1016 - Testing FindReferencingSymbolsTool for symbol: default
+INFO  2026-10-16 00:47:03,216 serena.cli:health_check:1021 - FindReferencingSymbolsTool found 0 references for symbol default
+INFO  2026-10-16 00:47:03,216 serena.cli:health_check:1029 - Health check completed successfully

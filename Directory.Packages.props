@@ -7,11 +7,14 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <!-- Persistance : PostgreSQL exclusivement (D-003 / ADR-003). Aucun autre fournisseur. -->
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Identité (phase 02) : PasswordHasher d'ASP.NET Core Identity uniquement (pas les stores EF Identity), aligné sur ASP.NET Core 10.0.13. -->
+    <PackageVersion Include="Microsoft.Extensions.Identity.Core" Version="10.0.13" />
     <!-- Outillage de migrations (design-time seulement, PrivateAssets) : aligné sur EF Core 10.0.4 résolu par Npgsql. -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4" />
-    <!-- Configuration des tests PostgreSQL (user-secrets / variables d'environnement), alignée sur 10.0.4. -->
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.4" />
+    <!-- Configuration (user-secrets / variables d'environnement) : tests PostgreSQL et MMV.Maintenance. 10.0.13 depuis la
+         phase 02 : Mvc.Testing 10.0.13 (tests HTTP sur PostgreSQL) exige >= 10.0.13 (NU1605 sinon). -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.13" />
     <!-- Tests -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />

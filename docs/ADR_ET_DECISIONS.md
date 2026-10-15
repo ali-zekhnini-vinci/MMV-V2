@@ -55,3 +55,8 @@ Question importante mais différable jusqu'au lot Vente : pays d'exploitation/r�
 ## Registre des décisions résolues séparément
 
 Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les propositions métier tirées du dossier maître avec mention de classes C# historiques sont irrecevables. Le backlog des 153 + 23 reste préservé.
+
+## Note datée — 16/10/2026 (phase 02, en cours)
+
+- **ADR-007 reste `PROPOSED`.** La phase 02 implémente une **variante de développement provisoire** : jeton opaque 256 bits, session serveur révocable (seul le SHA-256 est stocké), jeton en mémoire volatile du client uniquement, durée absolue 8 h, inactivité 30 min, aucun rafraîchissement. Comparaison cookies HttpOnly + anti-CSRF / coffre OS et risques : `docs/phase/02/GATES_AND_DECISIONS.md` § O-02-02. Ce n'est pas une session distribuable approuvée.
+- Matrice de permissions **techniques** minimale : être authentifié ; `system.admin` (administration technique). Aucun droit métier ; les cinq profils visuels du Lot 1 ne confèrent aucun droit.

@@ -1,0 +1,14 @@
+# P02 etat avant GO O-02-01 (lecture seule), 2026-10-16. Aucune ecriture sur mmv_v2_dev ; aucune migration appliquee.
+$ dotnet run --project src/MMV.Maintenance -- status   (cible ConnectionStrings:Mmv = mmv_v2_dev)
+Base cible     : mmv_v2_dev (port 5433, PostgreSQL 18.6)
+Migrations     : 1 appliquée(s) [20261015125000_InitialBaseline] ; 1 en attente [20261015223849_AuthIdentity]
+Bootstrap      : non vérifiable (migration en attente)
+$ dotnet run --project src/MMV.Maintenance -- bootstrap-admin < /dev/null
+Précondition : migrations en attente. Appliquer d'abord le script SQL approuvé (aucune migration automatique).
+exit=2
+$ dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"
+Réussi!  - échec :     0, réussite :    11, ignorée(s) :     0, total :    11, durée : 734 ms - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    70, ignorée(s) :     0, total :    70, durée : 6 s - MMV.Api.Tests.dll (net10.0)
+$ dotnet test tests/MMV.PostgreSql.Tests --filter Stage=PostMigration   (echec ATTENDU avant GO)
+Collection: ["schémas : attendu [auth], obtenu []", "relations : attendu [auth.bootstrap_record kind=r "···, "lignes : attendu [20261015125000_InitialBaseli
+Collection: ["schémas : attendu [auth], obtenu []", "relations : attendu [auth.bootstrap_record kind=r "···, "lignes : attendu [20261015125000_InitialBaseli

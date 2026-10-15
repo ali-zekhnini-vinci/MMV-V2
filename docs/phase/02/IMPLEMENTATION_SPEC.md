@@ -67,7 +67,7 @@ Grille : sidebar **260 / 72 px**, barre supérieure **64 px**, barre d'état **3
 ### Tests frontend
 `npm test` (Vitest 5.0.3) : `.test.ts` en environnement node, `.test.tsx` en `jsdom` (30.1.1) avec `@testing-library/react` 16.3.3 / `user-event` 14.6.7 (clavier simulé au niveau DOM). Le double `src/test/fakeMmvApi.ts` est un **vrai serveur `node:http`** en mémoire reproduisant les contrats de l'API (pas sa sécurité) ; aucun mock de `fetch`. Exclu du bundle et du `tsconfig` applicatif.
 
-## 02-B — Identité et autorisation (conception, en cours d'implémentation)
+## 02-B — Identité et autorisation (implémenté ; persistance réelle soumise à O-02-01)
 
 ### Contrat HTTP
 
@@ -80,5 +80,41 @@ Grille : sidebar **260 / 72 px**, barre supérieure **64 px**, barre d'état **3
 
 `user` = `{id, userName, displayName, permissions[]}`. Aucune autre route `/api` n'existe ; aucune route métier exposée.
 
+### Couches
+
+| Couche | Chemin | Contenu |
+|---|---|---|
+| Domain | `src/MMV.Domain/Identity/` | `UserAccount` (verrouillage, activation, permissions), `PermissionGrant`, `Permissions` (`system.admin` seul), `UserSession` (validité, glissement, révocation), `BootstrapRecord` (singleton) |
+| Application | `src/MMV.Application/Identity/` | `IIdentityStore`, `IPasswordHashing`, `AuthOptions`, `SessionTokens` (256 bits CSPRNG, Base64Url, SHA-256), `AuthService` (login neutre, authentification, logout), `BootstrapService` (règles de saisie, création unique) |
+| Infrastructure | `src/MMV.Infrastructure/Identity/` | modèle EF explicite (schéma `auth`, snake_case), `IdentityStore` (Npgsql), `IdentityPasswordHashing` (`PasswordHasher<T>` d'ASP.NET Core Identity, paquet `Microsoft.Extensions.Identity.Core` 10.0.13 — pas les stores EF Identity) |
+| API | `src/MMV.Api/Auth/` | schéma `MmvSession` (`SessionAuthenticationHandler`), policy `SystemAdmin`, endpoints, limiteur de débit `login` (10/min/IP par défaut, `Auth:LoginAttemptsPerMinute`), filtre HTTPS sur `/api` |
+| Maintenance | `src/MMV.Maintenance/` | `status` (lecture seule), `bootstrap-admin` (interactif, masqué, entrée redirigée refusée, confirmation du nom de base ; codes 0/1/2/3/4) |
+
+Choix : ASP.NET Core Identity complet (7 tables `AspNet*`) écarté au profit du seul `PasswordHasher` pour ne créer que les tables indispensables ; `MapIdentityApi` écarté (inscription publique, jetons non révocables côté serveur). Aucune cryptographie maison : PBKDF2 Identity V3, `RandomNumberGenerator`, `SHA256`.
+
+### Sécurité des réponses
+- Refus de connexion neutre (même code et corps) pour compte inconnu, mot de passe erroné, compte désactivé ou verrouillé ; vérification de hachage factice si le compte n'existe pas (temps comparable).
+- Verrouillage : 5 échecs consécutifs → 15 min (le mot de passe correct est refusé pendant le verrouillage) ; remise à zéro après succès.
+- Corps de requête bornés (identifiant ≤ 64, mot de passe ≤ 128) avant tout hachage.
+- 401 `{code:"unauthenticated"}` + `WWW-Authenticate: Bearer` ; 403 `{code:"forbidden"}` ; aucun détail (absent/expiré/révoqué/désactivé indistincts).
+- Les permissions sont relues à chaque requête (session + compte) : retrait de droit ou désactivation effectifs immédiatement.
+- CORS : politique `desktop-api` distincte (GET/POST, en-têtes `Authorization`, `Content-Type`, origines exactes, sans credentials) ; la politique `desktop` des endpoints de santé reste GET seul (01B).
+
 ### Session — variante DEV PROVISOIRE (ADR-007 reste PROPOSED)
 Voir comparaison et risques : `GATES_AND_DECISIONS.md` § O-02-02.
+
+### Migrations et tests PostgreSQL
+- Migration `20261015223849_AuthIdentity` générée hors connexion ; scripts relus `docs/phase/02/sql/` ; application **uniquement** par `scripts/Invoke-MmvSqlScript.ps1` après GO O-02-01 ; jamais au démarrage, jamais `EnsureCreated()`.
+- Inventaire de schéma étendu (`tests/MMV.PostgreSql.Tests/SchemaInspection.cs`) : état accepté = base vide, baseline seule, ou baseline + `auth` **exact** (relations, propriétaires, ACL, colonnes, contraintes, index, historique).
+- Ordre d'exécution : avant GO `--filter "Stage!=PostMigration&Stage!=IdentityWrite"` ; après GO, suite complète. `Stage=IdentityWrite` = `mmv_v2_test` uniquement (transactions annulées ; test HTTP avec comptes éphémères supprimés en fin de test).
+
+## 02-C — Preuve native (banc versionné)
+
+`apps/desktop/e2e/` (hors bundle, non lint TS) : `cdp.mjs` (pilote du protocole de débogage WebView2, frappes `Input.*` réelles), `run-native.mjs` (scénarios), `capture-window.ps1` (`PrintWindow(PW_RENDERFULLCONTENT)` sur la fenêtre du processus `mmv-desktop`, zone cliente exacte), `send-keys.ps1` (vraies frappes Windows pour le zoom WebView2 Ctrl +/−).
+
+```sh
+# apps/desktop, PowerShell : $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9222"; npx tauri dev
+node e2e/run-native.mjs login-states --out ../../docs/phase/02/evidence
+```
+
+Le port de débogage n'est ouvert qu'en développement, sur la boucle locale, le temps de la preuve. Les comptes du parcours authentifié sont éphémères, sur `mmv_v2_test`, identifiants transmis par fichier temporaire hors dépôt (`MMV_E2E_CREDENTIALS_FILE`), jamais affichés.

@@ -52,6 +52,14 @@ Logos de la marque MMV fournis par le propriétaire ; droits de redistribution �
 
 Versions publiées depuis ≥ 2 semaines au 16/10/2026.
 
+## Dépendances ajoutées (NuGet, gestion centrale `Directory.Packages.props`)
+
+| Paquet | Version | Licence | Projet | Justification |
+|---|---|---|---|---|
+| `Microsoft.Extensions.Identity.Core` | 10.0.13 | MIT | `MMV.Infrastructure` | `PasswordHasher<T>` d'ASP.NET Core Identity (aucune crypto maison) |
+| `Microsoft.AspNetCore.Mvc.Testing` | 10.0.13 (existant) | MIT | `MMV.PostgreSql.Tests` | pipeline HTTP réel contre `mmv_v2_test` |
+| `Microsoft.Extensions.Configuration.EnvironmentVariables`, `…UserSecrets` | 10.0.4 → **10.0.13** | MIT | tests PostgreSQL, `MMV.Maintenance` | alignement exigé par Mvc.Testing 10.0.13 (NU1605) |
+
 ## Traçabilité exigence → chemin
 
 | Exigence | Chemin(s) | Statut |
@@ -64,5 +72,10 @@ Versions publiées depuis ≥ 2 semaines au 16/10/2026.
 | Barre d'état réelle | `apps/desktop/src/shell/StatusBar.tsx`, `statusBarView.ts`, `useServerHealth.ts` | implémenté |
 | Diagnostic 01B préservé | `apps/desktop/src/views/DiagnosticView.tsx`, `apps/desktop/src/technicalStatusView.ts` | implémenté |
 | Modules futurs non simulés | `apps/desktop/src/shell/navigation.ts`, `apps/desktop/src/views/UnavailableView.tsx` | implémenté |
-| Identité/sessions/permissions serveur | `src/MMV.Domain/Identity/`, `src/MMV.Application/Identity/`, `src/MMV.Infrastructure/Identity/`, `src/MMV.Api/Auth/` | à venir (02-B) |
-| Bootstrap administrateur local | `src/MMV.Maintenance/` | à venir (02-B) |
+| Identité/sessions/permissions serveur | `src/MMV.Domain/Identity/`, `src/MMV.Application/Identity/`, `src/MMV.Infrastructure/Identity/`, `src/MMV.Api/Auth/` | implémenté (tests sur doubles) |
+| CORS `/api` distinct de la santé | `src/MMV.Api/Cors/DesktopCors.cs` | implémenté |
+| Bootstrap administrateur local | `src/MMV.Maintenance/Program.cs` | implémenté ; exécution réelle O-02-01 |
+| Migration d'identité + scripts relus | `src/MMV.Infrastructure/Persistence/Migrations/20261015223849_AuthIdentity*.cs`, `docs/phase/02/sql/` | générée ; **non appliquée** (O-02-01) |
+| Application contrôlée des scripts | `scripts/Invoke-MmvSqlScript.ps1` | prêt ; non exécuté |
+| Tests serveur | `tests/MMV.Api.Tests/Identity/`, `tests/MMV.PostgreSql.Tests/{IdentityPostgreSqlTests,AuthHttpPostgreSqlTests,SchemaInspection,SchemaStateTests}.cs` | doubles PASS ; PostgreSQL après GO |
+| Banc natif | `apps/desktop/e2e/` | implémenté |

@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -14,6 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MMV.Infrastructure\MMV.Infrastructure.csproj" />
+    <!-- Phase 02 : pipeline HTTP réel de l'API contre mmv_v2_test (AuthHttpPostgreSqlTests). -->
+    <ProjectReference Include="..\..\src\MMV.Api\MMV.Api.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

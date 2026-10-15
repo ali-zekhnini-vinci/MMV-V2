@@ -59,3 +59,5 @@ Sauvegarde & audit = transversal dès le socle
 7. Revue humaine et merge seulement après approbation.
 
 > Note datée 15/10/2026 (soir) : l'objectif « slice minimal client ↔ API ↔ PostgreSQL réel » de la phase 01 est démontré en **développement local monoposte** (01A merged, 01B en revue propriétaire). Les éléments « réseau sécurisé » (TLS LAN, ADR-006 OPEN) et « démarrage Windows Service » ne sont **pas** réalisés : leur placement (avant ou pendant la phase 02) est une décision du propriétaire (O-B12, `docs/phase/01b/GATES_AND_DECISIONS.md`). Le périmètre de la phase 02 n'est pas approuvé par cette note.
+
+> Note datée 16/10/2026 (phase 02 `IN_PROGRESS`) : 01B est mergé dans `main` (`c0c3d6b`). Le Shell de la phase 02 affiche un accueil sobre sans chiffre ; les **cinq tableaux de bord riches du Lot 1** (un par profil visuel) restent au backlog (`DEFERRED`), comme la recherche globale et le panneau de notifications (contrôles visibles mais désactivés). Les entrées de menu des modules métier indiquent « Disponible dans une phase suivante ». Voir `docs/phase/02/GATES_AND_DECISIONS.md` (O-02-07, O-02-08).

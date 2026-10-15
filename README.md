@@ -4,7 +4,7 @@
 
 **Phase 02 `IN_PROGRESS`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge). **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
 
-Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
+Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **Migration d'identité générée, non appliquée** : GO unique du propriétaire attendu (O-02-01) avant application aux bases et bootstrap du premier administrateur. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
 
 ## Statut phase 01B (15/10/2026, historique)
 
@@ -47,7 +47,9 @@ Prérequis (versions exactes : [`docs/phase/01/IMPLEMENTATION_SPEC.md`](docs/pha
 dotnet tool restore                    # dotnet-ef 10.0.4 local
 dotnet restore MMV.slnx --locked-mode
 dotnet build MMV.slnx
-dotnet test MMV.slnx
+dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"   # avant application de la migration d'identité (phase 02)
+dotnet test MMV.slnx                                                          # après O-02-01 : suite complète
+dotnet run --project src/MMV.Maintenance -- status                            # état de la base cible (lecture seule)
 dotnet run --project src/MMV.Api --launch-profile http   # puis http://localhost:5022/health/live
 dotnet run --project src/MMV.Api --launch-profile https  # puis https://localhost:7267/health/live et /health/ready (01B)
 

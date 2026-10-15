@@ -4,6 +4,7 @@
     <Project Path="src/MMV.Application/MMV.Application.csproj" />
     <Project Path="src/MMV.Domain/MMV.Domain.csproj" />
     <Project Path="src/MMV.Infrastructure/MMV.Infrastructure.csproj" />
+    <Project Path="src/MMV.Maintenance/MMV.Maintenance.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MMV.Api.Tests/MMV.Api.Tests.csproj" />
