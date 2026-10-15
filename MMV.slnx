@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MMV.Api.Tests/MMV.Api.Tests.csproj" />
+    <Project Path="tests/MMV.PostgreSql.Tests/MMV.PostgreSql.Tests.csproj" />
   </Folder>
 </Solution>
