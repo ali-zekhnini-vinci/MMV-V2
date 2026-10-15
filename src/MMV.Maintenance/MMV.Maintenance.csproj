@@ -6,6 +6,11 @@
     <UserSecretsId>mmv-v2-api</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Politique de cible du bootstrap (BootstrapTargetPolicy) : tests unitaires, processus et PostgreSQL réel. -->
+    <InternalsVisibleTo Include="MMV.Maintenance.Tests" />
+    <InternalsVisibleTo Include="MMV.PostgreSql.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\MMV.Application\MMV.Application.csproj" />
     <ProjectReference Include="..\MMV.Infrastructure\MMV.Infrastructure.csproj" />
   </ItemGroup>

@@ -509,6 +509,15 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
         }
       },
+      "mmv.maintenance": {
+        "type": "Project",
+        "dependencies": {
+          "MMV.Application": "[1.0.0, )",
+          "MMV.Infrastructure": "[1.0.0, )",
+          "Microsoft.Extensions.Configuration.EnvironmentVariables": "[10.0.13, )",
+          "Microsoft.Extensions.Configuration.UserSecrets": "[10.0.13, )"
+        }
+      },
       "Microsoft.AspNetCore.OpenApi": {
         "type": "CentralTransitive",
         "requested": "[10.0.13, )",

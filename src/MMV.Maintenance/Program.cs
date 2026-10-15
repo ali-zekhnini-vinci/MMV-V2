@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -6,12 +5,18 @@ using Microsoft.Extensions.DependencyInjection;
 using MMV.Application.Identity;
 using MMV.Infrastructure;
 using MMV.Infrastructure.Persistence;
+using MMV.Maintenance;
+using Npgsql;
 
 // MMV.Maintenance — commandes LOCALES, exécutées par le propriétaire sur le poste serveur.
-//   status           : lecture seule (base cible, migrations, bootstrap effectué ?, nombre de comptes)
-//   bootstrap-admin  : création UNIQUE du premier administrateur (saisie interactive masquée)
+//   status           : lecture seule, session forcée default_transaction_read_only=on (base cible,
+//                      conformité de la cible, migrations, bootstrap effectué ?, nombre de comptes)
+//   bootstrap-admin  : création UNIQUE du premier administrateur (saisie interactive masquée), uniquement
+//                      sur la cible autorisée (BootstrapTargetPolicy : mmv_v2_dev / mmv_v2_dev / 5433 /
+//                      PostgreSQL 18 / boucle locale), contrôlée avant connexion, après connexion et
+//                      juste avant l'écriture.
 // Codes de sortie : 0 succès ; 1 usage ; 2 précondition non remplie ; 3 bootstrap déjà effectué ;
-//                   4 saisie invalide ou annulation.
+//                   4 saisie invalide ou annulation ; 5 cible non autorisée (refus sans modification).
 // Aucun mot de passe en argument, variable d'environnement ou flux redirigé ; rien n'est journalisé.
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -23,35 +28,72 @@ if (command is not ("status" or "bootstrap-admin"))
     return 1;
 }
 
-var configuration = new ConfigurationBuilder()
+IConfiguration configuration = new ConfigurationBuilder()
     .AddUserSecrets(typeof(MaintenanceMarker).Assembly, optional: true)
     .AddEnvironmentVariables()
     .Build();
 
-if (string.IsNullOrWhiteSpace(configuration.GetConnectionString(DependencyInjection.ConnectionStringName)))
+var connectionString = configuration.GetConnectionString(DependencyInjection.ConnectionStringName);
+if (string.IsNullOrWhiteSpace(connectionString))
 {
     Console.Error.WriteLine("Précondition : 'ConnectionStrings:Mmv' absente (user-secrets mmv-v2-api ou variable ConnectionStrings__Mmv).");
     return 2;
+}
+
+// 1er contrôle, AVANT toute connexion : la chaîne configurée doit viser exactement la cible autorisée.
+var connectionViolations = BootstrapTargetPolicy.CheckConnectionString(connectionString);
+if (command == "bootstrap-admin" && connectionViolations.Count > 0)
+{
+    return RefuseTarget(connectionViolations, "aucune connexion n'a été ouverte");
+}
+
+if (command == "status")
+{
+    if (!TryForceReadOnlySession(connectionString, out var readOnlyConnectionString))
+    {
+        Console.Error.WriteLine("Précondition : 'ConnectionStrings:Mmv' illisible.");
+        return 2;
+    }
+
+    configuration = new ConfigurationBuilder()
+        .AddConfiguration(configuration)
+        .AddInMemoryCollection([new($"ConnectionStrings:{DependencyInjection.ConnectionStringName}", readOnlyConnectionString)])
+        .Build();
 }
 
 var services = new ServiceCollection().AddInfrastructure(configuration).BuildServiceProvider();
 await using var scope = services.CreateAsyncScope();
 var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
 
-TargetInfo target;
+ServerTarget target;
 try
 {
-    target = await TargetInfo.ReadAsync(context);
+    target = await ReadTargetAsync(context);
 }
-catch (Exception exception) when (exception is Npgsql.NpgsqlException or InvalidOperationException or TimeoutException)
+catch (Exception exception) when (exception is NpgsqlException or InvalidOperationException or TimeoutException)
 {
     Console.Error.WriteLine($"Précondition : base injoignable ({exception.GetType().Name}).");
     return 2;
 }
 
+Console.WriteLine($"Base cible     : {target.Database} (rôle {target.SessionUser}, port {target.Port}, PostgreSQL {target.ServerVersion})");
+
+// 2e contrôle, après connexion : identité relue côté serveur, avant toute lecture applicative ou écriture.
+var serverViolations = BootstrapTargetPolicy.CheckServer(target);
+var allViolations = connectionViolations.Concat(serverViolations).ToList();
+Console.WriteLine($"Cible bootstrap: {(allViolations.Count == 0 ? "autorisée" : "NON AUTORISÉE")}");
+foreach (var violation in allViolations)
+{
+    Console.WriteLine($"  - {violation}");
+}
+
+if (command == "bootstrap-admin" && serverViolations.Count > 0)
+{
+    return RefuseTarget(serverViolations, "aucune modification effectuée");
+}
+
 var pending = (await context.Database.GetPendingMigrationsAsync()).ToList();
 var applied = (await context.Database.GetAppliedMigrationsAsync()).ToList();
-Console.WriteLine($"Base cible     : {target.Database} (port {target.Port}, PostgreSQL {target.ServerVersion})");
 Console.WriteLine($"Migrations     : {applied.Count} appliquée(s) [{string.Join(", ", applied)}] ; {pending.Count} en attente [{string.Join(", ", pending)}]");
 
 if (pending.Count > 0)
@@ -105,6 +147,13 @@ if (password != PromptSecret("Confirmez le mot de passe : "))
     return 4;
 }
 
+// 3e contrôle, juste avant l'écriture : la cible n'a pas changé pendant la saisie interactive.
+var finalViolations = BootstrapTargetPolicy.CheckServer(await ReadTargetAsync(context));
+if (finalViolations.Count > 0)
+{
+    return RefuseTarget(finalViolations, "aucune modification effectuée");
+}
+
 var result = await bootstrap.CreateInitialAdministratorAsync(userName, displayName, password, CancellationToken.None);
 switch (result.Status)
 {
@@ -156,27 +205,47 @@ static string PromptSecret(string label)
     }
 }
 
-internal sealed record TargetInfo(string Database, int Port, string ServerVersion)
+static int RefuseTarget(IReadOnlyList<string> violations, string consequence)
 {
-    public static async Task<TargetInfo> ReadAsync(MmvDbContext context)
+    Console.Error.WriteLine(
+        $"Refusé : cible non autorisée pour bootstrap-admin ({consequence}). Seule cible admise en phase 02 : "
+        + $"base {BootstrapTargetPolicy.Database}, rôle {BootstrapTargetPolicy.Role}, port {BootstrapTargetPolicy.Port}, "
+        + $"PostgreSQL {BootstrapTargetPolicy.ServerMajorVersion}, connexion locale.");
+    foreach (var violation in violations)
     {
-        var connection = context.Database.GetDbConnection();
-        await connection.OpenAsync();
-        try
-        {
-            await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT current_database(), inet_server_port(), current_setting('server_version')";
-            await using var reader = await command.ExecuteReaderAsync();
-            await reader.ReadAsync();
-            return new TargetInfo(
-                reader.GetString(0),
-                reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture),
-                reader.GetString(2));
-        }
-        finally
-        {
-            await connection.CloseAsync();
-        }
+        Console.Error.WriteLine($"  - {violation}");
+    }
+
+    return 5;
+}
+
+static bool TryForceReadOnlySession(string connectionString, out string readOnlyConnectionString)
+{
+    try
+    {
+        var builder = new NpgsqlConnectionStringBuilder(connectionString);
+        builder.Options = $"{builder.Options} -c default_transaction_read_only=on".Trim();
+        readOnlyConnectionString = builder.ConnectionString;
+        return true;
+    }
+    catch (ArgumentException)
+    {
+        readOnlyConnectionString = string.Empty;
+        return false;
+    }
+}
+
+static async Task<ServerTarget> ReadTargetAsync(MmvDbContext context)
+{
+    var connection = context.Database.GetDbConnection();
+    await connection.OpenAsync();
+    try
+    {
+        return await BootstrapTargetPolicy.ReadServerAsync(connection, CancellationToken.None);
+    }
+    finally
+    {
+        await connection.CloseAsync();
     }
 }
 
