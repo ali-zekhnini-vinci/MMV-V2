@@ -1,0 +1,56 @@
+﻿# 01B API reelle MMV.Api (profil https, Development), 20261015T212358Z UTC
+# Aucune base modifiee. Chaines 'down'/'mute' sans mot de passe (env ConnectionStrings__Mmv, non persistee).
+started up pid=37040
+### A. PostgreSQL 18 disponible (user-secrets mmv_v2_dev)
+GET https://localhost:7267/health/live (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=200 ssl_verify_result=0 time=0.095616s
+  body: {"status":"Healthy","scope":"process","processId":31900,"startedAtUtc":"2026-10-15T21:23:59.3878155Z","uptimeSeconds":0.7,"checkedAtUtc":"2026-10-15T21:24:00.1225234Z"}
+GET https://localhost:7267/health/ready (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=200 ssl_verify_result=0 time=0.383012s
+  body: {"status":"Healthy","scope":"database","checkedAtUtc":"2026-10-15T21:24:00.549944Z","durationMs":370}
+### A2. Origine non autorisee (Origin: https://evil.example)
+  HTTP/1.1 200 OK
+  (aucune ligne Access-Control-* = refus CORS)
+### A3. Ecoute reseau de l'API
+  ::1:5022
+  ::1:7267
+  127.0.0.1:5022
+  127.0.0.1:7267
+started db-down pid=37396
+### B. PostgreSQL injoignable (port 5434 ferme, connexion refusee)
+GET https://localhost:7267/health/live (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=200 ssl_verify_result=0 time=0.094437s
+  body: {"status":"Healthy","scope":"process","processId":32696,"startedAtUtc":"2026-10-15T21:24:01.8504316Z","uptimeSeconds":0.8,"checkedAtUtc":"2026-10-15T21:24:02.6251928Z"}
+GET https://localhost:7267/health/ready (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 503 Service Unavailable
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=503 ssl_verify_result=0 time=2.294091s
+  body: {"status":"Unhealthy","scope":"database","checkedAtUtc":"2026-10-15T21:24:04.9570376Z","durationMs":2280}
+  serveur muet a l'ecoute : 127.0.0.1:5499
+started db-mute pid=11280
+### C. Serveur muet sur 5499 (accepte TCP, ne repond jamais) : timeout borne
+GET https://localhost:7267/health/live (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 200 OK
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=200 ssl_verify_result=0 time=0.095254s
+  body: {"status":"Healthy","scope":"process","processId":38436,"startedAtUtc":"2026-10-15T21:24:07.232195Z","uptimeSeconds":0.8,"checkedAtUtc":"2026-10-15T21:24:08.0121229Z"}
+GET https://localhost:7267/health/ready (Origin: http://localhost:1420, curl Schannel, sans -k)
+  HTTP/1.1 503 Service Unavailable
+  Access-Control-Allow-Origin: http://localhost:1420
+  Vary: Origin
+  HTTP=503 ssl_verify_result=0 time=2.288827s
+  body: {"status":"Unhealthy","scope":"database","checkedAtUtc":"2026-10-15T21:24:10.3375449Z","durationMs":2275}
+### D. Fuite d'information dans les reponses (chaine, hote, base, mot de passe)
+  voir controle automatique en fin de fichier
+  controle automatique (bornes de mots) : lignes body contenant Password|Host=|5433|5434|5499|mmv_v2|Npgsql|localhost = 0 (un premier passage sans bornes avait compte 1 faux positif : '5499' dans l'horodatage 00.549944Z)

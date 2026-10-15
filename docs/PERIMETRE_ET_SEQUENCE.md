@@ -57,3 +57,5 @@ Sauvegarde & audit = transversal dès le socle
 5. Validation métier neuve ratifiée, tests prévus et cas dégradés.
 6. Comparaison visuelle capturée, tests clavier, résolutions 1440×900 et 1920×1080.
 7. Revue humaine et merge seulement après approbation.
+
+> Note datée 15/10/2026 (soir) : l'objectif « slice minimal client ↔ API ↔ PostgreSQL réel » de la phase 01 est démontré en **développement local monoposte** (01A merged, 01B en revue propriétaire). Les éléments « réseau sécurisé » (TLS LAN, ADR-006 OPEN) et « démarrage Windows Service » ne sont **pas** réalisés : leur placement (avant ou pendant la phase 02) est une décision du propriétaire (O-B12, `docs/phase/01b/GATES_AND_DECISIONS.md`). Le périmètre de la phase 02 n'est pas approuvé par cette note.

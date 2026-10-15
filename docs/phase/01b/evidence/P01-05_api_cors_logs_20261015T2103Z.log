@@ -1,0 +1,73 @@
+﻿### MMV.Api journal (out) - filtre CORS/health
+Now listening on: https://localhost:7267
+Now listening on: http://localhost:5022
+Hosting environment: Development
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+### MMV.Api journal (db-down.out) - filtre CORS/health
+Now listening on: https://localhost:7267
+Now listening on: http://localhost:5022
+Hosting environment: Development
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution successful.
+### MMV.Api journal (cors-refused.out) - filtre CORS/health
+Now listening on: https://localhost:7267
+Now listening on: http://localhost:5022
+Hosting environment: Development
+The request has an origin header: 'http://localhost:1420'.
+CORS policy execution failed.
+Request origin http://localhost:1420 does not have permission to access the resource.
+### MMV.Api journal (bundle.out) - filtre CORS/health
+Now listening on: https://localhost:7267
+Now listening on: http://localhost:5022
+Hosting environment: Development

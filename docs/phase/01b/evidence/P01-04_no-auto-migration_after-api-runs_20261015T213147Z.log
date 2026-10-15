@@ -1,0 +1,18 @@
+# Absence de migration/ecriture au demarrage : relecture apres les demarrages de MMV.Api de la session (profil https, 21:21Z-21:29Z ; 7 avec la chaine reelle mmv_v2_dev, les autres vers des ports 5434/5499 sans base), 20261015T213147Z UTC
+# recherche statique : aucun Migrate()/MigrateAsync/EnsureCreated dans src/ (Grep, 0 occurrence)
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_BaselineApplied [551 ms]
+ relations (2) : public.PK___EFMigrationsHistory kind=i owner=mmv_v2_dev acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_dev acl=default
+ lignes __EFMigrationsHistory (1) : 20261015125000_InitialBaseline 10.0.4
+ EF applied=[20261015125000_InitialBaseline] pending=[]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_BaselineApplied [96 ms]
+ relations (2) : public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ lignes __EFMigrationsHistory (1) : 20261015125000_InitialBaseline 10.0.4
+ EF applied=[20261015125000_InitialBaseline] pending=[]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsNothingButBaseline [5 ms]
+ relations (2) : public.PK___EFMigrationsHistory kind=i owner=mmv_v2_dev acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_dev acl=default
+ lignes __EFMigrationsHistory (1) : 20261015125000_InitialBaseline 10.0.4
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsNothingButBaseline [4 ms]
+ relations (2) : public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ lignes __EFMigrationsHistory (1) : 20261015125000_InitialBaseline 10.0.4
+Nombre total de tests : 4
+     Réussi(s) : 4
