@@ -1,0 +1,11 @@
+# Fichiers générés exclus du graphe Graphify
+**/packages.lock.json
+**/package-lock.json
+**/Cargo.lock
+**/bin/
+**/obj/
+**/node_modules/
+**/target/
+**/dist/
+**/gen/
+docs/phase/01/evidence/

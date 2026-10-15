@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+
+# Node / Vite (apps/desktop a aussi son propre .gitignore)
+node_modules/
+dist/
+
+# Rust / Tauri
+target/
+
+# Graphify : graphe local régénérable, non versionné
+graphify-out/
+
+# Secrets locaux
+.env
+.env.*
+*.pfx
+*.key
