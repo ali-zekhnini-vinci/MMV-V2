@@ -7,6 +7,11 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
     <!-- Persistance : PostgreSQL exclusivement (D-003 / ADR-003). Aucun autre fournisseur. -->
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <!-- Outillage de migrations (design-time seulement, PrivateAssets) : aligné sur EF Core 10.0.4 résolu par Npgsql. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4" />
+    <!-- Configuration des tests PostgreSQL (user-secrets / variables d'environnement), alignée sur 10.0.4. -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.4" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.4" />
     <!-- Tests -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
