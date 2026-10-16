@@ -34,7 +34,8 @@ $secrets = Get-Content -LiteralPath $secretsFile -Raw -Encoding UTF8 | ConvertFr
 $raw = $secrets.$Key
 if (-not $raw) { throw "Cle '$Key' absente de $SecretsId." }
 $b = [System.Data.Common.DbConnectionStringBuilder]::new()
-$b.ConnectionString = $raw
+# Accesseur explicite : sur un IDictionary, « $b.ConnectionString = » créerait une clé au lieu d'analyser la chaîne.
+$b.set_ConnectionString($raw)
 $get = { param($names) foreach ($n in $names) { if ($b.ContainsKey($n)) { return [string]$b[$n] } }; return $null }
 $hostName = & $get @('Host', 'Server'); $port = & $get @('Port'); $db = & $get @('Database'); $user = & $get @('Username', 'User ID', 'User')
 if ($hostName -notin @('localhost', '127.0.0.1', '::1')) { throw "Hote refuse (loopback attendu)." }
