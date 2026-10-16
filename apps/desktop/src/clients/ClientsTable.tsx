@@ -1,6 +1,6 @@
 // Table Clients — TanStack Table v8 en mode serveur : pagination et tri manuels (l'API renvoie la page
 // triée), aucune donnée triée ou filtrée localement. Gabarit : Lot 2 DRAFT, planches 01–03 (`table.dt`).
-// Colonnes : seulement des champs du contrat proposé (docs/phase/03/API_CLIENTS_PROPOSED.md).
+// Colonnes : seulement des champs du contrat (docs/phase/03/API_CLIENTS.md, ClientSummaryResponse).
 import {
   type ColumnDef,
   flexRender,

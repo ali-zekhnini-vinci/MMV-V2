@@ -7,7 +7,8 @@ namespace MMV.PostgreSql.Tests;
 /// <summary>
 /// Contrôles de schéma en lecture seule (session <c>default_transaction_read_only=on</c>).
 /// Sans trait : valables à tout stade connu (base vide, baseline 01B seule, baseline + identité phase 02).
-/// <c>Stage=PostMigration</c> : exigent TOUTES les migrations de l'assembly appliquées (phase 02 : O-02-01),
+/// <c>Stage=PostMigration</c> : exigent TOUTES les migrations de l'assembly appliquées (phase 02 : O-02-01 ;
+/// phase 03-A2 : + 0003_ClientsModule, contrôlé par ClientsModuleDifferences),
 /// à lancer après l'exécution des scripts approuvés.
 /// Historique : en 01B, ces tests exigeaient la baseline seule (voir docs/phase/01b/QA_MATRIX.md).
 /// </summary>
@@ -56,7 +57,7 @@ public sealed class SchemaStateTests(ITestOutputHelper output)
 
         var state = await SchemaInspection.ReadAsync(target, timeout.Token);
         output.WriteLine(state.ToString());
-        Assert.Empty(state.AuthIdentityDifferences(target.Role));
+        Assert.Empty(state.ClientsModuleDifferences(target.Role));
 
         // Vue EF Core (lecture seule) : toutes les migrations de l'assembly appliquées, rien en attente.
         var options = new DbContextOptionsBuilder<MmvDbContext>().UseNpgsql(target.ReadOnlyConnectionString()).Options;

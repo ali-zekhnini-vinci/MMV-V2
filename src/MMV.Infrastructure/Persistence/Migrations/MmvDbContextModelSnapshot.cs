@@ -22,6 +22,137 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("client_reference_seq", "clients")
+                .HasMax(999999999999999999L);
+
+            modelBuilder.Entity("MMV.Domain.Clients.Client", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AddressLine")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("address_line");
+
+                    b.Property<DateTimeOffset?>("ArchivedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at_utc");
+
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("reference")
+                        .HasDefaultValueSql("'CLI-' || to_char(nextval('clients.client_reference_seq'), 'FM999999999999000000')");
+
+                    b.Property<string>("SearchText")
+                        .IsRequired()
+                        .HasMaxLength(700)
+                        .HasColumnType("character varying(700)")
+                        .HasColumnName("search_text");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clients");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_clients_created_by_user_id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ux_clients_reference");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_clients_updated_by_user_id");
+
+                    b.HasIndex("CreatedAtUtc", "Id")
+                        .HasDatabaseName("ix_clients_created_at");
+
+                    b.HasIndex("LastName", "FirstName", "Id")
+                        .HasDatabaseName("ix_clients_active_name")
+                        .HasFilter("archived_at_utc IS NULL");
+
+                    b.ToTable("clients", "clients", t =>
+                        {
+                            t.HasCheckConstraint("ck_clients_archived_after_created", "archived_at_utc IS NULL OR archived_at_utc >= created_at_utc");
+
+                            t.HasCheckConstraint("ck_clients_birth_date_range", "birth_date IS NULL OR birth_date >= DATE '1900-01-01'");
+
+                            t.HasCheckConstraint("ck_clients_first_name_not_blank", "btrim(first_name) <> ''");
+
+                            t.HasCheckConstraint("ck_clients_last_name_not_blank", "btrim(last_name) <> ''");
+
+                            t.HasCheckConstraint("ck_clients_reference_format", "reference ~ '^CLI-[0-9]{6,18}$'");
+
+                            t.HasCheckConstraint("ck_clients_updated_after_created", "updated_at_utc >= created_at_utc");
+                        });
+                });
+
             modelBuilder.Entity("MMV.Domain.Identity.BootstrapRecord", b =>
                 {
                     b.Property<short>("Id")
@@ -61,7 +192,7 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                     b.ToTable("user_permissions", "auth", t =>
                         {
-                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin')");
+                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive')");
                         });
                 });
 
@@ -175,6 +306,23 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_sessions_token_hash_length", "octet_length(token_hash) = 32");
                         });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Clients.Client", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_clients_created_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_clients_updated_by_users");
                 });
 
             modelBuilder.Entity("MMV.Domain.Identity.PermissionGrant", b =>

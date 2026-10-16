@@ -1,5 +1,5 @@
 // Formulaire unique de création / modification d'un client (Lot 2 DRAFT, planches 10–15). React Hook Form +
-// Zod (règles PROPOSED de clientForm.ts), libellés toujours visibles, focus sur le premier champ en erreur,
+// Zod (règles D-03-02 de clientForm.ts), libellés toujours visibles, focus sur le premier champ en erreur,
 // Ctrl+S pour enregistrer, confirmation avant de quitter avec des modifications non enregistrées (bouton
 // Annuler et menu du Shell). Le serveur revalide tout ; ses erreurs par champ sont reportées sous les champs.
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -179,7 +179,7 @@ export function ClientFormView(props: ClientFormViewProps) {
         <form className="clients-card clients-form" noValidate onSubmit={(event) => void submit(event)} aria-label={title}>
           {!enabled && (
             <Banner tone="info" icon={<Info size={20} />} title="Aperçu du formulaire" id="client-form-preview">
-              L&apos;enregistrement est désactivé tant que le service Clients n&apos;est pas activé sur le serveur MMV (validation G03-METIER).
+              L&apos;enregistrement est indisponible : le service Clients est désactivé dans cette version de l&apos;application.
             </Banner>
           )}
           {isSubmitted && hasErrors && (

@@ -1,6 +1,6 @@
 // Liste des clients (Lot 2 DRAFT, planches 01–09). Recherche, statut, tri et pagination sont des
-// paramètres SERVEUR (contrat proposé) ; l'écran ne filtre ni ne trie rien localement. Avant activation du
-// service (G03-METIER), un état explicite remplace la table : aucune ligne fictive n'est jamais affichée.
+// paramètres SERVEUR (/api/clients, sous-lot 03-A2) ; l'écran ne filtre ni ne trie rien localement. Si le
+// service est désactivé (interrupteur de repli), un état explicite remplace la table : aucune ligne fictive.
 import type { SortingState, Updater } from "@tanstack/react-table";
 import { ArrowUpDown, CheckSquare, Plus, RefreshCw, Search, SearchX, ServerOff, ShieldAlert, SlidersHorizontal, Square, Users, WifiOff, X } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
@@ -94,7 +94,7 @@ export function ClientsListView() {
   );
 
   const subtitle = !enabled
-    ? "Service Clients en attente d'activation"
+    ? "Service Clients désactivé"
     : query.data
       ? `${query.data.totalCount} client${query.data.totalCount > 1 ? "s" : ""} · ${STATUS_LABEL[listState.status]}`
       : STATUS_LABEL[listState.status];
@@ -104,8 +104,8 @@ export function ClientsListView() {
     body = (
       <StateBlock tone="info" icon={ServerOff} title="Service Clients non activé">
         <p>
-          L&apos;interface Clients est prête, mais le serveur MMV n&apos;expose pas encore de données clients : le modèle, les droits
-          et la migration attendent la validation du propriétaire (G03-METIER).
+          Le service Clients est désactivé dans cette version de l&apos;application : aucune requête n&apos;est envoyée au serveur
+          MMV.
         </p>
         <p>Aucune donnée n&apos;est affichée ni enregistrée. Le formulaire « Nouveau client » est consultable en aperçu.</p>
       </StateBlock>

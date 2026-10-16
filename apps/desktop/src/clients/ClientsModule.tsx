@@ -45,7 +45,7 @@ function ClientRoute({ view }: { view: "detail" | "edit" }) {
   if (!enabled) {
     return (
       <StateBlock tone="info" icon={ServerOff} title="Service Clients non activé" action={back}>
-        <p>Aucune fiche client n&apos;est disponible tant que le service Clients n&apos;est pas activé (G03-METIER).</p>
+        <p>Aucune fiche client n&apos;est disponible : le service Clients est désactivé dans cette version de l&apos;application.</p>
       </StateBlock>
     );
   }

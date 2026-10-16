@@ -5,7 +5,8 @@ namespace MMV.PostgreSql.Tests;
 /// <summary>
 /// Inventaire des objets d'une base V2, relu par SELECT de catalogues dans une session forcée en lecture seule.
 /// Sert de contrôle avant migration (base vide), après la baseline 01B (baseline seule), après la migration
-/// d'identité de la phase 02 (baseline + schéma <c>auth</c> exact) et après les tests d'écriture (aucun objet résiduel).
+/// d'identité de la phase 02 (baseline + schéma <c>auth</c> exact), après la migration Clients de la phase 03-A2
+/// (+ schéma <c>clients</c> exact) et après les tests d'écriture (aucun objet résiduel).
 /// </summary>
 public sealed record SchemaState(
     string TransactionReadOnly,
@@ -21,24 +22,31 @@ public sealed record SchemaState(
     IReadOnlyList<string> HistoryRows,
     IReadOnlyList<string> AuthColumns,
     IReadOnlyList<string> AuthConstraints,
-    IReadOnlyList<string> AuthIndexes)
+    IReadOnlyList<string> AuthIndexes,
+    IReadOnlyList<string> ClientsColumns,
+    IReadOnlyList<string> ClientsConstraints,
+    IReadOnlyList<string> ClientsIndexes,
+    IReadOnlyList<string> ClientsSequences)
 {
     public const string BaselineMigrationId = "20261015125000_InitialBaseline";
     public const string AuthIdentityMigrationId = "20261015223849_AuthIdentity";
+    public const string ClientsModuleMigrationId = "20261016230630_ClientsModule";
 
-    /// <summary>Migrations de l'assembly, dans l'ordre (phase 02).</summary>
-    public static readonly string[] AllMigrationIds = [BaselineMigrationId, AuthIdentityMigrationId];
+    /// <summary>Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule).</summary>
+    public static readonly string[] AllMigrationIds = [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId];
 
-    /// <summary>Base vide, baseline seule, ou baseline + identité : aucun autre état n'est accepté.</summary>
+    /// <summary>
+    /// Base vide, baseline seule, baseline + identité, ou baseline + identité + clients : aucun autre état n'est
+    /// accepté. Les différences rapportées sont celles de l'état le plus récent.
+    /// </summary>
     public IReadOnlyList<string> KnownStateDifferences(string role)
     {
-        if (IsEmpty)
+        if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0)
         {
             return [];
         }
 
-        var baseline = BaselineDifferences(role);
-        return baseline.Count == 0 ? baseline : AuthIdentityDifferences(role);
+        return ClientsModuleDifferences(role);
     }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));
@@ -84,10 +92,18 @@ public sealed record SchemaState(
     /// <paramref name="role"/>. Les contraintes sont comparées par nom, type et règle de suppression ;
     /// leur texte SQL est relu dans le script approuvé.
     /// </summary>
-    public IReadOnlyList<string> AuthIdentityDifferences(string role)
+    public IReadOnlyList<string> AuthIdentityDifferences(string role) => IdentityDifferences(role, withClients: false);
+
+    /// <summary>
+    /// Exactement l'état produit par 0001, 0002 puis 0003_ClientsModule (docs/phase/03/sql/) : schéma <c>auth</c>
+    /// inchangé (contrainte de permissions recréée sous le même nom), schéma <c>clients</c> exact.
+    /// </summary>
+    public IReadOnlyList<string> ClientsModuleDifferences(string role) => IdentityDifferences(role, withClients: true);
+
+    private List<string> IdentityDifferences(string role, bool withClients)
     {
         var differences = new List<string>();
-        Expect(differences, "schémas", ExtraSchemas, ["auth"]);
+        Expect(differences, "schémas", ExtraSchemas, withClients ? ["auth", "clients"] : ["auth"]);
         string[] authRelations =
         [
             "bootstrap_record kind=r", "pk_bootstrap_record kind=i",
@@ -100,12 +116,18 @@ public sealed record SchemaState(
             $"public.PK___EFMigrationsHistory kind=i owner={role} acl=default",
             $"public.__EFMigrationsHistory kind=r owner={role} acl=default",
             .. authRelations.Select(r => $"auth.{r} owner={role} acl=default"),
+            .. (withClients ? ClientsRelations : []).Select(r => $"clients.{r} owner={role} acl=default"),
         ]);
         Expect(differences, "routines", Routines, []);
         Expect(differences, "types", Types, []);
         Expect(differences, "extensions", Extensions, []);
         Expect(differences, "décorations", Decorations, []);
-        Expect(differences, "lignes", HistoryRows, [$"{BaselineMigrationId} 10.0.4", $"{AuthIdentityMigrationId} 10.0.4"]);
+        Expect(differences, "lignes", HistoryRows,
+        [
+            $"{BaselineMigrationId} 10.0.4",
+            $"{AuthIdentityMigrationId} 10.0.4",
+            .. (withClients ? [$"{ClientsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
+        ]);
         Expect(differences, "colonnes auth", AuthColumns,
         [
             "bootstrap_record.administrator_id uuid notnull=t",
@@ -166,8 +188,69 @@ public sealed record SchemaState(
             "ux_sessions_token_hash unique=t",
             "ux_users_normalized_user_name unique=t",
         ]);
+        Expect(differences, "colonnes clients", ClientsColumns, withClients ? ClientsColumnsExpected : []);
+        Expect(differences, "contraintes clients", ClientsConstraints, withClients ? ClientsConstraintsExpected : []);
+        Expect(differences, "index clients", ClientsIndexes, withClients ? ClientsIndexesExpected : []);
+        Expect(differences, "séquences clients", ClientsSequences, withClients
+            ? ["client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-"]
+            : []);
         return differences;
     }
+
+    private static readonly string[] ClientsRelations =
+    [
+        "clients kind=r", "pk_clients kind=i", "client_reference_seq kind=S", "ux_clients_reference kind=i",
+        "ix_clients_active_name kind=i", "ix_clients_created_at kind=i",
+        "ix_clients_created_by_user_id kind=i", "ix_clients_updated_by_user_id kind=i",
+    ];
+
+    // Aucune colonne de sécurité sociale, mutuelle ni donnée de santé ; aucune colonne de version (xmin système).
+    private static readonly string[] ClientsColumnsExpected =
+    [
+        "clients.address_line character varying(200) notnull=f",
+        "clients.archived_at_utc timestamp with time zone notnull=f",
+        "clients.birth_date date notnull=f",
+        "clients.city character varying(100) notnull=f",
+        "clients.created_at_utc timestamp with time zone notnull=t",
+        "clients.created_by_user_id uuid notnull=t",
+        "clients.email character varying(254) notnull=f",
+        "clients.first_name character varying(100) notnull=t",
+        "clients.id uuid notnull=t",
+        "clients.last_name character varying(100) notnull=t",
+        "clients.notes character varying(1000) notnull=f",
+        "clients.phone character varying(32) notnull=f",
+        "clients.postal_code character varying(10) notnull=f",
+        "clients.reference character varying(24) notnull=t",
+        "clients.search_text character varying(700) notnull=t",
+        "clients.updated_at_utc timestamp with time zone notnull=t",
+        "clients.updated_by_user_id uuid notnull=t",
+    ];
+
+    private static readonly string[] ClientsConstraintsExpected =
+    [
+        "clients.ck_clients_archived_after_created c -",
+        "clients.ck_clients_birth_date_range c -",
+        "clients.ck_clients_first_name_not_blank c -",
+        "clients.ck_clients_last_name_not_blank c -",
+        "clients.ck_clients_reference_format c -",
+        "clients.ck_clients_updated_after_created c -",
+        "clients.fk_clients_created_by_users f r",
+        "clients.fk_clients_updated_by_users f r",
+        "clients.pk_clients p -",
+        // PostgreSQL 18 : NOT NULL catalogués dans pg_constraint, noms générés <table>_<colonne>_not_null.
+        .. new[] { "id", "reference", "first_name", "last_name", "search_text", "created_at_utc", "created_by_user_id", "updated_at_utc", "updated_by_user_id" }
+            .Select(c => $"clients.clients_{c}_not_null n -"),
+    ];
+
+    private static readonly string[] ClientsIndexesExpected =
+    [
+        "ix_clients_active_name unique=f",
+        "ix_clients_created_at unique=f",
+        "ix_clients_created_by_user_id unique=f",
+        "ix_clients_updated_by_user_id unique=f",
+        "pk_clients unique=t",
+        "ux_clients_reference unique=t",
+    ];
 
     public override string ToString() => string.Join(
         Environment.NewLine,
@@ -183,7 +266,11 @@ public sealed record SchemaState(
         Section("lignes __EFMigrationsHistory", HistoryRows),
         Section("colonnes auth", AuthColumns),
         Section("contraintes auth", AuthConstraints),
-        Section("index auth", AuthIndexes));
+        Section("index auth", AuthIndexes),
+        Section("colonnes clients", ClientsColumns),
+        Section("contraintes clients", ClientsConstraints),
+        Section("index clients", ClientsIndexes),
+        Section("séquences clients", ClientsSequences));
 
     private static string Section(string name, IReadOnlyList<string> items) =>
         $"{name} ({items.Count}) : " + (items.Count == 0 ? "—" : string.Join(" | ", items));
@@ -267,24 +354,42 @@ public static class SchemaInspection
                     "SELECT format('%s %s', \"MigrationId\", \"ProductVersion\") FROM public.\"__EFMigrationsHistory\"",
                     cancellationToken)
                 : [],
-            AuthColumns: await ListAsync(connection, """
-                SELECT format('%s.%s %s notnull=%s', c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
-                              CASE WHEN a.attnotnull THEN 't' ELSE 'f' END)
-                FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-                WHERE n.nspname = 'auth' AND c.relkind = 'r' AND a.attnum > 0 AND NOT a.attisdropped
-                """, cancellationToken),
-            AuthConstraints: await ListAsync(connection, """
-                SELECT format('%s.%s %s %s', c.relname, k.conname, k.contype,
-                              CASE WHEN k.contype = 'f' THEN k.confdeltype::text ELSE '-' END)
-                FROM pg_constraint k JOIN pg_class c ON c.oid = k.conrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-                WHERE n.nspname = 'auth'
-                """, cancellationToken),
-            AuthIndexes: await ListAsync(connection, """
-                SELECT format('%s unique=%s', ic.relname, CASE WHEN i.indisunique THEN 't' ELSE 'f' END)
-                FROM pg_index i JOIN pg_class ic ON ic.oid = i.indexrelid JOIN pg_namespace n ON n.oid = ic.relnamespace
-                WHERE n.nspname = 'auth'
+            AuthColumns: await ListAsync(connection, ColumnsSql("auth"), cancellationToken),
+            AuthConstraints: await ListAsync(connection, ConstraintsSql("auth"), cancellationToken),
+            AuthIndexes: await ListAsync(connection, IndexesSql("auth"), cancellationToken),
+            ClientsColumns: await ListAsync(connection, ColumnsSql("clients"), cancellationToken),
+            ClientsConstraints: await ListAsync(connection, ConstraintsSql("clients"), cancellationToken),
+            ClientsIndexes: await ListAsync(connection, IndexesSql("clients"), cancellationToken),
+            ClientsSequences: await ListAsync(connection, """
+                SELECT format('%s type=%s start=%s increment=%s min=%s max=%s cycle=%s owned_by=%s', c.relname,
+                              format_type(s.seqtypid, NULL), s.seqstart, s.seqincrement, s.seqmin, s.seqmax,
+                              CASE WHEN s.seqcycle THEN 't' ELSE 'f' END,
+                              coalesce((SELECT d.refobjid::regclass::text FROM pg_depend d
+                                        WHERE d.objid = c.oid AND d.classid = 'pg_class'::regclass AND d.deptype = 'a'), '-'))
+                FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'clients'
                 """, cancellationToken));
     }
+
+    private static string ColumnsSql(string schema) => $"""
+        SELECT format('%s.%s %s notnull=%s', c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
+                      CASE WHEN a.attnotnull THEN 't' ELSE 'f' END)
+        FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '{schema}' AND c.relkind = 'r' AND a.attnum > 0 AND NOT a.attisdropped
+        """;
+
+    private static string ConstraintsSql(string schema) => $"""
+        SELECT format('%s.%s %s %s', c.relname, k.conname, k.contype,
+                      CASE WHEN k.contype = 'f' THEN k.confdeltype::text ELSE '-' END)
+        FROM pg_constraint k JOIN pg_class c ON c.oid = k.conrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '{schema}'
+        """;
+
+    private static string IndexesSql(string schema) => $"""
+        SELECT format('%s unique=%s', ic.relname, CASE WHEN i.indisunique THEN 't' ELSE 'f' END)
+        FROM pg_index i JOIN pg_class ic ON ic.oid = i.indexrelid JOIN pg_namespace n ON n.oid = ic.relnamespace
+        WHERE n.nspname = '{schema}'
+        """;
 
     private static async Task<object?> ScalarAsync(NpgsqlConnection connection, string sql, CancellationToken cancellationToken)
     {

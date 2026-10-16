@@ -1,6 +1,5 @@
-// Archivage et réactivation (Lot 2 DRAFT, planches 22, 24–27). Les actions ne sont possibles que si le
-// service Clients est activé (après G03-METIER) ; le serveur décide du droit (`clients.archive` proposé)
-// et de la concurrence (jeton `version`). Aucune suppression physique n'est proposée (recommandation D-03-05).
+// Archivage et réactivation (Lot 2 DRAFT, planches 22, 24–27). Le serveur décide du droit (`clients.archive`,
+// D-03-08) et de la concurrence (jeton `version`, D-03-06). Aucune suppression physique (D-03-05 acceptée).
 import { AlertTriangle, Archive, ArchiveRestore, ShieldAlert } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import type { ClientSummary } from "../api/clients.ts";

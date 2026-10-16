@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MMV.Api.Auth;
 using MMV.Api.Cors;
 using MMV.Api.Health;
@@ -6,6 +7,8 @@ using MMV.Infrastructure;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
+// Nombres JSON stricts (jamais lus depuis une chaîne) : le contrat OpenAPI décrit des entiers, pas « integer | string ».
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict);
 builder.Services.AddOpenApi();
 builder.Services.AddLivenessCheck();
 builder.Services.AddReadinessCheck();

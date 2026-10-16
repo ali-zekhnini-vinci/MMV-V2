@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// Écrans Clients (phase 03-A) avec le service ACTIVÉ pour le test uniquement, contre le double node:http
-// du contrat PROPOSED (src/test/fakeClientsApi.ts) et des clients FICTIFS. En fonctionnement normal, le
-// service reste désactivé (CLIENTS_API_ENABLED = false) tant que G03-METIER n'est pas ratifié.
+// Écrans Clients (phases 03-A/03-A2) contre le double node:http du contrat (src/test/fakeClientsApi.ts) et des
+// clients FICTIFS. Le service est activé en fonctionnement normal depuis 03-A2 (CLIENTS_API_ENABLED = true) ;
+// le contexte le fournit explicitement ici. Le serveur réel est éprouvé par tests/MMV.Api.Tests et MMV.PostgreSql.Tests.
 import assert from "node:assert/strict";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

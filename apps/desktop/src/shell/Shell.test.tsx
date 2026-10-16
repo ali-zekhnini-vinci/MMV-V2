@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, test } from "vitest";
 import { Gate } from "../App.tsx";
 import { AuthProvider } from "../auth/AuthProvider.tsx";
+import { ClientsServiceContext } from "../clients/clientsService.ts";
 import { type FakeApi, startFakeApi } from "../test/fakeMmvApi.ts";
 
 const ADMIN = { userName: "admin", password: "Mot-de-passe-admin-1", displayName: "Admin Test", permissions: ["system.admin"] };
@@ -76,8 +77,29 @@ describe("Shell", () => {
     assert.equal(screen.queryByRole("grid"), null);
   });
 
-  test("Clients (service non activé) : état honnête, aucune donnée ni requête /api/clients", async () => {
+  // 03-A2 : le service Clients est activé par défaut (CLIENTS_API_ENABLED = true).
+  test("Clients : system.admin seul n'a aucun droit Clients -> le serveur répond 403 -> « Accès non autorisé »", async () => {
     const user = await signIn(ADMIN);
+    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
+    await screen.findByRole("heading", { name: "Clients", level: 1 });
+    await screen.findByRole("heading", { name: "Accès non autorisé" });
+    assert.equal(screen.queryByRole("table"), null);
+    const listCall = api.requests.find((request) => request.path.startsWith("/api/clients?"));
+    assert.ok(listCall?.bearer, "requête /api/clients authentifiée attendue");
+  });
+
+  test("Clients (interrupteur de repli désactivé) : état honnête, aucune donnée ni requête /api/clients", async () => {
+    const user = userEvent.setup();
+    render(
+      <ClientsServiceContext.Provider value={{ enabled: false }}>
+        <AuthProvider baseUrl={{ ok: true, url: api.url }}>
+          <Gate />
+        </AuthProvider>
+      </ClientsServiceContext.Provider>,
+    );
+    await user.type(screen.getByLabelText("Identifiant"), ADMIN.userName);
+    await user.type(screen.getByLabelText("Mot de passe"), `${ADMIN.password}{Enter}`);
+    await screen.findByRole("heading", { name: `Bonjour, ${ADMIN.displayName}` });
     await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
     await screen.findByRole("heading", { name: "Clients" });
     screen.getByRole("heading", { name: "Service Clients non activé" });

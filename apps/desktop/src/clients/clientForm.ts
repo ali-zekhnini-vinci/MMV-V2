@@ -1,7 +1,8 @@
-// Règles de saisie du formulaire Client (Phase 03-A) — **PROPOSED** (docs/phase/03/DECISIONS_G03_METIER.md).
-// Validation UX seulement : MMV.Api revalidera tout côté serveur (400/422 + codes par champ).
-// Champs volontairement absents : n° de sécurité sociale et mutuelle (sensibles, non ratifiés), toute
-// donnée optique ou médicale (Phase 04).
+// Règles de saisie du formulaire Client — D-03-02 acceptée (G03-METIER A, 17/10/2026 ;
+// docs/phase/03/DECISIONS_G03_METIER.md). Validation UX seulement : MMV.Api revalide tout côté serveur
+// (MMV.Application ClientInputValidator, mêmes règles ; 400/422 + codes par champ).
+// Champs volontairement absents (D-03-03) : n° de sécurité sociale et mutuelle, toute donnée optique ou
+// médicale (Phase 04).
 import { z } from "zod";
 import type { ClientDetail, ClientInput } from "../api/clients.ts";
 
@@ -140,7 +141,7 @@ export function toFormValues(client: ClientDetail): ClientFormValues {
 
 const FIELD_NAMES = Object.keys(EMPTY_CLIENT_FORM) as (keyof ClientFormValues)[];
 
-/** Codes serveur proposés → message affiché. Un code inconnu donne un message générique (jamais le code brut). */
+/** Codes serveur (ClientFieldErrors) → message affiché. Un code inconnu donne un message générique (jamais le code brut). */
 const SERVER_CODE_MESSAGES: Record<string, string> = {
   required: "Champ requis",
   too_long: "Valeur trop longue",

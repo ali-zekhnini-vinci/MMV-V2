@@ -11,4 +11,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Phase 03-A2 : motifs de recherche Clients (ClientStore.SearchPatterns) testés unitairement et sur PostgreSQL. -->
+    <InternalsVisibleTo Include="MMV.Api.Tests" />
+    <InternalsVisibleTo Include="MMV.PostgreSql.Tests" />
+  </ItemGroup>
 </Project>

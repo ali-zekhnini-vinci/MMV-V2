@@ -1,5 +1,5 @@
 // Mise en évidence de la recherche dans une cellule (présentation uniquement : le filtrage est serveur).
-// Comparaison insensible à la casse et aux accents, pour rester cohérente avec la recherche proposée.
+// Comparaison insensible à la casse et aux accents, pour rester cohérente avec la recherche serveur (MMV.Domain ClientSearch).
 import type { ReactNode } from "react";
 import { findFolded } from "./searchText.ts";
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MMV.Application.Identity;
+using MMV.Domain.Identity;
 using MMV.Infrastructure;
 using MMV.Infrastructure.Persistence;
 using MMV.Maintenance;
@@ -15,16 +16,41 @@ using Npgsql;
 //                      sur la cible autorisée (BootstrapTargetPolicy : mmv_v2_dev / mmv_v2_dev / 5433 /
 //                      PostgreSQL 18 / boucle locale), contrôlée avant connexion, après connexion et
 //                      juste avant l'écriture.
+//   permissions list : lecture seule (même session forcée que status) : comptes et permissions.
+//   permissions grant|revoke <identifiant> <permission> (phase 03-A2, D-03-09) : attribution ou retrait d'un
+//                      droit métier (clients.read | clients.write | clients.archive ; jamais system.admin), même
+//                      cible stricte et mêmes trois contrôles que bootstrap-admin, confirmation interactive.
 // Codes de sortie : 0 succès ; 1 usage ; 2 précondition non remplie ; 3 bootstrap déjà effectué ;
-//                   4 saisie invalide ou annulation ; 5 cible non autorisée (refus sans modification).
+//                   4 saisie invalide ou annulation ; 5 cible non autorisée (refus sans modification) ;
+//                   6 compte introuvable (aucune modification).
 // Aucun mot de passe en argument, variable d'environnement ou flux redirigé ; rien n'est journalisé.
 
 Console.OutputEncoding = Encoding.UTF8;
 
-var command = args.Length == 1 ? args[0] : null;
-if (command is not ("status" or "bootstrap-admin"))
+const string Usage =
+    "Usage : MMV.Maintenance status | bootstrap-admin | permissions list | permissions grant|revoke <identifiant> <permission>";
+var command = args switch
 {
-    Console.Error.WriteLine("Usage : MMV.Maintenance status | bootstrap-admin");
+    ["status"] => "status",
+    ["bootstrap-admin"] => "bootstrap-admin",
+    ["permissions", "list"] => "permissions list",
+    ["permissions", "grant" or "revoke", _, _] => $"permissions {args[1]}",
+    _ => null,
+};
+if (command is null)
+{
+    Console.Error.WriteLine(Usage);
+    return 1;
+}
+
+var isWrite = command is "bootstrap-admin" or "permissions grant" or "permissions revoke";
+var targetUserName = args.Length == 4 ? args[2] : null;
+var targetPermission = args.Length == 4 ? args[3] : null;
+if (targetPermission is not null && !PermissionAdministrationService.IsGrantable(targetPermission))
+{
+    // Refus avant toute lecture de configuration ou connexion.
+    Console.Error.WriteLine(
+        $"Refusé : permission non attribuable par cette commande. Admises : {string.Join(", ", Permissions.Grantable)}.");
     return 1;
 }
 
@@ -42,12 +68,12 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 // 1er contrôle, AVANT toute connexion : la chaîne configurée doit viser exactement la cible autorisée.
 var connectionViolations = BootstrapTargetPolicy.CheckConnectionString(connectionString);
-if (command == "bootstrap-admin" && connectionViolations.Count > 0)
+if (isWrite && connectionViolations.Count > 0)
 {
-    return RefuseTarget(connectionViolations, "aucune connexion n'a été ouverte");
+    return RefuseTarget(command, connectionViolations, "aucune connexion n'a été ouverte");
 }
 
-if (command == "status")
+if (!isWrite)
 {
     if (!TryForceReadOnlySession(connectionString, out var readOnlyConnectionString))
     {
@@ -81,15 +107,15 @@ Console.WriteLine($"Base cible     : {target.Database} (rôle {target.SessionUse
 // 2e contrôle, après connexion : identité relue côté serveur, avant toute lecture applicative ou écriture.
 var serverViolations = BootstrapTargetPolicy.CheckServer(target);
 var allViolations = connectionViolations.Concat(serverViolations).ToList();
-Console.WriteLine($"Cible bootstrap: {(allViolations.Count == 0 ? "autorisée" : "NON AUTORISÉE")}");
+Console.WriteLine($"Cible écriture : {(allViolations.Count == 0 ? "autorisée" : "NON AUTORISÉE")}");
 foreach (var violation in allViolations)
 {
     Console.WriteLine($"  - {violation}");
 }
 
-if (command == "bootstrap-admin" && serverViolations.Count > 0)
+if (isWrite && serverViolations.Count > 0)
 {
-    return RefuseTarget(serverViolations, "aucune modification effectuée");
+    return RefuseTarget(command, serverViolations, "aucune modification effectuée");
 }
 
 var pending = (await context.Database.GetPendingMigrationsAsync()).ToList();
@@ -99,7 +125,7 @@ Console.WriteLine($"Migrations     : {applied.Count} appliquée(s) [{string.Join
 if (pending.Count > 0)
 {
     Console.WriteLine("Bootstrap      : non vérifiable (migration en attente)");
-    if (command == "bootstrap-admin")
+    if (isWrite)
     {
         Console.Error.WriteLine("Précondition : migrations en attente. Appliquer d'abord le script SQL approuvé (aucune migration automatique).");
         return 2;
@@ -116,6 +142,24 @@ Console.WriteLine($"Comptes        : {await context.Users.CountAsync()}");
 if (command == "status")
 {
     return 0;
+}
+
+if (command == "permissions list")
+{
+    var accounts = await scope.ServiceProvider.GetRequiredService<IIdentityStore>().ListUsersAsync(CancellationToken.None);
+    foreach (var account in accounts)
+    {
+        var granted = account.Permissions.Select(p => p.Permission).Order(StringComparer.Ordinal).ToList();
+        Console.WriteLine(
+            $"  {account.UserName} ({(account.IsActive ? "actif" : "désactivé")}) : {(granted.Count == 0 ? "aucune permission" : string.Join(", ", granted))}");
+    }
+
+    return 0;
+}
+
+if (command is "permissions grant" or "permissions revoke")
+{
+    return await ChangePermissionAsync(command, targetUserName!, targetPermission!, target, scope.ServiceProvider, context);
 }
 
 if (completed)
@@ -151,7 +195,7 @@ if (password != PromptSecret("Confirmez le mot de passe : "))
 var finalViolations = BootstrapTargetPolicy.CheckServer(await ReadTargetAsync(context));
 if (finalViolations.Count > 0)
 {
-    return RefuseTarget(finalViolations, "aucune modification effectuée");
+    return RefuseTarget(command, finalViolations, "aucune modification effectuée");
 }
 
 var result = await bootstrap.CreateInitialAdministratorAsync(userName, displayName, password, CancellationToken.None);
@@ -205,10 +249,61 @@ static string PromptSecret(string label)
     }
 }
 
-static int RefuseTarget(IReadOnlyList<string> violations, string consequence)
+static async Task<int> ChangePermissionAsync(
+    string command, string userName, string permission, ServerTarget target, IServiceProvider services, MmvDbContext context)
+{
+    var grant = command == "permissions grant";
+    if (Console.IsInputRedirected)
+    {
+        Console.Error.WriteLine("Refusé : saisie interactive obligatoire (aucune entrée redirigée).");
+        return 4;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"{(grant ? "Attribution" : "Retrait")} demandé : permission {permission}, compte « {userName} ».");
+    Console.Write($"Confirmez la base cible en saisissant son nom ({target.Database}) : ");
+    if (Console.ReadLine()?.Trim() != target.Database)
+    {
+        Console.Error.WriteLine("Annulé : confirmation incorrecte.");
+        return 4;
+    }
+
+    // 3e contrôle, juste avant l'écriture : la cible n'a pas changé pendant la saisie interactive.
+    var finalViolations = BootstrapTargetPolicy.CheckServer(await ReadTargetAsync(context));
+    if (finalViolations.Count > 0)
+    {
+        return RefuseTarget(command, finalViolations, "aucune modification effectuée");
+    }
+
+    var administration = services.GetRequiredService<PermissionAdministrationService>();
+    var result = grant
+        ? await administration.GrantAsync(userName, permission, CancellationToken.None)
+        : await administration.RevokeAsync(userName, permission, CancellationToken.None);
+    switch (result.Status)
+    {
+        case PermissionChangeStatus.Granted or PermissionChangeStatus.Revoked or PermissionChangeStatus.Unchanged:
+            var outcome = result.Status switch
+            {
+                PermissionChangeStatus.Granted => "attribuée",
+                PermissionChangeStatus.Revoked => "retirée",
+                _ => "inchangée (déjà dans l'état demandé)",
+            };
+            Console.WriteLine(
+                $"Permission {permission} {outcome} (compte interne {result.UserId}). Permissions : {string.Join(", ", result.Permissions!)}.");
+            return 0;
+        case PermissionChangeStatus.UnknownAccount:
+            Console.Error.WriteLine("Refusé : compte introuvable (aucune modification).");
+            return 6;
+        default:
+            Console.Error.WriteLine("Refusé : permission non attribuable par cette commande.");
+            return 1;
+    }
+}
+
+static int RefuseTarget(string command, IReadOnlyList<string> violations, string consequence)
 {
     Console.Error.WriteLine(
-        $"Refusé : cible non autorisée pour bootstrap-admin ({consequence}). Seule cible admise en phase 02 : "
+        $"Refusé : cible non autorisée pour {command} ({consequence}). Seule cible d'écriture admise : "
         + $"base {BootstrapTargetPolicy.Database}, rôle {BootstrapTargetPolicy.Role}, port {BootstrapTargetPolicy.Port}, "
         + $"PostgreSQL {BootstrapTargetPolicy.ServerMajorVersion}, connexion locale.");
     foreach (var violation in violations)

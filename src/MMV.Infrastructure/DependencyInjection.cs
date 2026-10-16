@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MMV.Application.Clients;
 using MMV.Application.Identity;
+using MMV.Infrastructure.Clients;
 using MMV.Infrastructure.Identity;
 using MMV.Infrastructure.Persistence;
 
@@ -14,7 +16,7 @@ public static class DependencyInjection
     public const string ConnectionStringName = "Mmv";
 
     /// <summary>
-    /// Enregistre la persistance PostgreSQL et les services d'identité. La chaîne de connexion est lue
+    /// Enregistre la persistance PostgreSQL, les services d'identité et le module Clients. La chaîne de connexion est lue
     /// à la première résolution du contexte, jamais au démarrage : l'API démarre sans base configurée.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -36,6 +38,11 @@ public static class DependencyInjection
         services.TryAddScoped<IIdentityStore, IdentityStore>();
         services.TryAddScoped<AuthService>();
         services.TryAddScoped<BootstrapService>();
+        services.TryAddScoped<PermissionAdministrationService>();
+
+        // Clients (phase 03-A2).
+        services.TryAddScoped<IClientStore, ClientStore>();
+        services.TryAddScoped<ClientService>();
 
         return services;
     }

@@ -6,8 +6,9 @@ using Npgsql;
 namespace MMV.Maintenance;
 
 /// <summary>
-/// Cible UNIQUE autorisée pour <c>bootstrap-admin</c> en phase 02 : base <c>mmv_v2_dev</c>, rôle
-/// <c>mmv_v2_dev</c>, port 5433, PostgreSQL 18, connexion locale (loopback) uniquement.
+/// Cible UNIQUE autorisée pour <c>bootstrap-admin</c> (phase 02) et <c>permissions grant|revoke</c>
+/// (phase 03-A2) : base <c>mmv_v2_dev</c>, rôle <c>mmv_v2_dev</c>, port 5433, PostgreSQL 18, connexion
+/// locale (loopback) uniquement.
 /// Deux contrôles, tous deux avant la moindre écriture :
 /// <list type="number">
 ///   <item><see cref="CheckConnectionString"/> : chaîne configurée, AVANT toute connexion ;</item>

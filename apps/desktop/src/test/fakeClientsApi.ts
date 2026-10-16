@@ -1,8 +1,9 @@
-// Routes /api/clients du double de test (src/test/fakeMmvApi.ts) — contrat **PROPOSED** de la Phase 03-A
-// (docs/phase/03/API_CLIENTS_PROPOSED.md). Données FICTIVES fournies par chaque test, en mémoire du
-// processus de test uniquement ; jamais persistées ni montrées hors des tests. Les permissions
-// clients.read / clients.write / clients.archive sont celles proposées à G03-METIER (non ratifiées).
-// Le double reproduit le contrat (statuts, corps, liste blanche), pas la sécurité ni les règles complètes.
+// Routes /api/clients du double de test (src/test/fakeMmvApi.ts) — contrat implémenté par MMV.Api en 03-A2
+// (docs/phase/03/API_CLIENTS.md ; schémas : src/api/contract/clients.openapi.json). Données FICTIVES fournies par
+// chaque test, en mémoire du processus de test uniquement ; jamais persistées ni montrées hors des tests.
+// Permissions clients.read / clients.write / clients.archive (G03-METIER B acceptée le 17/10/2026).
+// Le double reproduit le contrat (statuts, corps, liste blanche, ordre des contrôles), pas la sécurité ni les
+// règles complètes : celles-ci sont prouvées côté serveur (tests/MMV.Api.Tests, tests/MMV.PostgreSql.Tests).
 import type { IncomingMessage, ServerResponse } from "node:http";
 
 export const CLIENT_PERMISSIONS = { read: "clients.read", write: "clients.write", archive: "clients.archive" } as const;
@@ -90,7 +91,7 @@ const summary = ({ id, reference, firstName, lastName, phone, email, city, statu
   version,
 });
 
-/** Validation minimale du double (les règles complètes seront éprouvées côté serveur au sous-lot 03-A2). */
+/** Validation minimale du double (règles complètes : MMV.Application ClientInputValidator, testées côté serveur). */
 function validate(body: Record<string, unknown> | null): Record<string, string[]> | null {
   const errors: Record<string, string[]> = {};
   for (const field of ["firstName", "lastName"] as const) {
@@ -157,12 +158,14 @@ export async function handleClients(
     return send(response, 200, { items, page, pageSize, totalCount: filtered.length });
   }
 
-  const body = method === "GET" ? null : ((await context.readBody()) as Record<string, unknown> | null);
+  const raw = method === "GET" ? null : await context.readBody();
+  const body = typeof raw === "object" && raw !== null && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
 
   if (method === "POST" && id === undefined) {
     if (!can(CLIENT_PERMISSIONS.write)) return send(response, 403, { code: "forbidden" });
+    if (body === null) return send(response, 400, { code: "invalid_body" });
     const errors = validate(body);
-    if (errors || body === null) return send(response, 422, { code: "validation_failed", errors });
+    if (errors) return send(response, 422, { code: "validation_failed", errors });
     const now = new Date().toISOString();
     const index = clients.length + 1;
     const record: FakeClientRecord = {
@@ -187,11 +190,13 @@ export async function handleClients(
 
   if (!can(action === undefined ? CLIENT_PERMISSIONS.write : CLIENT_PERMISSIONS.archive)) return send(response, 403, { code: "forbidden" });
   if (!client) return send(response, 404, { code: "client_not_found" });
-  if (typeof body?.version !== "number") return send(response, 400, { code: "version_required" });
+  if (body === null) return send(response, 400, { code: "invalid_body" });
+  if (typeof body.version !== "number") return send(response, 400, { code: "version_required" });
+  // Même ordre que MMV.Api : un client archivé est refusé en modification avant le contrôle de version.
+  if (method === "PUT" && action === undefined && client.status === "archived") return send(response, 409, { code: "client_archived" });
   if (body.version !== client.version) return send(response, 409, { code: "version_conflict" });
 
   if (method === "PUT" && action === undefined) {
-    if (client.status === "archived") return send(response, 409, { code: "client_archived" });
     const errors = validate(body);
     if (errors) return send(response, 422, { code: "validation_failed", errors });
     Object.assign(client, pickInput(body), { version: client.version + 1, updatedAtUtc: new Date().toISOString() });

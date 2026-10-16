@@ -1,8 +1,10 @@
-// Contrat HTTP Clients (Phase 03-A) — **PROPOSED**, non ratifié : aucune route /api/clients n'existe encore
-// côté MMV.Api. Référence : docs/phase/03/API_CLIENTS_PROPOSED.md. Ce module n'est appelé que si le service
-// Clients est activé (clients/clientsService.ts) ; avant ratification, l'écran affiche honnêtement l'état
-// « service non activé » au lieu d'interroger une route inexistante.
-// Le serveur reste seul juge des droits (permissions clients.* proposées) et des règles de validation.
+// Contrat HTTP Clients — implémenté par MMV.Api au sous-lot 03-A2 (G03-METIER A/B acceptés, C accepté sur le
+// principe le 17/10/2026). Référence : docs/phase/03/API_CLIENTS.md. Les types ci-dessous correspondent aux
+// schémas OpenAPI générés par le serveur (instantané src/api/contract/clients.openapi.json, vérifié par
+// src/api/clientsContract.test.ts) : ClientSummary ↔ ClientSummaryResponse, ClientDetail ↔ ClientDetailResponse,
+// ClientPage ↔ ClientPageResponse, ClientInput ↔ ClientInputRequest (+ version : ClientUpdateRequest).
+// Les parseurs stricts restent la garde à l'exécution (aucun type généré ne valide une réponse).
+// Le serveur reste seul juge des droits (clients.read / clients.write / clients.archive) et des règles de validation.
 import { type ApiResult, requestJson } from "./client.ts";
 
 export type ClientStatus = "active" | "archived";
@@ -10,7 +12,7 @@ export type ClientStatus = "active" | "archived";
 /** Ligne de liste : seulement les colonnes affichées (minimisation des données personnelles). */
 export interface ClientSummary {
   id: string;
-  /** Référence lisible attribuée par le serveur (format proposé `CLI-000123`). */
+  /** Référence lisible attribuée par PostgreSQL (`CLI-000123`, 6 chiffres au minimum), jamais réutilisée. */
   reference: string;
   firstName: string;
   lastName: string;
@@ -19,7 +21,7 @@ export interface ClientSummary {
   city: string | null;
   status: ClientStatus;
   createdAtUtc: string;
-  /** Jeton de concurrence optimiste (xmin PostgreSQL proposé), renvoyé tel quel à chaque écriture. */
+  /** Jeton de concurrence optimiste (xmin PostgreSQL), renvoyé tel quel à chaque écriture. */
   version: number;
 }
 
@@ -40,7 +42,7 @@ export interface ClientPage {
   totalCount: number;
 }
 
-/** Champs saisissables (PROPOSED). Les champs sensibles de la maquette (sécurité sociale, mutuelle) sont exclus. */
+/** Champs saisissables (D-03-02). Les champs sensibles de la maquette (sécurité sociale, mutuelle) sont exclus (D-03-03). */
 export interface ClientInput {
   firstName: string;
   lastName: string;
@@ -67,21 +69,21 @@ export interface ClientListParams {
   pageSize: number;
 }
 
-/** Bornes proposées du listing (liste blanche côté serveur, rejet 400 au-delà). */
+/** Bornes du listing (liste blanche côté serveur, rejet 400 `invalid_query` au-delà). */
 export const CLIENT_PAGE_SIZE = 20;
 export const CLIENT_MAX_PAGE_SIZE = 100;
 export const CLIENT_SEARCH_MIN_LENGTH = 2;
 export const CLIENT_SEARCH_MAX_LENGTH = 100;
-const SORT_FIELDS: readonly ClientSortField[] = ["name", "createdAt", "city"];
-const STATUS_FILTERS: readonly ClientStatusFilter[] = ["active", "archived", "all"];
+export const CLIENT_SORT_FIELDS: readonly ClientSortField[] = ["name", "createdAt", "city"];
+export const CLIENT_STATUS_FILTERS: readonly ClientStatusFilter[] = ["active", "archived", "all"];
 
 /** Chaîne de requête du listing : uniquement des valeurs de liste blanche, recherche bornée. */
 export function clientListQuery(params: ClientListParams): string {
   const query = new URLSearchParams();
   const search = params.search.trim().slice(0, CLIENT_SEARCH_MAX_LENGTH);
   if (search.length >= CLIENT_SEARCH_MIN_LENGTH) query.set("q", search);
-  query.set("status", STATUS_FILTERS.includes(params.status) ? params.status : "active");
-  query.set("sort", SORT_FIELDS.includes(params.sort) ? params.sort : "name");
+  query.set("status", CLIENT_STATUS_FILTERS.includes(params.status) ? params.status : "active");
+  query.set("sort", CLIENT_SORT_FIELDS.includes(params.sort) ? params.sort : "name");
   query.set("dir", params.direction === "desc" ? "desc" : "asc");
   query.set("page", String(Math.max(1, Math.trunc(params.page) || 1)));
   query.set("pageSize", String(Math.min(CLIENT_MAX_PAGE_SIZE, Math.max(1, Math.trunc(params.pageSize) || CLIENT_PAGE_SIZE))));
