@@ -19,7 +19,7 @@
 | ID | Sujet | État | Bloque |
 |---|---|---|---|
 | O-02-01 | GO unique : migration d'identité sur `mmv_v2_dev` + `mmv_v2_test` et bootstrap administrateur réel | OPEN — dossier ci-dessous, présenté le 16/10/2026. **GO accordé le 16/10/2026 (« GO O-02-01 ACCORDÉ ») et exécuté** : § Exécution O-02-01 | — (levé) |
-| SEC-02-01 | **Incident** : mots de passe PostgreSQL de `mmv_v2_dev` et `mmv_v2_test` affichés dans une session agent le 16/10/2026 | OPEN — **rotation des deux mots de passe requise** (action propriétaire) : § Incident SEC-02-01 | distribution, revue de sécurité |
+| SEC-02-01 | **Incident** : mots de passe PostgreSQL de `mmv_v2_dev` et `mmv_v2_test` affichés dans une session agent le 16/10/2026 | OPEN — **rotation des deux mots de passe requise** (action propriétaire) : § Incident SEC-02-01. **CLOSED 16/10/2026** : rotation confirmée par le propriétaire, vérifiée (Q-02-63) | — (levé) |
 | O-02-14 | Base injoignable : une requête `/api` authentifiée aboutit à une exception non gérée (500 générique, journalisée sans secret) au lieu d'un 503 explicite ; le client n'affiche aucun faux succès | PROPOSED (16/10/2026) — à traiter avec la résilience des modules métier | aucune |
 | O-02-15 | `Invoke-MmvSqlScript.ps1` : la requête d'**affichage** finale (après `COMMIT`) échoue sous Windows PowerShell 5.1 (guillemets de `"__EFMigrationsHistory"` retirés au passage à `psql.exe`) ; sans effet sur l'application | PROPOSED (16/10/2026) — correction à soumettre au propriétaire (le script approuvé n'est pas modifié sans GO) | aucune |
 | O-02-09 | Zoom clavier WebView2 activé (`zoomHotkeysEnabled`, Ctrl +/−) : accessibilité et preuve native des zooms 125/150 % | PROPOSED | aucune |
@@ -143,6 +143,8 @@ Le compte administrateur réel n'a été utilisé par aucun test (0 session sur 
 
 **État : `PHASE02_IMPLEMENTED — READY_FOR_OWNER_REVIEW`, avec action propriétaire ouverte SEC-02-01 (rotation des mots de passe PostgreSQL).** Ni `APPROVED` ni `MERGED`. Aucun push, aucune PR, aucun merge, aucun travail Phase 03.
 
+**Amendement daté 16/10/2026 — clôture.** Audit externe final : GO technique pour la publication et le merge manuel (message du propriétaire « CLÔTURE PHASE 02 »). SEC-02-01 clos (§ Incident SEC-02-01). **État : `PHASE02_READY_FOR_MANUAL_MERGE`** : branche `feat/phase-02-auth-shell` publiée sur `origin` ; PR et merge réservés au propriétaire ; ni `MERGED` ni Phase 03.
+
 ## Incident SEC-02-01 — exposition des mots de passe PostgreSQL (16/10/2026)
 
 **Faits.** Le 16/10/2026 à 08:50:18Z, pendant la session agent d'application d'O-02-01 (avant la migration), une commande de diagnostic **en lecture seule** destinée à lister les clés des chaînes de connexion **en excluant le mot de passe** a utilisé `$b.ConnectionString = …` sous Windows PowerShell 5.1. Même cause que le défaut du script ci-dessus : l'affectation crée une clé `ConnectionString` contenant la chaîne brute ; le filtre par nom de clé ne s'est pas appliqué. La sortie contenait les **deux chaînes complètes, mots de passe compris**, des rôles `mmv_v2_dev` et `mmv_v2_test`.
@@ -158,3 +160,5 @@ Le compte administrateur réel n'a été utilisé par aucun test (0 session sur 
 4. Facultatif : purger le transcript local de la session concernée ; revoir `listen_addresses` / `pg_hba.conf` (relève d'O-B12 / réseau).
 
 **Mesures déjà prises.** Accesseur explicite `set_ConnectionString` dans le script ; diagnostics ultérieurs limités aux noms de clés après analyse effective ; contrôle des journaux par recherche des valeurs exactes (Q-02-56). **État : OPEN** jusqu'à confirmation de la rotation par le propriétaire.
+
+**Amendement daté 16/10/2026 — clôture.** Le propriétaire confirme avoir changé les mots de passe des rôles `mmv_v2_dev` et `mmv_v2_test` et mis à jour les deux user-secrets. Contrôle sans affichage : nouvelles valeurs différentes des valeurs exposées ; connexion en lecture seule OK sur les deux bases (identité serveur conforme) ; anciennes valeurs refusées ; `MMV.Maintenance status` OK ; `dotnet test MMV.slnx` **128/128**, aucun test PostgreSQL ignoré (Q-02-63, `evidence/P02_SEC-02-01_rotation_check_20261016T2144Z.log`). **SEC-02-01 : CLOSED.** Points facultatifs laissés au propriétaire : purge du transcript local, revue `listen_addresses` / `pg_hba.conf`.

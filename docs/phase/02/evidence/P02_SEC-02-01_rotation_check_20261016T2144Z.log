@@ -1,0 +1,14 @@
+﻿# P02 SEC-02-01 controle apres rotation, 20261016T2144Z (UTC). Rotation des mots de passe des roles mmv_v2_dev / mmv_v2_test et mise a jour des user-secrets effectuees par le PROPRIETAIRE. Aucune valeur affichee.
+# user-secrets : mmv-v2-api (ConnectionStrings:Mmv) et mmv-v2-postgresql-tests (ConnectionStrings:MmvTest) modifies le 16/10/2026 vers 23:31 (heure locale) ; valeurs differentes des valeurs exposees (comparaison programmatique, resultat booleen seul).
+$ psql (lecture seule, mot de passe des user-secrets passe par PGPASSWORD au seul processus) : SELECT current_database(), current_user, inet_server_port(), transaction_read_only
+mmv_v2_dev|mmv_v2_dev|5433|on  exit=0
+mmv_v2_test|mmv_v2_test|5433|on  exit=0
+# Anciennes valeurs exposees : connexion refusee sur les deux roles (psql exit=2) ; motif detaille non releve.
+$ dotnet run --project src/MMV.Maintenance --no-build -- status
+Base cible     : mmv_v2_dev (role mmv_v2_dev, port 5433, PostgreSQL 18.6) ; Cible bootstrap: autorisee ; Migrations : 2 appliquees, 0 en attente ; Bootstrap : deja effectue ; Comptes : 1
+exit=0
+$ dotnet test MMV.slnx
+Reussi! - echec : 0, reussite : 20, ignoree(s) : 0, total : 20 - MMV.PostgreSql.Tests.dll
+Reussi! - echec : 0, reussite : 38, ignoree(s) : 0, total : 38 - MMV.Maintenance.Tests.dll
+Reussi! - echec : 0, reussite : 70, ignoree(s) : 0, total : 70 - MMV.Api.Tests.dll
+exit=0  (128/128, aucun test PostgreSQL ignore)

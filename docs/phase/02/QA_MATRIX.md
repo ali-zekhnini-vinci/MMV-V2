@@ -102,4 +102,6 @@ GO O-02-01 accordé puis bootstrap réel confirmé par le propriétaire (`GATES_
 | Q-02-61 | Graphify CLI | `graphify update .` | PASS | 1530 nœuds, 2627 arêtes, 108 communautés (AST local, sans extraction LLM) |
 | Q-02-62 | Non testé / limites | — | NOT_TESTED | verrouillage après 5 échecs et 429 : prouvés sur doubles (Q-02-15), non rejoués en natif ; expiration réelle 30 min / 8 h : doubles seulement ; connexion du compte administrateur réel : **volontairement** non testée ; `npx tauri build` : `NOT_RERUN` depuis Q-02-41 ; Serena MCP TypeScript : BLOCKED (Q-02-09) ; TLS LAN, multiposte, installateur : hors périmètre |
 
+| Q-02-63 | Après rotation SEC-02-01 (16/10/2026, rotation par le propriétaire) | comparaison programmatique des user-secrets aux valeurs exposées (booléen) ; `psql` en lecture seule ×2 ; anciennes valeurs ; `MMV.Maintenance status` ; `dotnet test MMV.slnx` | PASS | nouvelles valeurs ≠ valeurs exposées ; `mmv_v2_dev` et `mmv_v2_test` : connexion OK, identité conforme ; anciennes valeurs refusées (exit 2) ; status OK ; **128/128**, 0 ignoré. `evidence/P02_SEC-02-01_rotation_check_20261016T2144Z.log` |
+
 Q-02-19 et Q-02-43 (`NOT_TESTED` avant GO) sont couverts par Q-02-49 et Q-02-52 à Q-02-55 ; leurs lignes datées restent inchangées.

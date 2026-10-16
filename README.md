@@ -2,6 +2,8 @@
 
 ## Statut actuel — phase 02 (16/10/2026)
 
+**Amendement daté 16/10/2026 — clôture : `PHASE02_READY_FOR_MANUAL_MERGE`.** Audit externe final : GO technique pour la publication et le merge manuel. **SEC-02-01 CLOSED** : rotation des deux mots de passe confirmée par le propriétaire et vérifiée sans affichage (connexions OK, anciennes valeurs refusées, `dotnet test MMV.slnx` 128/128). Branche `feat/phase-02-auth-shell` publiée sur `origin` ; PR et merge réservés au propriétaire ; Phase 03 non commencée. Le paragraphe suivant est conservé tel qu'à la livraison.
+
 **Phase 02 `PHASE02_IMPLEMENTED — READY_FOR_OWNER_REVIEW`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge ; ni `APPROVED` ni `MERGED`). **Action propriétaire ouverte SEC-02-01 : rotation des mots de passe PostgreSQL de `mmv_v2_dev` et `mmv_v2_test`**, affichés dans une session agent le 16/10/2026 (absents du dépôt et de son historique) — procédure : [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md) § Incident SEC-02-01. **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
 
 Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **16/10/2026, après GO O-02-01 :** migration d'identité appliquée à `mmv_v2_dev` et `mmv_v2_test` ; premier administrateur créé par le propriétaire, second bootstrap refusé (code 3) ; parcours natif Tauri → HTTPS → MMV.Api → PostgreSQL (`mmv_v2_test`, comptes éphémères) PASS : connexion, permissions 401/403, déconnexion, révocation, désactivation, résilience API/base, redémarrage client ; journaux sans secret. Tests : .NET 128/128 (dont PostgreSQL 20/20), frontend 81/81. Non testé : `QA_MATRIX.md` Q-02-62.
@@ -90,7 +92,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (`READY_FOR_OWNER_REVIEW`, SEC-02-01 ouvert) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
+- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (`PHASE02_READY_FOR_MANUAL_MERGE`, SEC-02-01 clos) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).
