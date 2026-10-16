@@ -1,23 +1,31 @@
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { PERMISSION_SYSTEM_ADMIN } from "../api/auth.ts";
-import { findNavItemByPath, initialOf, NAV_ITEMS, NAV_SECTIONS, roleLabel, viewAccess, visibleSections } from "./navigation.ts";
+import { findNavItem, findNavItemByPath, initialOf, NAV_ITEMS, NAV_SECTIONS, roleLabel, routePattern, viewAccess, visibleSections } from "./navigation.ts";
 
 const ADMIN = [PERMISSION_SYSTEM_ADMIN];
 const USER: string[] = [];
 
 describe("navigation et garde UI", () => {
-  test("les modules métier sont tous marqués « phase suivante » (aucun faux écran)", () => {
+  // Phase 03-A (17/10/2026) : Clients devient disponible (écrans, données soumises à G03-METIER) ;
+  // Rendez-vous est annoncé pour 03-B. Les autres modules restent « phase suivante » (aucun faux écran).
+  test("modules d'une phase suivante : tous sauf Clients", () => {
     const later = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => item.availability === "later");
     assert.deepEqual(
       later.map((item) => item.id),
-      ["clients", "products", "prescriptions", "orders", "sales", "inventory", "notifications", "reports", "settings"],
+      ["appointments", "products", "prescriptions", "orders", "sales", "inventory", "notifications", "reports", "settings"],
     );
+    assert.match(findNavItem("appointments").note ?? "", /03-B/);
   });
 
-  test("seules les entrées techniques sont disponibles", () => {
+  test("entrées disponibles : techniques + Clients", () => {
     const available = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => item.availability === "available");
-    assert.deepEqual(available.map((item) => item.id), ["home", "accounts", "diagnostic"]);
+    assert.deepEqual(available.map((item) => item.id), ["home", "clients", "accounts", "diagnostic"]);
+  });
+
+  test("Clients : aucune permission requise côté UI (le serveur reste seul juge, droits clients.* proposés)", () => {
+    assert.equal(findNavItem("clients").requires, undefined);
+    assert.equal(viewAccess("clients", USER), "allowed");
   });
 
   test("Comptes est masqué pour un compte sans system.admin", () => {
@@ -33,7 +41,8 @@ describe("navigation et garde UI", () => {
 
   test("viewAccess : allowed / later / forbidden", () => {
     assert.equal(viewAccess("home", USER), "allowed");
-    assert.equal(viewAccess("clients", ADMIN), "later");
+    assert.equal(viewAccess("clients", ADMIN), "allowed");
+    assert.equal(viewAccess("appointments", ADMIN), "later");
     assert.equal(viewAccess("accounts", USER), "forbidden");
     assert.equal(viewAccess("accounts", ADMIN), "allowed");
   });
@@ -45,6 +54,16 @@ describe("navigation et garde UI", () => {
     assert.equal(findNavItemByPath("/comptes")?.id, "accounts");
     assert.equal(findNavItemByPath("/diagnostic")?.id, "diagnostic");
     assert.equal(findNavItemByPath("/inexistant"), undefined);
+  });
+
+  test("sous-routes du module Clients : entrée active, motif imbriqué, pas de faux préfixe", () => {
+    assert.equal(findNavItemByPath("/clients")?.id, "clients");
+    assert.equal(findNavItemByPath("/clients/nouveau")?.id, "clients");
+    assert.equal(findNavItemByPath("/clients/0190-abc/modifier")?.id, "clients");
+    assert.equal(findNavItemByPath("/clientsX"), undefined);
+    assert.equal(findNavItemByPath("/comptes/x"), undefined);
+    assert.equal(routePattern(findNavItem("clients")), "/clients/*");
+    assert.equal(routePattern(findNavItem("accounts")), "/comptes");
   });
 
   test("libellés de rôle et initiale", () => {

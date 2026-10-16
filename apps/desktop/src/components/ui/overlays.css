@@ -1,0 +1,127 @@
+/* ============================================================
+   MMV V2 — Boîtes de confirmation et onglets (composants shadcn/ui adaptés, phase 03)
+   Gabarit : Lot 2 DRAFT (.scrim, .modal, .tabs) ; jetons MMV uniquement. Hors couche.
+   ============================================================ */
+
+.mmv-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--surface-overlay);
+  backdrop-filter: blur(2px);
+}
+
+.mmv-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 41;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: var(--space-6) var(--space-6) 26px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-3);
+  transform: translate(-50%, -50%);
+  color: var(--text-primary);
+}
+
+.mmv-dialog:focus {
+  outline: none;
+}
+
+.mmv-dialog__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+}
+
+.mmv-dialog__icon--warning {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.mmv-dialog__icon--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.mmv-dialog__icon--error {
+  background: var(--error-soft);
+  color: var(--error-text);
+}
+
+.mmv-dialog__icon--info {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+.mmv-dialog__title {
+  margin: 0 0 10px;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: var(--weight-bold);
+}
+
+.mmv-dialog__text {
+  margin: 0 0 var(--space-5);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.mmv-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.mmv-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mmv-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: -1px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.mmv-tabs__tab:hover {
+  color: var(--text-primary);
+}
+
+.mmv-tabs__tab[data-state="active"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+.mmv-tabs__tab:focus-visible {
+  outline: none;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
+  box-shadow: var(--shadow-focus);
+}
+
+.mmv-tabs__panel:focus-visible {
+  outline: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-focus);
+}

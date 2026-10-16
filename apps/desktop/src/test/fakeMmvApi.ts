@@ -3,6 +3,7 @@
 // src/MMV.Api/Auth/ (statuts, corps), pas leur sécurité : la preuve serveur est dans tests/MMV.*.Tests.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { type FakeClientRecord, type FakeClientsOptions, handleClients, seedClients } from "./fakeClientsApi.ts";
 
 export interface FakeAccount {
   userName: string;
@@ -12,7 +13,7 @@ export interface FakeAccount {
   active?: boolean;
 }
 
-export interface FakeApiOptions {
+export interface FakeApiOptions extends FakeClientsOptions {
   accounts?: FakeAccount[];
   /** Simule une base indisponible (/health/ready 503). */
   databaseDown?: boolean;
@@ -32,6 +33,8 @@ export interface FakeApi {
   /** Retire une permission à un compte (sessions comprises). */
   removePermission: (userName: string, permission: string) => void;
   activeSessions: () => number;
+  /** Clients fictifs du double (phase 03-A), modifiables pour simuler un autre poste. */
+  clients: FakeClientRecord[];
   stop: () => Promise<void>;
 }
 
@@ -49,6 +52,7 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
   const sessions = new Map<string, string>(); // jeton -> userName
   const requests: FakeApi["requests"] = [];
   let counter = 0;
+  const clients = seedClients(options.clients ?? []);
 
   const send = (response: ServerResponse, status: number, body?: unknown) => {
     response.writeHead(status, body === undefined ? {} : { "content-type": "application/json" });
@@ -140,6 +144,15 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
           })),
         );
       }
+      if (auth && (path === "/api/clients" || path.startsWith("/api/clients/") || path.startsWith("/api/clients?"))) {
+        return handleClients(request, response, {
+          permissions: auth.account.permissions,
+          clients,
+          options,
+          send,
+          readBody: () => readBody(request),
+        });
+      }
       return send(response, 404, { code: "not_found" });
     })();
   });
@@ -157,6 +170,7 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
       if (account) account.permissions = account.permissions.filter((item) => item !== permission);
     },
     activeSessions: () => sessions.size,
+    clients,
     stop: () =>
       new Promise<void>((resolve) => {
         server.closeAllConnections();

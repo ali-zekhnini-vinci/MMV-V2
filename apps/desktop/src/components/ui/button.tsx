@@ -1,5 +1,6 @@
 // Bouton — composant shadcn/ui (structure cva + Radix Slot) adapté au Design System MMV : variantes et
-// cotes reprises des styles validés (login : MMV-Login-handoff ; shell : MMV-Shell-handoff §7), couleurs
+// cotes reprises des styles validés (login : MMV-Login-handoff ; shell : MMV-Shell-handoff §7 ; Lot 2 DRAFT pour
+// `tertiary`/`danger`, phase 03), couleurs
 // exclusivement issues des jetons MMV (styles/index.css). Aucun thème shadcn par défaut.
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -20,6 +21,12 @@ const buttonVariants = cva(
         // Bouton d'icône (barre supérieure, sidebar) : transparent, survol discret.
         ghost:
           "rounded-sm bg-transparent font-normal text-text-secondary enabled:hover:bg-surface-hover enabled:hover:text-text-primary disabled:text-text-disabled",
+        // Action tertiaire / lien (Retour à la liste, Créer un autre client) : texte accent (Lot 2 `.btn-ter`).
+        tertiary:
+          "rounded-sm bg-transparent text-accent enabled:hover:bg-accent-soft disabled:text-text-disabled",
+        // Action à risque non destructive (Archiver) : carte bordée, texte erreur (Lot 2 `.btn-danger`).
+        danger:
+          "rounded-sm border border-border-strong bg-surface-card text-error-text enabled:hover:bg-error-soft disabled:text-text-disabled",
       },
       size: {
         default: "h-10 gap-1.5 px-4",

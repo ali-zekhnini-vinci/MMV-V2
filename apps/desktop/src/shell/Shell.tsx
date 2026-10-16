@@ -3,10 +3,12 @@
 // la grille CSS replace visuellement la sidebar à gauche. La barre d'état n'est pas focalisable.
 // Navigation : React Router, routeur MÉMOIRE (client de bureau Tauri sans barre d'adresse) — chaque
 // ouverture de session démarre sur l'Accueil, aucune route n'est restaurée après fermeture/rechargement.
+import { QueryClientProvider } from "@tanstack/react-query";
 import { RefreshCw, ServerCrash } from "lucide-react";
-import { useCallback, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate } from "react-router";
 import type { SessionInfo } from "../api/auth.ts";
+import { createMmvQueryClient } from "../api/queryClient.ts";
 import { useAuth } from "../auth/authContext.ts";
 import { Button } from "../components/ui/button.tsx";
 import { AccountsView } from "../views/AccountsView.tsx";
@@ -14,7 +16,8 @@ import { DiagnosticView } from "../views/DiagnosticView.tsx";
 import { ForbiddenView } from "../views/ForbiddenView.tsx";
 import { HomeView } from "../views/HomeView.tsx";
 import { UnavailableView } from "../views/UnavailableView.tsx";
-import { findNavItem, findNavItemByPath, NAV_ITEMS, type NavItem, type ViewId, viewAccess, visibleSections } from "./navigation.ts";
+import { type LeaveGuard, NavigationGuardContext, type NavigationGuardRegistry } from "./navigationGuard.ts";
+import { findNavItem, findNavItemByPath, NAV_ITEMS, type NavItem, routePattern, type ViewId, viewAccess, visibleSections } from "./navigation.ts";
 import { Sidebar } from "./Sidebar.tsx";
 import { StatusBar } from "./StatusBar.tsx";
 import { useTheme } from "./theme.ts";
@@ -22,14 +25,23 @@ import { Topbar } from "./Topbar.tsx";
 import { useServerHealth } from "./useServerHealth.ts";
 import "./Shell.css";
 
+// Module Clients chargé à la demande (bundle séparé : TanStack Table, dialogues, onglets), O-02-13.
+const ClientsModule = lazy(() => import("../clients/ClientsModule.tsx").then((module) => ({ default: module.ClientsModule })));
+
 /** En dessous de cette largeur (CSS px, zoom compris), la sidebar démarre réduite (handoff §10). */
 export const COLLAPSE_BELOW_PX = 1280;
 
 export function Shell({ session }: { session: SessionInfo }) {
+  // Cache TanStack Query propre à la session : créé à l'ouverture du Shell, vidé à sa fermeture
+  // (déconnexion, expiration) — aucune donnée serveur ne passe d'une session à l'autre ni sur disque.
+  const [queryClient] = useState(createMmvQueryClient);
+  useEffect(() => () => queryClient.clear(), [queryClient]);
   return (
-    <MemoryRouter>
-      <ShellLayout session={session} />
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <ShellLayout session={session} />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
@@ -46,7 +58,21 @@ function ShellLayout({ session }: { session: SessionInfo }) {
   const sections = visibleSections(user.permissions);
   const current: ViewId = findNavItemByPath(location.pathname)?.id ?? "home";
 
-  const navigate = useCallback(
+  // Garde de sortie (formulaire modifié) : consultée avant tout changement d'entrée de menu.
+  const leaveGuard = useRef<LeaveGuard | null>(null);
+  const guardRegistry = useMemo<NavigationGuardRegistry>(
+    () => ({
+      register: (guard) => {
+        leaveGuard.current = guard;
+        return () => {
+          if (leaveGuard.current === guard) leaveGuard.current = null;
+        };
+      },
+    }),
+    [],
+  );
+
+  const goTo = useCallback(
     async (id: ViewId) => {
       routerNavigate(findNavItem(id).path);
       // L'écran Comptes interroge lui-même l'API protégée ; les autres revalident la session
@@ -59,6 +85,16 @@ function ShellLayout({ session }: { session: SessionInfo }) {
     [refreshSession, routerNavigate],
   );
 
+  const navigate = useCallback(
+    (id: ViewId) => {
+      const guard = leaveGuard.current;
+      // La garde affiche sa confirmation et rappellera `goTo` seulement si l'utilisateur confirme.
+      if (guard !== null && guard(() => void goTo(id))) return;
+      void goTo(id);
+    },
+    [goTo],
+  );
+
   const handleSignOut = useCallback(() => {
     void signOut();
   }, [signOut]);
@@ -67,7 +103,14 @@ function ShellLayout({ session }: { session: SessionInfo }) {
   const renderView = (item: NavItem) => {
     const access = viewAccess(item.id, user.permissions);
     if (access === "forbidden") return <ForbiddenView reason="Votre compte ne dispose pas du droit requis pour cet écran." />;
-    if (access === "later") return <UnavailableView label={item.label} />;
+    if (access === "later") return <UnavailableView label={item.label} note={item.note} />;
+    if (item.id === "clients") {
+      return (
+        <Suspense fallback={<p role="status" className="view__muted">Chargement du module Clients…</p>}>
+          <ClientsModule />
+        </Suspense>
+      );
+    }
     if (item.id === "accounts") return <AccountsView />;
     if (item.id === "diagnostic") return <DiagnosticView baseUrl={baseUrl} health={health} />;
     return <HomeView user={user} />;
@@ -84,7 +127,7 @@ function ShellLayout({ session }: { session: SessionInfo }) {
         collapsed={collapsed}
         theme={theme}
         user={user}
-        onNavigate={(id) => void navigate(id)}
+        onNavigate={navigate}
         onToggleCollapsed={() => setCollapsed((value) => !value)}
         onSignOut={handleSignOut}
       />
@@ -100,12 +143,14 @@ function ShellLayout({ session }: { session: SessionInfo }) {
             </Button>
           </div>
         )}
-        <Routes>
-          {NAV_ITEMS.map((item) => (
-            <Route key={item.id} path={item.path} element={renderView(item)} />
-          ))}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <NavigationGuardContext.Provider value={guardRegistry}>
+          <Routes>
+            {NAV_ITEMS.map((item) => (
+              <Route key={item.id} path={routePattern(item)} element={renderView(item)} />
+            ))}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </NavigationGuardContext.Provider>
       </main>
       <StatusBar expiresAtUtc={session.expiresAtUtc} health={health.status} checking={health.checking} />
     </div>

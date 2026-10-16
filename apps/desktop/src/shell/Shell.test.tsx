@@ -62,10 +62,28 @@ describe("Shell", () => {
 
   test("module d'une phase suivante : écran explicite, aucun CRUD", async () => {
     const user = await signIn(ADMIN);
-    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
-    await screen.findByRole("heading", { name: "Clients" });
+    await user.click(within(nav()).getByRole("button", { name: /^Produits/ }));
+    await screen.findByRole("heading", { name: "Produits" });
     screen.getByText(/Disponible dans une phase suivante/);
     assert.equal(screen.queryByRole("table"), null);
+  });
+
+  test("Rendez-vous : annoncé pour 03-B, aucun calendrier prétendu", async () => {
+    const user = await signIn(ADMIN);
+    await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
+    await screen.findByRole("heading", { name: "Rendez-vous" });
+    screen.getByText(/sous-lot 03-B/);
+    assert.equal(screen.queryByRole("grid"), null);
+  });
+
+  test("Clients (service non activé) : état honnête, aucune donnée ni requête /api/clients", async () => {
+    const user = await signIn(ADMIN);
+    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
+    await screen.findByRole("heading", { name: "Clients" });
+    screen.getByRole("heading", { name: "Service Clients non activé" });
+    assert.equal(screen.queryByRole("table"), null);
+    assert.equal((screen.getByRole("searchbox", { name: "Rechercher un client" }) as HTMLInputElement).disabled, true);
+    assert.equal(api.requests.some((request) => request.path.startsWith("/api/clients")), false);
   });
 
   test("admin : Comptes liste les comptes renvoyés par le serveur", async () => {
