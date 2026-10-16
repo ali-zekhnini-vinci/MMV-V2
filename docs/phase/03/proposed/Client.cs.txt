@@ -1,0 +1,66 @@
+namespace MMV.Domain.Clients;
+
+/// <summary>
+/// Client du magasin (PROPOSED, phase 03-A, dossier G03-METIER) — données d'identification et de contact
+/// strictement minimales. Aucune donnée optique, médicale ni d'assurance (Phase 04 / décisions ultérieures).
+/// Cycle de vie : actif ou archivé (pas de suppression physique). Concurrence : xmin PostgreSQL.
+/// </summary>
+public sealed class Client
+{
+    public const int NameMaxLength = 100;
+    public const int ReferenceMaxLength = 16;
+    public const int PhoneMaxLength = 32;
+    public const int EmailMaxLength = 254;
+    public const int AddressLineMaxLength = 200;
+    public const int CityMaxLength = 100;
+    public const int PostalCodeMaxLength = 10;
+    public const int NotesMaxLength = 1000;
+    public const int SearchTextMaxLength = 700;
+
+    private Client()
+    {
+        Reference = string.Empty;
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        SearchText = string.Empty;
+    }
+
+    public Guid Id { get; private set; }
+
+    /// <summary>Référence lisible attribuée par la base (séquence), ex. CLI-000123 ; jamais réutilisée.</summary>
+    public string Reference { get; private set; }
+
+    public string FirstName { get; private set; }
+
+    public string LastName { get; private set; }
+
+    public DateOnly? BirthDate { get; private set; }
+
+    public string? Phone { get; private set; }
+
+    public string? Email { get; private set; }
+
+    public string? AddressLine { get; private set; }
+
+    public string? City { get; private set; }
+
+    public string? PostalCode { get; private set; }
+
+    public string? Notes { get; private set; }
+
+    /// <summary>Texte de recherche normalisé par l'application (minuscules, sans accents, chiffres du téléphone).</summary>
+    public string SearchText { get; private set; }
+
+    public DateTimeOffset CreatedAtUtc { get; private set; }
+
+    public Guid CreatedByUserId { get; private set; }
+
+    public DateTimeOffset UpdatedAtUtc { get; private set; }
+
+    public Guid UpdatedByUserId { get; private set; }
+
+    public DateTimeOffset? ArchivedAtUtc { get; private set; }
+
+    /// <summary>Jeton de concurrence optimiste : colonne système xmin (aucune colonne créée).</summary>
+    public uint Version { get; private set; }
+}

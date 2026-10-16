@@ -1,6 +1,14 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-## Statut actuel — phase 02 (16/10/2026)
+## Statut actuel — phase 03 (17/10/2026)
+
+**`PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv`, créée depuis `origin/main` = `cb79d1f951aa68e9523642384648424dee61836d` (merge de la PR #3, **Phase 02 MERGED**, vérifié par Git). Aucun push, PR ni merge.
+
+- **03-A1 implémenté :** TanStack Query 5.104.1 et TanStack Table 8.21.3 intégrés ; module Clients (`/clients`) : liste à pagination/tri/recherche serveur, filtres, formulaire unique (validation, état modifié, confirmation de sortie, Ctrl+S), fiche à onglets (Ordonnances / Ventes explicitement reportés), archivage/réactivation, conflits de version. Tant que le dossier G03-METIER n'est pas ratifié, le service est **désactivé** : l'écran l'indique, aucune requête ni donnée fictive (seuls les tests activent le service contre un double HTTP). Tests frontend 128/128 ; .NET 123/123 hors étape d'écriture (NOT_RERUN) ; captures natives `NOT_TESTED`.
+- **À valider (une seule fois) :** [`docs/phase/03/DECISIONS_G03_METIER.md`](docs/phase/03/DECISIONS_G03_METIER.md) — champs clients, cycle de vie, permissions `clients.*`, contrat [`API_CLIENTS_PROPOSED.md`](docs/phase/03/API_CLIENTS_PROPOSED.md), migration `0003_ClientsModule` générée hors connexion **non appliquée** (`docs/phase/03/sql/`).
+- 03-A2, 03-B (Rendez-vous, cadrage [`RDV_03B_PREPARATION.md`](docs/phase/03/RDV_03B_PREPARATION.md)) et 03-C non commencés. Détail : [`docs/phase/03.md`](docs/phase/03.md).
+
+## Statut phase 02 (16/10/2026, historique)
 
 **Amendement daté 16/10/2026 — clôture : `PHASE02_READY_FOR_MANUAL_MERGE`.** Audit externe final : GO technique pour la publication et le merge manuel. **SEC-02-01 CLOSED** : rotation des deux mots de passe confirmée par le propriétaire et vérifiée sans affichage (connexions OK, anciennes valeurs refusées, `dotnet test MMV.slnx` 128/128). Branche `feat/phase-02-auth-shell` publiée sur `origin` ; PR et merge réservés au propriétaire ; Phase 03 non commencée. Le paragraphe suivant est conservé tel qu'à la livraison.
 
@@ -35,7 +43,7 @@ Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md),
 
 | Élément | Chemin |
 |---|---|
-| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) ; Tailwind CSS 4, shadcn/ui + Radix, React Hook Form + Zod, React Router, Lucide (détail : `apps/desktop/README.md`) | `apps/desktop/` (client API : `apps/desktop/src/api/`, composants : `apps/desktop/src/components/ui/`) |
+| Client Windows Tauri 2 + React 19 + TypeScript strict + Vite (npm) ; Tailwind CSS 4, shadcn/ui + Radix, React Hook Form + Zod, React Router, Lucide, TanStack Query/Table (phase 03) (détail : `apps/desktop/README.md`) | `apps/desktop/` (client API : `apps/desktop/src/api/`, composants : `apps/desktop/src/components/ui/`, module Clients : `apps/desktop/src/clients/`) |
 | Solution .NET 10 | `MMV.slnx`, `src/MMV.Domain`, `src/MMV.Application`, `src/MMV.Infrastructure`, `src/MMV.Api` |
 | Santé (`/health/live`, `/health/ready`), CORS restreint | `src/MMV.Api/Health/`, `src/MMV.Api/Cors/DesktopCors.cs` |
 | Migration baseline vide et script SQL relu | `src/MMV.Infrastructure/Persistence/Migrations/`, `docs/phase/01b/sql/` |
@@ -92,7 +100,8 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (`PHASE02_READY_FOR_MANUAL_MERGE`, SEC-02-01 clos) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
+- `docs/phase/03.md` et `docs/phase/03/` : phase 03 (`PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`) — dossier G03-METIER, correspondance des 47 états, contrat Clients proposé, SQL proposé non appliqué, cadrage Rendez-vous, spécification, QA, gates, source-map.
+- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (**MERGED** dans `main`, `cb79d1f` ; état de livraison `PHASE02_READY_FOR_MANUAL_MERGE`, SEC-02-01 clos) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).

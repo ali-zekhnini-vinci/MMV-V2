@@ -71,3 +71,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - GO O-02-01 exécuté : migration d'identité appliquée à `mmv_v2_dev` et `mmv_v2_test`, premier administrateur créé par le propriétaire, second bootstrap refusé. **ADR-007 reste `PROPOSED`** : la variante de session dev (jeton opaque en mémoire volatile, session serveur révocable) est désormais **prouvée en natif** dans WebView2 (aucun cookie ni stockage de session ; révocation, désactivation et retrait de droit effectifs immédiatement ; session perdue au redémarrage du client). La comparaison avec cookies HttpOnly ou coffre OS reste à faire avant distribution (`docs/phase/02/QA_MATRIX.md` Q-02-52 à Q-02-55).
 - Incident **SEC-02-01** : mots de passe PostgreSQL des rôles de développement et de test affichés dans une session agent ; absents du dépôt ; rotation requise par le propriétaire (`docs/phase/02/GATES_AND_DECISIONS.md` § Incident SEC-02-01). Aucune décision d'architecture modifiée.
+
+## Note datée — 17/10/2026 (phase 03-A)
+
+- Phase 02 mergée (`cb79d1f`) ; ADR-007 reste `PROPOSED` (variante de session dev inchangée, réutilisée par le module Clients).
+- Permissions **métier** proposées, non créées : `clients.read`, `clients.write`, `clients.archive` (puis `appointments.*` pour 03-B). `system.admin` ne confère aucun droit métier. Dossier : `docs/phase/03/DECISIONS_G03_METIER.md` (D-03-01 à D-03-17, tous `PROPOSED`).
+- **ADR-014 (licences)** : dépendances ajoutées MIT (`@tanstack/react-query`, `@tanstack/react-table`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-tabs`) ; FullCalendar Standard MIT évalué pour 03-B, plugins Premium exclus. ADR-014 et ADR-001 restent `PROPOSED`.
+- ADR-010 (pays/fiscalité) toujours `OPEN DECISION` : il conditionne le format téléphonique normalisé, le fuseau du magasin (D-03-13) et l'effacement légal des données clients.

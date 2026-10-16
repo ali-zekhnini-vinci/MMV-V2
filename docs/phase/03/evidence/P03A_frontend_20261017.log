@@ -1,0 +1,26 @@
+# Phase 03-A — frontend, 2026-10-16T22:44:19Z
+## npm ci : BLOCKED — EPERM unlink node_modules/@tailwindcss/oxide-win32-x64-msvc/*.node, verrouillé par un serveur Vite externe à la session (PID 23448, démarré 17/10/2026 00:28) ; node_modules restauré par npm install, package-lock.json inchangé (cmp)
+## npm ls (dépendances directes ajoutées)
+├── @radix-ui/react-alert-dialog@1.2.1
+├── @radix-ui/react-tabs@1.2.1
+├── @tanstack/react-query@5.104.1
+└── @tanstack/react-table@8.21.3
+## npm run check
+
+## npm run lint
+  149:17  warning  Compilation Skipped: Use of incompatible library
+✖ 1 problem (0 errors, 1 warning)
+## npm test
+ Test Files  12 passed (12)
+      Tests  128 passed (128)
+## npm run build
+dist/assets/ClientsModule-BVVHzVx2.css                              15.94 kB │ gzip:   3.12 kB
+dist/assets/index-BODxdOGg.css                                      31.11 kB │ gzip:   7.45 kB
+dist/assets/ClientsModule-B1DYwKpX.js                              112.12 kB │ gzip:  32.15 kB
+dist/assets/index-CqhaIjyw.js                                      548.44 kB │ gzip: 174.21 kB
+[plugin builtin:vite-reporter] 
+✓ built in 944ms
+## dist : fichiers JS contenant un double de test ou une donnée fictive (attendu 0)
+0
+## dist : fichiers JS contenant l'adresse de dev (attendu 0)
+0

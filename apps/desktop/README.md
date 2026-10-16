@@ -37,3 +37,13 @@ Prérequis Node : **22.22 ou plus** (exigence de `react-router` 8).
 Le CSS spécifique au design (login, shell : grille 260/72/64/32, dégradé, infobulles du rail) reste dans `src/login/LoginScreen.css` et `src/shell/Shell.css`, **hors couche** : il prime sur les utilitaires Tailwind et sur le preflight. Ajout d'un composant shadcn : `npx shadcn add <composant>` puis remplacement des classes du thème par défaut (`bg-primary`, `text-muted-foreground`…) par les jetons MMV (`bg-accent`, `text-text-secondary`…) — un test (`src/styles/styles.test.ts`) refuse les variables du thème shadcn par défaut.
 
 Non installés volontairement (aucun cas d'usage réel en phase 02) : TanStack Query/Table, Sonner, Zustand, FullCalendar, Recharts.
+
+## Ajouts phase 03-A (17/10/2026)
+
+| Technologie | Version | Utilisation réelle |
+|---|---|---|
+| TanStack Query | 5.104.1 | `src/api/queryClient.ts` (politique : nouvel essai unique sur erreur de transport, aucun persister), `src/clients/clientQueries.ts`, `QueryClientProvider` par session dans `src/shell/Shell.tsx` |
+| TanStack Table | 8.21.3 | `src/clients/ClientsTable.tsx` (tri et pagination serveur) |
+| Radix `react-alert-dialog` / `react-tabs` | 1.2.1 / 1.2.1 | `src/components/ui/alert-dialog.tsx`, `src/components/ui/tabs.tsx` (styles `overlays.css`, jetons MMV) |
+
+Module Clients : `src/clients/` (chargé à la demande). Le service est **désactivé** (`src/clients/clientsService.ts`, `CLIENTS_API_ENABLED = false`) tant que le dossier G03-METIER n'est pas ratifié ; les tests l'activent contre le double `src/test/fakeClientsApi.ts` (données fictives de test uniquement). Toujours non installés : Sonner, Zustand, FullCalendar (03-B), Recharts, `openapi-typescript`.

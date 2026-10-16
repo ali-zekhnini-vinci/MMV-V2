@@ -85,6 +85,8 @@ Aucun composant supplémentaire par principe : éviter de multiplier les projets
 
 > Note datée 16/10/2026 (phase 02, corrections finales) : les lignes Style, Composants, Icônes, Routes, Formulaires et polices sont **installées et utilisées** dans `apps/desktop` (versions exactes et chemins : `docs/phase/02/IMPLEMENTATION_SPEC.md` § Pile frontend, `apps/desktop/README.md`). Les autres lignes frontend (TanStack Query/Table, FullCalendar, dnd-kit, Sonner, Zustand, Recharts) restent des propositions **non installées** : elles seront ajoutées avec leur premier cas d'usage réel. Statuts « Proposition » remplacés pour ces seules lignes ; aucun ADR n'est ratifié par cette note.
 
+> Note datée 17/10/2026 (phase 03-A) : **TanStack Query** 5.104.1 et **TanStack Table** 8.21.3 sont installés et utilisés (`apps/desktop/src/api/queryClient.ts`, `apps/desktop/src/clients/`) : un cache par session, vidé à la déconnexion, aucun persister ; tri et pagination **serveur** (mode manuel). `openapi-typescript` / `openapi-fetch` **non installés** : le document OpenAPI actuel ne déclare que des réponses 200 sans schéma (`docs/phase/03/API_CLIENTS_PROPOSED.md`, O-03-01). FullCalendar Standard : cadrage 03-B (`docs/phase/03/RDV_03B_PREPARATION.md`), v7 MIT, aucun plugin Premium. Radix `react-alert-dialog` et `react-tabs` ajoutés (composants shadcn/ui). Aucun ADR ratifié par cette note.
+
 ## 4. Choix d'architecture comparés
 
 | Scénario | Atouts | Coûts / risques | Décision |
