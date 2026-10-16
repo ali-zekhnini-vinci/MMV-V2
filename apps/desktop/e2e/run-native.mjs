@@ -82,6 +82,8 @@ async function signIn(page, account) {
 const navButton = (label) =>
   `[...document.querySelectorAll('nav[aria-label="Navigation"] button')].find(b => (b.getAttribute('aria-label') || b.textContent).startsWith(${JSON.stringify(label)}))`;
 
+const buttonByText = (label) => `[...document.querySelectorAll('button')].find(b => b.textContent.trim() === ${JSON.stringify(label)})`;
+
 const scenarios = {
   /** Écran de connexion : focus initial, tabulation, validation, zoom — indépendant de la base. */
   async "login-states"(page) {
@@ -207,11 +209,35 @@ const scenarios = {
     capture("logout_back-to-login_1920x1080");
   },
 
-  /** Connexion puis attente d'une action serveur (révocation/403) déclenchée hors fenêtre. */
+  /** Connexion puis attente d'une action serveur (révocation/403/désactivation) déclenchée hors fenêtre. */
   async "sign-in"(page) {
-    const { admin } = credentials();
-    await signIn(page, admin);
-    log("PRÊT", "session ouverte (admin éphémère)");
+    const role = option("--account", "admin");
+    await signIn(page, credentials()[role]);
+    log("PRÊT", `session ouverte (compte éphémère « ${role} »)`);
+  },
+
+  /** Compte éphémère sans system.admin : entrée « Comptes » absente, accueil accessible, déconnexion. */
+  async "user-no-admin"(page) {
+    const { user } = credentials();
+    await signIn(page, user);
+    check(!(await page.evaluate(`!!${navButton("Comptes")}`)), "navigation : « Comptes » absente sans system.admin");
+    capture("user-no-admin_home_1920x1080", { width: 1920, height: 1080 });
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "retour au login" });
+  },
+
+  /** Compte désactivé côté serveur : refus neutre, identique à un mot de passe erroné. */
+  async "login-disabled"(page) {
+    const { off } = credentials();
+    await freshLogin(page);
+    await page.evaluate("document.getElementById(document.querySelector('label[for]').htmlFor).focus()");
+    await page.type(off.userName);
+    await page.press("Tab");
+    await page.type(off.password);
+    await page.press("Enter");
+    await page.waitFor(hasText("Identifiant ou mot de passe incorrect."), { label: "refus neutre (compte désactivé)" });
+    check(!(await text(page)).includes("Bonjour,"), "aucune session ouverte");
+    capture("login_disabled-account_1920x1080", { width: 1920, height: 1080 });
   },
 
   /** Après révocation serveur : la navigation ramène au login « session expirée ». */
@@ -231,14 +257,16 @@ const scenarios = {
   /** API arrêtée pendant la session : bandeau et barre d'état. */
   async "shell-api-down"(page) {
     await page.evaluate(`${navButton("Diagnostic technique")}.click()`);
-    await page.evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent === 'Revérifier').click()`);
+    await page.waitFor(buttonByText("Revérifier"), { label: "diagnostic affiché" });
+    await page.evaluate(`${buttonByText("Revérifier")}.click()`);
     await page.waitFor(hasText("Serveur MMV inaccessible."), { label: "bandeau serveur inaccessible" });
     capture("shell_api-down_1920x1080", { width: 1920, height: 1080 });
   },
 
   /** API redémarrée (session persistée côté serveur) : la session continue sans reconnexion. */
   async "shell-api-back"(page) {
-    await page.evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('Réessayer')).click()`);
+    await page.waitFor(buttonByText("Réessayer"), { label: "bandeau serveur inaccessible" });
+    await page.evaluate(`${buttonByText("Réessayer")}.click()`);
     await page.waitFor(`!${hasText("Serveur MMV inaccessible.")}`, { label: "bandeau levé" });
     await page.evaluate(`${navButton("Accueil")}.click()`);
     await page.sleep(800);
@@ -249,7 +277,8 @@ const scenarios = {
   /** API sans base : barre d'état « base indisponible », session non validable sans faux succès. */
   async "shell-db-down"(page) {
     await page.evaluate(`${navButton("Diagnostic technique")}.click()`);
-    await page.evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent === 'Revérifier').click()`);
+    await page.waitFor(buttonByText("Revérifier"), { label: "diagnostic affiché" });
+    await page.evaluate(`${buttonByText("Revérifier")}.click()`);
     await page.waitFor(hasText("Base de données indisponible"), { label: "base indisponible" });
     capture("shell_db-down_1920x1080", { width: 1920, height: 1080 });
   },
