@@ -17,7 +17,7 @@ public sealed class TransactionalRollbackTests(ITestOutputHelper output)
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var target = PostgreSqlTarget.Test;
 
-        // 1. Garde de cible (lecture seule) : identité, version, absence de privilège administrateur, baseline.
+        // 1. Garde de cible (lecture seule) : identité, version, absence de privilège administrateur, schéma connu.
         var identity = await target.ReadIdentityAsync(timeout.Token);
         output.WriteLine(identity.ToString());
         Assert.Equal("mmv_v2_test", identity.Database);
@@ -28,7 +28,8 @@ public sealed class TransactionalRollbackTests(ITestOutputHelper output)
         Assert.False(identity.BypassesRls);
 
         var before = await SchemaInspection.ReadAsync(target, timeout.Token);
-        Assert.Empty(before.BaselineDifferences(target.Role));
+        // Baseline 01B seule, ou baseline + identité (phase 02) : tout autre état est refusé avant écriture.
+        Assert.Empty(before.KnownStateDifferences(target.Role));
 
         var table = $"mmv_ob02_probe_{Guid.NewGuid():N}";
         output.WriteLine($"table temporaire : {table}");

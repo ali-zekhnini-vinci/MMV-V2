@@ -59,3 +59,11 @@ Sauvegarde & audit = transversal dès le socle
 7. Revue humaine et merge seulement après approbation.
 
 > Note datée 15/10/2026 (soir) : l'objectif « slice minimal client ↔ API ↔ PostgreSQL réel » de la phase 01 est démontré en **développement local monoposte** (01A merged, 01B en revue propriétaire). Les éléments « réseau sécurisé » (TLS LAN, ADR-006 OPEN) et « démarrage Windows Service » ne sont **pas** réalisés : leur placement (avant ou pendant la phase 02) est une décision du propriétaire (O-B12, `docs/phase/01b/GATES_AND_DECISIONS.md`). Le périmètre de la phase 02 n'est pas approuvé par cette note.
+
+> Note datée 16/10/2026 (phase 02 `IN_PROGRESS`) : 01B est mergé dans `main` (`c0c3d6b`). Le Shell de la phase 02 affiche un accueil sobre sans chiffre ; les **cinq tableaux de bord riches du Lot 1** (un par profil visuel) restent au backlog (`DEFERRED`), comme la recherche globale et le panneau de notifications (contrôles visibles mais désactivés). Les entrées de menu des modules métier indiquent « Disponible dans une phase suivante ». Voir `docs/phase/02/GATES_AND_DECISIONS.md` (O-02-07, O-02-08).
+
+> Note datée 16/10/2026 (phase 02, corrections finales) : la pile frontend des écrans est en place (Tailwind CSS 4, shadcn/ui + Radix, React Hook Form + Zod, React Router, polices locales). **Backlog technique** rattaché aux lots qui en auront l'usage réel, non installé en phase 02 : TanStack Query (premier écran de données serveur), TanStack Table (premières listes), Sonner (notifications d'opération), FullCalendar Standard (agenda), dnd-kit (atelier), Recharts (rapports). État de la phase 02 : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED` ; aucun travail Phase 03 engagé.
+
+> Note datée 16/10/2026 (phase 02, finalisation) : GO O-02-01 exécuté (migration d'identité, premier administrateur, preuve native authentifiée). État : `PHASE02_IMPLEMENTED — READY_FOR_OWNER_REVIEW`, action propriétaire SEC-02-01 (rotation des mots de passe PostgreSQL) ouverte. Backlog inchangé ; O-02-14 (503 explicite si la base est injoignable sur `/api`) et O-02-15 (affichage final du script SQL) ajoutés au backlog technique. Aucun travail Phase 03 engagé.
+
+> Amendement daté 16/10/2026 (clôture phase 02) : SEC-02-01 clos (rotation vérifiée) ; état `PHASE02_READY_FOR_MANUAL_MERGE`, branche publiée, merge par le propriétaire. Phase 03 non commencée.

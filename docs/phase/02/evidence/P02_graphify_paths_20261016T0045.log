@@ -1,0 +1,10 @@
+# P02 Graphify CLI 0.9.77 : 'graphify update .' (AST local, aucun appel LLM/cloud) puis requetes de chemin, 2026-10-16
+$ graphify path "SessionAuthenticationHandler" "IdentityStore" --undirected
+Shortest path (4 hops):
+  SessionAuthenticationHandler --method [EXTRACTED]--> .HandleAuthenticateAsync() --references [EXTRACTED]--> AuthService --references [EXTRACTED]--> IIdentityStore <--implements [EXTRACTED]-- IdentityStore
+$ graphify path "AuthEndpoints" "MmvDbContext" --undirected
+Shortest path (4 hops):
+  AuthEndpoints <--contains [EXTRACTED]-- AuthEndpoints.cs --imports [EXTRACTED]--> MMV.Domain.Identity <--imports [EXTRACTED]-- MmvDbContext.cs --contains [EXTRACTED]--> MmvDbContext
+$ graphify path "LoginScreen" "requestJson" 
+Shortest path (4 hops):
+  LoginScreen() --calls [EXTRACTED]--> useAuth() <--contains [EXTRACTED]-- authContext.ts --imports_from [EXTRACTED]--> auth.ts --imports [EXTRACTED]--> requestJson()

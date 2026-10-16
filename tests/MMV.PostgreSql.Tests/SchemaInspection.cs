@@ -4,8 +4,8 @@ namespace MMV.PostgreSql.Tests;
 
 /// <summary>
 /// Inventaire des objets d'une base V2, relu par SELECT de catalogues dans une session forcée en lecture seule.
-/// Sert de contrôle avant migration (base vide), après migration (baseline seule) et après les tests d'écriture
-/// (aucun objet résiduel).
+/// Sert de contrôle avant migration (base vide), après la baseline 01B (baseline seule), après la migration
+/// d'identité de la phase 02 (baseline + schéma <c>auth</c> exact) et après les tests d'écriture (aucun objet résiduel).
 /// </summary>
 public sealed record SchemaState(
     string TransactionReadOnly,
@@ -18,9 +18,28 @@ public sealed record SchemaState(
     IReadOnlyList<string> Decorations,
     IReadOnlyList<string> HistoryColumns,
     IReadOnlyList<string> HistoryConstraints,
-    IReadOnlyList<string> HistoryRows)
+    IReadOnlyList<string> HistoryRows,
+    IReadOnlyList<string> AuthColumns,
+    IReadOnlyList<string> AuthConstraints,
+    IReadOnlyList<string> AuthIndexes)
 {
     public const string BaselineMigrationId = "20261015125000_InitialBaseline";
+    public const string AuthIdentityMigrationId = "20261015223849_AuthIdentity";
+
+    /// <summary>Migrations de l'assembly, dans l'ordre (phase 02).</summary>
+    public static readonly string[] AllMigrationIds = [BaselineMigrationId, AuthIdentityMigrationId];
+
+    /// <summary>Base vide, baseline seule, ou baseline + identité : aucun autre état n'est accepté.</summary>
+    public IReadOnlyList<string> KnownStateDifferences(string role)
+    {
+        if (IsEmpty)
+        {
+            return [];
+        }
+
+        var baseline = BaselineDifferences(role);
+        return baseline.Count == 0 ? baseline : AuthIdentityDifferences(role);
+    }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));
 
@@ -56,6 +75,97 @@ public sealed record SchemaState(
             "__EFMigrationsHistory_ProductVersion_not_null NOT NULL \"ProductVersion\"",
         ]);
         Expect(differences, "lignes", HistoryRows, [$"{BaselineMigrationId} 10.0.4"]);
+        Expect(differences, "colonnes auth", AuthColumns, []);
+        return differences;
+    }
+
+    /// <summary>
+    /// Exactement l'état produit par 0001 puis 0002_AuthIdentity (docs/phase/02/sql/), objets possédés par
+    /// <paramref name="role"/>. Les contraintes sont comparées par nom, type et règle de suppression ;
+    /// leur texte SQL est relu dans le script approuvé.
+    /// </summary>
+    public IReadOnlyList<string> AuthIdentityDifferences(string role)
+    {
+        var differences = new List<string>();
+        Expect(differences, "schémas", ExtraSchemas, ["auth"]);
+        string[] authRelations =
+        [
+            "bootstrap_record kind=r", "pk_bootstrap_record kind=i",
+            "users kind=r", "pk_users kind=i", "ux_users_normalized_user_name kind=i",
+            "user_permissions kind=r", "pk_user_permissions kind=i",
+            "sessions kind=r", "pk_sessions kind=i", "ix_sessions_user_id kind=i", "ux_sessions_token_hash kind=i",
+        ];
+        Expect(differences, "relations", Relations,
+        [
+            $"public.PK___EFMigrationsHistory kind=i owner={role} acl=default",
+            $"public.__EFMigrationsHistory kind=r owner={role} acl=default",
+            .. authRelations.Select(r => $"auth.{r} owner={role} acl=default"),
+        ]);
+        Expect(differences, "routines", Routines, []);
+        Expect(differences, "types", Types, []);
+        Expect(differences, "extensions", Extensions, []);
+        Expect(differences, "décorations", Decorations, []);
+        Expect(differences, "lignes", HistoryRows, [$"{BaselineMigrationId} 10.0.4", $"{AuthIdentityMigrationId} 10.0.4"]);
+        Expect(differences, "colonnes auth", AuthColumns,
+        [
+            "bootstrap_record.administrator_id uuid notnull=t",
+            "bootstrap_record.completed_at_utc timestamp with time zone notnull=t",
+            "bootstrap_record.id smallint notnull=t",
+            "sessions.created_at_utc timestamp with time zone notnull=t",
+            "sessions.expires_at_utc timestamp with time zone notnull=t",
+            "sessions.id uuid notnull=t",
+            "sessions.last_seen_at_utc timestamp with time zone notnull=t",
+            "sessions.revocation_reason character varying(32) notnull=f",
+            "sessions.revoked_at_utc timestamp with time zone notnull=f",
+            "sessions.token_hash bytea notnull=t",
+            "sessions.user_id uuid notnull=t",
+            "user_permissions.permission character varying(64) notnull=t",
+            "user_permissions.user_id uuid notnull=t",
+            "users.created_at_utc timestamp with time zone notnull=t",
+            "users.display_name character varying(128) notnull=t",
+            "users.failed_login_count integer notnull=t",
+            "users.id uuid notnull=t",
+            "users.is_active boolean notnull=t",
+            "users.lockout_end_utc timestamp with time zone notnull=f",
+            "users.normalized_user_name character varying(64) notnull=t",
+            "users.password_hash text notnull=t",
+            "users.user_name character varying(64) notnull=t",
+        ]);
+        string[] notNull =
+        [
+            "bootstrap_record.id", "bootstrap_record.administrator_id", "bootstrap_record.completed_at_utc",
+            "sessions.id", "sessions.user_id", "sessions.token_hash", "sessions.created_at_utc",
+            "sessions.last_seen_at_utc", "sessions.expires_at_utc",
+            "user_permissions.user_id", "user_permissions.permission",
+            "users.id", "users.user_name", "users.normalized_user_name", "users.display_name",
+            "users.password_hash", "users.is_active", "users.failed_login_count", "users.created_at_utc",
+        ];
+        Expect(differences, "contraintes auth", AuthConstraints,
+        [
+            "bootstrap_record.ck_bootstrap_record_singleton c -",
+            "bootstrap_record.pk_bootstrap_record p -",
+            "sessions.ck_sessions_expiry_after_creation c -",
+            "sessions.ck_sessions_token_hash_length c -",
+            "sessions.fk_sessions_users f c",
+            "sessions.pk_sessions p -",
+            "user_permissions.ck_user_permissions_permission c -",
+            "user_permissions.fk_user_permissions_users f c",
+            "user_permissions.pk_user_permissions p -",
+            "users.ck_users_failed_login_count c -",
+            "users.pk_users p -",
+            // PostgreSQL 18 : NOT NULL catalogués dans pg_constraint, noms générés <table>_<colonne>_not_null.
+            .. notNull.Select(c => $"{c[..c.IndexOf('.', StringComparison.Ordinal)]}.{c.Replace('.', '_')}_not_null n -"),
+        ]);
+        Expect(differences, "index auth", AuthIndexes,
+        [
+            "ix_sessions_user_id unique=f",
+            "pk_bootstrap_record unique=t",
+            "pk_sessions unique=t",
+            "pk_user_permissions unique=t",
+            "pk_users unique=t",
+            "ux_sessions_token_hash unique=t",
+            "ux_users_normalized_user_name unique=t",
+        ]);
         return differences;
     }
 
@@ -70,7 +180,10 @@ public sealed record SchemaState(
         Section("triggers/règles/politiques/ACL par défaut", Decorations),
         Section("colonnes __EFMigrationsHistory", HistoryColumns),
         Section("contraintes __EFMigrationsHistory", HistoryConstraints),
-        Section("lignes __EFMigrationsHistory", HistoryRows));
+        Section("lignes __EFMigrationsHistory", HistoryRows),
+        Section("colonnes auth", AuthColumns),
+        Section("contraintes auth", AuthConstraints),
+        Section("index auth", AuthIndexes));
 
     private static string Section(string name, IReadOnlyList<string> items) =>
         $"{name} ({items.Count}) : " + (items.Count == 0 ? "—" : string.Join(" | ", items));
@@ -153,7 +266,24 @@ public static class SchemaInspection
                 ? await ListAsync(connection,
                     "SELECT format('%s %s', \"MigrationId\", \"ProductVersion\") FROM public.\"__EFMigrationsHistory\"",
                     cancellationToken)
-                : []);
+                : [],
+            AuthColumns: await ListAsync(connection, """
+                SELECT format('%s.%s %s notnull=%s', c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
+                              CASE WHEN a.attnotnull THEN 't' ELSE 'f' END)
+                FROM pg_attribute a JOIN pg_class c ON c.oid = a.attrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'auth' AND c.relkind = 'r' AND a.attnum > 0 AND NOT a.attisdropped
+                """, cancellationToken),
+            AuthConstraints: await ListAsync(connection, """
+                SELECT format('%s.%s %s %s', c.relname, k.conname, k.contype,
+                              CASE WHEN k.contype = 'f' THEN k.confdeltype::text ELSE '-' END)
+                FROM pg_constraint k JOIN pg_class c ON c.oid = k.conrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+                WHERE n.nspname = 'auth'
+                """, cancellationToken),
+            AuthIndexes: await ListAsync(connection, """
+                SELECT format('%s unique=%s', ic.relname, CASE WHEN i.indisunique THEN 't' ELSE 'f' END)
+                FROM pg_index i JOIN pg_class ic ON ic.oid = i.indexrelid JOIN pg_namespace n ON n.oid = ic.relnamespace
+                WHERE n.nspname = 'auth'
+                """, cancellationToken));
     }
 
     private static async Task<object?> ScalarAsync(NpgsqlConnection connection, string sql, CancellationToken cancellationToken)

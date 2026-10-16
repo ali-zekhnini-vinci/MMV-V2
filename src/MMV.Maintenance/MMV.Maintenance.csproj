@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Commandes de maintenance LOCALES (phase 02) : état de la base cible, bootstrap unique du premier
+       administrateur. Aucun endpoint réseau. Même chaîne de connexion que l'API (user-secrets mmv-v2-api). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>mmv-v2-api</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Politique de cible du bootstrap (BootstrapTargetPolicy) : tests unitaires, processus et PostgreSQL réel. -->
+    <InternalsVisibleTo Include="MMV.Maintenance.Tests" />
+    <InternalsVisibleTo Include="MMV.PostgreSql.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MMV.Application\MMV.Application.csproj" />
+    <ProjectReference Include="..\MMV.Infrastructure\MMV.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+  </ItemGroup>
+</Project>

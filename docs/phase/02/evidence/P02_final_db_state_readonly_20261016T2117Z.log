@@ -1,0 +1,17 @@
+﻿# P02 etat final des bases apres tests, 20261016T2117Z (UTC), LECTURE SEULE (PGOPTIONS default_transaction_read_only=on). Aucun identifiant de compte affiche.
+== mmv_v2_dev
+db | role | port | ro
+mmv_v2_dev | mmv_v2_dev | 5433 | on
+users | active | admins | e2e | sessions | bootstrap | bootstrap_admin_ok
+1 | 1 | 1 | 0 | 0 | 1 | 1
+migrations
+20261015125000_InitialBaseline, 20261015223849_AuthIdentity
+exit=0
+== mmv_v2_test
+db | role | port | ro
+mmv_v2_test | mmv_v2_test | 5433 | on
+users | active | admins | e2e | sessions | bootstrap | bootstrap_admin_ok
+0 | 0 | 0 | 0 | 0 | 0 | 0
+migrations
+20261015125000_InitialBaseline, 20261015223849_AuthIdentity
+exit=0

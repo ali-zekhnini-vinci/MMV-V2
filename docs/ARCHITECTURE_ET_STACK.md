@@ -54,19 +54,19 @@ Aucun composant supplémentaire par principe : éviter de multiplier les projets
 | OS cible | Windows 11 x64 ; autres versions selon parc | Proposition | Support et prérequis WebView2 à vérifier |
 | Desktop | Tauri 2 + WebView2 | Cible propriétaire | Aucune logique métier critique Rust |
 | Front | React + TypeScript strict + Vite + npm | Proposition | UI sans Next.js |
-| Style | Tailwind CSS 4 + variables MMV ; CSS ciblé | Proposition | Fidélité des tokens, pas thème shadcn par défaut |
-| Composants | Radix primitives + shadcn/ui adaptés | Proposition | Accessibilité, réécriture des styles |
-| Icônes | lucide-react | Proposition | Pas d'emoji dans le produit |
-| Routes | React Router | Proposition | Le routing/guard client n'est pas un contrôle d'accès |
-| Réseau/data | TanStack Query v5 ; openapi-typescript/openapi-fetch | Proposition | API typed, retry limité pour mutations critiques |
+| Style | Tailwind CSS 4 + variables MMV ; CSS ciblé | **Intégré phase 02** (4.3.3) | Fidélité des tokens, pas thème shadcn par défaut |
+| Composants | Radix primitives + shadcn/ui adaptés | **Intégré phase 02** (Button, Label, DropdownMenu) | Accessibilité, réécriture des styles |
+| Icônes | lucide-react | **Intégré phase 02** (1.49.0) | Pas d'emoji dans le produit |
+| Routes | React Router | **Intégré phase 02** (8.4.0, routeur mémoire) | Le routing/guard client n'est pas un contrôle d'accès |
+| Réseau/data | TanStack Query v5 ; openapi-typescript/openapi-fetch | Proposition — **non installé** (avec le premier cas d'usage réel) | API typed, retry limité pour mutations critiques |
 | Listes | TanStack Table v8 | Proposition | Tri et pagination serveur selon taille |
-| Formulaires | React Hook Form + Zod | Proposition | UI seulement, toujours revalider sur le serveur |
+| Formulaires | React Hook Form + Zod | **Intégré phase 02** (7.90.0 + 4.6.7, Login) | UI seulement, toujours revalider sur le serveur |
 | Agenda | FullCalendar Standard | Proposition | Pas de plugin Premium sans licence payante |
 | Kanban | dnd-kit | À ajouter au lot atelier | Fallback clavier obligatoire |
 | Dialogues/notifications | Radix + Sonner | Proposition | Pas de toasts comme seule preuve d'opération |
 | Etat UI | React hooks/context ; Zustand si besoin mesuré | Option | Éviter 2 sources de vérité |
 | Graphiques | Recharts | Différé | Rapports ou dashboard concernés seulement |
-| Langue/format | Français, Intl, MAD, Inter + Source Sans 3 | Cible visuelle | Définir règles métier/arrondis distinctement |
+| Langue/format | Français, Intl, MAD, Inter + Source Sans 3 | Cible visuelle ; polices **embarquées localement** (OFL) en phase 02 | Définir règles métier/arrondis distinctement |
 | API/backend | ASP.NET Core .NET 10 LTS ; C# | Proposition forte | Service Windows et monolithe modulaire |
 | Persistance | EF Core 10 + Npgsql 10 + PostgreSQL 18.x | PostgreSQL approuvé, versions proposées | Pas de SQLite même tests/unitaires |
 | Temps réel | ASP.NET Core SignalR | Proposition | Notifications/invalidation cache, pas CRUD primaire |
@@ -82,6 +82,8 @@ Aucun composant supplémentaire par principe : éviter de multiplier les projets
 > Note datée 15/10/2026 (phase 01B) : la proposition « Tests UI » ci-dessus reste une proposition. En 01B, les tests du client API utilisent le lanceur natif `node --test` (Node 22, aucune dépendance) : l'ajout de Vitest a échoué sur npm 10.9.9 (plantage du résolveur, détail `docs/phase/01b/QA_MATRIX.md` Q-B14 ; décision O-B08). À réévaluer avant les tests de composants UI.
 
 **Versions :** ne pas déduire un numéro de patch du document ; pinner les versions exactes en phase 01, après `npm`, `dotnet`, `cargo`, NuGet, LSP et docs officiels vérifiés sur Windows. PostgreSQL 18 actuellement maintenu (support jusqu'en 2030).
+
+> Note datée 16/10/2026 (phase 02, corrections finales) : les lignes Style, Composants, Icônes, Routes, Formulaires et polices sont **installées et utilisées** dans `apps/desktop` (versions exactes et chemins : `docs/phase/02/IMPLEMENTATION_SPEC.md` § Pile frontend, `apps/desktop/README.md`). Les autres lignes frontend (TanStack Query/Table, FullCalendar, dnd-kit, Sonner, Zustand, Recharts) restent des propositions **non installées** : elles seront ajoutées avec leur premier cas d'usage réel. Statuts « Proposition » remplacés pour ces seules lignes ; aucun ADR n'est ratifié par cette note.
 
 ## 4. Choix d'architecture comparés
 

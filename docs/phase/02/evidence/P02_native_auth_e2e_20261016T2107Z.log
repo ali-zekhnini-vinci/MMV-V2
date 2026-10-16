@@ -1,0 +1,207 @@
+﻿# P02 preuve native authentifiee, 20261016T2107Z (UTC) : Tauri 2 (npx tauri dev, WebView2, CDP boucle locale 9222) -> HTTPS https://localhost:7267 -> MMV.Api (profil https, Development) -> PostgreSQL 18 mmv_v2_test (5433).
+# Comptes : 3 comptes EPHEMERES sur mmv_v2_test (suffixe 774fbedc2c : e2e-admin / e2e-user / e2e-off), mots de passe aleatoires 192 bits, fichier temporaire hors depot, jamais affiches. Compte administrateur reel (mmv_v2_dev) : non utilise.
+# Captures : docs/phase/02/evidence/P02_native_*_<horodatage>.png (horodatage par scenario).
+$ node e2e/run-native.mjs login-states  --out <EVIDENCE>
+2026-10-16T21:07:06.692Z SCÉNARIO — login-states
+2026-10-16T21:07:06.693Z PASS — zoom WebView2 effectif 100 %
+2026-10-16T21:07:08.202Z PASS — focus initial sur Identifiant
+2026-10-16T21:07:09.746Z CAPTURE — <EVIDENCE>\P02_native_login_initial_1920x1080_20261016T210706Z.png 1920x1080
+2026-10-16T21:07:09.837Z PASS — Tab -> Mot de passe
+2026-10-16T21:07:09.933Z PASS — Tab -> Afficher le mot de passe
+2026-10-16T21:07:10.027Z PASS — Tab -> Se connecter
+2026-10-16T21:07:10.312Z PASS — Maj+Tab ×3 -> Identifiant
+2026-10-16T21:07:10.405Z PASS — Entrée champs vides : deux messages
+2026-10-16T21:07:11.861Z CAPTURE — <EVIDENCE>\P02_native_login_validation_1920x1080_20261016T210706Z.png 1920x1080
+2026-10-16T21:07:14.862Z CAPTURE — <EVIDENCE>\P02_native_login_initial_1440x900_20261016T210706Z.png 1440x900
+2026-10-16T21:07:17.632Z PASS — zoom WebView2 effectif 125 %
+2026-10-16T21:07:17.633Z PASS — 1440×900 zoom 125 % : aucun défilement horizontal
+2026-10-16T21:07:18.178Z CAPTURE — <EVIDENCE>\P02_native_login_1440x900_zoom125_20261016T210706Z.png 1440x900
+2026-10-16T21:07:19.557Z PASS — zoom WebView2 effectif 150 %
+2026-10-16T21:07:19.557Z PASS — 1440×900 zoom 150 % : aucun défilement horizontal
+2026-10-16T21:07:20.084Z CAPTURE — <EVIDENCE>\P02_native_login_1440x900_zoom150_20261016T210706Z.png 1440x900
+2026-10-16T21:07:24.211Z PASS — zoom WebView2 effectif 100 %
+2026-10-16T21:07:24.211Z TERMINÉ — login-states
+exit=0
+$ node e2e/run-native.mjs login-invalid  --out <EVIDENCE>
+2026-10-16T21:07:24.314Z SCÉNARIO — login-invalid
+2026-10-16T21:07:26.753Z PASS — mot de passe vidé
+2026-10-16T21:07:28.213Z CAPTURE — <EVIDENCE>\P02_native_login_invalid_1920x1080_20261016T210724Z.png 1920x1080
+2026-10-16T21:07:28.213Z TERMINÉ — login-invalid
+exit=0
+$ node e2e/run-native.mjs shell  --out <EVIDENCE>
+2026-10-16T21:07:34.183Z SCÉNARIO — shell
+2026-10-16T21:07:34.185Z PASS — zoom WebView2 effectif 100 %
+2026-10-16T21:07:36.159Z PASS — barre d'état : serveur joignable (/health/live)
+2026-10-16T21:07:37.616Z CAPTURE — <EVIDENCE>\P02_native_shell_open_light_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:38.464Z CAPTURE — <EVIDENCE>\P02_native_shell_collapsed_light_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:39.350Z CAPTURE — <EVIDENCE>\P02_native_shell_collapsed_dark_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:40.231Z CAPTURE — <EVIDENCE>\P02_native_shell_open_dark_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:41.985Z CAPTURE — <EVIDENCE>\P02_native_shell_open_light_1440x900_20261016T210734Z.png 1440x900
+2026-10-16T21:07:42.819Z CAPTURE — <EVIDENCE>\P02_native_shell_collapsed_light_1440x900_20261016T210734Z.png 1440x900
+2026-10-16T21:07:45.556Z PASS — zoom WebView2 effectif 125 %
+2026-10-16T21:07:45.556Z PASS — shell 1440×900 zoom 125 % : aucun défilement horizontal
+2026-10-16T21:07:46.070Z CAPTURE — <EVIDENCE>\P02_native_shell_1440x900_zoom125_20261016T210734Z.png 1440x900
+2026-10-16T21:07:47.446Z PASS — zoom WebView2 effectif 150 %
+2026-10-16T21:07:47.446Z PASS — shell 1440×900 zoom 150 % : aucun défilement horizontal
+2026-10-16T21:07:47.969Z CAPTURE — <EVIDENCE>\P02_native_shell_1440x900_zoom150_20261016T210734Z.png 1440x900
+2026-10-16T21:07:52.426Z PASS — zoom WebView2 effectif 100 %
+2026-10-16T21:07:52.897Z ORDRE — BUTTON Thème — passer en mode clair | BUTTON Menu utilisateur — Admin Éphémère | BUTTON Réduire le menu | BUTTON Accueil | BUTTON Clients — Disponible dans une phase suivante
+2026-10-16T21:07:52.897Z PASS — Tab : Thème -> Menu utilisateur -> Réduire le menu
+2026-10-16T21:07:52.897Z PASS — Tab : puis première entrée de navigation
+2026-10-16T21:07:54.468Z CAPTURE — <EVIDENCE>\P02_native_shell_module-later_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:55.181Z CAPTURE — <EVIDENCE>\P02_native_shell_accounts_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:55.901Z CAPTURE — <EVIDENCE>\P02_native_shell_diagnostic_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:56.069Z PASS — déconnexion volontaire : pas de bandeau d'expiration
+2026-10-16T21:07:56.609Z CAPTURE — <EVIDENCE>\P02_native_logout_back-to-login_1920x1080_20261016T210734Z.png 1920x1080
+2026-10-16T21:07:56.609Z TERMINÉ — shell
+exit=0
+$ node e2e/run-native.mjs user-no-admin  --out <EVIDENCE>
+2026-10-16T21:07:56.724Z SCÉNARIO — user-no-admin
+2026-10-16T21:07:58.545Z PASS — navigation : « Comptes » absente sans system.admin
+2026-10-16T21:08:00.019Z CAPTURE — <EVIDENCE>\P02_native_user-no-admin_home_1920x1080_20261016T210756Z.png 1920x1080
+2026-10-16T21:08:00.179Z TERMINÉ — user-no-admin
+exit=0
+$ E2eSeed state 774fbedc2c   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+e2e-admin-774fbedc2c actif=True perms=[system.admin] échecs=0 sessions=1 [logout]
+e2e-off-774fbedc2c actif=True perms=[] échecs=0 sessions=0 []
+e2e-user-774fbedc2c actif=True perms=[] échecs=0 sessions=1 [logout]
+exit=0
+# Revocation serveur d une session ouverte (admin ephemere)
+$ node e2e/run-native.mjs sign-in  --out <EVIDENCE>
+2026-10-16T21:08:10.076Z SCÉNARIO — sign-in
+2026-10-16T21:08:11.905Z PRÊT — session ouverte (compte éphémère « admin »)
+2026-10-16T21:08:11.906Z TERMINÉ — sign-in
+exit=0
+$ E2eSeed revoke-sessions 774fbedc2c admin   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+révocation serveur : 1 session(s) active(s) de e2e-admin-774fbedc2c révoquée(s)
+exit=0
+$ node e2e/run-native.mjs after-revocation  --out <EVIDENCE>
+2026-10-16T21:08:13.274Z SCÉNARIO — after-revocation
+2026-10-16T21:08:14.779Z CAPTURE — <EVIDENCE>\P02_native_revoked_session-expired_1920x1080_20261016T210813Z.png 1920x1080
+2026-10-16T21:08:14.779Z TERMINÉ — after-revocation
+exit=0
+# Desactivation serveur d un compte dont la session est ouverte
+$ node e2e/run-native.mjs sign-in --account off --out <EVIDENCE>
+2026-10-16T21:08:14.878Z SCÉNARIO — sign-in
+2026-10-16T21:08:16.703Z PRÊT — session ouverte (compte éphémère « off »)
+2026-10-16T21:08:16.703Z TERMINÉ — sign-in
+exit=0
+$ E2eSeed deactivate 774fbedc2c off   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+compte e2e-off-774fbedc2c désactivé
+exit=0
+$ node e2e/run-native.mjs after-revocation  --out <EVIDENCE>
+2026-10-16T21:08:17.980Z SCÉNARIO — after-revocation
+2026-10-16T21:08:19.478Z CAPTURE — <EVIDENCE>\P02_native_revoked_session-expired_1920x1080_20261016T210817Z.png 1920x1080
+2026-10-16T21:08:19.479Z TERMINÉ — after-revocation
+exit=0
+# Connexion d un compte desactive : refus neutre
+$ node e2e/run-native.mjs login-disabled  --out <EVIDENCE>
+2026-10-16T21:08:19.574Z SCÉNARIO — login-disabled
+2026-10-16T21:08:21.399Z PASS — aucune session ouverte
+2026-10-16T21:08:22.877Z CAPTURE — <EVIDENCE>\P02_native_login_disabled-account_1920x1080_20261016T210819Z.png 1920x1080
+2026-10-16T21:08:22.877Z TERMINÉ — login-disabled
+exit=0
+$ E2eSeed state 774fbedc2c   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+e2e-admin-774fbedc2c actif=True perms=[system.admin] échecs=0 sessions=2 [e2e-server-revocation,logout]
+e2e-off-774fbedc2c actif=False perms=[] échecs=0 sessions=1 [account-disabled]
+e2e-user-774fbedc2c actif=True perms=[] échecs=0 sessions=1 [logout]
+exit=0
+# Retrait serveur de system.admin pendant la session (admin ephemere) : 403
+$ node e2e/run-native.mjs sign-in  --out <EVIDENCE>
+2026-10-16T21:08:32.392Z SCÉNARIO — sign-in
+2026-10-16T21:08:34.218Z PRÊT — session ouverte (compte éphémère « admin »)
+2026-10-16T21:08:34.218Z TERMINÉ — sign-in
+exit=0
+$ E2eSeed strip-admin 774fbedc2c admin   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+permission system.admin retirée à e2e-admin-774fbedc2c
+exit=0
+$ node e2e/run-native.mjs after-permission-removed  --out <EVIDENCE>
+2026-10-16T21:08:35.526Z SCÉNARIO — after-permission-removed
+2026-10-16T21:08:37.176Z CAPTURE — <EVIDENCE>\P02_native_forbidden_403_1920x1080_20261016T210835Z.png 1920x1080
+2026-10-16T21:08:37.176Z TERMINÉ — after-permission-removed
+exit=0
+# Note : la capture du 2e after-revocation (desactivation) est renommee P02_native_disabled_session-expired_1920x1080_20261016T210817Z.png
+# Resilience API : session ouverte (user ephemere), arret de MMV.Api
+$ node e2e/run-native.mjs sign-in --account user --out <EVIDENCE>
+2026-10-16T21:08:47.633Z SCÉNARIO — sign-in
+2026-10-16T21:08:49.454Z PRÊT — session ouverte (compte éphémère « user »)
+2026-10-16T21:08:49.454Z TERMINÉ — sign-in
+exit=0
+# MMV.Api arretee (pid 2576) ; 7267 a l'ecoute : False
+$ node e2e/run-native.mjs shell-api-down  --out <EVIDENCE>
+2026-10-16T21:08:51.374Z SCÉNARIO — shell-api-down
+2026-10-16T21:08:51.393Z ERREUR — Évaluation échouée : Uncaught
+exit=1
+# MMV.Api redemarree (mmv_v2_test) : API demarree : pid 34136 / ready : HTTP 200 {"status":"Healthy","scope":"database","checkedAtUtc":"2026-10-16T21:08:54.158905Z","durationMs":128}
+$ node e2e/run-native.mjs shell-api-back  --out <EVIDENCE>
+2026-10-16T21:08:54.281Z SCÉNARIO — shell-api-back
+2026-10-16T21:08:54.282Z ERREUR — Évaluation échouée : Uncaught
+exit=1
+# Les 2 echecs ci-dessus = defaut du banc (clic avant rendu de la vue Diagnostic / du bandeau) ; corrige dans e2e/run-native.mjs (attente du bouton, buttonByText). Reprise de la sequence ci-dessous, session user toujours ouverte.
+# MMV.Api arretee (pid 34240) ; 7267 a l'ecoute : False
+$ node e2e/run-native.mjs shell-api-down  --out <EVIDENCE>
+2026-10-16T21:09:37.654Z SCÉNARIO — shell-api-down
+2026-10-16T21:09:39.314Z CAPTURE — <EVIDENCE>\P02_native_shell_api-down_1920x1080_20261016T210937Z.png 1920x1080
+2026-10-16T21:09:39.314Z TERMINÉ — shell-api-down
+exit=0
+# MMV.Api redemarree (mmv_v2_test) : API demarree : pid 13148 / ready : HTTP 200 {"status":"Healthy","scope":"database","checkedAtUtc":"2026-10-16T21:09:42.0916823Z","durationMs":140}
+$ node e2e/run-native.mjs shell-api-back  --out <EVIDENCE>
+2026-10-16T21:09:42.216Z SCÉNARIO — shell-api-back
+2026-10-16T21:09:43.204Z PASS — session conservée après redémarrage de l'API
+2026-10-16T21:09:44.663Z CAPTURE — <EVIDENCE>\P02_native_shell_api-restarted_session-kept_1920x1080_20261016T210942Z.png 1920x1080
+2026-10-16T21:09:44.663Z TERMINÉ — shell-api-back
+exit=0
+# Resilience PostgreSQL : MMV.Api redemarree avec la chaine mmv_v2_test sur un port FERME (5499, aucun serveur) : API demarree : pid 23348
+$ node e2e/run-native.mjs shell-db-down  --out <EVIDENCE>
+2026-10-16T21:12:28.727Z SCÉNARIO — shell-db-down
+2026-10-16T21:12:30.381Z CAPTURE — <EVIDENCE>\P02_native_shell_db-down_1920x1080_20261016T211228Z.png 1920x1080
+2026-10-16T21:12:30.381Z TERMINÉ — shell-db-down
+exit=0
+# (pendant cette etape /health/ready n'a renvoye aucun 200 ; la boucle d'attente du lanceur a expire, attendu)
+# MMV.Api redemarree normalement (mmv_v2_test 5433) : API demarree : pid 27096 / ready : HTTP 200 {"status":"Healthy","scope":"database","checkedAtUtc":"2026-10-16T21:12:49.2157111Z","durationMs":126}
+# Redemarrage du client : processus mmv-desktop (pid 27620) arrete ; tauri dev relance
+$ node e2e/run-native.mjs after-client-restart  --out <EVIDENCE>
+2026-10-16T21:13:12.899Z SCÉNARIO — after-client-restart
+2026-10-16T21:13:12.901Z PASS — aucune session restaurée
+2026-10-16T21:13:12.902Z STOCKAGE — ["mmv.theme"][]
+2026-10-16T21:13:12.902Z PASS — aucune clé de session dans le stockage WebView2
+2026-10-16T21:13:14.411Z CAPTURE — <EVIDENCE>\P02_native_client-restart_login_1920x1080_20261016T211312Z.png 1920x1080
+2026-10-16T21:13:14.411Z TERMINÉ — after-client-restart
+exit=0
+# Etat serveur final du 1er jeu
+$ E2eSeed state 774fbedc2c   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+e2e-admin-774fbedc2c actif=True perms=[] échecs=0 sessions=3 [active,e2e-server-revocation,logout]
+e2e-off-774fbedc2c actif=False perms=[] échecs=0 sessions=1 [account-disabled]
+e2e-user-774fbedc2c actif=True perms=[] échecs=0 sessions=2 [active,logout]
+exit=0
+# Nettoyage des comptes ephemeres (suffixe 774fbedc2c)
+$ E2eSeed cleanup 774fbedc2c   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+nettoyage : 3 compte(s) supprimé(s), sessions restantes = 0
+exit=0
+# Nettoyage des comptes ephemeres (suffixe b999422274)
+$ E2eSeed cleanup b999422274   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+nettoyage : 3 compte(s) supprimé(s), sessions restantes = 0
+exit=0
+# Residus mmv_v2_test apres nettoyage
+$ E2eSeed residue   (outil local hors depot, mmv_v2_test uniquement)
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+mmv_v2_test : users=0 e2e=0 perms=0 sessions=0 bootstrap=0
+exit=0
+# Fichiers d'identifiants temporaires supprimes : True
+# Reprise 21:2xZ : la capture after-client-restart de 21:13:12Z etait vide (fenetre capturee pendant son redimensionnement juste apres le lancement ; verifications DOM PASS ci-dessus inchangees). Capture supprimee ; client relance (processus neuf, API arretee) et scenario rejoue :
+$ node e2e/run-native.mjs after-client-restart  --out <EVIDENCE>
+2026-10-16T21:19:07.319Z SCÉNARIO — after-client-restart
+2026-10-16T21:19:07.320Z PASS — aucune session restaurée
+2026-10-16T21:19:07.322Z STOCKAGE — ["mmv.theme"][]
+2026-10-16T21:19:07.322Z PASS — aucune clé de session dans le stockage WebView2
+2026-10-16T21:19:08.831Z CAPTURE — <EVIDENCE>\P02_native_client-restart_login_1920x1080_20261016T211907Z.png 1920x1080
+2026-10-16T21:19:08.831Z TERMINÉ — after-client-restart
+exit=0

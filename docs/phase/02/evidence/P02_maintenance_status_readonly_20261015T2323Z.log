@@ -1,0 +1,6 @@
+# 2026-10-15T23:23:13Z dotnet run --project src/MMV.Maintenance --no-build -- status  (session default_transaction_read_only=on)
+Base cible     : mmv_v2_dev (rôle mmv_v2_dev, port 5433, PostgreSQL 18.6)
+Cible bootstrap: autorisée
+Migrations     : 1 appliquée(s) [20261015125000_InitialBaseline] ; 1 en attente [20261015223849_AuthIdentity]
+Bootstrap      : non vérifiable (migration en attente)
+exit=0

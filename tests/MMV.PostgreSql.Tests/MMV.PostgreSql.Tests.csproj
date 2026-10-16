@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
@@ -14,6 +15,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\MMV.Infrastructure\MMV.Infrastructure.csproj" />
+    <!-- Phase 02 : pipeline HTTP réel de l'API contre mmv_v2_test (AuthHttpPostgreSqlTests). -->
+    <ProjectReference Include="..\..\src\MMV.Api\MMV.Api.csproj" />
+    <!-- Phase 02 : politique de cible du bootstrap relue sur les vraies bases (BootstrapTargetPostgreSqlTests) ;
+         alias externe : son type Program ne doit pas masquer celui de MMV.Api. -->
+    <ProjectReference Include="..\..\src\MMV.Maintenance\MMV.Maintenance.csproj" Aliases="maintenance" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

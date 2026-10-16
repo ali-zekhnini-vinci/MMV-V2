@@ -2,12 +2,15 @@ namespace MMV.Api.Cors;
 
 /// <summary>
 /// CORS du client Tauri : origines explicites lues dans <c>Cors:AllowedOrigins</c> (définies en
-/// développement seulement), GET uniquement, sans identifiants. Toute origine joker ou non absolue
-/// fait échouer le démarrage plutôt que d'ouvrir l'API.
+/// développement seulement), sans identifiants (aucun cookie). Deux politiques sur les mêmes origines :
+/// <see cref="PolicyName"/> (santé, GET seul, 01B) et <see cref="ApiPolicyName"/> (routes <c>/api</c>,
+/// phase 02 : GET/POST, en-têtes <c>Authorization</c> et <c>Content-Type</c> seulement). Toute origine
+/// joker ou non absolue fait échouer le démarrage plutôt que d'ouvrir l'API.
 /// </summary>
 internal static class DesktopCors
 {
     public const string PolicyName = "desktop";
+    public const string ApiPolicyName = "desktop-api";
     public const string OriginsKey = "Cors:AllowedOrigins";
 
     public static IServiceCollection AddDesktopCors(this IServiceCollection services, IConfiguration configuration)
@@ -24,9 +27,16 @@ internal static class DesktopCors
             }
         }
 
-        services.AddCors(options => options.AddPolicy(PolicyName, policy => policy
-            .WithOrigins(origins)
-            .WithMethods(HttpMethods.Get)));
+        services.AddCors(options =>
+        {
+            options.AddPolicy(PolicyName, policy => policy
+                .WithOrigins(origins)
+                .WithMethods(HttpMethods.Get));
+            options.AddPolicy(ApiPolicyName, policy => policy
+                .WithOrigins(origins)
+                .WithMethods(HttpMethods.Get, HttpMethods.Post)
+                .WithHeaders("Authorization", "Content-Type"));
+        });
 
         return services;
     }

@@ -1,0 +1,73 @@
+/* ============================================================
+   MMV V2 — Feuille d'entrée Tailwind CSS 4 (phase 02)
+   - Tailwind via @tailwindcss/vite ; couches theme, base (preflight), components, utilities.
+   - Thème = jetons MMV de tokens.css, référencés et NON dupliqués (`@theme inline reference`) :
+     les utilitaires écrivent var(--accent), var(--radius-sm)…, donc suivent le thème sombre.
+     Palettes, tailles, rayons, ombres et polices par défaut de Tailwind sont retirés (`--*: initial`) :
+     aucun thème shadcn/ui par défaut, seules les valeurs du Design System MMV existent.
+   - tokens.css et les CSS de composants (login/, shell/) restent hors couche : ils priment sur
+     les utilitaires et sur le preflight ; le CSS spécifique est conservé là où le design l'exige.
+   ============================================================ */
+@import "tailwindcss";
+@import "./fonts.css";
+@import "./tokens.css";
+
+@theme inline reference {
+  --color-*: initial;
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-pressed: var(--accent-pressed);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-disabled: var(--accent-disabled);
+  --color-surface-page: var(--surface-page);
+  --color-surface-card: var(--surface-card);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-focus: var(--border-focus);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-error-text: var(--error-text);
+  --color-info: var(--info);
+
+  --radius-*: initial;
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  --shadow-*: initial;
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-focus: var(--shadow-focus);
+
+  /* Tailles : échelle MMV (la hauteur de ligne reste héritée, comme dans les CSS de composants). */
+  --text-*: initial;
+  --text-2xs: var(--text-2xs);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-body: var(--text-body);
+  --text-body-lg: var(--text-body-lg);
+  --text-h3: var(--text-h3);
+  --text-h2: var(--text-h2);
+  --text-h1: var(--text-h1);
+  --text-display: var(--text-display);
+
+  --font-*: initial;
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}

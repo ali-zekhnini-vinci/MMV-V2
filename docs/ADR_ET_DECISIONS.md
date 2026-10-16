@@ -55,3 +55,19 @@ Question importante mais différable jusqu'au lot Vente : pays d'exploitation/r�
 ## Registre des décisions résolues séparément
 
 Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les propositions métier tirées du dossier maître avec mention de classes C# historiques sont irrecevables. Le backlog des 153 + 23 reste préservé.
+
+## Note datée — 16/10/2026 (phase 02, en cours)
+
+- **ADR-007 reste `PROPOSED`.** La phase 02 implémente une **variante de développement provisoire** : jeton opaque 256 bits, session serveur révocable (seul le SHA-256 est stocké), jeton en mémoire volatile du client uniquement, durée absolue 8 h, inactivité 30 min, aucun rafraîchissement. Comparaison cookies HttpOnly + anti-CSRF / coffre OS et risques : `docs/phase/02/GATES_AND_DECISIONS.md` § O-02-02. Ce n'est pas une session distribuable approuvée.
+- Matrice de permissions **techniques** minimale : être authentifié ; `system.admin` (administration technique). Aucun droit métier ; les cinq profils visuels du Lot 1 ne confèrent aucun droit.
+
+## Note datée — 16/10/2026 (phase 02, corrections finales avant migration)
+
+- Revue externe frontend + backend .NET : architecture d'authentification de la phase 02 **conforme**, conservée. **ADR-007 reste `PROPOSED`** (variante de session dev inchangée).
+- `bootstrap-admin` (MMV.Maintenance) n'écrit que sur la cible de développement autorisée (`mmv_v2_dev`, rôle `mmv_v2_dev`, port 5433, PostgreSQL 18, connexion locale) ; tout écart est refusé sans modification. Aucune migration appliquée ni bootstrap réel avant le GO O-02-01.
+- Pile frontend de `docs/ARCHITECTURE_ET_STACK.md` §3 intégrée pour les seules lignes ayant un usage réel (Tailwind CSS 4, shadcn/ui + Radix, React Hook Form + Zod, React Router, Lucide) ; polices Inter/Source Sans 3 embarquées (O-02-05 résolu). **ADR-014 (licences)** : dépendances ajoutées MIT / Apache-2.0 / SIL OFL 1.1, inventaire `docs/phase/02/SOURCE_MAP.md` ; ADR-014, ADR-001 restent `PROPOSED`.
+
+## Note datée — 16/10/2026 (phase 02, exécution O-02-01 et finalisation)
+
+- GO O-02-01 exécuté : migration d'identité appliquée à `mmv_v2_dev` et `mmv_v2_test`, premier administrateur créé par le propriétaire, second bootstrap refusé. **ADR-007 reste `PROPOSED`** : la variante de session dev (jeton opaque en mémoire volatile, session serveur révocable) est désormais **prouvée en natif** dans WebView2 (aucun cookie ni stockage de session ; révocation, désactivation et retrait de droit effectifs immédiatement ; session perdue au redémarrage du client). La comparaison avec cookies HttpOnly ou coffre OS reste à faire avant distribution (`docs/phase/02/QA_MATRIX.md` Q-02-52 à Q-02-55).
+- Incident **SEC-02-01** : mots de passe PostgreSQL des rôles de développement et de test affichés dans une session agent ; absents du dépôt ; rotation requise par le propriétaire (`docs/phase/02/GATES_AND_DECISIONS.md` § Incident SEC-02-01). Aucune décision d'architecture modifiée.

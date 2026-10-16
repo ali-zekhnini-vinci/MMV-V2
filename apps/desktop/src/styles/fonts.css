@@ -1,0 +1,6 @@
+/* Polices de l'identité MMV, embarquées localement (phase 02) — SIL Open Font License 1.1.
+   Inter (titres) et Source Sans 3 (texte) : axes de graisse variables, woff2 copiés dans le bundle par
+   Vite depuis node_modules/@fontsource-variable/*. Aucun appel réseau à l'exécution.
+   Licences redistribuées avec le client : public/licenses/. */
+@import "@fontsource-variable/inter/wght.css";
+@import "@fontsource-variable/source-sans-3/wght.css";
