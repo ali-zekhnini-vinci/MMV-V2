@@ -1,5 +1,7 @@
 # 03 — Contrat HTTP Clients (PROPOSED, 17/10/2026)
 
+> **Amendement daté 17/10/2026 (03-A2) — historique.** Ce document est conservé tel que présenté au dossier G03-METIER. Le contrat **implémenté** est [`API_CLIENTS.md`](API_CLIENTS.md) (mêmes routes et ressources ; précisions : 400 `invalid_body` pour un corps illisible ou un champ inconnu, 415 pour un `Content-Type` non JSON, `client_archived` contrôlé avant la version, schémas OpenAPI réels). Les mentions « non implémenté », `CLIENTS_API_ENABLED = false` et « génération de types non retenue » ci-dessous décrivent l'état du 03-A.
+
 **Statut : `PROPOSED`** — non implémenté dans MMV.Api. Consommé par l'interface (`apps/desktop/src/api/clients.ts`) et par le double de test (`apps/desktop/src/test/fakeClientsApi.ts`), jamais par une route réelle tant que G03-METIER n'est pas ratifié (`CLIENTS_API_ENABLED = false`, `apps/desktop/src/clients/clientsService.ts`). Décisions associées : [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md) D-03-01 à D-03-12.
 
 ## Règles communes

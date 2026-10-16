@@ -4,6 +4,8 @@ Source : `references/phase03/LOT2_ETATS_VISUELS.md` et `references/phase03/lot2/
 
 Colonnes : **UI 03-A** = ce qui existe dans le code (`IMPLEMENTED` : écran réel testé ; `PENDING_SERVICE` : affiché seulement quand le service Clients sera activé, testé sur double ; `N/A` : sans objet par recommandation ; `03-B` : sous-lot Rendez-vous) ; **Décision** = référence de [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md) ; **Statut** = `APPROVED` / `PROPOSED` / `DEFERRED`. Aucune ligne n'est `APPROVED` à ce jour.
 
+> **Amendement daté 17/10/2026 (03-A2).** Tableau conservé tel qu'établi en 03-A. Depuis 03-A2 : le service Clients est **activé** (`CLIENTS_API_ENABLED = true`) et raccordé aux routes réelles `/api/clients` ; les lignes `PENDING_SERVICE` sont donc servies par la vraie API, mais restent **non démontrables en natif** tant que la migration 0003 n'est pas appliquée et que des droits `clients.*` ne sont pas attribués (QA Q-03-75 `NOT_TESTED`). Décisions : les lignes rattachées à D-03-01 à D-03-10 passent de `PROPOSED` à **ACCEPTED** (G03-METIER A, B) ; D-03-11 / D-03-12 **ACCEPTED sur le principe** ; les états Rendez-vous (D-03-13 à D-03-17) restent `PROPOSED` ; `DEFERRED` inchangés. Aucun écran visuellement modifié ; aucun état `APPROVED` (approbation visuelle non prononcée).
+
 ## Clients (29 états)
 
 | ID | État | Fonctionnalité | UI 03-A | Tests | Décision | Statut |

@@ -50,3 +50,50 @@ Exécutions réelles, poste Windows 11 Home 10.0.26200 x64, 17/10/2026. Statuts 
 | Q-03-40 | Graphify CLI | `graphify update .` ; `graphify query "Comment le module Clients appelle-t-il l'API ?"` | PASS | 1862 nœuds, 3553 arêtes, 119 communautés ; sous-graphe incluant `ClientsModule.tsx`, `clientQueries.ts`, `api/clients.ts` |
 | Q-03-41 | Serena MCP TypeScript | `get_symbols_overview("apps/desktop/src/clients/clientQueries.ts")` | PASS | `clientKeys`, `useClientList`, `useClientDetail`, `useClientWrite`, mutations (limite TypeScript de 01B/02 levée) |
 | Q-03-42 | Serena MCP C# | `find_symbol("Permissions/All", "src/MMV.Domain/Identity/Permissions.cs", include_body)` | PASS | `[SystemAdmin]` (branche inchangée côté C#) |
+
+## 03-A2 — Préflight et environnement (17/10/2026)
+
+| ID | Vérification | Commande / méthode | Résultat | Extrait |
+|---|---|---|---|---|
+| Q-03-50 | Processus du propriétaire | `Get-CimInstance Win32_Process` (node, dotnet, MMV, tauri) | PASS | aucun `MMV.Api`, Vite ni Tauri actif (seuls les serveurs de langage Serena) ; aucun processus arrêté ni modifié par l'agent |
+| Q-03-51 | `npm ci` (relance de Q-03-11) | `npm ci` ; `cmp package-lock.json` | PASS | 0 vulnérabilité ; verrou identique |
+| Q-03-52 | Dépendances | `git status` des verrous npm / NuGet | PASS | aucune dépendance ajoutée (ni npm, ni NuGet) ; `packages.lock.json` et `package-lock.json` inchangés |
+
+## 03-A2 — Backend (sans migration)
+
+| ID | Vérification | Commande | Résultat | Extrait |
+|---|---|---|---|---|
+| Q-03-53 | Règles D-03-01 à D-03-05 | `ClientRulesTests` | PASS | 47/47 : obligatoires, longueurs, téléphone 8–15 chiffres, email (motif de Zod 4), date civile 1900→aujourd'hui, code postal, caractères de contrôle, repliement accents/casse, motifs de recherche échappés, cycle de vie |
+| Q-03-54 | Cas d'usage | `ClientServiceTests`, `PermissionAdministrationServiceTests` | PASS | 9/9 et 7/7 : UUID v7, auteur, précision µs, version périmée → conflit sans écriture, conflit à l'enregistrement, client archivé non modifiable, aucune suppression ; `system.admin` et permissions inconnues non attribuables |
+| Q-03-55 | Pipeline HTTP `/api/clients` | `ClientsEndpointsTests` | PASS | 46/46 : 401 ×6, 403 pour `system.admin` seul et compte sans droit ×6, chaque écriture exige sa permission, cycle complet, 422 à codes bornés, 400 `invalid_body` (champ inconnu `socialSecurityNumber`, JSON illisible, type), 415, `version_required`, 404, `invalid_query` ×16, pagination serveur, DELETE → 405, HTTP → 403 `https_required`, CORS PUT admis / DELETE refusé |
+| Q-03-56 | Confidentialité des journaux (D-03-10) | `Logs_ContainTechnicalIdentifiersOnly` | PASS | identifiant du client présent ; aucun nom, téléphone, email, adresse, date de naissance, note ni terme de recherche |
+| Q-03-57 | Contrat OpenAPI réel | `ClientsOpenApiContractTests` (2) ; instantané `apps/desktop/src/api/contract/clients.openapi.json` | PASS | 4 chemins, aucun DELETE ; statuts déclarés (200/201/400/401/403/404/409/422) ; 9 schémas dont `ClientStatusValue` ; entiers stricts ; paramètres de liste à énumérations et bornes |
+| Q-03-58 | `MMV.Maintenance permissions` | `BootstrapCommandProcessTests` (12 nouveaux) | PASS | permission non attribuable → code 1 sans connexion ; cible étrangère → code 5 « aucune connexion n'a été ouverte » ; arguments mal formés → 1 ; `permissions list` en lecture seule non refusée par la politique |
+| Q-03-59 | Non-régression Phase 02 | `AuthEndpointsTests` | PASS | `GET /api/clients` (route absente en 02) remplacé par `/api/appointments` et `/api/prescriptions` (toujours 404) ; aucun autre test modifié |
+| Q-03-60 | Build complet (relance de Q-03-32) | `dotnet build MMV.slnx --no-incremental` | PASS | 0 avertissement / 0 erreur |
+| Q-03-61 | Suite .NET hors écriture | `dotnet test MMV.slnx --filter "Stage!=IdentityWrite&Stage!=ClientsWrite&Stage!=PostMigration"` | PASS | `MMV.Api.Tests` 182/182, `MMV.Maintenance.Tests` 50/50, `MMV.PostgreSql.Tests` 14/14 |
+| Q-03-62 | Expression de référence sur PostgreSQL 18 réel | `ClientReferenceFormatPostgreSqlTests` (session lecture seule, `mmv_v2_test`) | PASS | `CLI-000001`, `CLI-000042`, `CLI-999999`, `CLI-1000000`, `CLI-123456789`, `CLI-999999999999999999` ; jamais tronqué |
+| Q-03-63 | État connu des bases | `SchemaStateTests.*_ContainsOnlyAKnownState` (lecture seule) | PASS | `mmv_v2_dev` et `mmv_v2_test` à l'état baseline + identité (aucun objet `clients`) |
+| Q-03-64 | Toutes migrations appliquées | `--filter "Stage=PostMigration"` | **FAIL (attendu)** | 2/2 échecs : schémas `[auth]` au lieu de `[auth, clients]`, historique limité à `InitialBaseline`, `AuthIdentity` — constat que 0003 n'est **pas** appliquée ; à relancer après G03-SQL (`evidence/P03A2_postgresql_20261017.log`) |
+| Q-03-65 | Écriture Clients sur PostgreSQL | `--filter "Stage=ClientsWrite"` (5 tests : cycle complet, conflit `xmin` entre deux contextes, recherche, contraintes, matrice HTTP) | **NOT_RUN** | exige 0003 appliquée sur `mmv_v2_test` ; **non déclaré réussi** |
+| Q-03-66 | Étape `IdentityWrite` | — | NOT_RERUN | 5 tests ; exemple de permission inconnue remplacé (`clients.read` devient admise par 0003 → `clients.delete`) ; non exécutés (aucune écriture sans GO) |
+| Q-03-67 | Migration et SQL hors connexion | `dotnet ef migrations add` / `script` / `list --no-connect` | PASS | `20261016230630_ClientsModule` ; 3 scripts, empreintes dans `GATES_AND_DECISIONS.md` ; diff avec la proposition 03-A limité à la référence ; **aucune connexion, aucune application** |
+| Q-03-68 | Base de développement | revue des commandes exécutées | PASS | aucune écriture persistante sur `mmv_v2_dev` ni `mmv_v2_test`, aucun client fictif, aucune permission attribuée (seules les sessions en lecture seule et la transaction annulée de `TransactionalRollbackTests` ont touché `mmv_v2_test`) |
+
+## 03-A2 — Frontend
+
+| ID | Vérification | Commande | Résultat | Extrait |
+|---|---|---|---|---|
+| Q-03-70 | Typage | `npm run check` | PASS | aucune erreur |
+| Q-03-71 | Lint | `npm run lint` | PASS (avertissement) | 0 erreur, 1 avertissement O-03-02 inchangé |
+| Q-03-72 | Tests | `npm test` | PASS | **134/134**, 13 fichiers (03-A : 128 ; + 5 contrat ; Shell : test « non activé » remplacé par « `system.admin` seul → 403 serveur » + « interrupteur de repli », aucun test supprimé sans remplacement) |
+| Q-03-73 | Types ↔ contrat | `apps/desktop/src/api/clientsContract.test.ts` | PASS | 5/5 : propriétés et nullabilité (tables vérifiées à la compilation), `status`, entiers, requêtes, routes et statuts, listes blanches et bornes = `clientListQuery`, parseurs stricts sur exemple généré du schéma |
+| Q-03-74 | Build | `npm run build` ; recherche dans `dist/` | PASS (avertissement) | `ClientsModule` 112,04 kB ; principal 548,44 kB (O-03-03) ; aucun double, aucune donnée fictive, aucun contrat de test dans le bundle |
+| Q-03-75 | Parcours natif sur la vraie API | `npx tauri dev` | **NOT_TESTED** | exige la migration 0003 et des droits `clients.*` attribués ; sans migration, l'écran afficherait l'erreur technique bornée |
+
+## 03-A2 — Outils agent
+
+| ID | Vérification | Appel réel | Résultat | Extrait |
+|---|---|---|---|---|
+| Q-03-76 | Graphify CLI | `graphify update .` ; `graphify query "Comment les permissions clients.write protègent la modification d'un client ?"` | PASS | 2327 nœuds ; sous-graphe : `Permissions`, `Client`, `ClientService`, `ClientRulesTests`, `MmvDbContext` |
+| Q-03-77 | Serena MCP | — | NOT_RUN | non utilisé dans cette session (lecture directe et Graphify suffisants) |

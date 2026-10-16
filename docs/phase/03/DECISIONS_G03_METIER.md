@@ -1,6 +1,26 @@
 # 03 — Dossier d'arbitrage G03-METIER (présenté le 17/10/2026)
 
-**Statut : toutes les lignes sont `PROPOSED`.** Rien ici n'est approuvé tant que le propriétaire ne l'a pas ratifié explicitement. Les valeurs d'exemple des maquettes (personnes, téléphones, horaires, motifs, durées) ne sont ni des données de démonstration ni des défauts métier.
+## Décision du propriétaire — 17/10/2026 (GO 03-A2)
+
+Source : message de session « PHASE 03-A2 — GO MÉTIER CLIENTS », versionné [`prompts/PHASE03_A2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_A2_GO_CLAUDE_CODE.md).
+
+| Section | Décision | Lignes |
+|---|---|---|
+| **A. Modèle Clients** | **ACCEPTED** | D-03-01 à D-03-07 — prénom et nom obligatoires, autres champs facultatifs ; référence `CLI` générée par PostgreSQL, unique, non réutilisée ; recherche insensible aux accents et à la casse ; aucune unicité d'email ni de téléphone ; aucune donnée médicale, de sécurité sociale ni de mutuelle en Phase 03 ; archivage/réactivation sans suppression définitive ; concurrence stricte par version, sans écrasement silencieux |
+| **B. Permissions** | **ACCEPTED** | D-03-08 à D-03-10 — `clients.read`, `clients.write`, `clients.archive` ; `system.admin` sans droit Clients implicite ; attribution par l'outil de maintenance |
+| **C. API et migration** | **ACCEPTED sur le principe** — SQL **non autorisé à l'application** avant la revue du propriétaire | D-03-11, D-03-12 — backend, endpoints, validations, permissions et tests autorisés ; migration `0003_ClientsModule` et son SQL exact à préparer, **non appliqués** |
+| **D. Rendez-vous** | **EN ATTENTE** (Phase 03-B) | D-03-13 à D-03-17 restent `PROPOSED` ; module Rendez-vous non développé |
+
+Les tableaux ci-dessous sont conservés **tels que présentés** (colonne « Recommandation » = proposition du 17/10/2026). Mise en œuvre et précisions techniques apportées en 03-A2, **soumises à la revue SQL** :
+
+- **D-03-01 (référence)** : l'expression proposée `'CLI-' || lpad(nextval(…)::text, 6, '0')` **tronquait** au-delà de 999 999 (`lpad` coupe à 6 caractères), d'où des références en double et un rejet par l'index unique. Corrigée en `'CLI-' || to_char(nextval(…), 'FM999999999999000000')` : 6 chiffres au minimum, jamais tronqué ; séquence `MAXVALUE 999999999999999999 NO CYCLE`, colonne `varchar(24)`, contrainte `^CLI-[0-9]{6,18}$`. Vérifié par PostgreSQL 18 en lecture seule (`ClientReferenceFormatPostgreSqlTests`). La séquence n'est jamais remise à zéro : une insertion annulée consomme un numéro (trous possibles, aucune réutilisation).
+- **D-03-04 (recherche)** : chaque mot saisi doit apparaître (ordre libre : « Dupont Jean » trouve « Jean Dupont ») ; une saisie purement téléphonique est comparée aux seuls chiffres. Contrat : [`API_CLIENTS.md`](API_CLIENTS.md) § Recherche.
+- **D-03-09 (attribution)** : `MMV.Maintenance permissions list | grant | revoke <identifiant> <permission>` ; seules `clients.read|write|archive` sont attribuables (jamais `system.admin`) ; même cible stricte et mêmes trois contrôles que `bootstrap-admin` ; confirmation interactive du nom de la base ; code 6 si le compte est introuvable. Aucune attribution effectuée (aucune migration appliquée).
+- **D-03-12 (migration)** : nom EF `20261016230630_ClientsModule` (régénéré, l'horodatage proposé `20261016223616` est caduc) ; scripts [`sql/0003_ClientsModule.sql`](sql/0003_ClientsModule.sql), `.idempotent.sql`, `.rollback.sql`. **Le retour arrière supprime la table et toutes les fiches clients** : à n'utiliser qu'avant toute donnée réelle, après retrait des attributions `clients.*`.
+
+## Dossier présenté (historique, 17/10/2026)
+
+**Statut d'origine : toutes les lignes sont `PROPOSED`.** Rien ici n'est approuvé tant que le propriétaire ne l'a pas ratifié explicitement — ratification du 17/10/2026 : voir la section précédente. Les valeurs d'exemple des maquettes (personnes, téléphones, horaires, motifs, durées) ne sont ni des données de démonstration ni des défauts métier.
 
 Une **seule validation** est demandée pour démarrer 03-A2 (domaine Clients, API, migration) : sections A, B et C. La section D (Rendez-vous) peut être validée maintenant ou au démarrage de 03-B ; elle ne bloque pas 03-A2.
 

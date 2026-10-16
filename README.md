@@ -2,10 +2,16 @@
 
 ## Statut actuel — phase 03 (17/10/2026)
 
-**`PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv`, créée depuis `origin/main` = `cb79d1f951aa68e9523642384648424dee61836d` (merge de la PR #3, **Phase 02 MERGED**, vérifié par Git). Aucun push, PR ni merge.
+**`PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A2 du propriétaire : G03-METIER **A et B acceptés**, **C accepté sur le principe** (SQL non autorisé à l'application), D (Rendez-vous) en attente de 03-B.
+
+- **03-A2 implémenté :** domaine Clients, validation serveur, API `/api/clients` (6 routes, policies `clients.read` / `clients.write` / `clients.archive`, `system.admin` sans droit Clients), persistance EF Core 10 / Npgsql (référence `CLI` par séquence PostgreSQL, concurrence `xmin`), OpenAPI à schémas réels contrôlé contre les types TypeScript, commande `MMV.Maintenance permissions list|grant|revoke`, interface branchée sur la vraie API. Contrat : [`docs/phase/03/API_CLIENTS.md`](docs/phase/03/API_CLIENTS.md).
+- **À revoir avant application :** migration `0003_ClientsModule` et SQL exact ([`docs/phase/03/sql/0003_ClientsModule.sql`](docs/phase/03/sql/0003_ClientsModule.sql), `.idempotent.sql`, `.rollback.sql` ; empreintes dans [`GATES_AND_DECISIONS.md`](docs/phase/03/GATES_AND_DECISIONS.md)) — **non appliquée**, aucun client ni droit en base.
+- Tests : .NET 246/246 hors écriture (API 182, Maintenance 50, PostgreSQL 14), frontend 134/134 ; `Stage=ClientsWrite` (5) **NOT_RUN** et `Stage=PostMigration` en échec attendu tant que 0003 n'est pas appliquée ; parcours natif `NOT_TESTED`. 03-B et 03-C non commencés.
+
+*Historique — statut 03-A (17/10/2026) :* **`PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv`, créée depuis `origin/main` = `cb79d1f951aa68e9523642384648424dee61836d` (merge de la PR #3, **Phase 02 MERGED**, vérifié par Git). Aucun push, PR ni merge.
 
 - **03-A1 implémenté :** TanStack Query 5.104.1 et TanStack Table 8.21.3 intégrés ; module Clients (`/clients`) : liste à pagination/tri/recherche serveur, filtres, formulaire unique (validation, état modifié, confirmation de sortie, Ctrl+S), fiche à onglets (Ordonnances / Ventes explicitement reportés), archivage/réactivation, conflits de version. Tant que le dossier G03-METIER n'est pas ratifié, le service est **désactivé** : l'écran l'indique, aucune requête ni donnée fictive (seuls les tests activent le service contre un double HTTP). Tests frontend 128/128 ; .NET 123/123 hors étape d'écriture (NOT_RERUN) ; captures natives `NOT_TESTED`.
-- **À valider (une seule fois) :** [`docs/phase/03/DECISIONS_G03_METIER.md`](docs/phase/03/DECISIONS_G03_METIER.md) — champs clients, cycle de vie, permissions `clients.*`, contrat [`API_CLIENTS_PROPOSED.md`](docs/phase/03/API_CLIENTS_PROPOSED.md), migration `0003_ClientsModule` générée hors connexion **non appliquée** (`docs/phase/03/sql/`).
+- **À valider (une seule fois)** *(validé le 17/10/2026 pour A, B ; C sur le principe)* **:** [`docs/phase/03/DECISIONS_G03_METIER.md`](docs/phase/03/DECISIONS_G03_METIER.md) — champs clients, cycle de vie, permissions `clients.*`, contrat [`API_CLIENTS_PROPOSED.md`](docs/phase/03/API_CLIENTS_PROPOSED.md), migration `0003_ClientsModule` générée hors connexion **non appliquée** (`docs/phase/03/sql/`).
 - 03-A2, 03-B (Rendez-vous, cadrage [`RDV_03B_PREPARATION.md`](docs/phase/03/RDV_03B_PREPARATION.md)) et 03-C non commencés. Détail : [`docs/phase/03.md`](docs/phase/03.md).
 
 ## Statut phase 02 (16/10/2026, historique)
@@ -37,7 +43,7 @@ Chaîne démontrée en développement local : **fenêtre Tauri → HTTPS → MMV
 
 Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md), [`docs/phase/01b/QA_MATRIX.md`](docs/phase/01b/QA_MATRIX.md), [`docs/phase/01b/GATES_AND_DECISIONS.md`](docs/phase/01b/GATES_AND_DECISIONS.md). Phases antérieures : 00 (cadrage) livrée ; 01A **MERGED** dans `main` (`4ed20a8e38b9db7519c0f56e24afaaaa4d6556ed`), voir [`docs/phase/01/QA_MATRIX.md`](docs/phase/01/QA_MATRIX.md).
 
-**Nature du code :** socle technique minimal, **non** destiné à la production. Aucun module métier, aucune donnée de magasin.
+**Nature du code :** socle technique minimal, **non** destiné à la production. Aucun module métier, aucune donnée de magasin. *(Note datée 17/10/2026 : phrase rédigée en 01B ; depuis 03-A2, le module Clients existe dans le code, sans aucune donnée en base.)*
 
 ## Contenu du dépôt
 
@@ -47,7 +53,8 @@ Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md),
 | Solution .NET 10 | `MMV.slnx`, `src/MMV.Domain`, `src/MMV.Application`, `src/MMV.Infrastructure`, `src/MMV.Api` |
 | Santé (`/health/live`, `/health/ready`), CORS restreint | `src/MMV.Api/Health/`, `src/MMV.Api/Cors/DesktopCors.cs` |
 | Migration baseline vide et script SQL relu | `src/MMV.Infrastructure/Persistence/Migrations/`, `docs/phase/01b/sql/` |
-| Commandes de maintenance locales (état, bootstrap administrateur à cible stricte) | `src/MMV.Maintenance/` |
+| Commandes de maintenance locales (état, bootstrap administrateur et attribution des droits Clients à cible stricte) | `src/MMV.Maintenance/` |
+| Module Clients (phase 03-A2) : domaine, cas d'usage, persistance, routes `/api/clients` | `src/MMV.Domain/Clients/`, `src/MMV.Application/Clients/`, `src/MMV.Infrastructure/Clients/`, `src/MMV.Api/Clients/` |
 | Tests | `tests/MMV.Api.Tests/`, `tests/MMV.Maintenance.Tests/`, `tests/MMV.PostgreSql.Tests/`, `apps/desktop/src/**/*.test.{ts,tsx}` |
 | Documentation de phase | `docs/phase/`, preuves dans `docs/phase/01/`, `docs/phase/01b/evidence/` et `docs/phase/02/evidence/` |
 
@@ -62,8 +69,11 @@ dotnet restore MMV.slnx --locked-mode
 dotnet build MMV.slnx
 dotnet test MMV.slnx                                                          # suite complète (migration d'identité appliquée le 16/10/2026)
 dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"   # base encore non migrée uniquement
+dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite&Stage!=ClientsWrite"   # avant application de 0003_ClientsModule (03-A2)
 dotnet run --project src/MMV.Maintenance -- status                            # état et conformité de la base cible (session en lecture seule)
 # bootstrap-admin : effectué par le propriétaire le 16/10/2026 sur mmv_v2_dev ; tout nouveau lancement est refusé (code 3)
+dotnet run --project src/MMV.Maintenance -- permissions list                  # comptes et permissions (lecture seule)
+# permissions grant|revoke <identifiant> clients.read|clients.write|clients.archive : après application de 0003 uniquement
 dotnet run --project src/MMV.Api --launch-profile http   # puis http://localhost:5022/health/live
 dotnet run --project src/MMV.Api --launch-profile https  # puis https://localhost:7267/health/live et /health/ready (01B)
 
@@ -100,7 +110,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/03.md` et `docs/phase/03/` : phase 03 (`PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`) — dossier G03-METIER, correspondance des 47 états, contrat Clients proposé, SQL proposé non appliqué, cadrage Rendez-vous, spécification, QA, gates, source-map.
+- `docs/phase/03.md` et `docs/phase/03/` : phase 03 (`PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED` ; historique 03-A : `PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`) — décision G03-METIER, correspondance des 47 états, contrat Clients implémenté (`API_CLIENTS.md`) et proposé (historique), SQL 0003 à revoir non appliqué, cadrage Rendez-vous, spécification, QA, gates, source-map.
 - `docs/phase/02.md` et `docs/phase/02/` : phase 02 (**MERGED** dans `main`, `cb79d1f` ; état de livraison `PHASE02_READY_FOR_MANUAL_MERGE`, SEC-02-01 clos) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.

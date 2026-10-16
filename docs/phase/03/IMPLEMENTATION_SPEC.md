@@ -1,6 +1,8 @@
 # 03 — IMPLEMENTATION_SPEC
 
-**Statut :** spécification de travail du sous-lot 03-A (17/10/2026). Les choix métier, le contrat HTTP, les permissions et la migration sont **PROPOSED** (dossier [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md)). Aucune route, table ni permission nouvelle n'existe côté serveur ou en base.
+**Statut (17/10/2026, 03-A2) :** sous-lots 03-A1 et 03-A2 **implémentés**. G03-METIER A et B acceptés, C accepté sur le principe : routes `/api/clients`, policies et permissions `clients.*` existent dans le code ; la migration `0003_ClientsModule` est **préparée, non appliquée** — aucune table ni permission n'existe encore en base. Section 03-A2 en fin de document.
+
+*Historique 03-A :* spécification de travail du sous-lot 03-A (17/10/2026). Les choix métier, le contrat HTTP, les permissions et la migration étaient **PROPOSED** (dossier [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md)) ; aucune route, table ni permission nouvelle n'existait côté serveur ou en base. Les sections suivantes décrivent l'état 03-A ; les écarts 03-A2 sont signalés dans la dernière section.
 
 ## Architecture 03-A
 
@@ -70,7 +72,7 @@ Les deux paquets Radix appartiennent à la même vague de publication (12/10/202
 
 Résultats : [`QA_MATRIX.md`](QA_MATRIX.md).
 
-## Plan 03-A2 (après GO G03-METIER) — EF Core / Npgsql
+## Plan 03-A2 (après GO G03-METIER) — EF Core / Npgsql — *historique 03-A, réalisé : voir « Réalisation 03-A2 »*
 
 Proposition générée **hors connexion** dans un worktree jetable (fabrique design-time sans chaîne de connexion), **non intégrée** au dépôt :
 
@@ -87,3 +89,44 @@ Commandes (worktree, depuis la racine) : `dotnet ef migrations add ClientsModule
 Relecture du SQL : schéma `clients` ; séquence `clients.client_reference_seq` ; table `clients.clients` (17 colonnes, 6 contraintes `CHECK`, 2 FK `RESTRICT` vers `auth.users`) ; index `ux_clients_reference`, `ix_clients_active_name` (partiel, actifs), `ix_clients_created_at`, `ix_clients_created_by_user_id`, `ix_clients_updated_by_user_id` ; contrainte `auth.user_permissions.ck_user_permissions_permission` recréée avec `clients.read|write|archive`. Points d'attention : le retour arrière échoue tant que des attributions `clients.*` existent (les supprimer d'abord) et ne supprime pas le schéma `clients` vide.
 
 Reste à faire en 03-A2 (GO requis) : services Application (création, modification, archivage, recherche normalisée `search_text`), endpoints et policies, CORS `PUT`, réponses OpenAPI déclarées, journaux sans donnée personnelle, commande `MMV.Maintenance permissions grant|revoke` (D-03-09), extension de `SchemaInspection` au schéma `clients`, tests d'autorisation serveur, tests Npgsql sur `mmv_v2_test` (transactions annulées, données fictives), application de la migration par `scripts/Invoke-MmvSqlScript.ps1`, bascule `CLIENTS_API_ENABLED = true`, preuves natives.
+
+## Réalisation 03-A2 (17/10/2026)
+
+```text
+MMV.Domain/Clients        Client (Create/Update/Archive/Reactivate, lecture seule si archivé, xmin → Version)
+                          ClientDetails (saisie validée) ; ClientSearch (repliement NFD/minuscules, chiffres, search_text)
+MMV.Domain/Identity       Permissions : + clients.read / clients.write / clients.archive ; Grantable (sans system.admin)
+MMV.Application/Clients   ClientInputValidator (D-03-02, codes bornés) ; ClientService (UUID v7, horodatage µs, conflits)
+                          IClientStore ; ClientListQuery / ClientPage / ClientWriteResult
+MMV.Application/Identity  PermissionAdministrationService (grant/revoke, permissions attribuables seulement)
+MMV.Infrastructure        Clients/ClientModel (schéma clients, séquence, contraintes, index, FK RESTRICT, IsRowVersion)
+                          Clients/ClientStore (EF Core 10 / Npgsql : filtres, LIKE échappés, tri à clé finale id,
+                          DbUpdateConcurrencyException → false) ; MmvDbContext.Clients ; migration 20261016230630_ClientsModule
+MMV.Api                   Clients/ClientsEndpoints (6 routes, TypedResults, corps JSON stricts, liste blanche, journaux
+                          LoggerMessage 3001/3002 à identifiants techniques) ; AuthSetup : policies ClientsRead/Write/Archive ;
+                          DesktopCors : + PUT ; Program : nombres JSON stricts
+MMV.Maintenance           permissions list | grant | revoke <identifiant> <permission> (cible stricte, 3 contrôles, code 6)
+apps/desktop              CLIENTS_API_ENABLED = true ; contrat src/api/contract/clients.openapi.json + clientsContract.test.ts ;
+                          libellés « non activé » neutres (interrupteur de repli) ; double fakeClientsApi aligné
+```
+
+| Exigence du GO 03-A2 | Mise en œuvre | Preuve |
+|---|---|---|
+| Prénom/nom obligatoires, autres facultatifs | `ClientInputValidator` ; contraintes `ck_clients_*_not_blank` | Q-03-53, Q-03-55 |
+| Référence `CLI` par PostgreSQL, unique, non réutilisée | séquence `NO CYCLE`, défaut `to_char`, `ux_clients_reference` ; `Reference` jamais envoyée par EF (`PropertySaveBehavior.Ignore`), relue par `RETURNING` | Q-03-62 ; `ClientsWrite` NOT_RUN |
+| Recherche insensible aux accents et à la casse | `ClientSearch` + `ClientStore.SearchPatterns` | Q-03-53, Q-03-54 |
+| Aucune unicité email/téléphone | aucun index unique hors `reference` | `SchemaInspection.ClientsIndexesExpected` |
+| Aucune donnée médicale / sécurité sociale / mutuelle | absentes du modèle ; champ inconnu → 400 | Q-03-55, `ClientsColumnsExpected` |
+| Archivage/réactivation, pas de suppression | `Client.Archive/Reactivate` ; aucune route DELETE (405) | Q-03-54, Q-03-55 |
+| Concurrence stricte par version | contrôle `Version` avant écriture + `WHERE xmin` à l'enregistrement → 409 | Q-03-54, Q-03-55 ; conflit `xmin` réel : `ClientsWrite` NOT_RUN |
+| `clients.*`, `system.admin` sans droit implicite | policies distinctes | Q-03-55 (403 ×6) |
+| Attribution par l'outil de maintenance | `permissions grant|revoke` | Q-03-54, Q-03-58 |
+| EF Core 10, Npgsql, PostgreSQL 18 exclusivement | aucun autre fournisseur (`ProjectReferenceRulesTests`) | Q-03-61 |
+| Migration 0003 + SQL exact, non appliqués | `docs/phase/03/sql/0003_ClientsModule*.sql` | Q-03-64, Q-03-67 |
+| OpenAPI à schémas réels, types TS cohérents | `TypedResults`, `Accepts<T>`, transformateur de paramètres ; instantané + tests croisés | Q-03-57, Q-03-73 |
+| TanStack Query / Table sur la vraie API | `CLIENTS_API_ENABLED = true` (aucun changement des requêtes : le contrat consommé est celui implémenté) | Q-03-72 |
+| États chargement / erreur / conflit / permission refusée | inchangés et testés ; `system.admin` seul → « Accès non autorisé » | Q-03-72 |
+
+Comportement sans migration : la session, la navigation et les droits fonctionnent ; un compte disposant de `clients.read` obtiendrait une erreur technique (500, table absente) affichée « Impossible de charger les clients » + Réessayer ; un compte sans droit obtient 403 « Accès non autorisé ». Les droits `clients.*` ne peuvent d'ailleurs pas être attribués avant la migration (contrainte `ck_user_permissions_permission`).
+
+Écarts de rendu : aucun écran nouveau ni modifié visuellement (seuls les textes de l'état de repli « Service Clients non activé » sont neutralisés) ; `STATE_MAP_47.md` § Amendement 03-A2.

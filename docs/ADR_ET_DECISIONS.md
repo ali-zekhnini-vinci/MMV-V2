@@ -78,3 +78,9 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - Permissions **métier** proposées, non créées : `clients.read`, `clients.write`, `clients.archive` (puis `appointments.*` pour 03-B). `system.admin` ne confère aucun droit métier. Dossier : `docs/phase/03/DECISIONS_G03_METIER.md` (D-03-01 à D-03-17, tous `PROPOSED`).
 - **ADR-014 (licences)** : dépendances ajoutées MIT (`@tanstack/react-query`, `@tanstack/react-table`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-tabs`) ; FullCalendar Standard MIT évalué pour 03-B, plugins Premium exclus. ADR-014 et ADR-001 restent `PROPOSED`.
 - ADR-010 (pays/fiscalité) toujours `OPEN DECISION` : il conditionne le format téléphonique normalisé, le fuseau du magasin (D-03-13) et l'effacement légal des données clients.
+
+## Note datée — 17/10/2026 (phase 03-A2)
+
+- **G03-METIER** (décision du propriétaire, `prompts/PHASE03_A2_GO_CLAUDE_CODE.md`) : sections A (modèle Clients) et B (permissions) **ACCEPTED** ; C (API et migration) **ACCEPTED sur le principe**, SQL de `0003_ClientsModule` soumis à revue, **non appliqué** ; D (Rendez-vous) en attente de 03-B. Détail : `docs/phase/03/DECISIONS_G03_METIER.md`.
+- Permissions **métier** `clients.read`, `clients.write`, `clients.archive` définies dans le code (`src/MMV.Domain/Identity/Permissions.cs`) et contrôlées par des policies serveur distinctes ; `system.admin` n'en implique aucune. Attribution exclusivement par `MMV.Maintenance permissions grant|revoke` (cible stricte, jamais `system.admin`). Aucune attribution tant que 0003 n'est pas appliquée.
+- **ADR-003** (PostgreSQL seul) respecté : EF Core 10 / Npgsql ; recherche sans extension PostgreSQL. **ADR-007** reste `PROPOSED` (session dev réutilisée). **ADR-014** : aucune dépendance ajoutée en 03-A2. **ADR-010** toujours `OPEN DECISION` (format téléphonique libre, effacement légal à cadrer).

@@ -1,0 +1,17 @@
+# Phase 03-A2 — frontend apps/desktop, 17/10/2026 (Node 22.23.3, npm 10.9.9), aucun serveur Vite actif
+## npm ci (relance de Q-03-11, BLOCKED en 03-A)
+found 0 vulnerabilities
+cmp package-lock.json (avant/après) : identique — aucune dépendance ajoutée en 03-A2
+## npm run check (tsconfig.json, tsconfig.node.json, tsconfig.test.json)
+aucune erreur
+## npm run lint
+✖ 1 problem (0 errors, 1 warning) — react-hooks/incompatible-library sur useReactTable (O-03-02, inchangé)
+## npm test
+ Test Files  13 passed (13)
+      Tests  134 passed (134)
+(03-A : 128 ; + 5 src/api/clientsContract.test.ts ; Shell.test.tsx : test « service non activé » remplacé par « system.admin seul -> 403 serveur » + « interrupteur de repli désactivé », aucun test supprimé sans remplacement)
+## npm run build
+dist/assets/ClientsModule-*.js 112.04 kB (gzip 32.07 kB) ; dist/assets/index-*.js 548.44 kB (gzip 174.21 kB) — avertissement > 500 kB (O-02-13 / O-03-03, inchangé)
+✓ built in 1.14s
+## grep -rlE "fakeClientsApi|fakeMmvApi|Yasmine|exemple\.test|localhost:5" dist ; grep -l "clients.openapi|ClientSummaryResponse" dist/assets/*.js
+aucun fichier (aucun double de test, aucune donnée fictive, aucun contrat de test dans le bundle)
