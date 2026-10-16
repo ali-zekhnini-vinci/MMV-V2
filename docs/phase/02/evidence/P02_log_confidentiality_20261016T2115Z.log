@@ -1,0 +1,45 @@
+# P02 confidentialite des journaux, 20261016T2115Z (UTC). Journaux bruts du banc (MMV.Api x5 lancements, tauri dev x2) conserves hors depot (scratchpad) ; journaux de preuve du depot (docs/phase/02/evidence/*.log).
+# Recherche : 6 mots de passe ephemeres + 2 mots de passe PostgreSQL (valeurs exactes, jamais affichees) + motifs generiques (Bearer, accessToken, hachage Identity V3 'AQAAAA...', Password=, "password":"...").
+$ scan-logs.ps1 (outil local hors depot)
+﻿PASS   api1.err.log (0 o)
+PASS   api1.out.log (1144 o)
+PASS   api2.err.log (0 o)
+PASS   api2.out.log (562 o)
+PASS   api3.err.log (0 o)
+PASS   api3.out.log (562 o)
+PASS   api4.err.log (0 o)
+PASS   api4.out.log (18401 o)
+PASS   api5.err.log (0 o)
+PASS   api5.out.log (1599 o)
+PASS   tauri.err.log (894 o)
+PASS   tauri.out.log (229 o)
+PASS   tauri2.err.log (568 o)
+PASS   tauri2.out.log (108 o)
+PASS   P02_graphify_paths_20261016T0045.log (936 o)
+PASS   P02_http_permission_matrix_20261016T2113Z.log (2462 o)
+PASS   P02_maintenance_status_readonly_20261015T2323Z.log (410 o)
+PASS   P02_native_auth_e2e_20261016T2107Z.log (12646 o)
+PASS   P02_native_stack_check_20261015T2342Z.log (666 o)
+PASS   P02_O-02-01_apply_mmv_v2_dev_20261016T0854Z.log (4525 o)
+PASS   P02_O-02-01_apply_mmv_v2_test_20261016T0855Z.log (4607 o)
+PASS   P02_O-02-01_postgresql_tests_20261016T0855Z.log (3052 o)
+PASS   P02_preGO_state_readonly_20261016T0050.log (1401 o)
+PASS   P02_second_bootstrap_refused_20261016T2102Z.log (1362 o)
+PASS   P02_serena_typescript_cli_20261016T0046.log (1732 o)
+PASS   P02_visual_regression_20261015T2342Z.log (5458 o)
+secrets connus recherches : 8 ; fichiers : 26 ; occurrences : 0
+# Categories de messages MMV.Api (niveau par defaut Information ; Microsoft.AspNetCore/EF Core : Warning) :
+      1 fail: Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware[1] :: An unhandled exception has occurred while executing the request.
+      1 fail: Microsoft.EntityFrameworkCore.Database.Connection[20004] :: An error occurred using the connection to database 'mmv_v2_test' on server 'tcp://localhost:5499'.
+      1 fail: Microsoft.EntityFrameworkCore.Query[10100] :: An exception occurred while iterating over the results of a query for context type 'MMV.Infrastructure.Persistence.MmvDbContext'.
+     32 fail: Microsoft.Extensions.Diagnostics.HealthChecks.DefaultHealthCheckService[103] :: Health check database with status Unhealthy completed after <n>ms with message 'PostgreSQL injoignable.'
+      5 info: Microsoft.Hosting.Lifetime[0] :: Application started. Press Ctrl+C to shut down.
+      5 info: Microsoft.Hosting.Lifetime[0] :: Content root path: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\src\MMV.Api
+      5 info: Microsoft.Hosting.Lifetime[0] :: Hosting environment: Development
+      5 info: Microsoft.Hosting.Lifetime[14] :: Now listening on: http://localhost:5022
+      5 info: Microsoft.Hosting.Lifetime[14] :: Now listening on: https://localhost:7267
+      7 info: MMV.Api.Auth.SessionAuthenticationHandler[12] :: AuthenticationScheme: MmvSession was challenged.
+      2 info: MMV.Api.Auth.SessionAuthenticationHandler[13] :: AuthenticationScheme: MmvSession was forbidden.
+      5 info: MMV.Api.Auth.SessionAuthenticationHandler[7] :: MmvSession was not authenticated. Failure message: Session invalide.
+# Mentions d'identifiants de comptes (e2e-*), de Username=/Host=/Database= dans les journaux MMV.Api : 0
+# Observation : base arretee (port 5499), une requete authentifiee -> exception non geree (500, ExceptionHandlerMiddleware) journalisee sans secret ; le client affiche 'Base de donnees indisponible' sans faux succes.

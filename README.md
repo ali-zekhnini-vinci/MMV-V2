@@ -2,11 +2,11 @@
 
 ## Statut actuel — phase 02 (16/10/2026)
 
-**Phase 02 `IN_PROGRESS`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge). **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
+**Phase 02 `PHASE02_IMPLEMENTED — READY_FOR_OWNER_REVIEW`** sur la branche locale `feat/phase-02-auth-shell` (aucun push, PR ni merge ; ni `APPROVED` ni `MERGED`). **Action propriétaire ouverte SEC-02-01 : rotation des mots de passe PostgreSQL de `mmv_v2_dev` et `mmv_v2_test`**, affichés dans une session agent le 16/10/2026 (absents du dépôt et de son historique) — procédure : [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md) § Incident SEC-02-01. **01B MERGED** dans `main` : `origin/main` = `c0c3d6ba15e57b49db350278c5a174735243ccb5` (merge de PR #2, vérifié par Git le 16/10/2026).
 
-Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **Migration d'identité générée, non appliquée** : GO unique du propriétaire attendu (O-02-01) avant application aux bases et bootstrap du premier administrateur.
+Objectif : écran de connexion et Shell React/Tauri conformes aux références visuelles DRAFT, identité/authentification/permissions minimales côté MMV.Api + PostgreSQL. **16/10/2026, après GO O-02-01 :** migration d'identité appliquée à `mmv_v2_dev` et `mmv_v2_test` ; premier administrateur créé par le propriétaire, second bootstrap refusé (code 3) ; parcours natif Tauri → HTTPS → MMV.Api → PostgreSQL (`mmv_v2_test`, comptes éphémères) PASS : connexion, permissions 401/403, déconnexion, révocation, désactivation, résilience API/base, redémarrage client ; journaux sans secret. Tests : .NET 128/128 (dont PostgreSQL 20/20), frontend 81/81. Non testé : `QA_MATRIX.md` Q-02-62.
 
-**Corrections finales (16/10/2026) : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED`.** Architecture d'authentification jugée conforme par la revue et conservée ; `MMV.Maintenance bootstrap-admin` refuse (code 5, sans modification) toute cible autre que `mmv_v2_dev` / rôle `mmv_v2_dev` / port 5433 / PostgreSQL 18 / connexion locale ; pile frontend **installée et utilisée** : Tailwind CSS 4 (Vite), shadcn/ui adaptés aux jetons MMV, Radix (Slot, Label, DropdownMenu), React Hook Form + Zod (Login), React Router (Shell), Lucide React, polices Inter et Source Sans 3 locales (OFL). Tests : .NET 70 + 38 + 13 (avant GO), frontend 81/81 ; non-régression visuelle et natif sans base PASS. Dossier de migration : `docs/phase/02/O-02-01_MANIFEST.sha256`. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
+*Historique — corrections finales (16/10/2026) : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED`.* Architecture d'authentification jugée conforme par la revue et conservée ; `MMV.Maintenance bootstrap-admin` refuse (code 5, sans modification) toute cible autre que `mmv_v2_dev` / rôle `mmv_v2_dev` / port 5433 / PostgreSQL 18 / connexion locale ; pile frontend **installée et utilisée** : Tailwind CSS 4 (Vite), shadcn/ui adaptés aux jetons MMV, Radix (Slot, Label, DropdownMenu), React Hook Form + Zod (Login), React Router (Shell), Lucide React, polices Inter et Source Sans 3 locales (OFL). Tests : .NET 70 + 38 + 13 (avant GO), frontend 81/81 ; non-régression visuelle et natif sans base PASS. Dossier de migration : `docs/phase/02/O-02-01_MANIFEST.sha256`. Détail et état des gates : [`docs/phase/02.md`](docs/phase/02.md), [`docs/phase/02/QA_MATRIX.md`](docs/phase/02/QA_MATRIX.md), [`docs/phase/02/GATES_AND_DECISIONS.md`](docs/phase/02/GATES_AND_DECISIONS.md).
 
 ## Statut phase 01B (15/10/2026, historique)
 
@@ -39,7 +39,7 @@ Détail, preuves et états historiques : [`docs/phase/01.md`](docs/phase/01.md),
 | Migration baseline vide et script SQL relu | `src/MMV.Infrastructure/Persistence/Migrations/`, `docs/phase/01b/sql/` |
 | Commandes de maintenance locales (état, bootstrap administrateur à cible stricte) | `src/MMV.Maintenance/` |
 | Tests | `tests/MMV.Api.Tests/`, `tests/MMV.Maintenance.Tests/`, `tests/MMV.PostgreSql.Tests/`, `apps/desktop/src/**/*.test.{ts,tsx}` |
-| Documentation de phase | `docs/phase/`, preuves dans `docs/phase/01/` et `docs/phase/01b/evidence/` |
+| Documentation de phase | `docs/phase/`, preuves dans `docs/phase/01/`, `docs/phase/01b/evidence/` et `docs/phase/02/evidence/` |
 
 ## Exécuter localement
 
@@ -50,10 +50,10 @@ Prérequis (versions exactes : [`docs/phase/01/IMPLEMENTATION_SPEC.md`](docs/pha
 dotnet tool restore                    # dotnet-ef 10.0.4 local
 dotnet restore MMV.slnx --locked-mode
 dotnet build MMV.slnx
-dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"   # avant application de la migration d'identité (phase 02)
-dotnet test MMV.slnx                                                          # après O-02-01 : suite complète
+dotnet test MMV.slnx                                                          # suite complète (migration d'identité appliquée le 16/10/2026)
+dotnet test MMV.slnx --filter "Stage!=PostMigration&Stage!=IdentityWrite"   # base encore non migrée uniquement
 dotnet run --project src/MMV.Maintenance -- status                            # état et conformité de la base cible (session en lecture seule)
-# bootstrap-admin : uniquement après GO O-02-01, par le propriétaire ; cible imposée mmv_v2_dev/5433/PG18/locale (sinon code 5)
+# bootstrap-admin : effectué par le propriétaire le 16/10/2026 sur mmv_v2_dev ; tout nouveau lancement est refusé (code 3)
 dotnet run --project src/MMV.Api --launch-profile http   # puis http://localhost:5022/health/live
 dotnet run --project src/MMV.Api --launch-profile https  # puis https://localhost:7267/health/live et /health/ready (01B)
 
@@ -90,7 +90,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (IN_PROGRESS, `OWNER_SQL_GO_REQUIRED`) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
+- `docs/phase/02.md` et `docs/phase/02/` : phase 02 (`READY_FOR_OWNER_REVIEW`, SEC-02-01 ouvert) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.
 - `docs/ADR_ET_DECISIONS.md` : registre avec statuts distincts (ADR réseau non ratifiés).

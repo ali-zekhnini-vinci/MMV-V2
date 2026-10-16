@@ -1,0 +1,86 @@
+﻿# P02 O-02-01 application sur mmv_v2_test, 20261016T0855Z (UTC). GO proprietaire O-02-01 + GO script corrige (Invoke-MmvSqlScript.ps1 LF 6b3d3a41...5fb03d).
+$ ./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Database mmv_v2_test -Script docs/phase/02/sql/0002_AuthIdentity.idempotent.sql -Sha256 67C15100A8D27FD91D4CD869B927774CC537E4275F60C3FCDCA28161495F5A41
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : docs/phase/02/sql/0002_AuthIdentity.idempotent.sql (SHA-256 67C15100A8D27FD91D4CD869B927774CC537E4275F60C3FCDCA28161495F5A41)
+START TRANSACTION
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+COMMIT
+APPLIQUE : exit 0
+ERREUR:  la relation Â« __efmigrationshistory Â» n'existe pas
+LINE 1: ..._agg(MigrationId, ', ' ORDER BY MigrationId) FROM __EFMigrat...
+                                                             ^
+process exit=0
+# Note : l'erreur ci-dessus = requete d'affichage FINALE du script, APRES le COMMIT (guillemets retires par Windows PowerShell 5.1). Migration appliquee.
+# Inspection post-migration en lecture seule (default_transaction_read_only=on) :
+db | role | port | ver | ro
+mmv_v2_test | mmv_v2_test | 5433 | 180006 | on
+MigrationId | ProductVersion
+20261015125000_InitialBaseline | 10.0.4
+20261015223849_AuthIdentity | 10.0.4
+schema | owner
+auth | mmv_v2_test
+public | pg_database_owner
+schema | relname | relkind | owner
+public | PK___EFMigrationsHistory | i | mmv_v2_test
+public | __EFMigrationsHistory | r | mmv_v2_test
+auth | bootstrap_record | r | mmv_v2_test
+auth | ix_sessions_user_id | i | mmv_v2_test
+auth | pk_bootstrap_record | i | mmv_v2_test
+auth | pk_sessions | i | mmv_v2_test
+auth | pk_user_permissions | i | mmv_v2_test
+auth | pk_users | i | mmv_v2_test
+auth | sessions | r | mmv_v2_test
+auth | user_permissions | r | mmv_v2_test
+auth | users | r | mmv_v2_test
+auth | ux_sessions_token_hash | i | mmv_v2_test
+auth | ux_users_normalized_user_name | i | mmv_v2_test
+tbl | conname | contype | def
+auth.bootstrap_record | bootstrap_record_administrator_id_not_null | n | NOT NULL administrator_id
+auth.bootstrap_record | bootstrap_record_completed_at_utc_not_null | n | NOT NULL completed_at_utc
+auth.bootstrap_record | bootstrap_record_id_not_null | n | NOT NULL id
+auth.bootstrap_record | ck_bootstrap_record_singleton | c | CHECK ((id = 1))
+auth.bootstrap_record | pk_bootstrap_record | p | PRIMARY KEY (id)
+auth.users | ck_users_failed_login_count | c | CHECK ((failed_login_count >= 0))
+auth.users | pk_users | p | PRIMARY KEY (id)
+auth.users | users_created_at_utc_not_null | n | NOT NULL created_at_utc
+auth.users | users_display_name_not_null | n | NOT NULL display_name
+auth.users | users_failed_login_count_not_null | n | NOT NULL failed_login_count
+auth.users | users_id_not_null | n | NOT NULL id
+auth.users | users_is_active_not_null | n | NOT NULL is_active
+auth.users | users_normalized_user_name_not_null | n | NOT NULL normalized_user_name
+auth.users | users_password_hash_not_null | n | NOT NULL password_hash
+auth.users | users_user_name_not_null | n | NOT NULL user_name
+auth.sessions | ck_sessions_expiry_after_creation | c | CHECK ((expires_at_utc > created_at_utc))
+auth.sessions | ck_sessions_token_hash_length | c | CHECK ((octet_length(token_hash) = 32))
+auth.sessions | fk_sessions_users | f | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+auth.sessions | pk_sessions | p | PRIMARY KEY (id)
+auth.sessions | sessions_created_at_utc_not_null | n | NOT NULL created_at_utc
+auth.sessions | sessions_expires_at_utc_not_null | n | NOT NULL expires_at_utc
+auth.sessions | sessions_id_not_null | n | NOT NULL id
+auth.sessions | sessions_last_seen_at_utc_not_null | n | NOT NULL last_seen_at_utc
+auth.sessions | sessions_token_hash_not_null | n | NOT NULL token_hash
+auth.sessions | sessions_user_id_not_null | n | NOT NULL user_id
+auth.user_permissions | ck_user_permissions_permission | c | CHECK (((permission)::text = 'system.admin'::text))
+auth.user_permissions | fk_user_permissions_users | f | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+auth.user_permissions | pk_user_permissions | p | PRIMARY KEY (user_id, permission)
+auth.user_permissions | user_permissions_permission_not_null | n | NOT NULL permission
+auth.user_permissions | user_permissions_user_id_not_null | n | NOT NULL user_id
+t | count
+auth.users | 0
+auth.user_permissions | 0
+auth.sessions | 0
+auth.bootstrap_record | 0
+functions_procs
+0
+triggers
+0
+extname
+plpgsql

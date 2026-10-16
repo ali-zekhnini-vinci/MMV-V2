@@ -1,0 +1,44 @@
+﻿# P02 tests PostgreSQL apres O-02-01, 20261016T0855Z (UTC). Ecritures : mmv_v2_test uniquement (ROLLBACK ou comptes ephemeres supprimes).
+$ dotnet test tests/MMV.PostgreSql.Tests --no-build --filter Stage=PostMigration --logger console;verbosity=detailed
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [661 ms]
+ transaction_read_only=on public_owner=pg_database_owner
+ EF applied=[20261015125000_InitialBaseline, 20261015223849_AuthIdentity] pending=[]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [85 ms]
+ transaction_read_only=on public_owner=pg_database_owner
+ EF applied=[20261015125000_InitialBaseline, 20261015223849_AuthIdentity] pending=[]
+Série de tests réussie.
+Nombre total de tests : 2
+     Réussi(s) : 2
+$ dotnet test tests/MMV.PostgreSql.Tests --no-build --filter Stage=IdentityWrite --logger console;verbosity=detailed
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.Bootstrap_SucceedsOnce_ThenIsRefused [1 s]
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.LoginSessionLogoutAndDeactivation_RoundTripOnPostgreSql [246 ms]
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.BootstrapRecord_IsASingletonEnforcedByPostgreSql [14 ms]
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.UnknownPermissionAndDuplicateUserName_AreRejectedByPostgreSql [4 ms]
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+  Réussi MMV.PostgreSql.Tests.AuthHttpPostgreSqlTests.AuthMatrix_OnRealPostgreSql [1 s]
+ comptes éphémères créés sur mmv_v2_test (suffixe 08fbe6c824)
+ nettoyage : 2 compte(s) supprimé(s), sessions restantes = 0
+Série de tests réussie.
+Nombre total de tests : 5
+     Réussi(s) : 5
+$ dotnet test MMV.slnx --no-build
+Réussi!  - échec :     0, réussite :    20, ignorée(s) :     0, total :    20, durée : 1 s - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    38, ignorée(s) :     0, total :    38, durée : 3 s - MMV.Maintenance.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    70, ignorée(s) :     0, total :    70, durée : 7 s - MMV.Api.Tests.dll (net10.0)
+# Residus apres tests (lecture seule) :
+mmv_v2_test : users | perms | sessions | bootstrap / 0 | 0 | 0 | 0 / (1 row)
+mmv_v2_dev : users | perms | sessions | bootstrap / 0 | 0 | 0 | 0 / (1 row)
+$ dotnet run --project src/MMV.Maintenance --no-build -- status   (avant bootstrap proprietaire)
+Base cible     : mmv_v2_dev (rôle mmv_v2_dev, port 5433, PostgreSQL 18.6)
+Cible bootstrap: autorisée
+Migrations     : 2 appliquée(s) [20261015125000_InitialBaseline, 20261015223849_AuthIdentity] ; 0 en attente []
+Bootstrap      : non effectué
+Comptes        : 0
+exit=0

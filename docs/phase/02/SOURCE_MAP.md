@@ -99,12 +99,13 @@ shadcn/ui n'est pas une dépendance npm : composants copiés et adaptés (`apps/
 | Barre d'état réelle | `apps/desktop/src/shell/StatusBar.tsx`, `statusBarView.ts`, `useServerHealth.ts` | implémenté |
 | Diagnostic 01B préservé | `apps/desktop/src/views/DiagnosticView.tsx`, `apps/desktop/src/technicalStatusView.ts` | implémenté |
 | Modules futurs non simulés | `apps/desktop/src/shell/navigation.ts`, `apps/desktop/src/views/UnavailableView.tsx` | implémenté |
-| Identité/sessions/permissions serveur | `src/MMV.Domain/Identity/`, `src/MMV.Application/Identity/`, `src/MMV.Infrastructure/Identity/`, `src/MMV.Api/Auth/` | implémenté (tests sur doubles) |
+| Identité/sessions/permissions serveur | `src/MMV.Domain/Identity/`, `src/MMV.Application/Identity/`, `src/MMV.Infrastructure/Identity/`, `src/MMV.Api/Auth/` | implémenté (tests sur doubles) ; **16/10/2026 : PASS sur PostgreSQL réel et en natif** (Q-02-49, Q-02-52, Q-02-53) |
 | CORS `/api` distinct de la santé | `src/MMV.Api/Cors/DesktopCors.cs` | implémenté |
-| Bootstrap administrateur local | `src/MMV.Maintenance/Program.cs` | implémenté ; exécution réelle O-02-01 |
+| Bootstrap administrateur local | `src/MMV.Maintenance/Program.cs` | implémenté ; exécution réelle O-02-01 — **effectuée par le propriétaire le 16/10/2026** ; second lancement refusé code 3 (Q-02-50, Q-02-51) |
 | Cible stricte du bootstrap (mmv_v2_dev / 5433 / PG 18 / locale) | `src/MMV.Maintenance/BootstrapTargetPolicy.cs`, `tests/MMV.Maintenance.Tests/`, `tests/MMV.PostgreSql.Tests/BootstrapTargetPostgreSqlTests.cs` | implémenté, PASS (16/10/2026) |
-| Dossier O-02-01 (manifeste SHA-256) | `docs/phase/02/O-02-01_MANIFEST.sha256` | prêt ; non exécuté |
-| Migration d'identité + scripts relus | `src/MMV.Infrastructure/Persistence/Migrations/20261015223849_AuthIdentity*.cs`, `docs/phase/02/sql/` | générée ; **non appliquée** (O-02-01) |
-| Application contrôlée des scripts | `scripts/Invoke-MmvSqlScript.ps1` | prêt ; non exécuté |
-| Tests serveur | `tests/MMV.Api.Tests/Identity/`, `tests/MMV.PostgreSql.Tests/{IdentityPostgreSqlTests,AuthHttpPostgreSqlTests,SchemaInspection,SchemaStateTests}.cs` | doubles PASS ; PostgreSQL après GO |
-| Banc natif | `apps/desktop/e2e/` | implémenté |
+| Dossier O-02-01 (manifeste SHA-256) | `docs/phase/02/O-02-01_MANIFEST.sha256` | prêt ; non exécuté. **16/10/2026 : exécuté** ; manifeste conservé tel que présenté (la ligne du script porte l'empreinte d'avant correction, voir `GATES_AND_DECISIONS.md` § Exécution O-02-01) |
+| Migration d'identité + scripts relus | `src/MMV.Infrastructure/Persistence/Migrations/20261015223849_AuthIdentity*.cs`, `docs/phase/02/sql/` | générée ; *non appliquée jusqu'au GO* — **appliquée à `mmv_v2_dev` et `mmv_v2_test` le 16/10/2026** (Q-02-46, Q-02-47) |
+| Application contrôlée des scripts | `scripts/Invoke-MmvSqlScript.ps1` | prêt ; *non exécuté jusqu'au GO* — **corrigé (`set_ConnectionString`, GO propriétaire) et exécuté le 16/10/2026** (Q-02-45) ; affichage final après `COMMIT` défaillant (O-02-15) |
+| Tests serveur | `tests/MMV.Api.Tests/Identity/`, `tests/MMV.PostgreSql.Tests/{IdentityPostgreSqlTests,AuthHttpPostgreSqlTests,SchemaInspection,SchemaStateTests}.cs` | doubles PASS ; PostgreSQL **PASS après GO** (Q-02-49) |
+| Banc natif | `apps/desktop/e2e/` | implémenté ; scénarios `user-no-admin`, `login-disabled`, `sign-in --account` ajoutés et parcours authentifié exécuté le 16/10/2026 (Q-02-52) |
+| Banc visuel temporaire | `apps/desktop/.visual/` (jamais versionné) | **supprimé** le 16/10/2026 (Q-02-58) |

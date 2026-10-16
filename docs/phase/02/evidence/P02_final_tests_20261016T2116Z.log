@@ -1,0 +1,17 @@
+﻿# P02 tests finaux, 20261016T2116Z (UTC), apres preuve native, nettoyage et suppression du banc .visual. Executions reelles de cette session.
+$ dotnet build MMV.slnx -v q  -> 0 avertissement, 0 erreur
+$ dotnet test MMV.slnx   (suite complete : Stage=PostMigration lecture seule dev+test ; Stage=IdentityWrite sur mmv_v2_test uniquement)
+Réussi!  - échec :     0, réussite :    20, ignorée(s) :     0, total :    20 - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    38, ignorée(s) :     0, total :    38 - MMV.Maintenance.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    70, ignorée(s) :     0, total :    70 - MMV.Api.Tests.dll (net10.0)
+exit=0  (128/128)
+$ cd apps/desktop; npm run lint   (eslint ., configuration inchangee, aucune exclusion speciale ; apps/desktop/.visual supprime)
+exit=0
+$ npm test   (vitest run)
+ Test Files  9 passed (9)
+      Tests  81 passed (81)
+exit=0
+$ npm run build   (tsc x3 + vite build)
+dist/assets/index-kGOd_hqQ.js  516.00 kB | gzip: 164.50 kB  (avertissement Vite > 500 kB, O-02-13 ; bundle identique a a3318d8)
+exit=0
+# Rust/Tauri : compilation reelle par `npx tauri dev` (profil dev) pendant la preuve native, 0 erreur ; `tauri build` NOT_RERUN.

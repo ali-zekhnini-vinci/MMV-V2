@@ -1,0 +1,32 @@
+﻿# P02 matrice des permissions HTTP, 20261016T2113Z (UTC) : processus MMV.Api reel (profil https, Development, 7267 + 5022) -> mmv_v2_test. Comptes ephemeres (2e jeu, suffixe b999422274), jamais affiches ; compte administrateur reel non utilise.
+$ E2eSeed seed <fichier temporaire>
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+seed : 3 comptes éphémères créés (suffixe b999422274) ; identifiants dans un fichier temporaire hors dépôt
+$ matrix.ps1 (Invoke-WebRequest, Windows PowerShell 5.1, certificat de dev approuve, aucune exception TLS)
+PASS  anonyme GET /api/auth/session -> 401 unauthenticated [WWW-Authenticate: Bearer]
+PASS  anonyme GET /api/admin/accounts -> 401 unauthenticated [WWW-Authenticate: Bearer]
+PASS  jeton forgé GET /api/auth/session -> 401 unauthenticated [WWW-Authenticate: Bearer]
+PASS  login mot de passe erroné -> 401 invalid_credentials
+PASS  login compte inconnu -> 401 invalid_credentials
+PASS  corps identiques (erroné / inconnu) : {"code":"invalid_credentials"}
+PASS  login admin -> 200 
+      réponse login : champs = accessToken,tokenType,expiresAtUtc,idleTimeoutSeconds,user ; user.permissions = system.admin
+PASS  admin GET /api/admin/accounts -> 200      
+      champs d'un compte listé : id,userName,displayName,isActive,permissions,createdAtUtc
+PASS  liste des comptes : aucun champ mot de passe/hachage/jeton
+PASS  login user (sans system.admin) -> 200 
+PASS  user GET /api/auth/session -> 200 
+PASS  user GET /api/admin/accounts -> 403 forbidden
+PASS  HTTP 5022 GET /api/auth/session (user) -> 403 https_required
+PASS  admin POST /api/auth/logout -> 204 
+PASS  admin jeton après logout GET /api/auth/session -> 401 unauthenticated [WWW-Authenticate: Bearer]
+compte e2e-user-b999422274 désactivé
+PASS  user jeton après désactivation GET /api/auth/session -> 401 unauthenticated [WWW-Authenticate: Bearer]
+PASS  login compte désactivé (bon mot de passe) -> 401 invalid_credentials
+PASS  corps identique à un mot de passe erroné
+$ E2eSeed state
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+e2e-admin-b999422274 actif=True perms=[system.admin] échecs=0 sessions=1 [logout]
+e2e-off-b999422274 actif=True perms=[] échecs=0 sessions=0 []
+e2e-user-b999422274 actif=False perms=[] échecs=0 sessions=1 [account-disabled]
+# Note : accents des lignes matrix.ps1 retablis apres coup (script lu en ANSI par Windows PowerShell 5.1 ; re-decodage cp1252 -> UTF-8, contenu inchange).

@@ -9,16 +9,19 @@
 
 | Gate | Critère | État |
 |---|---|---|
-| G-02-A | Login/Shell conformes aux références, états, clavier, thème, tests | implémenté ; tests DOM PASS ; preuve native `NOT_TESTED` (02-C). **16/10/2026 (corrections finales)** : pile Tailwind CSS 4 / shadcn/ui + Radix / React Hook Form + Zod / React Router / polices locales intégrée ; 81/81 PASS ; non-régression visuelle PASS (Q-02-40) ; natif sans base PASS (Q-02-41) |
-| G-02-B | Identité serveur, hachage Identity, policies, 401/403, bootstrap local refusé la 2e fois | implémenté ; tests sur doubles non persistants PASS ; partie PostgreSQL `BLOCKED_OWNER_APPROVAL` (O-02-01). **16/10/2026** : architecture jugée conforme par la revue ; contrôle strict de cible de `bootstrap-admin` PASS (Q-02-28 à Q-02-30) |
-| G-02-C | Tauri → HTTPS → API → PG réel, login/logout/révocation natifs, captures, résilience | banc natif prêt ; login natif (états sans base) PASS ; parcours authentifié `BLOCKED_OWNER_APPROVAL` (O-02-01) |
-| G-02-DOC | DOCUMENTATION GATE | synchronisé le 16/10/2026 (corrections finales) ; à reprendre après O-02-01 |
+| G-02-A | Login/Shell conformes aux références, états, clavier, thème, tests | implémenté ; tests DOM PASS ; preuve native `NOT_TESTED` (02-C). **16/10/2026 (corrections finales)** : pile Tailwind CSS 4 / shadcn/ui + Radix / React Hook Form + Zod / React Router / polices locales intégrée ; 81/81 PASS ; non-régression visuelle PASS (Q-02-40) ; natif sans base PASS (Q-02-41). **16/10/2026 (finalisation)** : Login/Shell natifs sur API et PostgreSQL réels PASS (Q-02-52) ; 81/81 PASS, lint sans exclusion après suppression du banc `.visual` (Q-02-58, Q-02-59) → **PASS** |
+| G-02-B | Identité serveur, hachage Identity, policies, 401/403, bootstrap local refusé la 2e fois | implémenté ; tests sur doubles non persistants PASS ; partie PostgreSQL `BLOCKED_OWNER_APPROVAL` (O-02-01). **16/10/2026** : architecture jugée conforme par la revue ; contrôle strict de cible de `bootstrap-admin` PASS (Q-02-28 à Q-02-30). **16/10/2026 (GO O-02-01 exécuté)** : migration appliquée aux deux bases, `PostMigration` 2/2, `IdentityWrite` 5/5 (Q-02-46 à Q-02-49) ; bootstrap réel par le propriétaire (exit 0, Q-02-50) ; second bootstrap refusé **code 3** (Q-02-51) ; matrice 401/403 sur le processus API réel 19/19 (Q-02-53) → **PASS** |
+| G-02-C | Tauri → HTTPS → API → PG réel, login/logout/révocation natifs, captures, résilience | banc natif prêt ; login natif (états sans base) PASS ; parcours authentifié `BLOCKED_OWNER_APPROVAL` (O-02-01). **16/10/2026 (finalisation)** : Tauri → HTTPS → MMV.Api → `mmv_v2_test` avec comptes éphémères : login, refus neutre, session, permissions (non-admin, 403 après retrait), déconnexion, révocation serveur, désactivation, résilience API et PostgreSQL, redémarrage client, 27 captures (Q-02-52 à Q-02-55) ; journaux sans secret (Q-02-56) → **PASS** (limites : Q-02-62) |
+| G-02-DOC | DOCUMENTATION GATE | synchronisé le 16/10/2026 (corrections finales) ; à reprendre après O-02-01. **16/10/2026 (finalisation)** : resynchronisé après exécution d'O-02-01 et preuve native (README, `02.md`, QA, spec, source-map, gates, ADR, périmètre) → **PASS** |
 
 ## Décisions ouvertes
 
 | ID | Sujet | État | Bloque |
 |---|---|---|---|
-| O-02-01 | GO unique : migration d'identité sur `mmv_v2_dev` + `mmv_v2_test` et bootstrap administrateur réel | OPEN — dossier ci-dessous, présenté le 16/10/2026 | G-02-B (partie PG), G-02-C |
+| O-02-01 | GO unique : migration d'identité sur `mmv_v2_dev` + `mmv_v2_test` et bootstrap administrateur réel | OPEN — dossier ci-dessous, présenté le 16/10/2026. **GO accordé le 16/10/2026 (« GO O-02-01 ACCORDÉ ») et exécuté** : § Exécution O-02-01 | — (levé) |
+| SEC-02-01 | **Incident** : mots de passe PostgreSQL de `mmv_v2_dev` et `mmv_v2_test` affichés dans une session agent le 16/10/2026 | OPEN — **rotation des deux mots de passe requise** (action propriétaire) : § Incident SEC-02-01 | distribution, revue de sécurité |
+| O-02-14 | Base injoignable : une requête `/api` authentifiée aboutit à une exception non gérée (500 générique, journalisée sans secret) au lieu d'un 503 explicite ; le client n'affiche aucun faux succès | PROPOSED (16/10/2026) — à traiter avec la résilience des modules métier | aucune |
+| O-02-15 | `Invoke-MmvSqlScript.ps1` : la requête d'**affichage** finale (après `COMMIT`) échoue sous Windows PowerShell 5.1 (guillemets de `"__EFMigrationsHistory"` retirés au passage à `psql.exe`) ; sans effet sur l'application | PROPOSED (16/10/2026) — correction à soumettre au propriétaire (le script approuvé n'est pas modifié sans GO) | aucune |
 | O-02-09 | Zoom clavier WebView2 activé (`zoomHotkeysEnabled`, Ctrl +/−) : accessibilité et preuve native des zooms 125/150 % | PROPOSED | aucune |
 | O-02-10 | Écoute HTTP 5022 (O-B10) : les routes `/api` refusent le HTTP (403 `https_required`) ; santé inchangée | PROPOSED | aucune |
 | O-02-02 | Variante de session dev (jeton opaque volatile) — ADR-007 | PROPOSED (voir ci-dessous) | ratification ADR-007, distribution |
@@ -27,9 +30,9 @@
 | O-02-05 | Embarquement des polices Inter / Source Sans 3 (fichiers OFL locaux) | **RESOLVED 16/10/2026** (consigne du propriétaire, corrections finales) : embarquées localement, SIL OFL 1.1, paquets `@fontsource-variable/inter` 5.3.0 et `…/source-sans-3` 5.3.1, licences dans `apps/desktop/public/licenses/`. Historique : OPEN, non embarquées (repli Segoe UI) jusqu'au 16/10/2026 | — |
 | O-02-06 | Versionnement des 4 logos officiels dans `apps/desktop/src/assets/brand/` (droits de redistribution) | OPEN — versionnés localement, non poussés | push |
 | O-02-07 | Recherche globale et notifications : contrôles visibles mais désactivés (« Disponible dans une phase suivante ») | PROPOSED | aucune |
-| O-02-11 | Navigation du shell par React Router en **routeur mémoire** (client de bureau sans barre d'adresse ; chaque session démarre sur l'Accueil ; aucune route restaurée ; pas de lien profond) | PROPOSED (16/10/2026) | aucune (réversible : `createHashRouter`) |
-| O-02-12 | Menu profil sur Radix DropdownMenu : flèches/Entrée/Échap/clic extérieur ; Tab ne quitte plus le menu (comportement Radix ; avant : Tab fermait le menu) ; ouverture à la souris = focus sur le menu, au clavier = sur « Se déconnecter » | PROPOSED (16/10/2026) | aucune |
-| O-02-13 | Bundle JS 516 kB (> seuil indicatif Vite de 500 kB) : accepté pour un client local chargé depuis le disque ; découpage à réévaluer avec les modules métier | PROPOSED (16/10/2026) | aucune |
+| O-02-11 | Navigation du shell par React Router en **routeur mémoire** (client de bureau sans barre d'adresse ; chaque session démarre sur l'Accueil ; aucune route restaurée ; pas de lien profond) | PROPOSED (16/10/2026) ; **ACCEPTED pour le POC desktop** le 16/10/2026 (message GO O-02-01 du propriétaire) | aucune (réversible : `createHashRouter`) |
+| O-02-12 | Menu profil sur Radix DropdownMenu : flèches/Entrée/Échap/clic extérieur ; Tab ne quitte plus le menu (comportement Radix ; avant : Tab fermait le menu) ; ouverture à la souris = focus sur le menu, au clavier = sur « Se déconnecter » | PROPOSED (16/10/2026) ; documenté, **non bloquant** pour la phase (message GO O-02-01) | aucune |
+| O-02-13 | Bundle JS 516 kB (> seuil indicatif Vite de 500 kB) : accepté pour un client local chargé depuis le disque ; découpage à réévaluer avec les modules métier | PROPOSED (16/10/2026) ; documenté, **non bloquant** pour la phase (message GO O-02-01) | aucune |
 | O-02-08 | Libellé « Accueil » (au lieu de « Tableau de bord ») tant qu'aucun tableau de bord réel n'existe ; 5 variantes Lot 1 au backlog | PROPOSED | aucune |
 
 Héritées de 01B, inchangées : O-B04 (rôle unique propriétaire), O-B10 (écoute HTTP 5022), O-B11 (adresse serveur en production), O-B12 ; ADR-004/006/007 non ratifiés.
@@ -44,6 +47,8 @@ Revue externe du frontend **et** des sources .NET : **architecture d'authentific
 
 **État : `PHASE02_STACK_AND_AUTH_READY — OWNER_SQL_GO_REQUIRED`.** Aucune application SQL, aucun bootstrap réel, aucun push, aucune PR, aucun merge, aucun développement Phase 03.
 
+> État remplacé le 16/10/2026 : voir § Finalisation Phase 02.
+
 ## O-02-02 — Session : comparaison et variante retenue pour le POC local (PROPOSED, provisoire dev)
 
 | Option | Avantages | Risques / coûts |
@@ -55,6 +60,8 @@ Revue externe du frontend **et** des sources .NET : **architecture d'authentific
 Paramètres proposés (dev) : durée absolue **8 h**, inactivité **30 min** (glissement à chaque requête authentifiée), aucun rafraîchissement ; révocation à la déconnexion, à la désactivation du compte (vérifiée à chaque requête) et par expiration. **Ce choix n'est pas une session distribuable approuvée** ; ADR-007 reste `PROPOSED`.
 
 ## O-02-01 — Dossier de décision unique : migration d'identité + bootstrap (16/10/2026, NON EXÉCUTÉ)
+
+> Mise à jour datée 16/10/2026 : dossier **exécuté** après le GO du propriétaire — voir § Exécution O-02-01 ci-dessous. Le texte de cette section est conservé tel que présenté.
 
 **Demande :** un GO unique couvrant (1) l'application de `0002_AuthIdentity.idempotent.sql` à `mmv_v2_dev` puis `mmv_v2_test`, (2) les tests d'identité réels sur `mmv_v2_test`, (3) le bootstrap du premier administrateur réel sur `mmv_v2_dev` par le propriétaire.
 
@@ -110,3 +117,44 @@ Aucune donnée insérée par le script (aucun compte, aucun mot de passe). Aucun
 - **Étape 4 renforcée** : `bootstrap-admin` refuse désormais (code 5, sans modification) toute cible autre que `mmv_v2_dev` / `mmv_v2_dev` / 5433 / PostgreSQL 18 / boucle locale, avant connexion, après connexion et juste avant l'écriture. Codes de sortie : 0 succès, 1 usage, 2 précondition (dont migration en attente), 3 bootstrap déjà effectué, 4 saisie invalide/annulation, **5 cible non autorisée**. Le second lancement attendu reste refusé **code 3**.
 - **Dossier léger** : manifeste `docs/phase/02/O-02-01_MANIFEST.sha256` (21 fichiers : 3 scripts SQL, migration C# + Designer + snapshot, `scripts/Invoke-MmvSqlScript.ps1` `b48bc673…dbba55` inchangé, code final de `MMV.Maintenance`, `BootstrapService`, tests concernés), empreintes du contenu Git (LF, identique à `git archive`) ; vérification : `sha256sum -c` (lignes non commentées) ou `Get-FileHash`. Les fichiers sont livrés dans l'archive `git archive` de la branche.
 - La procédure « après GO » ci-dessus est inchangée ; elle n'est **pas** exécutée tant que le propriétaire n'a pas donné le GO O-02-01.
+
+## Exécution O-02-01 (16/10/2026)
+
+**GO :** message du propriétaire « GO O-02-01 ACCORDÉ » (session, non versionné) : application de `docs/phase/02/sql/0002_AuthIdentity.idempotent.sql` (SHA-256 `67C15100…5F5A41` obligatoire) à `mmv_v2_dev` puis `mmv_v2_test` (PostgreSQL 18, 5433, local) par `Invoke-MmvSqlScript.ps1` ; tests post-migration et d'identité sur `mmv_v2_test` exclusivement ; bootstrap réel **par le propriétaire** ; second bootstrap refusé code 3 ; tests natifs avec comptes éphémères de `mmv_v2_test` (compte réel exclu) ; suppression du banc `apps/desktop/.visual/` ; DOCUMENTATION GATE ; commits locaux ; aucun push, PR, merge ni Phase 03. Message suivant du propriétaire : bootstrap réussi (exit 0), finalisation autorisée dans ce périmètre.
+
+| Étape | Résultat | Preuve |
+|---|---|---|
+| Précontrôle : défaut de `scripts/Invoke-MmvSqlScript.ps1` | le script refusait **aussi la bonne cible**, avant toute connexion : sous Windows PowerShell 5.1, `$b.ConnectionString = …` sur un `DbConnectionStringBuilder` (un `IDictionary`) crée une clé au lieu d'analyser la chaîne. Correction d'une ligne (`$b.set_ConnectionString($raw)`), appliquée avec le GO du propriétaire. Empreinte LF : `b48bc673…dbba55` (version présentée, conservée dans `O-02-01_MANIFEST.sha256`) → **`6b3d3a414b8c373fafd55af10935ef52e6ed7edfd46c013eb056659b6a5fb03d`** (version exécutée et committée) | en-têtes des journaux d'application ; Q-02-45 |
+| Application `mmv_v2_dev` (08:54Z) et `mmv_v2_test` (08:55Z) | `PRECHECK OK` (base, rôle, 5433, `server_version_num` 180006), `COMMIT`, exit 0. La requête d'affichage exécutée **après** le `COMMIT` échoue (O-02-15) ; sans effet | `evidence/P02_O-02-01_apply_mmv_v2_dev_20261016T0854Z.log`, `…_apply_mmv_v2_test_20261016T0855Z.log` |
+| Inspection en lecture seule | 2 migrations (`InitialBaseline`, `AuthIdentity` / 10.0.4) ; schéma `auth` et ses 4 tables, index et contraintes conformes au dossier ; structures dev et test identiques | mêmes journaux |
+| Tests PostgreSQL | `PostMigration` 2/2, `IdentityWrite` 5/5 (ROLLBACK ; comptes HTTP éphémères supprimés), suite 128/128 ; résidus 0 dans les deux bases | `evidence/P02_O-02-01_postgresql_tests_20261016T0855Z.log` |
+| Bootstrap réel (propriétaire, son terminal, saisie masquée) | exit 0 **rapporté par le propriétaire** ; corroboré en lecture seule : `Bootstrap : déjà effectué`, 1 compte actif, `system.admin`, `bootstrap_record` → ce compte, 0 session | `evidence/P02_second_bootstrap_refused_20261016T2102Z.log`, `evidence/P02_final_db_state_readonly_20261016T2117Z.log` |
+| Second bootstrap | **refusé code 3** avant toute saisie ou écriture ; état inchangé | `evidence/P02_second_bootstrap_refused_20261016T2102Z.log` |
+
+Le compte administrateur réel n'a été utilisé par aucun test (0 session sur `mmv_v2_dev` en fin de phase). Aucune autre base, aucun rôle, aucun certificat modifié.
+
+## Finalisation Phase 02 (16/10/2026)
+
+- Preuve native authentifiée et matrice HTTP sur le processus API réel, contre `mmv_v2_test`, avec deux jeux de 3 comptes éphémères (administrateur, sans droit, désactivé) créés par un outil local hors dépôt et supprimés en fin de preuve (0 résidu) : QA Q-02-52 à Q-02-57.
+- Banc temporaire `apps/desktop/.visual/` (non versionné, exclu localement) **supprimé** (47 fichiers) ; `npm run lint` sur la configuration inchangée, sans exclusion : 0 problème (Q-02-58).
+- Banc versionné `apps/desktop/e2e/run-native.mjs` : scénarios `user-no-admin`, `login-disabled`, option `sign-in --account` ; attente explicite des boutons avant clic (défaut du banc constaté pendant la preuve, corrigé).
+- Tests finaux : .NET 128/128, frontend 81/81, lint, build (Q-02-59).
+- Limites et non testé : Q-02-62.
+
+**État : `PHASE02_IMPLEMENTED — READY_FOR_OWNER_REVIEW`, avec action propriétaire ouverte SEC-02-01 (rotation des mots de passe PostgreSQL).** Ni `APPROVED` ni `MERGED`. Aucun push, aucune PR, aucun merge, aucun travail Phase 03.
+
+## Incident SEC-02-01 — exposition des mots de passe PostgreSQL (16/10/2026)
+
+**Faits.** Le 16/10/2026 à 08:50:18Z, pendant la session agent d'application d'O-02-01 (avant la migration), une commande de diagnostic **en lecture seule** destinée à lister les clés des chaînes de connexion **en excluant le mot de passe** a utilisé `$b.ConnectionString = …` sous Windows PowerShell 5.1. Même cause que le défaut du script ci-dessus : l'affectation crée une clé `ConnectionString` contenant la chaîne brute ; le filtre par nom de clé ne s'est pas appliqué. La sortie contenait les **deux chaînes complètes, mots de passe compris**, des rôles `mmv_v2_dev` et `mmv_v2_test`.
+
+**Portée.** Sortie affichée dans la session, donc transmise au fournisseur du modèle d'IA avec le contexte de la conversation, et enregistrée dans le transcript local de la session (profil utilisateur, hors dépôt). Vérifié le 16/10/2026 par recherche des valeurs exactes, sans affichage (compteurs seuls) : **0 occurrence** dans les fichiers suivis, dans l'historique Git (toutes branches, `git log -S`), dans les fichiers non suivis du dépôt (sources, docs, scripts), dans les 4 archives ZIP locales du dépôt, dans les preuves `evidence/` et les journaux du banc (Q-02-56, Q-02-60). Rien n'a été poussé. Facteur aggravant : PostgreSQL 18 écoute sur `0.0.0.0:5433` / `[::]:5433` (Q-02-04) ; selon `pg_hba.conf` et le pare-feu, ces rôles, propriétaires de leur base, peuvent être joignables depuis le réseau local.
+
+**Non concernés.** Mot de passe du compte administrateur réel (saisi masqué par le propriétaire, jamais affiché) ; mots de passe des comptes éphémères (aléatoires, comptes supprimés) ; aucun jeton de session réel.
+
+**Actions requises (propriétaire ; l'agent ne modifie pas les rôles PostgreSQL) :**
+1. Changer les deux mots de passe dans `psql` en superutilisateur, par saisie masquée : `\password mmv_v2_dev` puis `\password mmv_v2_test` (pas d'`ALTER ROLE … PASSWORD '…'` en clair, qui resterait dans l'historique). Valeurs aléatoires longues (≥ 24 caractères), distinctes.
+2. Mettre à jour les user-secrets par saisie masquée : `. .\scripts\Set-MmvSecret.ps1` puis `Set-MmvSecret -Id mmv-v2-api -Key ConnectionStrings:Mmv -Name mmv_v2_dev` et `Set-MmvSecret -Id mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Name mmv_v2_test` (procédure `docs/phase/01b/IMPLEMENTATION_SPEC.md` § Secrets).
+3. Vérifier : `dotnet run --project src/MMV.Maintenance -- status` puis `dotnet test MMV.slnx`.
+4. Facultatif : purger le transcript local de la session concernée ; revoir `listen_addresses` / `pg_hba.conf` (relève d'O-B12 / réseau).
+
+**Mesures déjà prises.** Accesseur explicite `set_ConnectionString` dans le script ; diagnostics ultérieurs limités aux noms de clés après analyse effective ; contrôle des journaux par recherche des valeurs exactes (Q-02-56). **État : OPEN** jusqu'à confirmation de la rotation par le propriétaire.

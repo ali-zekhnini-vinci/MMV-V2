@@ -125,7 +125,7 @@ Voir comparaison et risques : `GATES_AND_DECISIONS.md` § O-02-02.
 ### Migrations et tests PostgreSQL
 - Migration `20261015223849_AuthIdentity` générée hors connexion ; scripts relus `docs/phase/02/sql/` ; application **uniquement** par `scripts/Invoke-MmvSqlScript.ps1` après GO O-02-01 ; jamais au démarrage, jamais `EnsureCreated()`.
 - Inventaire de schéma étendu (`tests/MMV.PostgreSql.Tests/SchemaInspection.cs`) : état accepté = base vide, baseline seule, ou baseline + `auth` **exact** (relations, propriétaires, ACL, colonnes, contraintes, index, historique).
-- Ordre d'exécution : avant GO `--filter "Stage!=PostMigration&Stage!=IdentityWrite"` ; après GO, suite complète.
+- Ordre d'exécution : avant GO `--filter "Stage!=PostMigration&Stage!=IdentityWrite"` ; après GO, suite complète. **16/10/2026** : migration appliquée aux deux bases (GO O-02-01) ; la suite complète est désormais la référence (128/128).
 - Politique de cible du bootstrap (16/10/2026) : `tests/MMV.Maintenance.Tests` (sans base : règles + exécution réelle du binaire refusée avant connexion) et `tests/MMV.PostgreSql.Tests/BootstrapTargetPostgreSqlTests.cs` (lecture seule : `mmv_v2_dev` admise, `mmv_v2_test` refusée). Ces tests s'exécutent avant comme après GO. `Stage=IdentityWrite` = `mmv_v2_test` uniquement (transactions annulées ; test HTTP avec comptes éphémères supprimés en fin de test).
 
 ## 02-C — Preuve native (banc versionné)
@@ -138,3 +138,5 @@ node e2e/run-native.mjs login-states --out ../../docs/phase/02/evidence
 ```
 
 Le port de débogage n'est ouvert qu'en développement, sur la boucle locale, le temps de la preuve. Les comptes du parcours authentifié sont éphémères, sur `mmv_v2_test`, identifiants transmis par fichier temporaire hors dépôt (`MMV_E2E_CREDENTIALS_FILE`), jamais affichés.
+
+**Exécution du 16/10/2026 (après GO O-02-01).** MMV.Api lancée avec `--launch-profile https` ; la chaîne `ConnectionStrings:MmvTest` des user-secrets de test est passée au **seul** processus de l'API par `ConnectionStrings__Mmv` (prioritaire sur le user-secret `mmv_v2_dev`), jamais affichée. Comptes éphémères (`e2e-{admin,user,off}-<suffixe>`) et actions serveur (révocation des sessions, retrait de `system.admin`, désactivation, suppression) réalisés par un petit outil local **non versionné** (référence `MMV.Infrastructure`, `PasswordHasher<UserAccount>` d'Identity, refus de toute cible autre que `mmv_v2_test`/5433/boucle locale avant et après connexion) : le dépôt ne contient volontairement aucun chemin de création de compte autre que `bootstrap-admin`. Scénarios supplémentaires de `e2e/run-native.mjs` : `user-no-admin` (entrée « Comptes » absente sans `system.admin`), `login-disabled` (refus neutre), `sign-in --account <admin|user|off>`. Résultats : `QA_MATRIX.md` Q-02-52 à Q-02-57.

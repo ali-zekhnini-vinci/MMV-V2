@@ -1,0 +1,23 @@
+﻿# P02 verification du second bootstrap, 20261016T2102Z (UTC). Bootstrap reel effectue par le proprietaire (exit=0, confirme). Aucune saisie, aucune ecriture attendue.
+$ dotnet run --project src/MMV.Maintenance --no-build -- status
+Base cible     : mmv_v2_dev (rôle mmv_v2_dev, port 5433, PostgreSQL 18.6)
+Cible bootstrap: autorisée
+Migrations     : 2 appliquée(s) [20261015125000_InitialBaseline, 20261015223849_AuthIdentity] ; 0 en attente []
+Bootstrap      : déjà effectué
+Comptes        : 1
+exit=0
+$ dotnet run --project src/MMV.Maintenance --no-build -- bootstrap-admin   (second lancement, entree vide)
+Base cible     : mmv_v2_dev (rôle mmv_v2_dev, port 5433, PostgreSQL 18.6)
+Cible bootstrap: autorisée
+Migrations     : 2 appliquée(s) [20261015125000_InitialBaseline, 20261015223849_AuthIdentity] ; 0 en attente []
+Bootstrap      : déjà effectué
+Comptes        : 1
+Refusé : le bootstrap administrateur a déjà été effectué sur cette base (une seule fois).
+exit=3
+$ dotnet run --project src/MMV.Maintenance --no-build -- status   (apres)
+Base cible     : mmv_v2_dev (rôle mmv_v2_dev, port 5433, PostgreSQL 18.6)
+Cible bootstrap: autorisée
+Migrations     : 2 appliquée(s) [20261015125000_InitialBaseline, 20261015223849_AuthIdentity] ; 0 en attente []
+Bootstrap      : déjà effectué
+Comptes        : 1
+exit=0

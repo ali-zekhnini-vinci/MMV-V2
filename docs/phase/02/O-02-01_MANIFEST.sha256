@@ -1,6 +1,7 @@
 # MMV V2 — dossier O-02-01 (migration AuthIdentity + bootstrap administrateur) — manifeste SHA-256
 # Contenu Git de a869be6 (blobs normalisés LF, identiques à git archive). Vérification : sha256sum -c (Git Bash) ou Get-FileHash.
 # NON APPLIQUÉ : aucune exécution SQL ni bootstrap réel avant le GO propriétaire O-02-01.
+# 16/10/2026 : EXECUTE apres GO O-02-01 (voir GATES_AND_DECISIONS.md, Execution O-02-01). scripts/Invoke-MmvSqlScript.ps1 corrige avec GO du proprietaire avant application : empreinte LF executee 6b3d3a414b8c373fafd55af10935ef52e6ed7edfd46c013eb056659b6a5fb03d ; la ligne ci-dessous conserve l empreinte de la version presentee.
 67c15100a8d27fd91d4cd869b927774cc537e4275f60c3fcdca28161495f5a41  docs/phase/02/sql/0002_AuthIdentity.idempotent.sql
 a5f40575c04b1e25f7b356558f2203b13ccb5bf7936e0c72077132682df10192  docs/phase/02/sql/0002_AuthIdentity.sql
 7deab41dd479035e7e3e8f3849e926404679b2b005c0b1463bc6748730df682e  docs/phase/02/sql/0002_AuthIdentity.rollback.sql
