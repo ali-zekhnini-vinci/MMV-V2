@@ -129,7 +129,7 @@ Q-03-22, Q-03-64, Q-03-65, Q-03-66 et Q-03-75 (états `NOT_TESTED`, `FAIL (atten
 
 ## 03-B — Rendez-vous (17/10/2026, GO « PHASE 03-B »)
 
-Contexte : `MMV.Api` du propriétaire actif (`dotnet run --launch-profile https`, PID 31776) et serveurs Serena : **non arrêtés, non recompilés** ; aucun Vite ni Tauri du propriétaire en cours. Aucune base contactée en 03-B, aucun SQL appliqué, aucun rendez-vous réel.
+Contexte : `MMV.Api` du propriétaire actif (`dotnet run --launch-profile https`, PID 31776 au préflight ; relancé par le propriétaire à 16:01, PID 39180, constaté en fin de lot) et serveurs Serena : **jamais arrêtés ni recompilés par l'agent** (seuls ses propres processus `node` — Vite temporaire, double de test, Vitest — ont été arrêtés) ; aucun Vite ni Tauri du propriétaire en cours. Aucune base contactée en 03-B, aucun SQL appliqué, aucun rendez-vous réel.
 
 | ID | Vérification | Commande / méthode | Résultat | Extrait |
 |---|---|---|---|---|
