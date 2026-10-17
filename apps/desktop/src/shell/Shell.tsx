@@ -27,6 +27,8 @@ import "./Shell.css";
 
 // Module Clients chargé à la demande (bundle séparé : TanStack Table, dialogues, onglets), O-02-13.
 const ClientsModule = lazy(() => import("../clients/ClientsModule.tsx").then((module) => ({ default: module.ClientsModule })));
+// Module Rendez-vous (03-B) chargé à la demande : FullCalendar et Temporal restent hors du bundle initial.
+const AppointmentsModule = lazy(() => import("../appointments/AppointmentsModule.tsx").then((module) => ({ default: module.AppointmentsModule })));
 
 /** En dessous de cette largeur (CSS px, zoom compris), la sidebar démarre réduite (handoff §10). */
 export const COLLAPSE_BELOW_PX = 1280;
@@ -108,6 +110,13 @@ function ShellLayout({ session }: { session: SessionInfo }) {
       return (
         <Suspense fallback={<p role="status" className="view__muted">Chargement du module Clients…</p>}>
           <ClientsModule />
+        </Suspense>
+      );
+    }
+    if (item.id === "appointments") {
+      return (
+        <Suspense fallback={<p role="status" className="view__muted">Chargement du module Rendez-vous…</p>}>
+          <AppointmentsModule />
         </Suspense>
       );
     }

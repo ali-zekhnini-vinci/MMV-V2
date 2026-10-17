@@ -173,6 +173,23 @@ describe("liste des clients", () => {
     assert.equal(api.clients.find((client) => client.lastName === "Benali")?.status, "archived");
   });
 
+  test("O-03-15 : la confirmation d'archivage ne suit pas la navigation (liste → fiche → liste)", async () => {
+    const { user } = await openClients();
+    await screen.findByRole("table");
+    await user.click(screen.getByRole("button", { name: "Archiver BENALI Omar" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Archiver le client" }));
+    await screen.findByText(/a été retiré\(e\) des listes actives/);
+    await user.click(screen.getByRole("button", { name: "Inclure les clients archivés" }));
+    await user.click(await screen.findByRole("button", { name: "Consulter BENALI Omar" }));
+    await screen.findByRole("heading", { name: "BENALI Omar", level: 1 });
+    // Seul le bandeau permanent de la fiche archivée subsiste : aucune notice de l'opération précédente.
+    assert.equal(screen.getAllByText("Client archivé").length, 1);
+    assert.equal(screen.queryByText(/a été retiré\(e\) des listes actives/), null);
+    await user.click(screen.getByRole("button", { name: "Retour à la liste" }));
+    await screen.findByRole("table");
+    assert.equal(screen.queryByText(/a été retiré\(e\) des listes actives/), null);
+  });
+
   test("conflit de concurrence à l'archivage : message métier, données actualisées", async () => {
     const { user, api } = await openClients();
     await screen.findByRole("table");

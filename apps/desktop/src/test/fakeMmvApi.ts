@@ -3,6 +3,7 @@
 // src/MMV.Api/Auth/ (statuts, corps), pas leur sécurité : la preuve serveur est dans tests/MMV.*.Tests.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { type FakeAppointmentRecord, type FakeAppointmentsOptions, FAKE_APPOINTMENT_OPTIONS, handleAppointments, seedAppointments } from "./fakeAppointmentsApi.ts";
 import { type FakeClientRecord, type FakeClientsOptions, handleClients, seedClients } from "./fakeClientsApi.ts";
 
 export interface FakeAccount {
@@ -13,7 +14,7 @@ export interface FakeAccount {
   active?: boolean;
 }
 
-export interface FakeApiOptions extends FakeClientsOptions {
+export interface FakeApiOptions extends FakeClientsOptions, FakeAppointmentsOptions {
   accounts?: FakeAccount[];
   /** Simule une base indisponible (/health/ready 503). */
   databaseDown?: boolean;
@@ -35,6 +36,8 @@ export interface FakeApi {
   activeSessions: () => number;
   /** Clients fictifs du double (phase 03-A), modifiables pour simuler un autre poste. */
   clients: FakeClientRecord[];
+  /** Rendez-vous fictifs du double (phase 03-B, contrat PROPOSÉ), modifiables pour simuler un autre poste. */
+  appointments: FakeAppointmentRecord[];
   stop: () => Promise<void>;
 }
 
@@ -53,6 +56,7 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
   const requests: FakeApi["requests"] = [];
   let counter = 0;
   const clients = seedClients(options.clients ?? []);
+  const appointments = seedAppointments(options.appointments ?? [], clients, options.appointmentOptions ?? FAKE_APPOINTMENT_OPTIONS);
 
   const send = (response: ServerResponse, status: number, body?: unknown) => {
     response.writeHead(status, body === undefined ? {} : { "content-type": "application/json" });
@@ -153,6 +157,16 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
           readBody: () => readBody(request),
         });
       }
+      if (auth && (path === "/api/appointments" || path.startsWith("/api/appointments/") || path.startsWith("/api/appointments?"))) {
+        return handleAppointments(request, response, {
+          permissions: auth.account.permissions,
+          appointments,
+          clients,
+          options,
+          send,
+          readBody: () => readBody(request),
+        });
+      }
       return send(response, 404, { code: "not_found" });
     })();
   });
@@ -171,6 +185,7 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
     },
     activeSessions: () => sessions.size,
     clients,
+    appointments,
     stop: () =>
       new Promise<void>((resolve) => {
         server.closeAllConnections();

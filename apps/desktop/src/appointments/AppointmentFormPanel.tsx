@@ -1,0 +1,408 @@
+// Panneau de saisie d'un rendez-vous (Lot 2 DRAFT, planches 35, 36, 40–42) : création, modification et
+// DÉPLACEMENT AU CLAVIER (mode `move` : seules la date et l'heure changent). React Hook Form + Zod
+// (appointmentForm.ts) ; listes (durées, motifs, responsables) servies par MMV.Api ; erreurs serveur par champ
+// sous les champs ; conflit horaire et autres refus 409 en bandeau. Échap ferme le panneau (confirmation si des
+// modifications ne sont pas enregistrées, y compris depuis le menu du Shell).
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, AlertTriangle, Calendar, Check, Clock, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
+import { type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type FieldErrors, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
+import type { AppointmentDetail, AppointmentOptions } from "../api/appointments.ts";
+import type { ApiRequestError } from "../api/queryClient.ts";
+import { clientDisplayName } from "../clients/clientForm.ts";
+import { ConfirmDialog } from "../components/ui/alert-dialog.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { Label } from "../components/ui/label.tsx";
+import { cn } from "../lib/utils.ts";
+import { useLeaveGuard } from "../shell/navigationGuard.ts";
+import {
+  type AppointmentFormValues,
+  appointmentFormSchema,
+  appointmentServerFieldErrors,
+  toAppointmentInput,
+} from "./appointmentForm.ts";
+import { useCreateAppointment, useUpdateAppointment } from "./appointmentQueries.ts";
+import { describeAppointmentFailure, type FailureView, formatWhen, reasonLabel } from "./appointmentsView.ts";
+import { ClientPicker } from "./ClientPicker.tsx";
+import { addMinutesUtc, formatDuration, formatTimeRange } from "./time.ts";
+
+export type FormMode = "create" | "edit" | "move";
+
+interface AppointmentFormPanelProps {
+  mode: FormMode;
+  options: AppointmentOptions;
+  initialValues: AppointmentFormValues;
+  /** Rendez-vous modifié ou déplacé (version figée à l'ouverture, D-03-06 par analogie). */
+  appointment?: AppointmentDetail;
+  canPickClient: boolean;
+  onClose: () => void;
+  onSaved: (appointment: AppointmentDetail, mode: FormMode) => void;
+}
+
+const TITLES: Record<FormMode, string> = { create: "Nouveau rendez-vous", edit: "Modifier le rendez-vous", move: "Déplacer le rendez-vous" };
+const SUBMIT: Record<FormMode, string> = { create: "Créer", edit: "Enregistrer", move: "Déplacer" };
+const FIELD_ORDER: (keyof AppointmentFormValues)[] = ["clientId", "date", "time", "durationMinutes", "responsibleUserId", "reasonCode", "notes"];
+
+export function AppointmentFormPanel({ mode, options, initialValues, appointment, canPickClient, onClose, onSaved }: AppointmentFormPanelProps) {
+  const create = useCreateAppointment();
+  const update = useUpdateAppointment();
+  const schema = useMemo(() => appointmentFormSchema(options), [options]);
+  const [editing] = useState(appointment ?? null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    setFocus,
+    setValue,
+    getValues,
+    control,
+    formState: { errors, isDirty, isSubmitSuccessful },
+  } = useForm<AppointmentFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: initialValues,
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+    // Le focus du premier champ en erreur est géré ici (le client est un bouton, pas un champ enregistré).
+    shouldFocusError: false,
+  });
+  const [picking, setPicking] = useState(false);
+  const [failure, setFailure] = useState<FailureView | null>(null);
+  const [leaveRequest, setLeaveRequest] = useState<(() => void) | null>(null);
+  const clientButton = useRef<HTMLButtonElement>(null);
+  const saving = create.isPending || update.isPending;
+  const clientLabel = useWatch({ control, name: "clientLabel" });
+  const clientId = useWatch({ control, name: "clientId" });
+
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    dirtyRef.current = isDirty && !isSubmitSuccessful;
+  });
+  useLeaveGuard((proceed) => {
+    if (!dirtyRef.current) return false;
+    setLeaveRequest(() => proceed);
+    return true;
+  });
+  const requestClose = () => (dirtyRef.current ? setLeaveRequest(() => onClose) : onClose());
+
+  const focusField = (field: keyof AppointmentFormValues) => {
+    if (field === "clientId" || field === "clientLabel") clientButton.current?.focus();
+    else setFocus(field);
+  };
+
+  const onInvalid = (invalid: FieldErrors<AppointmentFormValues>) => {
+    const first = FIELD_ORDER.find((field) => invalid[field]);
+    if (first) focusField(first);
+  };
+
+  const onValid = (values: AppointmentFormValues) => {
+    setFailure(null);
+    const input = toAppointmentInput(values, options);
+    const slot = { startsAtUtc: input.startsAtUtc, endsAtUtc: addMinutesUtc(input.startsAtUtc, input.durationMinutes), timeZone: options.timeZone };
+    const onError = (error: ApiRequestError) => {
+      const fields = appointmentServerFieldErrors(error.error.fieldErrors);
+      if (error.error.kind === "validation" && fields.length > 0) {
+        fields.forEach(([field, message]) => setError(field, { type: "server", message }));
+        focusField(fields[0][0]);
+        return;
+      }
+      setFailure(describeAppointmentFailure(error, slot));
+    };
+    const onSuccess = (saved: AppointmentDetail) => {
+      dirtyRef.current = false;
+      onSaved(saved, mode);
+    };
+    if (editing) update.mutate({ id: editing.id, input, version: editing.version }, { onSuccess, onError });
+    else create.mutate(input, { onSuccess, onError });
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape" && !picking && leaveRequest === null) {
+      event.preventDefault();
+      requestClose();
+    }
+  };
+
+  const move = mode === "move";
+  const currentDuration = getValues("durationMinutes");
+
+  return (
+    <aside className="rdv-side rdv-side--form" aria-label={picking ? "Sélectionner un client" : TITLES[mode]} onKeyDown={onKeyDown}>
+      {picking ? (
+        <ClientPicker
+          allowed={canPickClient}
+          selectedId={clientId}
+          onBack={() => {
+            setPicking(false);
+            setTimeout(() => clientButton.current?.focus(), 0);
+          }}
+          onClose={requestClose}
+          onPick={(client) => {
+            setValue("clientId", client.id, { shouldDirty: true, shouldValidate: errors.clientId !== undefined });
+            setValue("clientLabel", `${clientDisplayName(client)} · ${client.reference}`, { shouldDirty: true });
+            setPicking(false);
+            setTimeout(() => clientButton.current?.focus(), 0);
+          }}
+        />
+      ) : (
+        <form className="rdv-side__form" noValidate onSubmit={(event) => void handleSubmit(onValid, onInvalid)(event)} aria-busy={saving}>
+          <div className="rdv-side__head">
+            <h2 className="rdv-side__title">{TITLES[mode]}</h2>
+            <button type="button" className="rdv-iconbtn" aria-label="Fermer le panneau" onClick={requestClose}>
+              <X size={18} aria-hidden="true" />
+            </button>
+          </div>
+          {failure && (
+            <div className={cn("clients-banner rdv-side__banner", `clients-banner--${failure.tone}`)} role="alert">
+              <span className="clients-banner__icon" aria-hidden="true">
+                <AlertTriangle size={18} />
+              </span>
+              <div>
+                <div className="clients-banner__title">{failure.title}</div>
+                <div className="clients-banner__text">{failure.text}</div>
+              </div>
+            </div>
+          )}
+          <div className="rdv-side__body rdv-form">
+            {move && editing ? (
+              <div className="rdv-form__summary">
+                <p>
+                  <b>{clientLabel}</b>
+                </p>
+                <p>
+                  Actuellement : {formatWhen(editing.startsAtUtc, options.timeZone)} ({formatTimeRange(editing.startsAtUtc, editing.endsAtUtc, options.timeZone)})
+                </p>
+                <p>
+                  {formatDuration(Number(currentDuration))} · {reasonLabel(options, editing.reasonCode)}
+                  {editing.responsibleDisplayName ? ` · ${editing.responsibleDisplayName}` : ""}
+                </p>
+              </div>
+            ) : (
+              <ClientField
+                buttonRef={clientButton}
+                label={clientLabel}
+                error={errors.clientId?.message}
+                disabled={!canPickClient}
+                onOpen={() => setPicking(true)}
+              />
+            )}
+            <div className="rdv-form__row">
+              <Field label="Date" required icon={<Calendar size={18} />} error={errors.date?.message} hint="jj/mm/aaaa" registration={register("date")} placeholder="jj/mm/aaaa" autoFocus={move} />
+              <Field label="Heure" required icon={<Clock size={18} />} error={errors.time?.message} hint="hh:mm" registration={register("time")} placeholder="hh:mm" />
+            </div>
+            {!move && (
+              <>
+                <div className="rdv-form__row">
+                  <SelectField label="Durée" required icon={<Timer size={18} />} error={errors.durationMinutes?.message} registration={register("durationMinutes")}>
+                    <option value="">Choisir…</option>
+                    {options.durationsMinutes.map((minutes) => (
+                      <option key={minutes} value={String(minutes)}>
+                        {formatDuration(minutes)}
+                      </option>
+                    ))}
+                  </SelectField>
+                  <SelectField label="Responsable" required={options.responsibleRequired} icon={<User size={18} />} error={errors.responsibleUserId?.message} registration={register("responsibleUserId")}>
+                    <option value="">{options.responsibleRequired ? "Choisir…" : "Non attribué"}</option>
+                    {options.responsibles.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.displayName}
+                      </option>
+                    ))}
+                  </SelectField>
+                </div>
+                <SelectField label="Motif" required icon={<Stethoscope size={18} />} error={errors.reasonCode?.message} registration={register("reasonCode")}>
+                  <option value="">Choisir un motif…</option>
+                  {options.reasons.map((reason) => (
+                    <option key={reason.code} value={reason.code}>
+                      {reason.label}
+                    </option>
+                  ))}
+                </SelectField>
+                <Field
+                  label="Notes"
+                  multiline
+                  error={errors.notes?.message}
+                  hint="Notes internes, sans donnée de santé (1000 caractères au maximum)."
+                  registration={register("notes")}
+                  placeholder="Notes internes (optionnel)…"
+                  maxLength={1000}
+                />
+              </>
+            )}
+            <p className="rdv-form__tz">
+              <Info size={14} aria-hidden="true" /> Heures du magasin ({options.timeZone}).
+            </p>
+          </div>
+          <div className="rdv-side__foot">
+            <Button className="rdv-grow" onClick={requestClose} disabled={saving}>
+              Annuler
+            </Button>
+            <Button type="submit" variant="primary" className="rdv-grow" disabled={saving}>
+              <Check size={16} aria-hidden="true" />
+              {saving ? "Enregistrement…" : SUBMIT[mode]}
+            </Button>
+          </div>
+        </form>
+      )}
+      <ConfirmDialog
+        open={leaveRequest !== null}
+        onOpenChange={(open) => !open && setLeaveRequest(null)}
+        tone="warning"
+        icon={<AlertTriangle size={28} />}
+        title="Abandonner la saisie ?"
+        description="Les informations saisies pour ce rendez-vous ne sont pas enregistrées et seront perdues."
+        cancelLabel="Continuer la saisie"
+        confirmLabel="Abandonner"
+        onConfirm={() => {
+          const proceed = leaveRequest;
+          dirtyRef.current = false;
+          setLeaveRequest(null);
+          proceed?.();
+        }}
+      />
+    </aside>
+  );
+}
+
+function ClientField({
+  buttonRef,
+  label,
+  error,
+  disabled,
+  onOpen,
+}: {
+  buttonRef: Ref<HTMLButtonElement>;
+  label: string;
+  error?: string;
+  disabled: boolean;
+  onOpen: () => void;
+}) {
+  const id = useId();
+  return (
+    <div className="clients-field">
+      <span className="clients-field__label" id={`${id}-label`} data-required>
+        Client
+      </span>
+      <button
+        ref={buttonRef}
+        type="button"
+        className={cn("clients-input rdv-input--button", error && "clients-input--error", !label && "rdv-input--placeholder")}
+        aria-labelledby={`${id}-label ${id}-value`}
+        aria-describedby={error ? `${id}-error` : disabled ? `${id}-hint` : undefined}
+        aria-invalid={error ? true : undefined}
+        aria-required
+        aria-haspopup="listbox"
+        disabled={disabled}
+        onClick={onOpen}
+      >
+        <span className="clients-input__icon" aria-hidden="true">
+          <User size={18} />
+        </span>
+        <span id={`${id}-value`} className="rdv-grow rdv-input__value">
+          {label || "Rechercher un client…"}
+        </span>
+        <Search size={16} aria-hidden="true" />
+      </button>
+      {error ? (
+        <div className="clients-field__error" id={`${id}-error`}>
+          <AlertCircle size={14} aria-hidden="true" />
+          {error}
+        </div>
+      ) : disabled ? (
+        <div className="clients-field__hint" id={`${id}-hint`}>
+          Votre compte ne permet pas de rechercher des clients (clients.read).
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+interface FieldProps {
+  label: string;
+  registration: UseFormRegisterReturn;
+  error?: string;
+  hint?: string;
+  required?: boolean;
+  icon?: ReactNode;
+  multiline?: boolean;
+  placeholder?: string;
+  maxLength?: number;
+  autoFocus?: boolean;
+}
+
+function Field({ label, registration, error, hint, required, icon, multiline, placeholder, maxLength, autoFocus }: FieldProps) {
+  const id = useId();
+  const common = {
+    id,
+    ...registration,
+    placeholder,
+    maxLength,
+    autoFocus,
+    autoComplete: "off",
+    "aria-invalid": error ? true : undefined,
+    "aria-describedby": error ? `${id}-error` : hint ? `${id}-hint` : undefined,
+    "aria-required": required || undefined,
+  };
+  return (
+    <div className="clients-field">
+      <Label htmlFor={id} className="clients-field__label" data-required={required || undefined}>
+        {label}
+      </Label>
+      <div className={cn("clients-input", multiline && "clients-input--area", error && "clients-input--error")}>
+        {icon && <span className="clients-input__icon" aria-hidden="true">{icon}</span>}
+        {multiline ? <textarea rows={4} {...common} /> : <input type="text" spellCheck={false} {...common} />}
+      </div>
+      {error ? (
+        <div className="clients-field__error" id={`${id}-error`}>
+          <AlertCircle size={14} aria-hidden="true" />
+          {error}
+        </div>
+      ) : hint && multiline ? (
+        <div className="clients-field__hint" id={`${id}-hint`}>
+          {hint}
+        </div>
+      ) : hint ? (
+        <span className="rdv-sr-only" id={`${id}-hint`}>
+          Format {hint}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  registration,
+  error,
+  required,
+  icon,
+  children,
+}: {
+  label: string;
+  registration: UseFormRegisterReturn;
+  error?: string;
+  required?: boolean;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
+  const id = useId();
+  return (
+    <div className="clients-field">
+      <Label htmlFor={id} className="clients-field__label" data-required={required || undefined}>
+        {label}
+      </Label>
+      <div className={cn("clients-input rdv-select", error && "clients-input--error")}>
+        <span className="clients-input__icon" aria-hidden="true">{icon}</span>
+        <select id={id} {...registration} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} aria-required={required || undefined}>
+          {children}
+        </select>
+      </div>
+      {error && (
+        <div className="clients-field__error" id={`${id}-error`}>
+          <AlertCircle size={14} aria-hidden="true" />
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+

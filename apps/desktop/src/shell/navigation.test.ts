@@ -7,20 +7,25 @@ const ADMIN = [PERMISSION_SYSTEM_ADMIN];
 const USER: string[] = [];
 
 describe("navigation et garde UI", () => {
-  // Phase 03-A (17/10/2026) : Clients devient disponible (écrans, données soumises à G03-METIER) ;
-  // Rendez-vous est annoncé pour 03-B. Les autres modules restent « phase suivante » (aucun faux écran).
-  test("modules d'une phase suivante : tous sauf Clients", () => {
+  // Phase 03-A (17/10/2026) : Clients devient disponible (écrans, données soumises à G03-METIER).
+  // Phase 03-B (17/10/2026) : écran Rendez-vous disponible, service désactivé tant que D-03-13 à D-03-18
+  // ne sont pas ratifiées. Les autres modules restent « phase suivante » (aucun faux écran).
+  test("modules d'une phase suivante : tous sauf Clients et Rendez-vous", () => {
     const later = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => item.availability === "later");
     assert.deepEqual(
       later.map((item) => item.id),
-      ["appointments", "products", "prescriptions", "orders", "sales", "inventory", "notifications", "reports", "settings"],
+      ["products", "prescriptions", "orders", "sales", "inventory", "notifications", "reports", "settings"],
     );
-    assert.match(findNavItem("appointments").note ?? "", /03-B/);
   });
 
-  test("entrées disponibles : techniques + Clients", () => {
+  test("entrées disponibles : techniques + Clients + Rendez-vous", () => {
     const available = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => item.availability === "available");
-    assert.deepEqual(available.map((item) => item.id), ["home", "clients", "accounts", "diagnostic"]);
+    assert.deepEqual(available.map((item) => item.id), ["home", "clients", "appointments", "accounts", "diagnostic"]);
+  });
+
+  test("Rendez-vous : aucune permission requise côté UI (droits appointments.* proposés, le serveur reste seul juge)", () => {
+    assert.equal(findNavItem("appointments").requires, undefined);
+    assert.equal(viewAccess("appointments", USER), "allowed");
   });
 
   test("Clients : aucune permission requise côté UI (le serveur reste seul juge, droits clients.* proposés)", () => {
@@ -42,7 +47,7 @@ describe("navigation et garde UI", () => {
   test("viewAccess : allowed / later / forbidden", () => {
     assert.equal(viewAccess("home", USER), "allowed");
     assert.equal(viewAccess("clients", ADMIN), "allowed");
-    assert.equal(viewAccess("appointments", ADMIN), "later");
+    assert.equal(viewAccess("products", ADMIN), "later");
     assert.equal(viewAccess("accounts", USER), "forbidden");
     assert.equal(viewAccess("accounts", ADMIN), "allowed");
   });

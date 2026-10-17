@@ -105,7 +105,10 @@ export function ClientFormView(props: ClientFormViewProps) {
         {
           onSuccess: (client) => {
             reset(toFormValues(client));
-            setNotice({ title: "Modifications enregistrées", message: `La fiche de ${client.firstName} ${client.lastName} est à jour.` });
+            setNotice(
+              { title: "Modifications enregistrées", message: `La fiche de ${client.firstName} ${client.lastName} est à jour.` },
+              `/clients/${client.id}`,
+            );
             navigate(`/clients/${client.id}`);
           },
           onError,

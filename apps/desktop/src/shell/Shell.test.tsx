@@ -69,12 +69,14 @@ describe("Shell", () => {
     assert.equal(screen.queryByRole("table"), null);
   });
 
-  test("Rendez-vous : annoncé pour 03-B, aucun calendrier prétendu", async () => {
+  // 03-B : écran disponible, service désactivé (APPOINTMENTS_API_ENABLED = false) : aucun appel, aucun calendrier prétendu.
+  test("Rendez-vous : service non activé, aucune requête /api/appointments, aucun calendrier", async () => {
     const user = await signIn(ADMIN);
     await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
-    await screen.findByRole("heading", { name: "Rendez-vous" });
-    screen.getByText(/sous-lot 03-B/);
+    await screen.findByRole("heading", { name: "Rendez-vous", level: 1 });
+    await screen.findByRole("heading", { name: "Service Rendez-vous non activé" });
     assert.equal(screen.queryByRole("grid"), null);
+    assert.equal(api.requests.some((request) => request.path.startsWith("/api/appointments")), false);
   });
 
   // 03-A2 : le service Clients est activé par défaut (CLIENTS_API_ENABLED = true).

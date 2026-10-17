@@ -39,11 +39,17 @@ export interface ClientNotice {
   message: string;
 }
 
+/** Message rattaché à l'écran où il doit s'afficher : tout changement d'écran l'efface (O-03-15). */
+export interface ScopedClientNotice extends ClientNotice {
+  path: string;
+}
+
 export interface ClientsUi {
   listState: ClientListState;
   setListState: (update: (current: ClientListState) => ClientListState) => void;
   notice: ClientNotice | null;
-  setNotice: (notice: ClientNotice | null) => void;
+  /** `path` : écran cible (par défaut l'écran courant), pour un message émis juste avant une navigation. */
+  setNotice: (notice: ClientNotice | null, path?: string) => void;
 }
 
 export const ClientsUiContext = createContext<ClientsUi | null>(null);

@@ -23,6 +23,8 @@ interface ConfirmDialogProps {
   onConfirm?: () => void;
   /** Action en cours : boutons désactivés, libellé conservé. */
   pending?: boolean;
+  /** Contenu facultatif entre le texte et les actions (ex. motif d'annulation d'un rendez-vous, 03-B). */
+  children?: ReactNode;
 }
 
 export function ConfirmDialog({
@@ -37,6 +39,7 @@ export function ConfirmDialog({
   cancelLabel,
   onConfirm,
   pending = false,
+  children,
 }: ConfirmDialogProps) {
   return (
     <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -48,6 +51,7 @@ export function ConfirmDialog({
           </span>
           <AlertDialogPrimitive.Title className="mmv-dialog__title">{title}</AlertDialogPrimitive.Title>
           <AlertDialogPrimitive.Description className="mmv-dialog__text">{description}</AlertDialogPrimitive.Description>
+          {children}
           <div className="mmv-dialog__actions">
             <AlertDialogPrimitive.Cancel asChild>
               <Button variant={confirmLabel ? "secondary" : "primary"} disabled={pending}>

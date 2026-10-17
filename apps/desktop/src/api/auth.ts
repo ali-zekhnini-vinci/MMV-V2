@@ -7,6 +7,10 @@ import { type ApiResult, noContent, requestJson } from "./client.ts";
 export const PERMISSION_SYSTEM_ADMIN = "system.admin";
 export const PERMISSION_CLIENTS_WRITE = "clients.write";
 export const PERMISSION_CLIENTS_ARCHIVE = "clients.archive";
+export const PERMISSION_CLIENTS_READ = "clients.read";
+/** Rendez-vous (03-B) : droits PROPOSÉS (D-03-17), inconnus du serveur tant que le propriétaire ne les a pas ratifiés. */
+export const PERMISSION_APPOINTMENTS_WRITE = "appointments.write";
+export const PERMISSION_APPOINTMENTS_CANCEL = "appointments.cancel";
 
 export interface SessionUser {
   id: string;

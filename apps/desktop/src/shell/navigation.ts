@@ -66,14 +66,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { id: "home", path: "/", label: "Accueil", icon: LayoutDashboard, availability: "available" },
       // Phase 03-A : écrans Clients disponibles ; les données dépendent de l'activation du service (G03-METIER).
       { id: "clients", path: "/clients", label: "Clients", icon: Users, availability: "available", nested: true },
-      {
-        id: "appointments",
-        path: "/rendez-vous",
-        label: "Rendez-vous",
-        icon: CalendarDays,
-        availability: "later",
-        note: "Prévu au sous-lot 03-B, après validation des règles de rendez-vous (temps, conflits, responsables, droits).",
-      },
+      // Phase 03-B : écran Rendez-vous disponible ; service désactivé tant que D-03-13 à D-03-18 ne sont pas ratifiées.
+      { id: "appointments", path: "/rendez-vous", label: "Rendez-vous", icon: CalendarDays, availability: "available" },
       { id: "products", path: "/produits", label: "Produits", icon: Package, availability: "later" },
       { id: "prescriptions", path: "/ordonnances", label: "Ordonnances", icon: ClipboardList, availability: "later" },
       { id: "orders", path: "/commandes", label: "Commandes", icon: ShoppingBag, availability: "later" },

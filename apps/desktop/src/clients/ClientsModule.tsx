@@ -3,8 +3,8 @@
 //   /clients/:id            fiche            /clients/:id/modifier     modification
 // La fiche et la modification chargent le client depuis l'API (jamais depuis la ligne de liste).
 import { AlertTriangle, RefreshCw, SearchX, ServerOff, ShieldAlert } from "lucide-react";
-import { useMemo, useState } from "react";
-import { Navigate, Route, Routes, useNavigate, useParams } from "react-router";
+import { useCallback, useMemo, useState } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import { Button } from "../components/ui/button.tsx";
 import { ClientDetailView } from "./ClientDetailView.tsx";
 import { ClientFormView } from "./ClientFormView.tsx";
@@ -13,13 +13,22 @@ import { useClientDetail } from "./clientQueries.ts";
 import { useClientsService } from "./clientsService.ts";
 import { ClientsListView } from "./ClientsListView.tsx";
 import { LoadingBlock, StateBlock } from "./ClientStates.tsx";
-import { type ClientListState, type ClientNotice, ClientsUiContext, INITIAL_LIST_STATE } from "./clientsUi.ts";
+import { type ClientListState, type ClientNotice, ClientsUiContext, INITIAL_LIST_STATE, type ScopedClientNotice } from "./clientsUi.ts";
 import "./Clients.css";
 
 export function ClientsModule() {
   const [listState, setListState] = useState<ClientListState>(INITIAL_LIST_STATE);
-  const [notice, setNotice] = useState<ClientNotice | null>(null);
-  const ui = useMemo(() => ({ listState, setListState, notice, setNotice }), [listState, notice]);
+  const { pathname } = useLocation();
+  const [scoped, setScoped] = useState<ScopedClientNotice | null>(null);
+  // O-03-15 : un message de confirmation n'appartient qu'à l'écran pour lequel il a été émis ; il est
+  // effacé dès que l'écran change (ajustement pendant le rendu, sans effet ni affichage intermédiaire).
+  if (scoped !== null && scoped.path !== pathname) setScoped(null);
+  const notice = scoped !== null && scoped.path === pathname ? scoped : null;
+  const setNotice = useCallback(
+    (next: ClientNotice | null, path?: string) => setScoped(next === null ? null : { ...next, path: path ?? pathname }),
+    [pathname],
+  );
+  const ui = useMemo(() => ({ listState, setListState, notice, setNotice }), [listState, notice, setNotice]);
 
   return (
     <ClientsUiContext.Provider value={ui}>
