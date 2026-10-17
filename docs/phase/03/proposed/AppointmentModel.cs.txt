@@ -1,0 +1,78 @@
+using Microsoft.EntityFrameworkCore;
+using MMV.Domain.Appointments;
+using MMV.Domain.Clients;
+using MMV.Domain.Identity;
+
+namespace MMV.Infrastructure.Appointments;
+
+/// <summary>
+/// Schéma <c>appointments</c> (phase 03-B, PROPOSÉ, migration 0004_AppointmentsModule NON appliquée) :
+/// table <c>appointments.appointments</c>, contraintes explicites, aucune extension PostgreSQL (pas de
+/// <c>btree_gist</c>) : le non-chevauchement par responsable (D-03-15) est contrôlé dans la transaction
+/// d'écriture sous verrou consultatif <c>pg_advisory_xact_lock</c> par responsable. Concurrence optimiste par
+/// la colonne système <c>xmin</c>. Motifs : codes d'une liste serveur (D-03-18), format seul contrôlé ici.
+/// </summary>
+internal static class AppointmentModel
+{
+    public const string Schema = "appointments";
+
+    public static void Configure(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Appointment>(appointment =>
+        {
+            appointment.ToTable("appointments", Schema, t =>
+            {
+                t.HasCheckConstraint("ck_appointments_ends_after_starts", "ends_at_utc > starts_at_utc");
+                t.HasCheckConstraint("ck_appointments_duration_range", "ends_at_utc - starts_at_utc <= interval '12 hours'");
+                t.HasCheckConstraint("ck_appointments_status", "status IN ('planned', 'cancelled')");
+                t.HasCheckConstraint(
+                    "ck_appointments_cancellation_consistency",
+                    "(status = 'cancelled') = (cancelled_at_utc IS NOT NULL AND cancelled_by_user_id IS NOT NULL)");
+                t.HasCheckConstraint("ck_appointments_cancellation_reason_planned", "status = 'cancelled' OR cancellation_reason IS NULL");
+                t.HasCheckConstraint("ck_appointments_reason_code_format", "reason_code ~ '^[a-z0-9_-]{1,32}$'");
+                t.HasCheckConstraint("ck_appointments_updated_after_created", "updated_at_utc >= created_at_utc");
+            });
+            appointment.HasKey(a => a.Id).HasName("pk_appointments");
+            appointment.Property(a => a.Id).HasColumnName("id").ValueGeneratedNever();
+            appointment.Property(a => a.ClientId).HasColumnName("client_id").IsRequired();
+            appointment.Property(a => a.ResponsibleUserId).HasColumnName("responsible_user_id");
+            appointment.Property(a => a.StartsAtUtc).HasColumnName("starts_at_utc").IsRequired();
+            appointment.Property(a => a.EndsAtUtc).HasColumnName("ends_at_utc").IsRequired();
+            appointment.Property(a => a.ReasonCode).HasColumnName("reason_code").HasMaxLength(Appointment.ReasonCodeMaxLength).IsRequired();
+            appointment.Property(a => a.Notes).HasColumnName("notes").HasMaxLength(Appointment.NotesMaxLength);
+            appointment.Property(a => a.Status).HasColumnName("status").HasMaxLength(Appointment.StatusMaxLength).IsRequired();
+            appointment.Property(a => a.CancelledAtUtc).HasColumnName("cancelled_at_utc");
+            appointment.Property(a => a.CancelledByUserId).HasColumnName("cancelled_by_user_id");
+            appointment.Property(a => a.CancellationReason).HasColumnName("cancellation_reason").HasMaxLength(Appointment.CancellationReasonMaxLength);
+            appointment.Property(a => a.CreatedAtUtc).HasColumnName("created_at_utc").IsRequired();
+            appointment.Property(a => a.CreatedByUserId).HasColumnName("created_by_user_id").IsRequired();
+            appointment.Property(a => a.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();
+            appointment.Property(a => a.UpdatedByUserId).HasColumnName("updated_by_user_id").IsRequired();
+            // Npgsql : jeton de concurrence sur la colonne système xmin (aucune colonne créée par la migration).
+            appointment.Property(a => a.Version).IsRowVersion();
+            appointment.Ignore(a => a.IsCancelled);
+
+            // Agenda (période) et contrôle de chevauchement par responsable : rendez-vous planifiés seulement.
+            appointment.HasIndex(a => new { a.StartsAtUtc, a.Id }).HasDatabaseName("ix_appointments_starts_at");
+            appointment.HasIndex(a => new { a.ResponsibleUserId, a.StartsAtUtc })
+                .HasDatabaseName("ix_appointments_responsible_planned").HasFilter("status = 'planned'");
+            // Rendez-vous d'un client (fiche client, 03-C).
+            appointment.HasIndex(a => new { a.ClientId, a.StartsAtUtc }).HasDatabaseName("ix_appointments_client_starts_at");
+            appointment.HasIndex(a => a.CreatedByUserId).HasDatabaseName("ix_appointments_created_by_user_id");
+            appointment.HasIndex(a => a.UpdatedByUserId).HasDatabaseName("ix_appointments_updated_by_user_id");
+            appointment.HasIndex(a => a.CancelledByUserId).HasDatabaseName("ix_appointments_cancelled_by_user_id");
+
+            // Aucune suppression en cascade : un client ou un compte référencé ne peut pas disparaître.
+            appointment.HasOne<Client>().WithMany().HasForeignKey(a => a.ClientId)
+                .HasConstraintName("fk_appointments_clients").OnDelete(DeleteBehavior.Restrict);
+            appointment.HasOne<UserAccount>().WithMany().HasForeignKey(a => a.ResponsibleUserId)
+                .HasConstraintName("fk_appointments_responsible_users").OnDelete(DeleteBehavior.Restrict);
+            appointment.HasOne<UserAccount>().WithMany().HasForeignKey(a => a.CreatedByUserId)
+                .HasConstraintName("fk_appointments_created_by_users").OnDelete(DeleteBehavior.Restrict);
+            appointment.HasOne<UserAccount>().WithMany().HasForeignKey(a => a.UpdatedByUserId)
+                .HasConstraintName("fk_appointments_updated_by_users").OnDelete(DeleteBehavior.Restrict);
+            appointment.HasOne<UserAccount>().WithMany().HasForeignKey(a => a.CancelledByUserId)
+                .HasConstraintName("fk_appointments_cancelled_by_users").OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+}

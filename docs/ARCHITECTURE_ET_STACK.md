@@ -87,6 +87,8 @@ Aucun composant supplémentaire par principe : éviter de multiplier les projets
 
 > Note datée 17/10/2026 (phase 03-A) : **TanStack Query** 5.104.1 et **TanStack Table** 8.21.3 sont installés et utilisés (`apps/desktop/src/api/queryClient.ts`, `apps/desktop/src/clients/`) : un cache par session, vidé à la déconnexion, aucun persister ; tri et pagination **serveur** (mode manuel). `openapi-typescript` / `openapi-fetch` **non installés** : le document OpenAPI actuel ne déclare que des réponses 200 sans schéma (`docs/phase/03/API_CLIENTS_PROPOSED.md`, O-03-01). FullCalendar Standard : cadrage 03-B (`docs/phase/03/RDV_03B_PREPARATION.md`), v7 MIT, aucun plugin Premium. Radix `react-alert-dialog` et `react-tabs` ajoutés (composants shadcn/ui). Aucun ADR ratifié par cette note.
 
+> Note datée 17/10/2026 (phase 03-B) : **FullCalendar Standard** 7.1.0 (MIT) et `temporal-polyfill` 1.0.5 sont installés et utilisés par le module Rendez-vous (`apps/desktop/src/appointments/`, chunk chargé à la demande) : vues `timeGridDay` / `timeGridWeek`, fuseau du magasin fourni par le serveur, rendu par les jetons MMV (FullCalendar 7 sans thème). Aucun plugin Premium. Service désactivé tant que les décisions D-03-13 à D-03-18 ne sont pas ratifiées.
+
 ## 4. Choix d'architecture comparés
 
 | Scénario | Atouts | Coûts / risques | Décision |

@@ -175,3 +175,52 @@ Les comptes éphémères `e2e-c{admin,read,write,full}-<suffixe>` sont créés e
 | Procédure de permissions, aucun compte réel modifié | `PROCEDURE_PERMISSIONS_CLIENTS.md` ; commandes en lecture / refus | Q-03-88 |
 | Actions interdites masquées ou désactivées | `clientPermissions.ts` | Q-03-90, Q-03-93 |
 | Chaîne Tauri → HTTPS → API → PostgreSQL 18, captures, comparaison | banc natif | Q-03-90, Q-03-91 |
+
+## Réalisation 03-B (17/10/2026) — Rendez-vous, interface initiale
+
+Mandat : [`prompts/PHASE03_B_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B_GO_CLAUDE_CODE.md). Décisions D-03-13 à D-03-18 **PROPOSED** ([`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md)) : seuls les composants indépendants de ces décisions sont développés ; le service est désactivé.
+
+**Clients (O-03-15).** `clients/ClientsModule.tsx` rattache la notice à l'écran pour lequel elle est émise (`ScopedClientNotice.path`, `clients/clientsUi.ts`) et l'efface dès que le chemin change (ajustement pendant le rendu, sans effet) ; `setNotice(notice, path?)` permet au formulaire de viser la fiche qu'il ouvre (`ClientFormView.tsx`). Aucun autre changement du module Clients.
+
+**Architecture Rendez-vous.**
+
+```
+apps/desktop/src/
+  api/appointments.ts            contrat PROPOSÉ : types, parseurs stricts, fonctions HTTP
+  appointments/
+    appointmentsService.ts       APPOINTMENTS_API_ENABLED = false ; horloge injectable (tests)
+    appointmentPermissions.ts    garde d'affichage appointments.write / cancel + clients.read (sélecteur)
+    appointmentQueries.ts        TanStack Query : options, période, détail, sélecteur client, 4 mutations
+    time.ts                      Temporal : fuseau du magasin, bornes de vue, libellés français
+    appointmentForm.ts           Zod construit depuis les options serveur ; conversions ; erreurs par champ
+    appointmentsView.ts          libellés, teintes par position du motif, messages d'échec bornés
+    AppointmentsModule.tsx       page /rendez-vous : en-tête, barre d'outils, agenda, panneaux, annulation
+    AppointmentsCalendar.tsx     FullCalendar 7.1.0 (timeGridDay / timeGridWeek), clavier ↑/↓
+    AppointmentDetailPanel.tsx   panneau détail (planches 32, 37–39)
+    AppointmentFormPanel.tsx     création / modification / déplacement (planches 35, 36, 41, 42)
+    ClientPicker.tsx             combobox ARIA, clients actifs (planche 40)
+    Appointments.css             cotes du Lot 2, jetons MMV clair / sombre
+  test/fakeAppointmentsApi.ts    double node:http du contrat proposé (règle de conflit proposée)
+```
+
+Chargement à la demande depuis `shell/Shell.tsx` (chunk `AppointmentsModule`, FullCalendar et Temporal hors du bundle initial) ; entrée de navigation `appointments` passée à `available` (`shell/navigation.ts`). `components/ui/alert-dialog.tsx` : contenu facultatif `children` (motif d'annulation), rétrocompatible. `api/auth.ts` : constantes `clients.read`, `appointments.write`, `appointments.cancel`.
+
+**Comportements.**
+
+| Sujet | Mise en œuvre |
+|---|---|
+| Fuseau | `timeZone` des options passé à FullCalendar (Temporal natif) ; saisie `jj/mm/aaaa` + `hh:mm` convertie par `wallTimeToUtc` (heure inexistante refusée localement) ; « Aujourd'hui » = date du magasin |
+| Période | `viewRangeUtc` (minuit du magasin, fin exclue) → `GET /api/appointments?from&to&status` ; la période précédente reste affichée pendant le chargement |
+| Clavier | rendez-vous = boutons FullCalendar (Tab, Entrée / Espace = détail) ; ↑/↓ dans l'ordre chronologique ; focus sur le titre du détail ; Échap ferme panneau ou formulaire ; création et déplacement entièrement au clavier |
+| Souris | sélection d'un créneau → formulaire pré-rempli (durée reprise si elle figure dans la liste serveur) ; glisser = déplacement (relecture du détail, `PUT` complet, `revert()` sur refus) ; aucun redimensionnement |
+| Conflits et refus | traduits depuis les codes 409/422 (`describeAppointmentFailure`, `appointmentServerFieldErrors`) ; rien n'est déduit localement |
+| Permissions | sans `appointments.write` : pas de « Nouveau rendez-vous », sélection et glisser inactifs, Modifier / Déplacer désactivés avec motif ; sans `appointments.cancel` : Annuler / Rétablir désactivés ; sans `clients.read` : sélecteur indisponible, « Voir la fiche client » absent |
+| Annulés | masqués par défaut (`status=planned`), puce « Afficher les annulés » (`status=all`), rendu barré et atténué |
+| États | service non activé, chargement, erreur technique + Réessayer, accès refusé, journée / semaine vide, succès (bandeau `status`) |
+
+**FullCalendar 7 (constats).** Paquet unique `@fullcalendar/react` (vues par sous-chemins) ; mise en page seule (`skeleton.css`), classes internes hachées et bordures / marges neutralisées par `!important` : le style passe par les options `*Class` (`dayHeaderClass`, `slotLaneClass`, `eventClass`…) et `box-shadow` ; `slotMinHeight` 32 px (64 px/h comme les planches). Option `controller` non utilisée : vue et date pilotées par `ref.getApi()`.
+
+**Serveur proposé (texte, non compilé dans `src/`).** Généré et compilé dans un worktree jetable puis copié : [`proposed/Appointment.cs.txt`](proposed/Appointment.cs.txt), [`proposed/AppointmentModel.cs.txt`](proposed/AppointmentModel.cs.txt), [`proposed/20261017141136_AppointmentsModule.cs.txt`](proposed/20261017141136_AppointmentsModule.cs.txt) (avec `#pragma warning disable CA1861` comme 0003), [`proposed/permissions_dbcontext_snapshot_0004.diff.txt`](proposed/permissions_dbcontext_snapshot_0004.diff.txt) (permissions, `DbSet`, instantané EF, test `Grantable`). Commandes (racine du worktree) : `dotnet ef migrations add AppointmentsModule --project src/MMV.Infrastructure --startup-project src/MMV.Infrastructure --output-dir Persistence/Migrations`, puis `dotnet ef migrations script 20261016230630_ClientsModule 20261017141136_AppointmentsModule [--idempotent]` et le script inverse. Service applicatif, validation, routes et tests serveur : **après ratification** (étape 4 de `RDV_03B_PREPARATION.md`).
+
+**Tests ajoutés.** `appointments/time.test.ts` (8), `appointments/appointmentForm.test.ts` (6), `appointments/AppointmentsModule.test.tsx` (18), `clients/ClientsModule.test.tsx` (+1, O-03-15) ; `shell/navigation.test.ts` et `shell/Shell.test.tsx` adaptés (Rendez-vous disponible, service non activé). Frontend 171/171 (Q-03-111).
+

@@ -98,3 +98,25 @@ Les tableaux ci-dessus restent tels qu'établis. Depuis 03-A3, les lignes `PENDI
 | — (sans planche) | `forbidden_admin-only`, `list_read-only`, `detail_read-only`, `detail_write-no-archive` | états de droits ajoutés en 03-A3 (O-03-09) : « Accès non autorisé », motif « Consultation seule… », actions masquées (liste) ou désactivées (fiche) |
 
 Écarts propres au Shell Phase 02 constatés sur toutes les captures (hors périmètre 03-A3) : entrées de navigation différentes du Lot 2, recherche globale désactivée, logo sur fond clair en thème sombre.
+
+## Amendement daté 17/10/2026 (03-B) — états Rendez-vous implémentés sur double de test
+
+Le tableau « Rendez-vous (18 états) » ci-dessus reste tel qu'établi. Depuis 03-B, les états sont **implémentés** dans `apps/desktop/src/appointments/` et éprouvés contre le double du contrat proposé (`AppointmentsModule.test.tsx`, QA Q-03-100 à Q-03-112) et sur un banc visuel (Vite + double, captures `evidence/P03B_bench_rdv_*_1440x900_20261017.jpg`). En fonctionnement normal, seul l'état « Service Rendez-vous non activé » est visible (décisions D-03-13 à D-03-18 `PROPOSED`). Aucune ligne n'est `APPROVED`.
+
+| ID | Implémentation 03-B | Test | Écart volontaire |
+|---|---|---|---|
+| calDayLight / calDayDark | `AppointmentsCalendar.tsx` (`timeGridDay`, 64 px/h, repère d'heure courante, fuseau serveur) | « vue Jour… » | trait atténué à la demi-heure ; responsable affiché sur la grille à partir de 60 min (comme la planche, hauteur insuffisante en dessous) |
+| calWeekLight / calWeekDark | `timeGridWeek`, jours masqués selon `hiddenWeekdays` | « vue Semaine… » | noms abrégés « Y. El Amrani » comme la planche |
+| calEmpty | carte « Aucun rendez-vous ce jour » / « cette semaine » | « journée vide… » | — |
+| calSelected | sélection + panneau détail | « ↑/↓ parcourent… » | — |
+| calMove | glisser (souris, `startEditable`, aimant 15 min) **et** commande « Déplacer » (clavier) | « déplacer au clavier… » | glisser `NOT_TESTED` sous jsdom (géométrie absente) |
+| calConflict | refus 409 → `revert()` + bandeau « Créneau indisponible » | via le formulaire : « déplacement en conflit… » | bandeau au lieu de la bande hachurée sur la grille |
+| rdvFormLight / rdvFormDark | `AppointmentFormPanel.tsx` (RHF + Zod, listes serveur) | « au clavier : erreurs… » | date et heure en saisie texte `jj/mm/aaaa`, `hh:mm` (comme Clients) |
+| rdvDetailLight / rdvDetailDark | `AppointmentDetailPanel.tsx` | « ↑/↓… », « lecture seule… » | badge « Planifié » au lieu de « Confirmé » (aucun circuit de confirmation) |
+| rdvEdit | mode `edit`, version figée à l'ouverture | « modification pré-remplie… » | — |
+| rdvPicker | `ClientPicker.tsx` (combobox, clients actifs) | « au clavier… », « écriture sans clients.read… » | « Créer un nouveau client » absent (03-C) |
+| rdvErrors | messages sous les champs, focus sur le premier champ en erreur | « au clavier… », « heure inexistante… » | bouton Créer actif (validation rejouée au clic, comme Clients) |
+| rdvCancel | `ConfirmDialog` + motif facultatif ; détail annulé + « Rétablir » | « annulation avec motif… », « rétablissement refusé… » | bouton de confirmation en accent (contraste, comme Clients) |
+| rdvConflict | bandeau « Conflit horaire » dans le formulaire | « conflit horaire… » | texte = créneau demandé (aucune donnée de l'autre rendez-vous) |
+| rdvSuccess | bandeau `status` « Rendez-vous créé » | « au clavier… » | bandeau au lieu d'un toast (comme Clients) |
+

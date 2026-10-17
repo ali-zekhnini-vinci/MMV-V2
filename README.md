@@ -2,7 +2,15 @@
 
 ## Statut actuel — phase 03 (17/10/2026)
 
-**`PHASE03_A3_COMPLETE — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A3 du propriétaire (« intégration réelle Clients », [`prompts/PHASE03_A3_GO_CLAUDE_CODE.md`](prompts/PHASE03_A3_GO_CLAUDE_CODE.md)).
+**`PHASE03_B_UI_READY — OWNER_BUSINESS_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-B du propriétaire (« Rendez-vous », [`prompts/PHASE03_B_GO_CLAUDE_CODE.md`](prompts/PHASE03_B_GO_CLAUDE_CODE.md)).
+
+- **Clients :** notice de confirmation qui persistait après navigation corrigée (O-03-15) ; module inchangé par ailleurs, permissions non régressées.
+- **Rendez-vous (interface initiale) :** écran `/rendez-vous` — FullCalendar Standard **7.1.0** (MIT), vues Jour et Semaine, panneau détail, formulaire (React Hook Form + Zod), sélecteur de client, annulation / rétablissement, conflits, états, création et déplacement **au clavier**. Éprouvé sur double de test et banc visuel. **Service désactivé** : aucun rendez-vous n'est créé ni affiché tant que les règles ne sont pas validées.
+- **Décision du propriétaire requise :** proposition métier consolidée D-03-13 à D-03-18 (fuseau du magasin, durées, responsable, conflits, annulation, droits, motifs) — [`docs/phase/03/DECISIONS_03B_RDV_PROPOSITION.md`](docs/phase/03/DECISIONS_03B_RDV_PROPOSITION.md). Contrat et migration `0004_AppointmentsModule` **proposés, non appliqués** ([`docs/phase/03/API_APPOINTMENTS_PROPOSED.md`](docs/phase/03/API_APPOINTMENTS_PROPOSED.md)).
+- **Tests :** frontend **171/171** ; backend `src/` inchangé (suites .NET `NOT_RERUN`) ; code serveur proposé compilé en worktree, `MMV.Api.Tests` 182/182. Aucune base contactée. Détail : [`docs/phase/03/QA_MATRIX.md`](docs/phase/03/QA_MATRIX.md) Q-03-100 à Q-03-116.
+- Restent : intégration serveur 03-B après décision, 03-C (fiche client ↔ rendez-vous). Action propriétaire toujours ouverte : droits `clients.*` sur son compte ([`PROCEDURE_PERMISSIONS_CLIENTS.md`](docs/phase/03/PROCEDURE_PERMISSIONS_CLIENTS.md)).
+
+*Historique — statut 03-A3 (17/10/2026) :* **`PHASE03_A3_COMPLETE — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A3 du propriétaire (« intégration réelle Clients », [`prompts/PHASE03_A3_GO_CLAUDE_CODE.md`](prompts/PHASE03_A3_GO_CLAUDE_CODE.md)).
 
 - **Migration `0003_ClientsModule` appliquée** le 17/10/2026 à `mmv_v2_dev` puis `mmv_v2_test` (script idempotent à l'empreinte `4dbb0d84…d3db1c3b`, contrôles préalables en lecture seule conformes) : 3 migrations par base. `mmv_v2_dev` ne contient **aucun client** ; aucun compte réel modifié.
 - **Tests réels :** `PostMigration` 2/2, `ClientsWrite` 7/7, `IdentityWrite` 5/5 sur `mmv_v2_test` ; .NET **260/260** ; frontend **137/137** ; matrice HTTP sur le processus MMV.Api réel **31/31** ; parcours natif Tauri → HTTPS → API → PostgreSQL 18 PASS (22 captures, comparées aux planches Lot 2) ; résidus 0. Détail : [`docs/phase/03/QA_MATRIX.md`](docs/phase/03/QA_MATRIX.md) Q-03-80 à Q-03-99.

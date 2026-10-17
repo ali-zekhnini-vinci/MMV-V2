@@ -36,7 +36,7 @@ Prérequis Node : **22.22 ou plus** (exigence de `react-router` 8).
 
 Le CSS spécifique au design (login, shell : grille 260/72/64/32, dégradé, infobulles du rail) reste dans `src/login/LoginScreen.css` et `src/shell/Shell.css`, **hors couche** : il prime sur les utilitaires Tailwind et sur le preflight. Ajout d'un composant shadcn : `npx shadcn add <composant>` puis remplacement des classes du thème par défaut (`bg-primary`, `text-muted-foreground`…) par les jetons MMV (`bg-accent`, `text-text-secondary`…) — un test (`src/styles/styles.test.ts`) refuse les variables du thème shadcn par défaut.
 
-Non installés volontairement (aucun cas d'usage réel en phase 02) : TanStack Query/Table, Sonner, Zustand, FullCalendar, Recharts.
+Non installés volontairement (aucun cas d'usage réel en phase 02) : TanStack Query/Table, Sonner, Zustand, FullCalendar, Recharts. *(TanStack installé en 03-A, FullCalendar en 03-B : voir plus bas.)*
 
 ## Ajouts phase 03-A (17/10/2026)
 
@@ -60,3 +60,12 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 - Surlignage de recherche mot par mot, insensible aux accents (`src/clients/searchText.ts`).
 - Banc natif `e2e/run-native.mjs` : scénarios `clients-admin-only`, `clients-full`, `clients-read`, `clients-write`, option `--prefix`, thème imposé ; exécution avec `node --use-system-ca` (certificat de développement approuvé, aucun contournement TLS). Mode d'emploi : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-A3.
 - Aucune dépendance ajoutée.
+
+## Ajouts phase 03-B (17/10/2026)
+
+- Dépendances (versions figées, MIT) : `@fullcalendar/react` **7.1.0** (FullCalendar Standard, vues par sous-chemins `timegrid` / `interaction`, `skeleton.css`) et `temporal-polyfill` **1.0.5** (pair de FullCalendar 7, utilisé par `src/appointments/time.ts`). Aucun plugin Premium.
+- Module Rendez-vous : `src/appointments/` (chargé à la demande, chunk `AppointmentsModule`), route `/rendez-vous`. **Service désactivé** (`src/appointments/appointmentsService.ts`, `APPOINTMENTS_API_ENABLED = false`) : contrat `docs/phase/03/API_APPOINTMENTS_PROPOSED.md` non implémenté par MMV.Api, décisions D-03-13 à D-03-18 `PROPOSED`. Les tests activent le service avec le double `src/test/fakeAppointmentsApi.ts` et une horloge fixe.
+- Clavier : rendez-vous focalisables (Entrée / Espace = détail), ↑/↓ entre rendez-vous, Échap ferme les panneaux, création et déplacement par formulaire, sélecteur de client en combobox.
+- Module Clients : notice de confirmation rattachée à l'écran (O-03-15).
+- `src/components/ui/alert-dialog.tsx` : contenu facultatif entre le texte et les actions.
+
