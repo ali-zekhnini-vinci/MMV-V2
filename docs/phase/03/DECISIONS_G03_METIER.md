@@ -1,6 +1,10 @@
 # 03 — Dossier d'arbitrage G03-METIER (présenté le 17/10/2026)
 
-## Proposition consolidée 03-B — 17/10/2026 (en attente de décision)
+## Décision du propriétaire — 17/10/2026 (GO 03-B2) : section D ACCEPTED
+
+Source : « GO MÉTIER PHASE 03-B2 — RENDEZ-VOUS », versionné [`prompts/PHASE03_B2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B2_GO_CLAUDE_CODE.md). La section **D est `ACCEPTED`** dans sa version consolidée par le propriétaire (D-03-13 à D-03-18), qui diffère sur plusieurs points du tableau D d'origine ci-dessous et de la proposition 03-B : deux modes d'attribution (personnalisé / accueil), éligibilité explicite des collaborateurs, pool de capacité d'accueil, heures ambiguës refusées, liste exacte des sept motifs, horaires d'affichage configurables sans valeur imposée. Détail, paramètres par magasin encore à renseigner et interprétations signalées : [`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md) § Décision du propriétaire. Contrat implémenté : [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md). Migration `0004_AppointmentsModule` **préparée, non appliquée** (revue SQL requise). G03-METIER est ainsi entièrement tranché (A, B, C, D).
+
+## Proposition consolidée 03-B — 17/10/2026 (*historique : en attente de décision ; tranchée le 17/10/2026, GO 03-B2*)
 
 Source : « GO PHASE 03-B — RENDEZ-VOUS » ([`prompts/PHASE03_B_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B_GO_CLAUDE_CODE.md)). La section **D reste `PROPOSED`** : la proposition consolidée D-03-13 à D-03-17, complétée par **D-03-18 (motifs)**, est présentée dans [`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md) avec le contrat [`API_APPOINTMENTS_PROPOSED.md`](API_APPOINTMENTS_PROPOSED.md) et le SQL `0004_AppointmentsModule` **non appliqué**. Écarts avec le tableau D ci-dessous (conservé tel que présenté) : responsable **obligatoire** recommandé (D-03-14), précisions sur le pas de 5 min, minuit et le passé (D-03-13), bout à bout et client archivé (D-03-15, D-03-16).
 
@@ -61,7 +65,7 @@ Format de réponse suggéré : « G03-METIER : A, B, C acceptés » ou liste des
 | D-03-11 | Contrat HTTP | Contrat de [`API_CLIENTS_PROPOSED.md`](API_CLIENTS_PROPOSED.md) : `GET/POST /api/clients`, `GET/PUT /api/clients/{id}`, `POST /api/clients/{id}/archive|reactivate` ; pagination 20 (1–100), tri en liste blanche (`name`, `createdAt`, `city`), `status=active|archived|all` ; version dans le **corps** ; erreurs `{code, errors}`. | `ETag`/`If-Match` (412) au lieu de la version dans le corps ; filtre Ville (planche 06) dès 03-A2 | Contrat déjà consommé par l'interface et son double de test |
 | D-03-12 | Migration | Appliquer `0003_ClientsModule` ([`sql/`](sql/)) à `mmv_v2_dev` puis `mmv_v2_test` par `scripts/Invoke-MmvSqlScript.ps1`, comme O-02-01 : schéma `clients`, séquence, table, index, extension de la contrainte de permissions. Jamais au démarrage. Retour arrière : script `rollback` **après** suppression des attributions `clients.*` (sinon la contrainte restaurée échoue) ; le schéma `clients` vide n'est pas supprimé par le script généré (même comportement que 0002). | Deux migrations séparées (permissions puis table) | GO ciblé « G03-METIER + migration 0003 » requis avant toute écriture en base |
 
-## D. Rendez-vous (03-B) — peut être tranché plus tard
+## D. Rendez-vous (03-B) — peut être tranché plus tard (*historique : tableau d'origine ; décision 03-B2 ci-dessus*)
 
 | ID | Question | Recommandation | Alternatives |
 |---|---|---|---|

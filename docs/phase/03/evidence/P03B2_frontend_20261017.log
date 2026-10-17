@@ -1,0 +1,16 @@
+# P03B2 — frontend, 2026-10-17T16:06Z
+## npm run check (tsc app/node/test)
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+## npm run lint
+✖ 1 problem (0 errors, 1 warning)
+## npm test
+ Test Files  17 passed (17)
+      Tests  185 passed (185)
+## vite build
+dist/assets/AppointmentsModule-B4qYEX7f.css                         14.09 kB │ gzip:   3.32 kB
+dist/assets/appointmentLaunch-DYtABzqQ.css                          16.03 kB │ gzip:   3.12 kB
+dist/assets/appointmentLaunch-BLmlUgZN.js                           27.60 kB │ gzip:   9.46 kB
+dist/assets/AppointmentsModule-BO1jkAvP.js                         374.33 kB │ gzip: 106.50 kB
+dist/assets/index-BBzwpjra.js                                      550.17 kB │ gzip: 174.72 kB
+✓ built in 935ms

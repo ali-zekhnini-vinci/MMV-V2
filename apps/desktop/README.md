@@ -64,8 +64,15 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 ## Ajouts phase 03-B (17/10/2026)
 
 - Dépendances (versions figées, MIT) : `@fullcalendar/react` **7.1.0** (FullCalendar Standard, vues par sous-chemins `timegrid` / `interaction`, `skeleton.css`) et `temporal-polyfill` **1.0.5** (pair de FullCalendar 7, utilisé par `src/appointments/time.ts`). Aucun plugin Premium.
-- Module Rendez-vous : `src/appointments/` (chargé à la demande, chunk `AppointmentsModule`), route `/rendez-vous`. **Service désactivé** (`src/appointments/appointmentsService.ts`, `APPOINTMENTS_API_ENABLED = false`) : contrat `docs/phase/03/API_APPOINTMENTS_PROPOSED.md` non implémenté par MMV.Api, décisions D-03-13 à D-03-18 `PROPOSED`. Les tests activent le service avec le double `src/test/fakeAppointmentsApi.ts` et une horloge fixe.
+- Module Rendez-vous : `src/appointments/` (chargé à la demande, chunk `AppointmentsModule`), route `/rendez-vous`. *(État 03-B ; service activé en 03-B2, voir ci-dessous.)* **Service désactivé** (`src/appointments/appointmentsService.ts`, `APPOINTMENTS_API_ENABLED = false`) : contrat `docs/phase/03/API_APPOINTMENTS_PROPOSED.md` non implémenté par MMV.Api, décisions D-03-13 à D-03-18 `PROPOSED`. Les tests activent le service avec le double `src/test/fakeAppointmentsApi.ts` et une horloge fixe.
 - Clavier : rendez-vous focalisables (Entrée / Espace = détail), ↑/↓ entre rendez-vous, Échap ferme les panneaux, création et déplacement par formulaire, sélecteur de client en combobox.
 - Module Clients : notice de confirmation rattachée à l'écran (O-03-15).
 - `src/components/ui/alert-dialog.tsx` : contenu facultatif entre le texte et les actions.
 
+
+## Ajouts phase 03-B2 (17/10/2026)
+
+- Service Rendez-vous **activé** (`APPOINTMENTS_API_ENABLED = true`) sur le contrat implémenté `docs/phase/03/API_APPOINTMENTS.md` ; tant que le serveur n'a pas les paramètres du magasin, l'écran affiche « Agenda non configuré » (503 `appointments_not_configured`). L'état « service non activé » reste un interrupteur de repli testé.
+- Formulaire aligné sur D-03-13 à D-03-18 : champ Responsable selon le mode du motif (personnalisé : obligatoire ; accueil : « Non attribué (accueil) » seulement si une capacité est configurée), pas de 5 minutes, heures inexistantes **et ambiguës** refusées (`src/appointments/time.ts`), messages des nouveaux codes serveur (capacité d'accueil atteinte, collaborateur non éligible, changement d'heure).
+- Fiche client : « Prendre un rendez-vous » (`src/clients/ClientDetailView.tsx`, `src/appointments/appointmentLaunch.ts`) ouvre l'agenda avec le client présélectionné et permet de revenir à la fiche ; proposé avec `appointments.write`, désactivé pour un client archivé.
+- Contrat OpenAPI : `src/api/contract/appointments.openapi.json`, contrôlé par `src/api/appointmentsContract.test.ts` (et côté .NET). Aucune dépendance ajoutée.

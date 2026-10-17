@@ -121,3 +121,24 @@ Sources supplémentaires lues : `prompts/PHASE03_B_GO_CLAUDE_CODE.md` (message d
 | §5 Tests | `apps/desktop/src/appointments/*.test.ts(x)`, `apps/desktop/src/test/fakeAppointmentsApi.ts`, `apps/desktop/src/test/fakeMmvApi.ts`, `docs/phase/03/evidence/P03B_frontend_20261017.log`, `docs/phase/03/evidence/P03B_dotnet_proposal_20261017.log`, `docs/phase/03/evidence/P03B_bench_rdv_*_1440x900_20261017.jpg` |
 | §5 DOCUMENTATION GATE | `docs/phase/03/GATES_AND_DECISIONS.md` (G03-DOC) |
 
+
+## Traçabilité 03-B2 (mandat `prompts/PHASE03_B2_GO_CLAUDE_CODE.md`)
+
+Sources supplémentaires lues : `prompts/PHASE03_B2_GO_CLAUDE_CODE.md` (message de session du 17/10/2026, reproduit à l'identique), `docs/phase/03/DECISIONS_03B_RDV_PROPOSITION.md`, `API_APPOINTMENTS_PROPOSED.md`, `docs/phase/03/proposed/*.cs.txt`, code 03-A2 (Clients) et 03-B1 (interface Rendez-vous). Données de fuseaux : registre Windows (via `TimeZoneInfo`) et ICU 78.3 / tz 2026c (Node), sonde jetable non versionnée. Aucune référence visuelle nouvelle ; ancien MMV non consulté ; aucune dépendance ajoutée.
+
+| Exigence | Chemin |
+|---|---|
+| §1 D-03-13 (fuseau, durées, pas, minuit, passé, changements d'heure, plage configurable) | `src/MMV.Application/Appointments/AppointmentSettings.cs`, `AppointmentSchedule.cs`, `AppointmentInputValidator.cs`, `src/MMV.Domain/Appointments/AppointmentReasons.cs` (`AppointmentRules`), `apps/desktop/src/appointments/time.ts`, `appointmentForm.ts` |
+| §1 D-03-14 (deux modes, éligibilité explicite) | `src/MMV.Domain/Appointments/AppointmentReasons.cs`, `AppointmentResponsible.cs`, `src/MMV.Application/Appointments/ResponsibleAdministrationService.cs`, `src/MMV.Maintenance/Program.cs` (`responsibles`), `apps/desktop/src/appointments/AppointmentFormPanel.tsx` |
+| §1 D-03-15 (conflits, capacité instant par instant, transactions, ordre des verrous) | `src/MMV.Domain/Appointments/ReceptionOccupancy.cs`, `src/MMV.Application/Appointments/AppointmentService.cs` (`AppointmentLock`), `src/MMV.Infrastructure/Appointments/AppointmentStore.cs` (`LockSequence`, `WriteSession`) |
+| §1 D-03-16 (annulation, rétablissement, client archivé) | `src/MMV.Domain/Appointments/Appointment.cs`, `AppointmentService.cs` (`CancelAsync`, `RestoreAsync`), `apps/desktop/src/appointments/AppointmentDetailPanel.tsx` |
+| §1 D-03-17 (permissions, minimisation, journaux) | `src/MMV.Domain/Identity/Permissions.cs`, `src/MMV.Api/Auth/AuthSetup.cs`, `src/MMV.Api/Appointments/AppointmentsEndpoints.cs` (réponses, `LoggerMessage`) |
+| §1 D-03-18 (7 motifs) | `src/MMV.Domain/Appointments/AppointmentReasons.cs`, `GET /api/appointments/options` |
+| §2 Fiche client → rendez-vous | `apps/desktop/src/clients/ClientDetailView.tsx`, `apps/desktop/src/appointments/appointmentLaunch.ts`, `AppointmentsModule.tsx`, `AppointmentFormPanel.tsx`, `Appointments.css` |
+| §4 Contrats et endpoints, OpenAPI | `src/MMV.Api/Appointments/AppointmentsEndpoints.cs`, `AppointmentsSetup.cs`, `src/MMV.Api/Auth/AuthEndpoints.cs`, `src/MMV.Api/Program.cs`, `apps/desktop/src/api/contract/appointments.openapi.json`, `apps/desktop/src/api/appointments.ts`, `apps/desktop/src/api/client.ts`, `docs/phase/03/API_APPOINTMENTS.md` |
+| §4 Persistance, migration 0004, SQL | `src/MMV.Infrastructure/Appointments/AppointmentModel.cs`, `src/MMV.Infrastructure/Persistence/MmvDbContext.cs`, `src/MMV.Infrastructure/DependencyInjection.cs`, `src/MMV.Infrastructure/Persistence/Migrations/20261017150504_AppointmentsModule.cs`, `.Designer.cs`, `MmvDbContextModelSnapshot.cs`, `docs/phase/03/sql/0004_AppointmentsModule.sql`, `.idempotent.sql`, `.rollback.sql` |
+| §4 Service activé côté interface | `apps/desktop/src/appointments/appointmentsService.ts`, `apps/desktop/src/shell/Shell.test.tsx` |
+| §5 Aucune application, NOT_TESTED | `tests/MMV.PostgreSql.Tests/AppointmentsPostgreSqlTests.cs` (`Stage=AppointmentsWrite`), `SchemaInspection.cs`, `SchemaStateTests.cs`, `docs/phase/03/PROCEDURE_RENDEZ_VOUS_ACTIVATION.md` |
+| §6 Tests | `tests/MMV.Api.Tests/Appointments/*.cs`, `tests/MMV.Api.Tests/Clients/ClientsOpenApiContractTests.cs`, `ClientServiceTests.cs`, `tests/MMV.Api.Tests/Identity/AuthEndpointsTests.cs`, `apps/desktop/src/appointments/*.test.ts(x)`, `apps/desktop/src/api/appointmentsContract.test.ts`, `apps/desktop/src/test/fakeAppointmentsApi.ts`, `docs/phase/03/evidence/P03B2_dotnet_20261017.log`, `P03B2_frontend_20261017.log`, `P03B2_postgresql_readonly_20261017.log` |
+| §7 DOCUMENTATION GATE | `docs/phase/03/GATES_AND_DECISIONS.md` (G03-DOC), `DECISIONS_03B_RDV_PROPOSITION.md`, `DECISIONS_G03_METIER.md`, `QA_MATRIX.md`, `IMPLEMENTATION_SPEC.md` |
+| §8 Livraison | branche locale `feat/phase-03-clients-rdv` ; archive `git archive` hors dépôt |

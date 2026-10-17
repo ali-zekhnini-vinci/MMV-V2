@@ -1,6 +1,49 @@
 # 03-B — Proposition métier consolidée Rendez-vous (présentée le 17/10/2026)
 
-**Statut : toutes les lignes sont `PROPOSED`.** Rien n'est approuvé tant que le propriétaire ne l'a pas ratifié. Cette proposition consolide la section D de [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md) (D-03-13 à D-03-17, conservée telle que présentée) après développement de l'interface 03-B, et ajoute **D-03-18 (motifs)**. Les valeurs visibles sur les maquettes du Lot 2 (personnes, horaires, motifs, couleurs) ne sont **ni des défauts ni des règles** : l'interface ne les reprend pas, elle lit tout paramètre métier depuis le serveur.
+## Décision du propriétaire — 17/10/2026 (« GO MÉTIER PHASE 03-B2 — RENDEZ-VOUS »)
+
+Mandat : [`prompts/PHASE03_B2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B2_GO_CLAUDE_CODE.md). **D-03-13 à D-03-18 : `ACCEPTED`**, avec les écarts suivants par rapport à la proposition (décision consolidée du propriétaire, qui prévaut). Mise en œuvre : [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md) ; migration 0004 **préparée, non appliquée** (revue SQL requise).
+
+### Principes approuvés (identiques pour tous les magasins)
+
+| ID | Décision | Écart avec la proposition 03-B |
+|---|---|---|
+| D-03-13 | Fuseau IANA configuré côté serveur par magasin / installation, pris en charge : `Africa/Casablanca`, `Europe/Brussels` ; stockage UTC ; affichage dans le fuseau du magasin, jamais celui du poste ; heures locales **inexistantes ET ambiguës refusées** ; durées 15, 30, 45, 60, 90, 120 min, aucune présélection ; début au pas de 5 min ; aucun rendez-vous à cheval sur minuit ; création et déplacement dans le passé interdits ; horaires d'affichage **configurables**, ni 09:00–19:00 ni dimanche fermé imposés ; horaires d'ouverture bloquants `DEFERRED` (module Paramètres) | heure ambiguë refusée (au lieu de « première occurrence ») ; plage 09:00–19:00 / dimanche masqué **non** retenus comme valeurs ; Maroc et Belgique explicitement visés |
+| D-03-14 | Deux modes : **personnalisé** (responsable obligatoire, conflits par collaborateur) pour `conseil_devis`, `choix_equipement`, `prise_mesures`, `essayage_ajustement`, `autre` ; **accueil** (responsable facultatif, capacité commune obligatoire sans responsable) pour `retrait_commande`, `sav_reparation` ; responsable actif et **explicitement éligible**, éligibilité non déduite des permissions ; « accueil » est un mode, pas un motif | proposition : responsable toujours obligatoire, éligibilité = « au moins un droit `appointments.*` » |
+| D-03-15 | Attribué : chevauchement refusé (409), bout à bout admis ; non attribué : pool de capacité d'accueil propre au magasin, configurable côté serveur, jamais illimité, absent → réservations sans responsable refusées ; occupation calculée **à chaque instant** du créneau, réservée pour toute la durée, libérée à l'annulation, rétablie seulement si disponible ; garanties transactionnelles PostgreSQL contre les réservations simultanées, ordre de verrouillage stable ; ni FullCalendar Premium ni microservice | ajout du pool d'accueil et de la capacité |
+| D-03-16 | `planned` / `cancelled` ; annulation logique sans DELETE ; motif facultatif ≤ 200 ; auteur et date conservés ; rétablissement après nouveau contrôle des conflits et de la capacité ; client archivé : aucun nouveau rendez-vous, existants consultables et annulables, aucun rétablissement ; honoré / absent `DEFERRED` | « annulation d'un rendez-vous terminé refusée » **non** retenue (aucune règle) |
+| D-03-17 | `appointments.read`, `appointments.write`, `appointments.cancel` ; recherche et sélection du client = `clients.read` ; `system.admin` n'implique rien ; contrôles serveur ; agenda minimisé (ni téléphone, ni email, ni donnée de santé) ; notes opérationnelles non médicales ≤ 1000 ; aucun contenu de note ni nom de client journalisé ; gestion explicite de l'éligibilité, indépendante des droits | éligibilité gérée à part (nouvelle table) |
+| D-03-18 | Liste exacte : `conseil_devis` Conseil / Devis ; `choix_equipement` Choix de monture et verres ; `prise_mesures` Prise de mesures ; `essayage_ajustement` Essayage / Ajustement ; `retrait_commande` Retrait de commande ; `sav_reparation` SAV / Réparation ; `autre` Autre motif. Motif obligatoire, codes stables, libellés servis par l'API, pas de table de personnalisation en V1 | liste fournie (au lieu d'un paramètre serveur) ; aucun libellé des maquettes repris |
+
+Intégration demandée : depuis la fiche client, « Prendre un rendez-vous » conserve le client, ouvre le formulaire prérempli, permet de revenir à la fiche, sans seconde recherche (réalisé, `apps/desktop/src/appointments/appointmentLaunch.ts`).
+
+### Paramètres par magasin encore à renseigner (aucune valeur inventée)
+
+| Paramètre | Clé serveur | État au 17/10/2026 |
+|---|---|---|
+| Fuseau IANA du magasin | `Appointments:TimeZone` | **à renseigner** (Maroc ou Belgique) — service 503 sans lui |
+| Plage horaire affichée | `Appointments:DisplayStartTime` / `DisplayEndTime` | **à renseigner** — service 503 sans elle |
+| Jours masqués de la grille | `Appointments:HiddenWeekdays` | facultatif — aucun par défaut |
+| Capacité d'accueil | `Appointments:ReceptionCapacity` | facultatif — absente : aucun rendez-vous sans responsable ; POC local : 1 seulement si une ressource d'accueil réelle lui est réservée |
+| Collaborateurs éligibles | `MMV.Maintenance responsibles enable` | **à désigner** |
+| Droits des comptes | `MMV.Maintenance permissions grant … appointments.*` | **à attribuer** |
+| Horaires d'ouverture bloquants | module Paramètres | `DEFERRED` |
+
+Procédure : [`PROCEDURE_RENDEZ_VOUS_ACTIVATION.md`](PROCEDURE_RENDEZ_VOUS_ACTIVATION.md).
+
+### Précisions de mise en œuvre (interprétations signalées au propriétaire)
+
+- Changement d'heure : un créneau est refusé (`time_change`) si son début ou sa fin tombe dans une heure ambiguë ou s'il enjambe une transition (l'heure murale affichée serait fausse) — application de « refuser les heures inexistantes ou ambiguës » à tout le créneau.
+- Passé : refusé à la création et lorsqu'une modification change le créneau ; une modification du seul motif ou des notes d'un rendez-vous passé reste possible ; l'annulation d'un rendez-vous passé reste possible ; le **rétablissement** d'un rendez-vous dont le début est passé est refusé (assimilé à une création dans le passé) — **O-03-23, à confirmer**.
+- Minuit : un rendez-vous peut **finir** à 00:00 (il ne traverse pas minuit).
+- Rendez-vous d'un collaborateur désactivé : affiché avec son nom ; notes et motif modifiables ; tout changement de créneau ou réattribution exige un collaborateur actif et éligible.
+- Installation = magasin : un seul pool d'accueil par installation (multi-magasin hors V1).
+
+---
+
+*Historique — proposition présentée en 03-B (statut d'origine conservé ci-dessous).*
+
+**Statut d'origine : toutes les lignes sont `PROPOSED`.** Rien n'est approuvé tant que le propriétaire ne l'a pas ratifié. Cette proposition consolide la section D de [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md) (D-03-13 à D-03-17, conservée telle que présentée) après développement de l'interface 03-B, et ajoute **D-03-18 (motifs)**. Les valeurs visibles sur les maquettes du Lot 2 (personnes, horaires, motifs, couleurs) ne sont **ni des défauts ni des règles** : l'interface ne les reprend pas, elle lit tout paramètre métier depuis le serveur.
 
 Mandat : [`prompts/PHASE03_B_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B_GO_CLAUDE_CODE.md). Contrat proposé : [`API_APPOINTMENTS_PROPOSED.md`](API_APPOINTMENTS_PROPOSED.md). SQL proposé : [`sql/0004_AppointmentsModule.PROPOSED.sql`](sql/0004_AppointmentsModule.PROPOSED.sql) (non appliqué).
 

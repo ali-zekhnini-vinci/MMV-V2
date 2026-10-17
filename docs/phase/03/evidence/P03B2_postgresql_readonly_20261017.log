@@ -1,0 +1,18 @@
+# P03B2 — PostgreSQL 18 en LECTURE SEULE (default_transaction_read_only=on), 2026-10-17T16:06Z
+# Filtre : Stage!=ClientsWrite&Stage!=IdentityWrite&Stage!=Write&Stage!=AppointmentsWrite&Stage!=PostMigration
+# NOT_TESTED : AppointmentsWrite (6) et PostMigration (2) — exigent 0004 appliquée ; NOT_RERUN : ClientsWrite, IdentityWrite, Write (aucune écriture en base à cette étape)
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.TestDatabase_IsRefusedAsBootstrapTarget
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches
+  Réussi MMV.PostgreSql.Tests.ClientReferenceFormatPostgreSqlTests.ReferenceExpression_PadsToSixDigitsAndNeverTruncates
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5432;Database=mmv_v2_test;User"···)
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=mmv_v2_test;User"···)
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=postgres;Usernam"···)
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use"···)
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.DevDatabase_IsTheAllowedBootstrapTarget
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState
+Nombre total de tests : 13
+     Réussi(s) : 13

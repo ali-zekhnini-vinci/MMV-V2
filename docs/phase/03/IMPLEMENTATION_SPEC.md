@@ -224,3 +224,57 @@ Chargement à la demande depuis `shell/Shell.tsx` (chunk `AppointmentsModule`, F
 
 **Tests ajoutés.** `appointments/time.test.ts` (8), `appointments/appointmentForm.test.ts` (6), `appointments/AppointmentsModule.test.tsx` (18), `clients/ClientsModule.test.tsx` (+1, O-03-15) ; `shell/navigation.test.ts` et `shell/Shell.test.tsx` adaptés (Rendez-vous disponible, service non activé). Frontend 171/171 (Q-03-111).
 
+
+## Réalisation 03-B2 (17/10/2026) — Rendez-vous métier
+
+Mandat : [`prompts/PHASE03_B2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B2_GO_CLAUDE_CODE.md). Décisions D-03-13 à D-03-18 **ACCEPTED** ([`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md) § Décision). Contrat : [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md). Aucune dépendance ajoutée (ni NodaTime, ni FullCalendar Premium, ni microservice) ; architecture modulaire de 03-A2 reprise couche par couche.
+
+**Serveur.**
+
+```
+src/MMV.Domain/Appointments/
+  Appointment.cs                 entité (planifié / annulé, xmin, intervalle semi-ouvert, Overlaps)
+  AppointmentReasons.cs          7 motifs approuvés + mode (Personal / Reception), durées, pas de 5 min
+  AppointmentResponsible.cs      éligibilité explicite d'un compte (retrait logique)
+  ReceptionOccupancy.cs          occupation maximale simultanée sur un créneau (balayage des bornes)
+src/MMV.Domain/Identity/Permissions.cs   + appointments.read / write / cancel (All, Grantable)
+src/MMV.Application/Appointments/
+  AppointmentSettings.cs         section « Appointments » validée (fuseau admis, plage, jours, capacité), aucun défaut
+  AppointmentSchedule.cs         instants UTC stricts ; pas, minuit, changements d'heure dans le fuseau du magasin
+  AppointmentInputValidator.cs   422 par champ ; mode d'attribution ; notes ; motif d'annulation
+  AppointmentService.cs          cas d'usage ; IAppointmentStore / IAppointmentWriteSession ; AppointmentLock (clés)
+  ResponsibleAdministrationService.cs   liste / activation / retrait d'éligibilité (outil de maintenance)
+src/MMV.Infrastructure/Appointments/
+  AppointmentModel.cs            schéma appointments : 2 tables, contraintes, index partiels
+  AppointmentStore.cs            lectures jointes ; session d'écriture : transaction READ COMMITTED,
+                                 pg_advisory_xact_lock(1296913746, clé) par clés croissantes, FOR SHARE client
+src/MMV.Infrastructure/Persistence/Migrations/20261017150504_AppointmentsModule(.Designer).cs, instantané du modèle
+src/MMV.Api/Appointments/
+  AppointmentsSetup.cs           lecture des paramètres au démarrage, journal 3100 / 3103 (jamais d'arrêt de l'API)
+  AppointmentsEndpoints.cs       7 routes, filtre 503, corps stricts, TypedResults, journaux 3101 / 3102
+src/MMV.Api/Auth/AuthSetup.cs    policies AppointmentsRead / Write / Cancel
+src/MMV.Maintenance/Program.cs   responsibles list | enable | disable <identifiant>
+```
+
+**Garanties de réservation (D-03-15).** Toute écriture qui réserve (création, changement de créneau ou de responsable, rétablissement) : `BEGIN` (`READ COMMITTED`) → verrou consultatif transactionnel de la ressource visée (collaborateur, ou pool d'accueil clé 0) pris par `AppointmentStore.LockSequence` (clés croissantes, sans doublon) → `SELECT … FROM clients.clients WHERE id = … FOR SHARE` → éligibilité → chevauchement (`ix_appointments_responsible_planned`) ou occupation (`ix_appointments_unassigned_planned` + `ReceptionOccupancy`) → `INSERT`/`UPDATE … WHERE xmin = …` → `COMMIT`. Chaque instruction relit un instantané frais après l'obtention du verrou : une réservation concurrente validée est vue, une non validée fait attendre. Refus → `ROLLBACK` à la libération (verrous relâchés). Transaction englobante existante (tests PostgreSQL annulés) : réutilisée, jamais validée.
+
+**Interface (adaptation de 03-B1).**
+
+| Fichier | Changement |
+|---|---|
+| `api/appointments.ts` | contrat implémenté : `reasons[].responsibleRequired`, `startStepMinutes`, `receptionCapacity`, `cancelledByDisplayName`, nouveaux codes 409, 503 `appointments_not_configured` ; fin de plage `24:00` admise |
+| `api/client.ts` | code d'erreur borné lu aussi sur 503 |
+| `appointments/time.ts` | heure ambiguë **refusée** (`reason: "ambiguous"`) — D-03-13 |
+| `appointments/appointmentForm.ts` | `responsibleMode` (requis / facultatif / accueil indisponible) ; pas de 5 min ; messages des codes serveur `invalid_step`, `out_of_range`, `time_change`, `not_eligible`, `reception_not_configured` |
+| `appointments/AppointmentFormPanel.tsx` | champ Responsable selon le motif (« Non attribué (accueil) » seulement si une capacité existe), aide contextuelle, bouton de retour à la fiche |
+| `appointments/appointmentsView.ts` | « Capacité d'accueil atteinte », « Accueil non configuré », « Responsable indisponible », « Créneau passé » ; `isStoreNotConfigured` |
+| `appointments/AppointmentsModule.tsx` | état « Agenda non configuré » (503) ; arrivée depuis la fiche client : formulaire ouvert avec le client, retour à la fiche (abandon ou bandeau de confirmation) |
+| `appointments/appointmentLaunch.ts` | état de navigation validé (`readAppointmentLaunch`, `appointmentLaunchFor`) |
+| `appointments/AppointmentDetailPanel.tsx` | date et auteur de l'annulation |
+| `appointments/appointmentsService.ts` | `APPOINTMENTS_API_ENABLED = true` |
+| `clients/ClientDetailView.tsx` | « Prendre un rendez-vous » (avec `appointments.write` ; désactivé pour un client archivé) |
+| `test/fakeAppointmentsApi.ts`, `test/fakeMmvApi.ts` | double aligné : motifs approuvés, modes, capacité instant par instant, codes, 503, auteur d'annulation |
+
+**Tests ajoutés ou adaptés.** .NET : `tests/MMV.Api.Tests/Appointments/` — `AppointmentRulesTests` (27), `AppointmentServiceTests` (37), `AppointmentsEndpointsTests` (39), `AppointmentsOpenApiContractTests` (2), `AppointmentTestDoubles.cs` (double transactionnel à verrous réels) ; `ClientsOpenApiContractTests` (extraction partagée), 2 tests préexistants mis à jour (commentaires datés). PostgreSQL : `AppointmentsPostgreSqlTests` (`Stage=AppointmentsWrite`, 6, NOT_TESTED), `SchemaInspection` / `SchemaStateTests` étendus à l'état 0004. Frontend : `time.test.ts` (9), `appointmentForm.test.ts` (7), `AppointmentsModule.test.tsx` (25), `api/appointmentsContract.test.ts` (4), `Shell.test.tsx` (+1). Résultats : QA Q-03-120 à Q-03-138.
+
+**Construction sans perturber le propriétaire.** `MMV.Api.exe` du propriétaire actif : compilation et tests .NET dans un worktree jetable (`git worktree add --detach <bloc-notes>/wt HEAD`, copie des fichiers modifiés) ; migration et scripts générés hors connexion dans ce worktree puis copiés dans `src/` et `docs/phase/03/sql/`.

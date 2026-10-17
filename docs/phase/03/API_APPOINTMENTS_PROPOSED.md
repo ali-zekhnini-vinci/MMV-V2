@@ -1,5 +1,7 @@
 # 03-B — Contrat HTTP Rendez-vous (PROPOSED, 17/10/2026)
 
+*Amendement 17/10/2026 (03-B2) : contrat **remplacé** par le contrat implémenté [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md) après approbation de D-03-13 à D-03-18. Écarts principaux : `responsibleRequired` porté par chaque motif, `receptionCapacity`, `startStepMinutes`, `cancelledByDisplayName`, codes `reception_capacity_full`, `reception_not_configured`, `responsible_unavailable`, `time_change`, `not_eligible`, 503 `appointments_not_configured`, table `appointments.responsibles`. Le texte ci-dessous est conservé comme historique.*
+
 **Statut : `PROPOSED` — non implémenté par MMV.Api.** Aucune route `/api/appointments` n'existe côté serveur ; le service est désactivé côté client (`apps/desktop/src/appointments/appointmentsService.ts`). Le contrat est consommé par l'interface 03-B et reproduit par le double de test `apps/desktop/src/test/fakeAppointmentsApi.ts`. Il dépend des décisions D-03-13 à D-03-18 ([`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md)) ; il sera aligné sur la décision du propriétaire, puis typé dans OpenAPI comme le contrat Clients ([`API_CLIENTS.md`](API_CLIENTS.md)).
 
 ## Règles communes (identiques à Clients)

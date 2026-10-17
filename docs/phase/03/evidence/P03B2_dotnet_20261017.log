@@ -1,0 +1,114 @@
+# P03B2 — suites .NET (worktree jetable ddfc603 + modifications 03-B2), 2026-10-17T16:05Z
+# dotnet build MMV.slnx : 0 avertissement, 0 erreur
+    0 Avertissement(s)
+    0 Erreur(s)
+## MMV.Api.Tests
+Réussi!  - échec :     0, réussite :   286, ignorée(s) :     0, total :   286, durée : 16 s - MMV.Api.Tests.dll (net10.0)
+## MMV.Maintenance.Tests
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 6 s - MMV.Maintenance.Tests.dll (net10.0)
+## MMV.Api.Tests — Appointments (détail)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "2026-07-16 08:30:00Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "2026-07-16T08:30Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "2026-07-16T10:30:00+02:00")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "16/07/2026 08:30")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_RefusesOffsetsAndLocalTimes(value: "2026-07-16T08:30:00")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_AcceptsExplicitUtcOnly(value: "2026-07-16T08:30:00+00:00")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_AcceptsExplicitUtcOnly(value: "2026-07-16T08:30:00Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Instant_AcceptsExplicitUtcOnly(value: "2026-07-16T08:30:00.000Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Settings_RefuseANonPositiveReceptionCapacity(capacity: 0)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Settings_RefuseANonPositiveReceptionCapacity(capacity: -1)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Brussels_SpringForward_SlotOverTheMissingHourIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Duration_OutsideTheApprovedListIsRefused(minutes: 180, field: "durationMinutes", code: "not_allowed")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Duration_OutsideTheApprovedListIsRefused(minutes: 25, field: "durationMinutes", code: "not_allowed")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Occupancy_CountsSimultaneityNotOverlapWithTheSlot
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Brussels_FallBack_AmbiguousLocalHourIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Settings_RefuseInvalidHiddenWeekdays
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_StartsOnAFiveMinuteStep(hour: 8, minute: 5, expected: null)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_StartsOnAFiveMinuteStep(hour: 8, minute: 31, expected: "invalid_step")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_StartsOnAFiveMinuteStep(hour: 8, minute: 7, expected: "invalid_step")
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_StartsOnAFiveMinuteStep(hour: 8, minute: 55, expected: null)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_StartsOnAFiveMinuteStep(hour: 8, minute: 0, expected: null)
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Settings_RequireAnExplicitSupportedTimeZoneAndDisplayRange
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Casablanca_EveryTransitionFoundInTheSystemDataIsGuarded
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_NeverCrossesLocalMidnight
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Restore_RefusedForADeactivatedCollaboratorTheMissingCapacityOrAStartedSlot
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Casablanca_ForwardChange_SlotOverTheMissingHourIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.DeactivatedCollaborator_ExistingAppointmentNotesCanStillBeEditedButNotMoved
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ReceptionReason_WithResponsible_IsCheckedOnTheCollaboratorAgendaOnly
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Locks_AreTakenInAStableAscendingOrderWithoutDuplicates
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Slot_WithSecondsIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.NotConfigured_EveryWriteIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Past_CreationIsRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Update_MoveIntoThePastIsRefusedButNotesOfAPastAppointmentCanChange
+  Réussi MMV.Api.Tests.Appointments.AppointmentRulesTests.Reasons_AreTheApprovedClosedListWithTheirMode
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.SimultaneousBookings_SameCollaborator_ExactlyOneSucceeds
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Update_MovesWithinItsOwnSlotAndRefusesAnOccupiedOne
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.WithoutConfiguredCapacity_UnassignedBookingsAreRefused
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.PersonalReason_RequiresAResponsibleEvenWithReceptionCapacity(reason: "conseil_devis")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.PersonalReason_RequiresAResponsibleEvenWithReceptionCapacity(reason: "autre")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.PersonalReason_RequiresAResponsibleEvenWithReceptionCapacity(reason: "prise_mesures")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.PersonalReason_RequiresAResponsibleEvenWithReceptionCapacity(reason: "essayage_ajustement")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.PersonalReason_RequiresAResponsibleEvenWithReceptionCapacity(reason: "choix_equipement")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ReceptionReason_WithoutResponsible_UsesTheReceptionCapacity(reason: "sav_reparation")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ReceptionReason_WithoutResponsible_UsesTheReceptionCapacity(reason: "retrait_commande")
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.SimultaneousBookings_WithoutTheLock_WouldDoubleBook
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Update_FromPersonalToReception_ConsumesCapacity
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.CancelledAppointments_DoNotBlockTheSlot
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Brussels_AmbiguousAutumnHour_IsRefusedAtCreation
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Create_WithResponsible_StoresUtcSlotAuthorAndClientView
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Casablanca_SlotOverTheMissingHour_IsRefusedAtCreation
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Cancel_IsLogicalKeepsAuthorDateReasonAndFreesTheSlot
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.DeactivatedOrNonEligibleCollaborator_CannotBeAssigned
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Overlap_SameCollaborator_IsAConflictButConsecutiveAndOtherCollaboratorsAreNot
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ReceptionCapacity_Saturated_RefusesAndConsecutiveSlotsAreFree
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Update_StaleVersionOrCancelled_WritesNothing
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Input_IsValidatedPerFieldWithoutDefaults
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.UnknownClient_IsAFieldError
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ArchivedClient_NoNewAppointmentButExistingOnesStayCancellable
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.SimultaneousRestoreAndBooking_OnTheSameSlot_ExactlyOneWins
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Restore_RechecksConflictsCapacityCollaboratorAndPast
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "POST", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsOpenApiContractTests.AppointmentsContract_DeclaresTypedResponsesAndNoDelete
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.SimultaneousBookings_ReceptionPool_NeverExceedTheCapacity
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.Cancel_WithoutReasonStoresNull
+  Réussi MMV.Api.Tests.Appointments.AppointmentServiceTests.ReceptionCapacity_IsComputedAtEachInstantNotByCountingOverlaps
+  Réussi MMV.Api.Tests.Appointments.AppointmentsOpenApiContractTests.GeneratedAppointmentsContract_MatchesTheVersionedSnapshot
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "POST", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "GET", path: "/api/appointments?from=2026-07-16T00:00:00Z&to=202"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "GET", path: "/api/appointments/options")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "GET", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "PUT", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Anonymous_Gets401(method: "POST", path: "/api/appointments")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_Returns201WithLocationAndDetail
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Update_RequiresVersionAndReturnsTheNewOne
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_StrictBody_Gets400(json: "{\"durationMinutes\":\"30\"}")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_StrictBody_Gets400(json: "{\"clientId\":\"x\"}")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_StrictBody_Gets400(json: "{\"socialSecurityNumber\":\"1\"}")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_StrictBody_Gets400(json: "[]")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_ReturnsOverlappingAppointmentsWithoutContactDataOrNotes
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.StoreNotConfigured_Gets503AfterAuthorization
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-16T00:00:00%2B02:00&to=2026-07-17T00"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-01T00:00:00Z&to=2026-08-02T00:00:00Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-16T00:00:00Z&to=2026-07-17T00:00:00Z"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-16T00:00:00Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-17T00:00:00Z&to=2026-07-16T00:00:00Z")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-16T00:00:00Z&from=2026-07-16T00:00:0"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.List_InvalidQuery_Gets400(query: "?from=2026-07-16T00:00:00Z&to=2026-07-17T00:00:00Z"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Cancel_ReasonTooLong_Gets422
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "POST", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "GET", path: "/api/appointments?from=2026-07-16T00:00:00Z&to=202"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "GET", path: "/api/appointments/options")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "PUT", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "GET", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "POST", path: "/api/appointments/00000000-0000-0000-0000-00000000"···)
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.NoAppointmentPermission_AndSystemAdmin_Get403(method: "POST", path: "/api/appointments")
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Options_ComeFromTheStoreConfiguration
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.CancelThenRestore_KeepsAuthorAndChecksTheSlotAgain
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.PermissionsAreDistinct_ReadWriteCancel
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_ConflictCapacityAndArchivedClientAre409
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Options_WithoutCapacity_ExposeNull
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Delete_IsNotAllowed
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Http_IsRefusedEvenWithAValidSession
+  Réussi MMV.Api.Tests.Appointments.AppointmentsEndpointsTests.Create_ValidationErrorsArePerField
