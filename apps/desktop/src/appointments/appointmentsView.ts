@@ -1,6 +1,6 @@
-// Présentation des rendez-vous (03-B) : libellés, tonalités d'affichage, messages d'échec bornés. Module pur.
-// Les messages traduisent des CODES du contrat proposé, jamais un texte serveur.
-import type { AppointmentOptions, AppointmentSummary } from "../api/appointments.ts";
+// Présentation des rendez-vous (03-B, 03-B2) : libellés, tonalités d'affichage, messages d'échec bornés. Module pur.
+// Les messages traduisent des CODES du contrat (docs/phase/03/API_APPOINTMENTS.md), jamais un texte serveur.
+import { type AppointmentOptions, type AppointmentSummary, APPOINTMENTS_NOT_CONFIGURED_CODE } from "../api/appointments.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
 import { formatNumericDate, formatTimeRange, utcToWall } from "./time.ts";
 
@@ -32,6 +32,10 @@ export function formatWhen(startsAtUtc: string, timeZone: string): string {
   return `${formatNumericDate(wall.date)} à ${wall.time}`;
 }
 
+/** 503 `appointments_not_configured` : paramètres du magasin absents côté serveur (D-03-13). */
+export const isStoreNotConfigured = (error: ApiRequestError): boolean =>
+  error.error.status === 503 && error.error.code === APPOINTMENTS_NOT_CONFIGURED_CODE;
+
 export interface FailureView {
   tone: "error" | "info" | "warning";
   title: string;
@@ -54,10 +58,23 @@ export function describeAppointmentFailure(error: ApiRequestError, slot?: { star
             : "Ce créneau chevauche un autre rendez-vous de ce responsable.",
           slotConflict: true,
         };
+      case "reception_capacity_full":
+        return {
+          tone: "error",
+          title: "Capacité d'accueil atteinte",
+          text: slot
+            ? `L'accueil est complet sur une partie du créneau ${formatTimeRange(slot.startsAtUtc, slot.endsAtUtc, slot.timeZone)}. Choisissez un autre horaire ou un responsable.`
+            : "L'accueil est complet sur ce créneau. Choisissez un autre horaire ou un responsable.",
+          slotConflict: true,
+        };
+      case "reception_not_configured":
+        return { tone: "warning", title: "Accueil non configuré", text: "Aucune capacité d'accueil n'est configurée pour ce magasin : un responsable est nécessaire." };
+      case "responsible_unavailable":
+        return { tone: "warning", title: "Responsable indisponible", text: "Ce collaborateur n'est plus actif ou n'est plus habilité à recevoir des rendez-vous." };
       case "client_archived":
         return { tone: "warning", title: "Client archivé", text: "Ce client est archivé : le serveur MMV refuse cette opération." };
       case "appointment_past":
-        return { tone: "warning", title: "Rendez-vous passé", text: "Ce rendez-vous est terminé : le serveur MMV refuse sa modification." };
+        return { tone: "warning", title: "Créneau passé", text: "Ce créneau a déjà commencé : le serveur MMV refuse de le planifier à nouveau." };
       case "appointment_cancelled":
         return { tone: "info", title: "Rendez-vous annulé", text: "Ce rendez-vous a été annulé entre-temps. Les données ont été actualisées." };
       case "appointment_not_cancelled":

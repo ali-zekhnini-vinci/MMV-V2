@@ -66,7 +66,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
       { id: "home", path: "/", label: "Accueil", icon: LayoutDashboard, availability: "available" },
       // Phase 03-A : écrans Clients disponibles ; les données dépendent de l'activation du service (G03-METIER).
       { id: "clients", path: "/clients", label: "Clients", icon: Users, availability: "available", nested: true },
-      // Phase 03-B : écran Rendez-vous disponible ; service désactivé tant que D-03-13 à D-03-18 ne sont pas ratifiées.
+      // Phase 03-B : écran Rendez-vous disponible ; 03-B2 : décisions approuvées, service raccordé à MMV.Api.
       { id: "appointments", path: "/rendez-vous", label: "Rendez-vous", icon: CalendarDays, availability: "available" },
       { id: "products", path: "/produits", label: "Produits", icon: Package, availability: "later" },
       { id: "prescriptions", path: "/ordonnances", label: "Ordonnances", icon: ClipboardList, availability: "later" },

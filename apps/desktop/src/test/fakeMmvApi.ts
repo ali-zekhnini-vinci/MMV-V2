@@ -165,6 +165,7 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
           options,
           send,
           readBody: () => readBody(request),
+          userDisplayName: auth.account.displayName,
         });
       }
       return send(response, 404, { code: "not_found" });

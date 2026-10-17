@@ -4,8 +4,9 @@ namespace MMV.Domain.Identity;
 /// Matrice minimale de permissions. Être authentifié donne accès à l'espace authentifié ;
 /// <see cref="SystemAdmin"/> donne l'administration technique seulement (phase 02) et n'implique
 /// AUCUN droit métier. Phase 03 (G03-METIER D-03-08, accepté le 17/10/2026) : droits Clients
-/// distincts, attribués explicitement par <c>MMV.Maintenance permissions grant</c>. Aucune autre
-/// permission métier (caisse, ordonnances, stock) n'est définie ici.
+/// distincts, attribués explicitement par <c>MMV.Maintenance permissions grant</c>. Phase 03-B2 (D-03-17,
+/// approuvée le 17/10/2026) : droits Rendez-vous distincts, même attribution. Aucune autre permission métier
+/// (caisse, ordonnances, stock) n'est définie ici.
 /// </summary>
 public static class Permissions
 {
@@ -20,12 +21,23 @@ public static class Permissions
     /// <summary>Archivage et réactivation des clients (aucune suppression physique).</summary>
     public const string ClientsArchive = "clients.archive";
 
+    /// <summary>Agenda, détail et paramètres des rendez-vous.</summary>
+    public const string AppointmentsRead = "appointments.read";
+
+    /// <summary>Création, modification et déplacement des rendez-vous.</summary>
+    public const string AppointmentsWrite = "appointments.write";
+
+    /// <summary>Annulation et rétablissement des rendez-vous (aucune suppression physique).</summary>
+    public const string AppointmentsCancel = "appointments.cancel";
+
     public const int MaxLength = 64;
 
-    public static IReadOnlyList<string> All { get; } = [SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive];
+    public static IReadOnlyList<string> All { get; } =
+        [SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel];
 
     /// <summary>Permissions attribuables par la commande de maintenance (jamais <see cref="SystemAdmin"/>).</summary>
-    public static IReadOnlyList<string> Grantable { get; } = [ClientsRead, ClientsWrite, ClientsArchive];
+    public static IReadOnlyList<string> Grantable { get; } =
+        [ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel];
 
     public static bool IsKnown(string permission) => All.Contains(permission, StringComparer.Ordinal);
 }

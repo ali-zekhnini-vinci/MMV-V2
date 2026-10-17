@@ -1,9 +1,8 @@
-// Formulaire Rendez-vous (03-B) — React Hook Form + Zod. Validation d'ergonomie seulement : MMV.Api
-// revalidera tout (contrat PROPOSÉ, docs/phase/03/API_APPOINTMENTS_PROPOSED.md). Aucune règle n'est déduite
-// des maquettes : durées, motifs, responsables et caractère obligatoire du responsable viennent des
-// paramètres SERVEUR (AppointmentOptions) ; conflits, passé et client archivé sont décidés par le serveur.
-// Seules exigences locales, structurelles : un client, une date, une heure, une durée (sans quoi aucun
-// créneau n'existe) et un motif (proposition D-03-18).
+// Formulaire Rendez-vous (03-B, aligné en 03-B2 sur D-03-13 à D-03-18 approuvées) — React Hook Form + Zod.
+// Validation d'ergonomie seulement : MMV.Api revalide tout (docs/phase/03/API_APPOINTMENTS.md). Aucune règle
+// n'est déduite des maquettes : durées, pas, motifs et leur mode d'attribution, collaborateurs éligibles et
+// capacité d'accueil viennent des paramètres SERVEUR (AppointmentOptions) ; conflits, capacité occupée, passé,
+// changements d'heure sur tout le créneau et client archivé sont décidés par le serveur.
 import { z } from "zod";
 import type { AppointmentDetail, AppointmentInput, AppointmentOptions } from "../api/appointments.ts";
 import { APPOINTMENT_CANCELLATION_REASON_MAX_LENGTH, APPOINTMENT_NOTES_MAX_LENGTH } from "../api/appointments.ts";
@@ -44,10 +43,15 @@ export const APPOINTMENT_MESSAGES = {
   timeRequired: "Heure requise",
   timeFormat: "Heure attendue au format hh:mm",
   timeNonexistent: "Cette heure n'existe pas ce jour-là (changement d'heure)",
+  timeAmbiguous: "Cette heure existe deux fois ce jour-là (changement d'heure) : choisissez une autre heure",
+  timeChange: "Ce créneau touche un changement d'heure : choisissez un autre horaire",
+  timeStep: "Heure de début au pas de 5 minutes (ex. 10:05)",
+  outOfRange: "Le rendez-vous doit se terminer avant minuit",
   durationRequired: "Choisissez une durée",
   durationNotAllowed: "Durée non proposée par le serveur",
-  responsibleRequired: "Choisissez un responsable",
-  responsibleUnknown: "Responsable inconnu ou inactif",
+  responsibleRequired: "Choisissez un responsable : ce motif est un rendez-vous personnalisé",
+  responsibleUnknown: "Collaborateur inactif ou non habilité à recevoir des rendez-vous",
+  receptionNotConfigured: "Aucune capacité d'accueil n'est configurée pour ce magasin : choisissez un responsable",
   reasonRequired: "Le motif est requis",
   reasonUnknown: "Motif non proposé par le serveur",
   notesTooLong: `${APPOINTMENT_NOTES_MAX_LENGTH} caractères au maximum`,
@@ -59,7 +63,20 @@ export const APPOINTMENT_MESSAGES = {
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-/** Schéma construit à partir des paramètres serveur (listes blanches, responsable obligatoire ou non). */
+export type ResponsibleMode = "required" | "optional" | "reception-unavailable" | "unknown";
+
+/**
+ * Mode d'attribution du motif choisi (D-03-14) : personnalisé → responsable obligatoire ; accueil → facultatif si
+ * une capacité d'accueil est configurée (D-03-15), sinon obligatoire de fait ; motif non choisi → inconnu.
+ */
+export function responsibleMode(options: AppointmentOptions, reasonCode: string): ResponsibleMode {
+  const reason = options.reasons.find((candidate) => candidate.code === reasonCode);
+  if (!reason) return "unknown";
+  if (reason.responsibleRequired) return "required";
+  return options.receptionCapacity === null ? "reception-unavailable" : "optional";
+}
+
+/** Schéma construit à partir des paramètres serveur (listes blanches, mode d'attribution par motif). */
 export function appointmentFormSchema(options: AppointmentOptions) {
   const durations = new Set(options.durationsMinutes.map(String));
   const reasons = new Set(options.reasons.map((reason) => reason.code));
@@ -78,10 +95,7 @@ export function appointmentFormSchema(options: AppointmentOptions) {
         .string()
         .min(1, APPOINTMENT_MESSAGES.durationRequired)
         .refine((value) => durations.has(value), APPOINTMENT_MESSAGES.durationNotAllowed),
-      responsibleUserId: z
-        .string()
-        .refine((value) => value !== "" || !options.responsibleRequired, APPOINTMENT_MESSAGES.responsibleRequired)
-        .refine((value) => value === "" || responsibles.has(value), APPOINTMENT_MESSAGES.responsibleUnknown),
+      responsibleUserId: z.string().refine((value) => value === "" || responsibles.has(value), APPOINTMENT_MESSAGES.responsibleUnknown),
       reasonCode: z
         .string()
         .min(1, APPOINTMENT_MESSAGES.reasonRequired)
@@ -89,11 +103,24 @@ export function appointmentFormSchema(options: AppointmentOptions) {
       notes: z.string().max(APPOINTMENT_NOTES_MAX_LENGTH, APPOINTMENT_MESSAGES.notesTooLong),
     })
     .superRefine((values, context) => {
+      if (values.responsibleUserId === "") {
+        const mode = responsibleMode(options, values.reasonCode);
+        if (mode === "required") context.addIssue({ code: "custom", path: ["responsibleUserId"], message: APPOINTMENT_MESSAGES.responsibleRequired });
+        if (mode === "reception-unavailable") {
+          context.addIssue({ code: "custom", path: ["responsibleUserId"], message: APPOINTMENT_MESSAGES.receptionNotConfigured });
+        }
+      }
       const date = parseFrenchDate(values.date.trim());
-      if (date === null || !TIME_PATTERN.test(values.time.trim())) return;
-      const zoned = wallTimeToUtc(date, values.time.trim(), options.timeZone);
+      const time = values.time.trim();
+      if (date === null || !TIME_PATTERN.test(time)) return;
+      if (Number(time.slice(3)) % options.startStepMinutes !== 0) {
+        context.addIssue({ code: "custom", path: ["time"], message: APPOINTMENT_MESSAGES.timeStep });
+        return;
+      }
+      const zoned = wallTimeToUtc(date, time, options.timeZone);
       if (!zoned.ok) {
-        context.addIssue({ code: "custom", path: ["time"], message: APPOINTMENT_MESSAGES.timeNonexistent });
+        const message = zoned.reason === "ambiguous" ? APPOINTMENT_MESSAGES.timeAmbiguous : APPOINTMENT_MESSAGES.timeNonexistent;
+        context.addIssue({ code: "custom", path: ["time"], message });
       }
     });
 }
@@ -160,9 +187,20 @@ const SERVER_FIELDS: Record<string, FormField> = {
 
 const SERVER_MESSAGES: Partial<Record<FormField, Record<string, string>>> = {
   clientId: { required: APPOINTMENT_MESSAGES.clientRequired, not_found: APPOINTMENT_MESSAGES.clientUnknown, archived: APPOINTMENT_MESSAGES.clientArchived },
-  time: { required: APPOINTMENT_MESSAGES.timeRequired, invalid_format: APPOINTMENT_MESSAGES.timeFormat, in_past: APPOINTMENT_MESSAGES.past },
+  time: {
+    required: APPOINTMENT_MESSAGES.timeRequired,
+    invalid_format: APPOINTMENT_MESSAGES.timeFormat,
+    invalid_step: APPOINTMENT_MESSAGES.timeStep,
+    out_of_range: APPOINTMENT_MESSAGES.outOfRange,
+    time_change: APPOINTMENT_MESSAGES.timeChange,
+    in_past: APPOINTMENT_MESSAGES.past,
+  },
   durationMinutes: { required: APPOINTMENT_MESSAGES.durationRequired, not_allowed: APPOINTMENT_MESSAGES.durationNotAllowed },
-  responsibleUserId: { required: APPOINTMENT_MESSAGES.responsibleRequired, not_found: APPOINTMENT_MESSAGES.responsibleUnknown },
+  responsibleUserId: {
+    required: APPOINTMENT_MESSAGES.responsibleRequired,
+    not_eligible: APPOINTMENT_MESSAGES.responsibleUnknown,
+    reception_not_configured: APPOINTMENT_MESSAGES.receptionNotConfigured,
+  },
   reasonCode: { required: APPOINTMENT_MESSAGES.reasonRequired, not_allowed: APPOINTMENT_MESSAGES.reasonUnknown },
   notes: { too_long: APPOINTMENT_MESSAGES.notesTooLong },
 };
@@ -180,7 +218,7 @@ export function appointmentServerFieldErrors(fieldErrors: Record<string, string[
   return result;
 }
 
-/** Motif d'annulation facultatif (proposition D-03-16). */
+/** Motif d'annulation facultatif (D-03-16). */
 export const cancellationSchema = z.object({
   reason: z.string().max(APPOINTMENT_CANCELLATION_REASON_MAX_LENGTH, APPOINTMENT_MESSAGES.cancellationTooLong),
 });

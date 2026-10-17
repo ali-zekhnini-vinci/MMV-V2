@@ -1,6 +1,6 @@
 // Requêtes et mutations Rendez-vous (TanStack Query v5), sur le modèle de clients/clientQueries.ts : appels
 // via `authorized` (jeton en mémoire, 401 → fin de session), annulation par signal, invalidation de toutes les
-// clés `appointments` après écriture. Tant que le service est désactivé, aucune requête n'est émise.
+// clés `appointments` après écriture. Interrupteur de repli désactivé : aucune requête n'est émise.
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type AppointmentDetail,

@@ -6,6 +6,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, test } from "vitest";
 import { Gate } from "../App.tsx";
+import { AppointmentsServiceContext } from "../appointments/appointmentsService.ts";
 import { AuthProvider } from "../auth/AuthProvider.tsx";
 import { ClientsServiceContext } from "../clients/clientsService.ts";
 import { type FakeApi, startFakeApi } from "../test/fakeMmvApi.ts";
@@ -69,11 +70,31 @@ describe("Shell", () => {
     assert.equal(screen.queryByRole("table"), null);
   });
 
-  // 03-B : écran disponible, service désactivé (APPOINTMENTS_API_ENABLED = false) : aucun appel, aucun calendrier prétendu.
-  test("Rendez-vous : service non activé, aucune requête /api/appointments, aucun calendrier", async () => {
+  // 03-B2 : service activé par défaut (APPOINTMENTS_API_ENABLED = true). *Historique 03-B : service désactivé,
+  // aucune requête /api/appointments (test conservé ci-dessous sous forme d'interrupteur de repli).*
+  test("Rendez-vous : system.admin seul n'a aucun droit Rendez-vous -> 403 -> « Accès non autorisé », aucun calendrier", async () => {
     const user = await signIn(ADMIN);
     await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
     await screen.findByRole("heading", { name: "Rendez-vous", level: 1 });
+    await screen.findByRole("heading", { name: "Accès non autorisé" });
+    assert.equal(screen.queryByRole("grid"), null);
+    const optionsCall = api.requests.find((request) => request.path === "/api/appointments/options");
+    assert.ok(optionsCall?.bearer, "requête /api/appointments/options authentifiée attendue");
+  });
+
+  test("Rendez-vous (interrupteur de repli désactivé) : service non activé, aucune requête /api/appointments", async () => {
+    const user = userEvent.setup();
+    render(
+      <AppointmentsServiceContext.Provider value={{ enabled: false }}>
+        <AuthProvider baseUrl={{ ok: true, url: api.url }}>
+          <Gate />
+        </AuthProvider>
+      </AppointmentsServiceContext.Provider>,
+    );
+    await user.type(screen.getByLabelText("Identifiant"), ADMIN.userName);
+    await user.type(screen.getByLabelText("Mot de passe"), `${ADMIN.password}{Enter}`);
+    await screen.findByRole("heading", { name: `Bonjour, ${ADMIN.displayName}` });
+    await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
     await screen.findByRole("heading", { name: "Service Rendez-vous non activé" });
     assert.equal(screen.queryByRole("grid"), null);
     assert.equal(api.requests.some((request) => request.path.startsWith("/api/appointments")), false);

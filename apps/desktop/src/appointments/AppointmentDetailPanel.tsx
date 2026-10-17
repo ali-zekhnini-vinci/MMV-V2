@@ -1,7 +1,8 @@
 // Détail d'un rendez-vous (Lot 2 DRAFT, planches 32, 37, 38–39) : panneau latéral chargé depuis l'API
 // (jamais depuis la ligne d'agenda, qui n'a pas les notes). Actions selon les permissions de session (garde
 // d'affichage) et l'état : planifié → Modifier / Déplacer / Annuler ; annulé → Rétablir. Les règles fines
-// (passé, client archivé, créneau libre au rétablissement) sont décidées par le serveur (D-03-15, D-03-16).
+// (passé, client archivé, créneau ou capacité d'accueil libre au rétablissement) sont décidées par le serveur
+// (D-03-15, D-03-16). L'annulation affiche son auteur et sa date (D-03-16).
 // Écart volontaire : badge « Planifié » au lieu de « Confirmé » (aucun circuit de confirmation décidé).
 import { AlertTriangle, Calendar, CalendarX, Clock, Move, Pencil, RefreshCw, RotateCcw, Stethoscope, Timer, User, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
@@ -13,7 +14,7 @@ import { appointmentClientName } from "./appointmentForm.ts";
 import type { AppointmentPermissions } from "./appointmentPermissions.ts";
 import { NO_APPOINTMENT_CANCEL_TITLE, NO_APPOINTMENT_WRITE_TITLE } from "./appointmentPermissions.ts";
 import { useAppointmentDetail } from "./appointmentQueries.ts";
-import { clientInitials, type FailureView, reasonLabel, STATUS_LABEL } from "./appointmentsView.ts";
+import { clientInitials, type FailureView, formatWhen, reasonLabel, STATUS_LABEL } from "./appointmentsView.ts";
 import { formatDuration, formatNumericDate, formatTimeRange, minutesBetween, utcToWall } from "./time.ts";
 
 interface AppointmentDetailPanelProps {
@@ -113,6 +114,12 @@ export function AppointmentDetailPanel({
           <div>
             <div className="clients-banner__title">Rendez-vous annulé</div>
             <div className="clients-banner__text">Motif : {appointment.cancellationReason ?? "non précisé"}</div>
+            {appointment.cancelledAtUtc && (
+              <div className="clients-banner__text">
+                Annulé le {formatWhen(appointment.cancelledAtUtc, options.timeZone)}
+                {appointment.cancelledByDisplayName ? ` par ${appointment.cancelledByDisplayName}` : ""}
+              </div>
+            )}
           </div>
         </div>
       )}

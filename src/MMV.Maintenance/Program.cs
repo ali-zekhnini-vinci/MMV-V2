@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Appointments;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 using MMV.Infrastructure;
@@ -20,6 +21,12 @@ using Npgsql;
 //   permissions grant|revoke <identifiant> <permission> (phase 03-A2, D-03-09) : attribution ou retrait d'un
 //                      droit métier (clients.read | clients.write | clients.archive ; jamais system.admin), même
 //                      cible stricte et mêmes trois contrôles que bootstrap-admin, confirmation interactive.
+//                      Phase 03-B2 : + appointments.read | appointments.write | appointments.cancel (D-03-17).
+//   responsibles list : lecture seule (même session forcée que status) : comptes, état actif, éligibilité à
+//                      recevoir des rendez-vous (phase 03-B2, D-03-14).
+//   responsibles enable|disable <identifiant> : éligibilité EXPLICITE d'un collaborateur à être responsable de
+//                      rendez-vous, indépendante des permissions ; même cible stricte, mêmes contrôles et
+//                      confirmation que permissions grant ; jamais de suppression (désactivation logique).
 // Codes de sortie : 0 succès ; 1 usage ; 2 précondition non remplie ; 3 bootstrap déjà effectué ;
 //                   4 saisie invalide ou annulation ; 5 cible non autorisée (refus sans modification) ;
 //                   6 compte introuvable (aucune modification).
@@ -28,13 +35,16 @@ using Npgsql;
 Console.OutputEncoding = Encoding.UTF8;
 
 const string Usage =
-    "Usage : MMV.Maintenance status | bootstrap-admin | permissions list | permissions grant|revoke <identifiant> <permission>";
+    "Usage : MMV.Maintenance status | bootstrap-admin | permissions list | permissions grant|revoke <identifiant> <permission>"
+    + " | responsibles list | responsibles enable|disable <identifiant>";
 var command = args switch
 {
     ["status"] => "status",
     ["bootstrap-admin"] => "bootstrap-admin",
     ["permissions", "list"] => "permissions list",
     ["permissions", "grant" or "revoke", _, _] => $"permissions {args[1]}",
+    ["responsibles", "list"] => "responsibles list",
+    ["responsibles", "enable" or "disable", _] => $"responsibles {args[1]}",
     _ => null,
 };
 if (command is null)
@@ -43,8 +53,8 @@ if (command is null)
     return 1;
 }
 
-var isWrite = command is "bootstrap-admin" or "permissions grant" or "permissions revoke";
-var targetUserName = args.Length == 4 ? args[2] : null;
+var isWrite = command is "bootstrap-admin" or "permissions grant" or "permissions revoke" or "responsibles enable" or "responsibles disable";
+var targetUserName = args.Length == 4 || command is "responsibles enable" or "responsibles disable" ? args[2] : null;
 var targetPermission = args.Length == 4 ? args[3] : null;
 if (targetPermission is not null && !PermissionAdministrationService.IsGrantable(targetPermission))
 {
@@ -160,6 +170,24 @@ if (command == "permissions list")
 if (command is "permissions grant" or "permissions revoke")
 {
     return await ChangePermissionAsync(command, targetUserName!, targetPermission!, target, scope.ServiceProvider, context);
+}
+
+if (command == "responsibles list")
+{
+    var listing = await scope.ServiceProvider.GetRequiredService<ResponsibleAdministrationService>().ListAsync(CancellationToken.None);
+    foreach (var entry in listing)
+    {
+        var proposed = entry.IsActive && entry.IsEligible ? "proposé comme responsable" : "non proposé";
+        Console.WriteLine(
+            $"  {entry.UserName} ({(entry.IsActive ? "actif" : "désactivé")}) : {(entry.IsEligible ? "éligible" : "non éligible")} — {proposed}");
+    }
+
+    return 0;
+}
+
+if (command is "responsibles enable" or "responsibles disable")
+{
+    return await ChangeResponsibleAsync(command, targetUserName!, target, scope.ServiceProvider, context);
 }
 
 if (completed)
@@ -298,6 +326,55 @@ static async Task<int> ChangePermissionAsync(
             Console.Error.WriteLine("Refusé : permission non attribuable par cette commande.");
             return 1;
     }
+}
+
+static async Task<int> ChangeResponsibleAsync(
+    string command, string userName, ServerTarget target, IServiceProvider services, MmvDbContext context)
+{
+    var enable = command == "responsibles enable";
+    if (Console.IsInputRedirected)
+    {
+        Console.Error.WriteLine("Refusé : saisie interactive obligatoire (aucune entrée redirigée).");
+        return 4;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"{(enable ? "Éligibilité" : "Retrait de l'éligibilité")} demandé : responsable de rendez-vous, compte « {userName} ».");
+    Console.Write($"Confirmez la base cible en saisissant son nom ({target.Database}) : ");
+    if (Console.ReadLine()?.Trim() != target.Database)
+    {
+        Console.Error.WriteLine("Annulé : confirmation incorrecte.");
+        return 4;
+    }
+
+    // 3e contrôle, juste avant l'écriture : la cible n'a pas changé pendant la saisie interactive.
+    var finalViolations = BootstrapTargetPolicy.CheckServer(await ReadTargetAsync(context));
+    if (finalViolations.Count > 0)
+    {
+        return RefuseTarget(command, finalViolations, "aucune modification effectuée");
+    }
+
+    var result = await services.GetRequiredService<ResponsibleAdministrationService>()
+        .SetEligibleAsync(userName, enable, CancellationToken.None);
+    if (result.Status == ResponsibleChangeStatus.UnknownAccount)
+    {
+        Console.Error.WriteLine("Refusé : compte introuvable (aucune modification).");
+        return 6;
+    }
+
+    var outcome = result.Status switch
+    {
+        ResponsibleChangeStatus.Enabled => "éligible",
+        ResponsibleChangeStatus.Disabled => "non éligible",
+        _ => "inchangé (déjà dans l'état demandé)",
+    };
+    Console.WriteLine($"Responsable de rendez-vous : {outcome} (compte interne {result.UserId}).");
+    if (enable && !result.AccountActive)
+    {
+        Console.WriteLine("Attention : compte désactivé, il ne sera proposé comme responsable qu'après réactivation.");
+    }
+
+    return 0;
 }
 
 static int RefuseTarget(string command, IReadOnlyList<string> violations, string consequence)

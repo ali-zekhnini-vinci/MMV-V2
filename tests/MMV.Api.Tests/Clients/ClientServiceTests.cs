@@ -206,7 +206,11 @@ public sealed class PermissionAdministrationServiceTests
     [Fact]
     public void SystemAdmin_ImpliesNoClientsPermission()
     {
-        Assert.Equal([Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive], Permissions.Grantable);
+        // 17/10/2026 (03-B2, D-03-17) : + appointments.read|write|cancel ; system.admin reste non attribuable.
+        Assert.Equal(
+            [Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive,
+             Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel],
+            Permissions.Grantable);
         Assert.DoesNotContain(Permissions.SystemAdmin, Permissions.Grantable);
     }
 }

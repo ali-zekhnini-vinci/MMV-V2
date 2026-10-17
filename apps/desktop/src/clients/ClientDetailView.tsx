@@ -1,12 +1,16 @@
 // Fiche client (Lot 2 DRAFT, planches 16–21) : en-tête permanent, onglets Informations / Ordonnances /
 // Ventes & commandes. Les deux derniers onglets appartiennent à des phases ultérieures : ils l'indiquent
 // explicitement, sans compteur ni ligne simulés. Un client archivé est en lecture seule.
-import { Archive, ArchiveRestore, ArrowLeft, Calendar, ClipboardList, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
+// 03-B2 : « Prendre un rendez-vous » ouvre l'agenda avec ce client présélectionné (appointmentLaunch.ts), proposé
+// avec `appointments.write` ; désactivé pour un client archivé (D-03-16). Le serveur reste seul juge.
+import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarPlus, ClipboardList, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { ClientDetail } from "../api/clients.ts";
 import { Button } from "../components/ui/button.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
+import { appointmentLaunchFor } from "../appointments/appointmentLaunch.ts";
+import { useAppointmentPermissions } from "../appointments/appointmentPermissions.ts";
 import { cn } from "../lib/utils.ts";
 import { clientDisplayName, clientInitials, formatIsoDate, formatUtcDate } from "./clientForm.ts";
 import { ClientNoticeBanner } from "./ClientNoticeBanner.tsx";
@@ -19,6 +23,7 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
   const navigate = useNavigate();
   const lifecycle = useClientLifecycle();
   const { canWrite, canArchive } = useClientPermissions();
+  const { canWrite: canBook } = useAppointmentPermissions();
   const archived = client.status === "archived";
   const name = clientDisplayName(client);
 
@@ -67,6 +72,17 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
           </ul>
         </div>
         <div className="clients-actions clients-actions--wrap">
+          {canBook && (
+            <Button
+              variant={archived ? undefined : "primary"}
+              disabled={archived}
+              title={archived ? "Client archivé : aucun nouveau rendez-vous n'est possible" : undefined}
+              onClick={() => navigate("/rendez-vous", { state: appointmentLaunchFor(client, name) })}
+            >
+              <CalendarPlus size={16} aria-hidden="true" />
+              Prendre un rendez-vous
+            </Button>
+          )}
           {archived ? (
             <>
               <Button disabled title={canWrite ? "Réactivez le client pour le modifier" : NO_WRITE_TITLE}>

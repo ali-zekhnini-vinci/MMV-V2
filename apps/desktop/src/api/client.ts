@@ -58,7 +58,8 @@ const KIND_BY_STATUS: Partial<Record<number, ApiErrorKind>> = {
 };
 
 /** Statuts dont le corps d'erreur `{ code, errors }` est lu (borné) pour guider l'écran. */
-const STATUSES_WITH_ERROR_BODY: readonly number[] = [400, 404, 409, 422];
+// 503 : code borné éventuel (ex. `appointments_not_configured`, 03-B2) ; le statut reste qualifié « http ».
+const STATUSES_WITH_ERROR_BODY: readonly number[] = [400, 404, 409, 422, 503];
 const CODE_PATTERN = /^[a-z0-9_.-]{1,64}$/;
 const FIELD_PATTERN = /^[A-Za-z0-9_.]{1,64}$/;
 

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MMV.Api.Appointments;
 using MMV.Api.Auth;
 using MMV.Api.Cors;
 using MMV.Api.Health;
@@ -14,9 +15,11 @@ builder.Services.AddLivenessCheck();
 builder.Services.AddReadinessCheck();
 builder.Services.AddDesktopCors(builder.Configuration);
 builder.Services.AddMmvAuth(builder.Configuration);
+builder.Services.AddAppointmentSettings(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+app.LogAppointmentSettings();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

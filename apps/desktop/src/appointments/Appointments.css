@@ -710,3 +710,9 @@
     width: auto;
   }
 }
+
+/* 03-B2 : retour à la fiche client après une prise de rendez-vous lancée depuis la fiche. */
+.rdv-notice__back {
+  margin-top: 6px;
+  margin-left: -8px;
+}

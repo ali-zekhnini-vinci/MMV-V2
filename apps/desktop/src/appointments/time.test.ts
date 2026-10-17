@@ -29,9 +29,20 @@ describe("conversions dans le fuseau du magasin", () => {
     assert.deepEqual(utcToWall("2026-07-16T23:30:00Z", "Europe/Paris"), { date: "2026-07-17", time: "01:30" });
   });
 
-  test("heure inexistante (passage à l'heure d'été) refusée, heure ambiguë = première occurrence", () => {
-    assert.deepEqual(wallTimeToUtc("2026-03-29", "02:30", "Europe/Paris"), { ok: false, reason: "nonexistent" });
-    assert.deepEqual(wallTimeToUtc("2026-10-25", "02:30", "Europe/Paris"), { ok: true, utc: "2026-10-25T00:30:00Z" });
+  // 03-B2 (D-03-13 approuvée) : l'heure ambiguë n'est plus résolue à la première occurrence, elle est refusée.
+  test("Belgique : heure inexistante et heure ambiguë refusées", () => {
+    assert.deepEqual(wallTimeToUtc("2026-03-29", "02:30", "Europe/Brussels"), { ok: false, reason: "nonexistent" });
+    assert.deepEqual(wallTimeToUtc("2026-10-25", "02:30", "Europe/Brussels"), { ok: false, reason: "ambiguous" });
+    assert.deepEqual(wallTimeToUtc("2026-03-29", "03:00", "Europe/Brussels"), { ok: true, utc: "2026-03-29T01:00:00Z" });
+    assert.deepEqual(wallTimeToUtc("2026-10-25", "03:00", "Europe/Brussels"), { ok: true, utc: "2026-10-25T02:00:00Z" });
+  });
+
+  test("Maroc : heure inexistante et heure ambiguë refusées (données ICU de l'environnement)", () => {
+    // 22/03/2026 : 02:00 (UTC+0) → 03:00 (UTC+1) ; 20/09/2026 : 02:00 (UTC+1) → 01:00 (UTC+0).
+    assert.deepEqual(wallTimeToUtc("2026-03-22", "02:30", "Africa/Casablanca"), { ok: false, reason: "nonexistent" });
+    assert.deepEqual(wallTimeToUtc("2026-09-20", "01:30", "Africa/Casablanca"), { ok: false, reason: "ambiguous" });
+    assert.deepEqual(wallTimeToUtc("2026-03-22", "03:30", "Africa/Casablanca"), { ok: true, utc: "2026-03-22T02:30:00Z" });
+    assert.deepEqual(wallTimeToUtc("2026-10-20", "10:00", "Africa/Casablanca"), { ok: true, utc: "2026-10-20T10:00:00Z" });
   });
 
   test("saisies invalides", () => {

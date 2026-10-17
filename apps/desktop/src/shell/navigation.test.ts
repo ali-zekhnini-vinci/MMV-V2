@@ -9,7 +9,7 @@ const USER: string[] = [];
 describe("navigation et garde UI", () => {
   // Phase 03-A (17/10/2026) : Clients devient disponible (écrans, données soumises à G03-METIER).
   // Phase 03-B (17/10/2026) : écran Rendez-vous disponible, service désactivé tant que D-03-13 à D-03-18
-  // ne sont pas ratifiées. Les autres modules restent « phase suivante » (aucun faux écran).
+  // ne sont pas ratifiées (03-B2 : décisions approuvées, service raccordé). Les autres modules restent « phase suivante ».
   test("modules d'une phase suivante : tous sauf Clients et Rendez-vous", () => {
     const later = NAV_SECTIONS.flatMap((section) => section.items).filter((item) => item.availability === "later");
     assert.deepEqual(

@@ -5,7 +5,7 @@ using MMV.Domain.Identity;
 
 namespace MMV.Api.Auth;
 
-/// <summary>Authentification, policies et limitation de débit (phase 02 ; policies Clients en phase 03-A2).</summary>
+/// <summary>Authentification, policies et limitation de débit (phase 02 ; policies Clients en phase 03-A2, Rendez-vous en 03-B2).</summary>
 internal static class AuthSetup
 {
     /// <summary>Policy : administration technique (permission <c>system.admin</c>).</summary>
@@ -15,6 +15,11 @@ internal static class AuthSetup
     public const string ClientsReadPolicy = "ClientsRead";
     public const string ClientsWritePolicy = "ClientsWrite";
     public const string ClientsArchivePolicy = "ClientsArchive";
+
+    /// <summary>Policies Rendez-vous (D-03-17) : chacune exige SA permission ; <c>system.admin</c> n'en satisfait aucune.</summary>
+    public const string AppointmentsReadPolicy = "AppointmentsRead";
+    public const string AppointmentsWritePolicy = "AppointmentsWrite";
+    public const string AppointmentsCancelPolicy = "AppointmentsCancel";
 
     /// <summary>Limitation de débit de <c>POST /api/auth/login</c>, par adresse IP distante.</summary>
     public const string LoginRateLimitPolicy = "login";
@@ -38,7 +43,16 @@ internal static class AuthSetup
                 .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.ClientsWrite))
             .AddPolicy(ClientsArchivePolicy, policy => policy
                 .RequireAuthenticatedUser()
-                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.ClientsArchive));
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.ClientsArchive))
+            .AddPolicy(AppointmentsReadPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsRead))
+            .AddPolicy(AppointmentsWritePolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsWrite))
+            .AddPolicy(AppointmentsCancelPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsCancel));
 
         var permitPerMinute = configuration.GetValue("Auth:LoginAttemptsPerMinute", 10);
         services.AddRateLimiter(options =>

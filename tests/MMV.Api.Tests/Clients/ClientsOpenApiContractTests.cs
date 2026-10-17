@@ -68,8 +68,13 @@ public sealed class ClientsOpenApiContractTests
     private static string[] Methods(JsonElement pathItem) =>
         [.. pathItem.EnumerateObject().Select(p => p.Name).Where(n => n is "get" or "post" or "put" or "patch" or "delete").Order(StringComparer.Ordinal)];
 
-    /// <summary>Extrait du document : routes /api/clients et schémas qu'elles référencent (transitivement).</summary>
-    private static async Task<string> GenerateClientsContractAsync()
+    private static Task<string> GenerateClientsContractAsync() => GenerateContractAsync("/api/clients");
+
+    /// <summary>
+    /// Extrait du document : routes commençant par <paramref name="prefix"/> et schémas qu'elles référencent
+    /// (transitivement). Partagé avec le contrat Rendez-vous (phase 03-B2).
+    /// </summary>
+    internal static async Task<string> GenerateContractAsync(string prefix)
     {
         using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
@@ -80,7 +85,7 @@ public sealed class ClientsOpenApiContractTests
         var paths = new JsonObject();
         foreach (var (name, item) in root["paths"]!.AsObject())
         {
-            if (name.StartsWith("/api/clients", StringComparison.Ordinal))
+            if (name.StartsWith(prefix, StringComparison.Ordinal))
             {
                 paths[name] = item!.DeepClone();
             }
@@ -149,7 +154,7 @@ public sealed class ClientsOpenApiContractTests
         }
     }
 
-    private static string FindRepositoryRoot()
+    internal static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MMV.slnx")))

@@ -1,7 +1,7 @@
-// Dates et heures des rendez-vous (03-B). Proposition D-03-13 : stockage UTC, affichage et saisie dans le
+// Dates et heures des rendez-vous (03-B ; D-03-13 approuvée en 03-B2) : stockage UTC, affichage et saisie dans le
 // fuseau IANA du MAGASIN fourni par le serveur (jamais celui du poste). Calculs par Temporal (polyfill déjà
-// requis par FullCalendar 7) : pas d'arithmétique manuelle sur des décalages, changements d'heure gérés.
-// Module pur, testé par time.test.ts.
+// requis par FullCalendar 7) : pas d'arithmétique manuelle sur des décalages ; heures inexistantes ET ambiguës
+// refusées. Module pur, testé par time.test.ts.
 import { Temporal } from "temporal-polyfill";
 
 export type CalendarView = "day" | "week";
@@ -28,23 +28,27 @@ export function todayIn(timeZone: string, now: Temporal.Instant = Temporal.Now.i
   return now.toZonedDateTimeISO(timeZone).toPlainDate().toString();
 }
 
-export type ZonedResult = { ok: true; utc: string } | { ok: false; reason: "invalid" | "nonexistent" };
+export type ZonedResult = { ok: true; utc: string } | { ok: false; reason: "invalid" | "nonexistent" | "ambiguous" };
 
 /**
- * Heure murale du magasin → instant UTC (`…Z`). Une heure inexistante (passage à l'heure d'été) est refusée
- * plutôt que décalée en silence ; une heure ambiguë (retour à l'heure d'hiver) prend la première occurrence.
+ * Heure murale du magasin → instant UTC (`…Z`). D-03-13 : une heure inexistante (avance de l'heure) ou ambiguë
+ * (recul de l'heure, deux occurrences) est REFUSÉE plutôt que décalée ou choisie en silence. Le serveur refait le
+ * contrôle sur tout le créneau (422 `startsAtUtc: time_change`).
  */
 export function wallTimeToUtc(date: CivilDate, time: string, timeZone: string): ZonedResult {
   if (!isCivilDate(date) || !isWallTime(time)) return { ok: false, reason: "invalid" };
   const wall = Temporal.PlainDateTime.from(`${date}T${time}`);
-  let zoned: Temporal.ZonedDateTime;
+  let earlier: Temporal.ZonedDateTime;
+  let later: Temporal.ZonedDateTime;
   try {
-    zoned = wall.toZonedDateTime(timeZone, { disambiguation: "earlier" });
+    earlier = wall.toZonedDateTime(timeZone, { disambiguation: "earlier" });
+    later = wall.toZonedDateTime(timeZone, { disambiguation: "later" });
   } catch {
     return { ok: false, reason: "invalid" };
   }
-  if (!zoned.toPlainDateTime().equals(wall)) return { ok: false, reason: "nonexistent" };
-  return { ok: true, utc: zoned.toInstant().toString() };
+  if (!earlier.toPlainDateTime().equals(wall)) return { ok: false, reason: "nonexistent" };
+  if (!earlier.toInstant().equals(later.toInstant())) return { ok: false, reason: "ambiguous" };
+  return { ok: true, utc: earlier.toInstant().toString() };
 }
 
 /** Instant UTC → date civile et heure murale du magasin. */

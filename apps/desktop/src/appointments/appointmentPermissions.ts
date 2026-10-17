@@ -1,4 +1,4 @@
-// Actions Rendez-vous proposées selon les permissions de la session (03-B, droits PROPOSÉS D-03-17). Garde
+// Actions Rendez-vous proposées selon les permissions de la session (03-B ; droits D-03-17 approuvés en 03-B2). Garde
 // d'AFFICHAGE uniquement, comme clients/clientPermissions.ts : le serveur reste seul juge, `system.admin`
 // n'accorde rien. Le sélecteur de client exige en plus `clients.read` (recherche GET /api/clients).
 import { PERMISSION_APPOINTMENTS_CANCEL, PERMISSION_APPOINTMENTS_WRITE, PERMISSION_CLIENTS_READ } from "../api/auth.ts";

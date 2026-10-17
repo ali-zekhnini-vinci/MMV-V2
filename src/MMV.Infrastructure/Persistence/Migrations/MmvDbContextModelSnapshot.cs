@@ -25,6 +25,151 @@ namespace MMV.Infrastructure.Persistence.Migrations
             modelBuilder.HasSequence("client_reference_seq", "clients")
                 .HasMax(999999999999999999L);
 
+            modelBuilder.Entity("MMV.Domain.Appointments.Appointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("cancellation_reason");
+
+                    b.Property<DateTimeOffset?>("CancelledAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at_utc");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("cancelled_by_user_id");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateTimeOffset>("EndsAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at_utc");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<Guid?>("ResponsibleUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("responsible_user_id");
+
+                    b.Property<DateTimeOffset>("StartsAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at_utc");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_appointments");
+
+                    b.HasIndex("CancelledByUserId")
+                        .HasDatabaseName("ix_appointments_cancelled_by_user_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_appointments_created_by_user_id");
+
+                    b.HasIndex("StartsAtUtc")
+                        .HasDatabaseName("ix_appointments_unassigned_planned")
+                        .HasFilter("status = 'planned' AND responsible_user_id IS NULL");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_appointments_updated_by_user_id");
+
+                    b.HasIndex("ClientId", "StartsAtUtc")
+                        .HasDatabaseName("ix_appointments_client_starts_at");
+
+                    b.HasIndex("ResponsibleUserId", "StartsAtUtc")
+                        .HasDatabaseName("ix_appointments_responsible_planned")
+                        .HasFilter("status = 'planned'");
+
+                    b.HasIndex("StartsAtUtc", "Id")
+                        .HasDatabaseName("ix_appointments_starts_at");
+
+                    b.ToTable("appointments", "appointments", t =>
+                        {
+                            t.HasCheckConstraint("ck_appointments_cancellation_consistency", "(status = 'cancelled') = (cancelled_at_utc IS NOT NULL AND cancelled_by_user_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_appointments_cancellation_reason_planned", "status = 'cancelled' OR cancellation_reason IS NULL");
+
+                            t.HasCheckConstraint("ck_appointments_duration_range", "ends_at_utc - starts_at_utc <= interval '12 hours'");
+
+                            t.HasCheckConstraint("ck_appointments_ends_after_starts", "ends_at_utc > starts_at_utc");
+
+                            t.HasCheckConstraint("ck_appointments_reason_code_format", "reason_code ~ '^[a-z0-9_-]{1,32}$'");
+
+                            t.HasCheckConstraint("ck_appointments_status", "status IN ('planned', 'cancelled')");
+
+                            t.HasCheckConstraint("ck_appointments_updated_after_created", "updated_at_utc >= created_at_utc");
+                        });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Appointments.AppointmentResponsible", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<bool>("IsEligible")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_eligible");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_responsibles");
+
+                    b.ToTable("responsibles", "appointments", t =>
+                        {
+                            t.HasCheckConstraint("ck_responsibles_updated_after_created", "updated_at_utc >= created_at_utc");
+                        });
+                });
+
             modelBuilder.Entity("MMV.Domain.Clients.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,7 +337,7 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                     b.ToTable("user_permissions", "auth", t =>
                         {
-                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive')");
+                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive', 'appointments.read', 'appointments.write', 'appointments.cancel')");
                         });
                 });
 
@@ -306,6 +451,52 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_sessions_token_hash_length", "octet_length(token_hash) = 32");
                         });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Appointments.Appointment", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CancelledByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_appointments_cancelled_by_users");
+
+                    b.HasOne("MMV.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointments_clients");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointments_created_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ResponsibleUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_appointments_responsible_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_appointments_updated_by_users");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Appointments.AppointmentResponsible", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithOne()
+                        .HasForeignKey("MMV.Domain.Appointments.AppointmentResponsible", "UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_responsibles_users");
                 });
 
             modelBuilder.Entity("MMV.Domain.Clients.Client", b =>

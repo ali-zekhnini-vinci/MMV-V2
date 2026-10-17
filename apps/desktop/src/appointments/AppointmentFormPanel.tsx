@@ -1,10 +1,12 @@
 // Panneau de saisie d'un rendez-vous (Lot 2 DRAFT, planches 35, 36, 40–42) : création, modification et
 // DÉPLACEMENT AU CLAVIER (mode `move` : seules la date et l'heure changent). React Hook Form + Zod
-// (appointmentForm.ts) ; listes (durées, motifs, responsables) servies par MMV.Api ; erreurs serveur par champ
-// sous les champs ; conflit horaire et autres refus 409 en bandeau. Échap ferme le panneau (confirmation si des
-// modifications ne sont pas enregistrées, y compris depuis le menu du Shell).
+// (appointmentForm.ts) ; listes (durées, motifs, collaborateurs éligibles) servies par MMV.Api ; le champ
+// Responsable suit le mode du motif (D-03-14 : personnalisé → obligatoire ; accueil → facultatif si une capacité
+// d'accueil est configurée) ; erreurs serveur par champ sous les champs ; conflit horaire, capacité d'accueil
+// atteinte et autres refus 409 en bandeau. Échap ferme le panneau (confirmation si des modifications ne sont pas
+// enregistrées, y compris depuis le menu du Shell).
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, AlertTriangle, Calendar, Check, Clock, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeft, Calendar, Check, Clock, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useMemo, useRef, useState } from "react";
 import { type FieldErrors, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
 import type { AppointmentDetail, AppointmentOptions } from "../api/appointments.ts";
@@ -19,6 +21,7 @@ import {
   type AppointmentFormValues,
   appointmentFormSchema,
   appointmentServerFieldErrors,
+  responsibleMode,
   toAppointmentInput,
 } from "./appointmentForm.ts";
 import { useCreateAppointment, useUpdateAppointment } from "./appointmentQueries.ts";
@@ -35,6 +38,8 @@ interface AppointmentFormPanelProps {
   /** Rendez-vous modifié ou déplacé (version figée à l'ouverture, D-03-06 par analogie). */
   appointment?: AppointmentDetail;
   canPickClient: boolean;
+  /** Prise de rendez-vous depuis une fiche client : libellé du retour (fermer = revenir à la fiche). */
+  returnLabel?: string;
   onClose: () => void;
   onSaved: (appointment: AppointmentDetail, mode: FormMode) => void;
 }
@@ -43,7 +48,7 @@ const TITLES: Record<FormMode, string> = { create: "Nouveau rendez-vous", edit: 
 const SUBMIT: Record<FormMode, string> = { create: "Créer", edit: "Enregistrer", move: "Déplacer" };
 const FIELD_ORDER: (keyof AppointmentFormValues)[] = ["clientId", "date", "time", "durationMinutes", "responsibleUserId", "reasonCode", "notes"];
 
-export function AppointmentFormPanel({ mode, options, initialValues, appointment, canPickClient, onClose, onSaved }: AppointmentFormPanelProps) {
+export function AppointmentFormPanel({ mode, options, initialValues, appointment, canPickClient, returnLabel, onClose, onSaved }: AppointmentFormPanelProps) {
   const create = useCreateAppointment();
   const update = useUpdateAppointment();
   const schema = useMemo(() => appointmentFormSchema(options), [options]);
@@ -72,6 +77,16 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
   const saving = create.isPending || update.isPending;
   const clientLabel = useWatch({ control, name: "clientLabel" });
   const clientId = useWatch({ control, name: "clientId" });
+  const reasonCode = useWatch({ control, name: "reasonCode" });
+  const attribution = responsibleMode(options, reasonCode);
+  const responsibleHint =
+    attribution === "optional"
+      ? `Rendez-vous d'accueil : sans responsable, il occupe une place d'accueil (${options.receptionCapacity} simultanée${options.receptionCapacity === 1 ? "" : "s"} au plus).`
+      : attribution === "reception-unavailable"
+        ? "Aucune capacité d'accueil n'est configurée : un responsable est nécessaire."
+        : attribution === "required"
+          ? "Rendez-vous personnalisé : responsable obligatoire."
+          : "Choisissez d'abord le motif.";
 
   const dirtyRef = useRef(false);
   useEffect(() => {
@@ -163,6 +178,14 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
             </div>
           )}
           <div className="rdv-side__body rdv-form">
+            {returnLabel && (
+              <div>
+                <Button variant="tertiary" size="sm" className="clients-back" onClick={requestClose}>
+                  <ArrowLeft size={16} aria-hidden="true" />
+                  {returnLabel}
+                </Button>
+              </div>
+            )}
             {move && editing ? (
               <div className="rdv-form__summary">
                 <p>
@@ -200,8 +223,15 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
                       </option>
                     ))}
                   </SelectField>
-                  <SelectField label="Responsable" required={options.responsibleRequired} icon={<User size={18} />} error={errors.responsibleUserId?.message} registration={register("responsibleUserId")}>
-                    <option value="">{options.responsibleRequired ? "Choisir…" : "Non attribué"}</option>
+                  <SelectField
+                    label="Responsable"
+                    required={attribution !== "optional"}
+                    icon={<User size={18} />}
+                    error={errors.responsibleUserId?.message}
+                    hint={responsibleHint}
+                    registration={register("responsibleUserId")}
+                  >
+                    <option value="">{attribution === "optional" ? "Non attribué (accueil)" : "Choisir…"}</option>
                     {options.responsibles.map((person) => (
                       <option key={person.id} value={person.id}>
                         {person.displayName}
@@ -373,6 +403,7 @@ function SelectField({
   label,
   registration,
   error,
+  hint,
   required,
   icon,
   children,
@@ -380,6 +411,7 @@ function SelectField({
   label: string;
   registration: UseFormRegisterReturn;
   error?: string;
+  hint?: string;
   required?: boolean;
   icon: ReactNode;
   children: ReactNode;
@@ -392,16 +424,26 @@ function SelectField({
       </Label>
       <div className={cn("clients-input rdv-select", error && "clients-input--error")}>
         <span className="clients-input__icon" aria-hidden="true">{icon}</span>
-        <select id={id} {...registration} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} aria-required={required || undefined}>
+        <select
+          id={id}
+          {...registration}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          aria-required={required || undefined}
+        >
           {children}
         </select>
       </div>
-      {error && (
+      {error ? (
         <div className="clients-field__error" id={`${id}-error`}>
           <AlertCircle size={14} aria-hidden="true" />
           {error}
         </div>
-      )}
+      ) : hint ? (
+        <div className="clients-field__hint" id={`${id}-hint`}>
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }

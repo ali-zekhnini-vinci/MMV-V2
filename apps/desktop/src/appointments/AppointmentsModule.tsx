@@ -1,11 +1,13 @@
-// Module Rendez-vous (sous-lot 03-B, Lot 2 DRAFT planches 28–43) : agenda Jour / Semaine (FullCalendar
-// Standard), panneau détail, formulaire, sélecteur de client, annulation / rétablissement, conflits, états.
-// Service DÉSACTIVÉ tant que les décisions D-03-13 à D-03-18, le contrat et la migration ne sont pas validés
-// par le propriétaire (appointmentsService.ts) : l'écran le dit, sans donnée fictive ni rendez-vous réel.
-// Route unique `/rendez-vous` : vue, date et panneau sont un état d'écran (rien n'est persisté).
-import { AlertTriangle, CalendarCheck, CalendarDays, CalendarX, CheckCircle2, ChevronLeft, ChevronRight, Info, Plus, RefreshCw, ServerOff, ShieldAlert, X } from "lucide-react";
+// Module Rendez-vous (sous-lots 03-B / 03-B2, Lot 2 DRAFT planches 28–43) : agenda Jour / Semaine (FullCalendar
+// Standard), panneau détail, formulaire, sélecteur de client, annulation / rétablissement, conflits, capacité
+// d'accueil, états. Raccordé à MMV.Api (03-B2) : tant que les paramètres du magasin ne sont pas configurés côté
+// serveur, l'écran l'indique (503 `appointments_not_configured`), sans donnée fictive.
+// Route unique `/rendez-vous` : vue, date et panneau sont un état d'écran (rien n'est persisté). Arrivée depuis
+// une fiche client (appointmentLaunch.ts) : formulaire de création ouvert avec ce client, retour à la fiche.
+import { AlertTriangle, ArrowLeft, CalendarCheck, CalendarDays, CalendarX, CheckCircle2, ChevronLeft, ChevronRight, Info, Plus, RefreshCw, ServerOff, Settings, ShieldAlert, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { Temporal } from "temporal-polyfill";
 import { type AppointmentDetail, type AppointmentOptions, type AppointmentSummary, getAppointment } from "../api/appointments.ts";
 import { ApiRequestError, unwrap } from "../api/queryClient.ts";
@@ -26,11 +28,12 @@ import {
 } from "./appointmentForm.ts";
 import { AppointmentDetailPanel } from "./AppointmentDetailPanel.tsx";
 import { AppointmentFormPanel, type FormMode } from "./AppointmentFormPanel.tsx";
+import { type AppointmentLaunchState, readAppointmentLaunch } from "./appointmentLaunch.ts";
 import { APPOINTMENTS_READ_ONLY_HINT, useAppointmentPermissions } from "./appointmentPermissions.ts";
 import { appointmentKeys, useAppointmentList, useAppointmentOptions, useCancelAppointment, useRestoreAppointment, useUpdateAppointment } from "./appointmentQueries.ts";
 import { AppointmentsCalendar } from "./AppointmentsCalendar.tsx";
 import { useAppointmentsService } from "./appointmentsService.ts";
-import { describeAppointmentFailure, type FailureView, formatWhen, reasonLabel } from "./appointmentsView.ts";
+import { describeAppointmentFailure, type FailureView, formatWhen, isStoreNotConfigured, reasonLabel } from "./appointmentsView.ts";
 import {
   type CalendarView,
   type CivilDate,
@@ -78,7 +81,15 @@ export function AppointmentsModule() {
     return (
       <div className="clients-view rdv-view">
         <PageHead subtitle="Agenda du magasin" />
-        {forbidden ? (
+        {isStoreNotConfigured(options.error) ? (
+          <StateBlock tone="info" icon={Settings} title="Agenda non configuré">
+            <p>
+              Les paramètres du magasin (fuseau horaire, plage d&apos;affichage, capacité d&apos;accueil) ne sont pas encore configurés sur le
+              serveur MMV.
+            </p>
+            <p>Aucun rendez-vous ne peut être créé ni affiché tant que cette configuration n&apos;est pas faite.</p>
+          </StateBlock>
+        ) : forbidden ? (
           <StateBlock tone="warning" icon={ShieldAlert} title="Accès non autorisé" role="alert">
             <p>Le serveur MMV a refusé l&apos;accès à l&apos;agenda pour votre compte (droit appointments.read).</p>
           </StateBlock>
@@ -102,6 +113,15 @@ export function AppointmentsModule() {
     );
   }
   return <Agenda options={options.data} />;
+}
+
+function BackButton({ back, onBack }: { back: { label: string; to: string }; onBack: (to: string) => void }) {
+  return (
+    <Button variant="tertiary" size="sm" className="rdv-notice__back" onClick={() => onBack(back.to)}>
+      <ArrowLeft size={16} aria-hidden="true" />
+      {back.label}
+    </Button>
+  );
 }
 
 function PageHead({ subtitle, actions, hint }: { subtitle: string; actions?: ReactNode; hint?: string }) {
@@ -129,10 +149,16 @@ type Panel =
 interface Notice {
   title: string;
   message: string;
+  /** Retour à la fiche client d'origine (prise de rendez-vous depuis la fiche). */
+  back?: { label: string; to: string };
 }
 
 function Agenda({ options }: { options: AppointmentOptions }) {
   const { now } = useAppointmentsService();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Lu une seule fois à l'arrivée : le client choisi sur sa fiche est conservé, sans seconde recherche.
+  const [launch] = useState<AppointmentLaunchState | null>(() => readAppointmentLaunch(location.state));
   const permissions = useAppointmentPermissions();
   const { authorized } = useAuth();
   const queryClient = useQueryClient();
@@ -144,7 +170,18 @@ function Agenda({ options }: { options: AppointmentOptions }) {
   const [view, setView] = useState<CalendarView>("day");
   const [date, setDate] = useState<CivilDate>(today);
   const [showCancelled, setShowCancelled] = useState(false);
-  const [panel, setPanel] = useState<Panel>({ kind: "none" });
+  const [panel, setPanel] = useState<Panel>(() =>
+    launch
+      ? {
+          kind: "form",
+          mode: "create",
+          values: { ...EMPTY_APPOINTMENT_FORM, ...launch.newAppointmentFor, date: formatIsoDate(todayIn(options.timeZone, now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : undefined)) },
+          key: 0,
+        }
+      : { kind: "none" },
+  );
+  // Une seule opération rattachée à la fiche d'origine : après elle, l'agenda reprend son fonctionnement normal.
+  const [origin, setOrigin] = useState<AppointmentLaunchState | null>(launch);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [gridFailure, setGridFailure] = useState<FailureView | null>(null);
@@ -169,6 +206,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
 
   const openForm = (mode: FormMode, values: AppointmentFormValues, appointment?: AppointmentDetail) => {
     clearMessages();
+    setOrigin(null);
     const key = formKey + 1;
     setFormKey(key);
     setPanel({ kind: "form", mode, values, appointment, key });
@@ -179,6 +217,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
 
   const openDetail = (appointment: Pick<AppointmentSummary, "id">) => {
     clearMessages();
+    setOrigin(null);
     setSelectedId(appointment.id);
     setPanel({ kind: "detail", id: appointment.id });
   };
@@ -191,9 +230,11 @@ function Agenda({ options }: { options: AppointmentOptions }) {
   const onSaved = (saved: AppointmentDetail, mode: FormMode) => {
     const name = appointmentClientName(saved);
     const when = formatWhen(saved.startsAtUtc, options.timeZone);
+    const back = origin && mode === "create" ? { label: `Retour à la fiche de ${origin.returnLabel}`, to: origin.returnTo } : undefined;
+    setOrigin(null);
     setNotice(
       mode === "create"
-        ? { title: "Rendez-vous créé", message: `${name} · ${when} · ${reasonLabel(options, saved.reasonCode)}.` }
+        ? { title: "Rendez-vous créé", message: `${name} · ${when} · ${reasonLabel(options, saved.reasonCode)}.`, back }
         : mode === "move"
           ? { title: "Rendez-vous déplacé", message: `${name} · ${when}.` }
           : { title: "Rendez-vous modifié", message: `${name} · ${when}.` },
@@ -315,6 +356,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
           <div>
             <div className="clients-notice__title">{notice.title}</div>
             <div className="clients-notice__text">{notice.message}</div>
+            {notice.back && <BackButton back={notice.back} onBack={(to) => navigate(to)} />}
           </div>
           <button type="button" className="clients-notice__close" aria-label="Fermer le message" onClick={() => setNotice(null)}>
             <X size={16} aria-hidden="true" />
@@ -462,7 +504,15 @@ function Agenda({ options }: { options: AppointmentOptions }) {
             initialValues={panel.values}
             appointment={panel.appointment}
             canPickClient={permissions.canPickClient}
-            onClose={() => setPanel(panel.appointment ? { kind: "detail", id: panel.appointment.id } : { kind: "none" })}
+            returnLabel={origin && panel.mode === "create" ? `Retour à la fiche de ${origin.returnLabel}` : undefined}
+            onClose={() => {
+              // Abandon d'une prise de rendez-vous lancée depuis une fiche : retour direct à cette fiche.
+              if (origin && panel.mode === "create") {
+                navigate(origin.returnTo);
+                return;
+              }
+              setPanel(panel.appointment ? { kind: "detail", id: panel.appointment.id } : { kind: "none" });
+            }}
             onSaved={onSaved}
           />
         )}

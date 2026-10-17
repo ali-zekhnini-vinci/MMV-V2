@@ -6,7 +6,8 @@ namespace MMV.PostgreSql.Tests;
 /// Inventaire des objets d'une base V2, relu par SELECT de catalogues dans une session forcée en lecture seule.
 /// Sert de contrôle avant migration (base vide), après la baseline 01B (baseline seule), après la migration
 /// d'identité de la phase 02 (baseline + schéma <c>auth</c> exact), après la migration Clients de la phase 03-A2
-/// (+ schéma <c>clients</c> exact) et après les tests d'écriture (aucun objet résiduel).
+/// (+ schéma <c>clients</c> exact), après la migration Rendez-vous de la phase 03-B2 (+ schéma <c>appointments</c>
+/// exact) et après les tests d'écriture (aucun objet résiduel).
 /// </summary>
 public sealed record SchemaState(
     string TransactionReadOnly,
@@ -26,27 +27,33 @@ public sealed record SchemaState(
     IReadOnlyList<string> ClientsColumns,
     IReadOnlyList<string> ClientsConstraints,
     IReadOnlyList<string> ClientsIndexes,
-    IReadOnlyList<string> ClientsSequences)
+    IReadOnlyList<string> ClientsSequences,
+    IReadOnlyList<string> AppointmentsColumns,
+    IReadOnlyList<string> AppointmentsConstraints,
+    IReadOnlyList<string> AppointmentsIndexes)
 {
     public const string BaselineMigrationId = "20261015125000_InitialBaseline";
     public const string AuthIdentityMigrationId = "20261015223849_AuthIdentity";
     public const string ClientsModuleMigrationId = "20261016230630_ClientsModule";
+    public const string AppointmentsModuleMigrationId = "20261017150504_AppointmentsModule";
 
-    /// <summary>Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule).</summary>
-    public static readonly string[] AllMigrationIds = [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId];
+    /// <summary>Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule).</summary>
+    public static readonly string[] AllMigrationIds =
+        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId];
 
     /// <summary>
-    /// Base vide, baseline seule, baseline + identité, ou baseline + identité + clients : aucun autre état n'est
+    /// Base vide, baseline seule, baseline + identité, + clients, ou + rendez-vous : aucun autre état n'est
     /// accepté. Les différences rapportées sont celles de l'état le plus récent.
     /// </summary>
     public IReadOnlyList<string> KnownStateDifferences(string role)
     {
-        if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0)
+        if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0
+            || ClientsModuleDifferences(role).Count == 0)
         {
             return [];
         }
 
-        return ClientsModuleDifferences(role);
+        return AppointmentsModuleDifferences(role);
     }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));
@@ -92,18 +99,34 @@ public sealed record SchemaState(
     /// <paramref name="role"/>. Les contraintes sont comparées par nom, type et règle de suppression ;
     /// leur texte SQL est relu dans le script approuvé.
     /// </summary>
-    public IReadOnlyList<string> AuthIdentityDifferences(string role) => IdentityDifferences(role, withClients: false);
+    public IReadOnlyList<string> AuthIdentityDifferences(string role) => IdentityDifferences(role, Stage.Auth);
 
     /// <summary>
     /// Exactement l'état produit par 0001, 0002 puis 0003_ClientsModule (docs/phase/03/sql/) : schéma <c>auth</c>
     /// inchangé (contrainte de permissions recréée sous le même nom), schéma <c>clients</c> exact.
     /// </summary>
-    public IReadOnlyList<string> ClientsModuleDifferences(string role) => IdentityDifferences(role, withClients: true);
+    public IReadOnlyList<string> ClientsModuleDifferences(string role) => IdentityDifferences(role, Stage.Clients);
 
-    private List<string> IdentityDifferences(string role, bool withClients)
+    /// <summary>
+    /// Exactement l'état produit par 0001 à 0004_AppointmentsModule (docs/phase/03/sql/) : schémas <c>auth</c> et
+    /// <c>clients</c> inchangés (contrainte de permissions recréée sous le même nom), schéma <c>appointments</c> exact.
+    /// </summary>
+    public IReadOnlyList<string> AppointmentsModuleDifferences(string role) => IdentityDifferences(role, Stage.Appointments);
+
+    private enum Stage
     {
+        Auth,
+        Clients,
+        Appointments,
+    }
+
+    private List<string> IdentityDifferences(string role, Stage stage)
+    {
+        var withClients = stage >= Stage.Clients;
+        var withAppointments = stage >= Stage.Appointments;
         var differences = new List<string>();
-        Expect(differences, "schémas", ExtraSchemas, withClients ? ["auth", "clients"] : ["auth"]);
+        string[] schemas = withAppointments ? ["appointments", "auth", "clients"] : withClients ? ["auth", "clients"] : ["auth"];
+        Expect(differences, "schémas", ExtraSchemas, schemas);
         string[] authRelations =
         [
             "bootstrap_record kind=r", "pk_bootstrap_record kind=i",
@@ -117,6 +140,7 @@ public sealed record SchemaState(
             $"public.__EFMigrationsHistory kind=r owner={role} acl=default",
             .. authRelations.Select(r => $"auth.{r} owner={role} acl=default"),
             .. (withClients ? ClientsRelations : []).Select(r => $"clients.{r} owner={role} acl=default"),
+            .. (withAppointments ? AppointmentsRelations : []).Select(r => $"appointments.{r} owner={role} acl=default"),
         ]);
         Expect(differences, "routines", Routines, []);
         Expect(differences, "types", Types, []);
@@ -127,6 +151,7 @@ public sealed record SchemaState(
             $"{BaselineMigrationId} 10.0.4",
             $"{AuthIdentityMigrationId} 10.0.4",
             .. (withClients ? [$"{ClientsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
+            .. (withAppointments ? [$"{AppointmentsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
         ]);
         Expect(differences, "colonnes auth", AuthColumns,
         [
@@ -194,8 +219,81 @@ public sealed record SchemaState(
         Expect(differences, "séquences clients", ClientsSequences, withClients
             ? ["client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-"]
             : []);
+        Expect(differences, "colonnes appointments", AppointmentsColumns, withAppointments ? AppointmentsColumnsExpected : []);
+        Expect(differences, "contraintes appointments", AppointmentsConstraints, withAppointments ? AppointmentsConstraintsExpected : []);
+        Expect(differences, "index appointments", AppointmentsIndexes, withAppointments ? AppointmentsIndexesExpected : []);
         return differences;
     }
+
+    private static readonly string[] AppointmentsRelations =
+    [
+        "appointments kind=r", "pk_appointments kind=i", "responsibles kind=r", "pk_responsibles kind=i",
+        "ix_appointments_cancelled_by_user_id kind=i", "ix_appointments_client_starts_at kind=i",
+        "ix_appointments_created_by_user_id kind=i", "ix_appointments_responsible_planned kind=i",
+        "ix_appointments_starts_at kind=i", "ix_appointments_unassigned_planned kind=i", "ix_appointments_updated_by_user_id kind=i",
+    ];
+
+    // Aucune coordonnée client, aucune donnée de santé, aucune colonne de version (xmin système).
+    private static readonly string[] AppointmentsColumnsExpected =
+    [
+        "appointments.cancellation_reason character varying(200) notnull=f",
+        "appointments.cancelled_at_utc timestamp with time zone notnull=f",
+        "appointments.cancelled_by_user_id uuid notnull=f",
+        "appointments.client_id uuid notnull=t",
+        "appointments.created_at_utc timestamp with time zone notnull=t",
+        "appointments.created_by_user_id uuid notnull=t",
+        "appointments.ends_at_utc timestamp with time zone notnull=t",
+        "appointments.id uuid notnull=t",
+        "appointments.notes character varying(1000) notnull=f",
+        "appointments.reason_code character varying(32) notnull=t",
+        "appointments.responsible_user_id uuid notnull=f",
+        "appointments.starts_at_utc timestamp with time zone notnull=t",
+        "appointments.status character varying(16) notnull=t",
+        "appointments.updated_at_utc timestamp with time zone notnull=t",
+        "appointments.updated_by_user_id uuid notnull=t",
+        "responsibles.created_at_utc timestamp with time zone notnull=t",
+        "responsibles.is_eligible boolean notnull=t",
+        "responsibles.updated_at_utc timestamp with time zone notnull=t",
+        "responsibles.user_id uuid notnull=t",
+    ];
+
+    private static readonly string[] AppointmentsConstraintsExpected =
+    [
+        "appointments.ck_appointments_cancellation_consistency c -",
+        "appointments.ck_appointments_cancellation_reason_planned c -",
+        "appointments.ck_appointments_duration_range c -",
+        "appointments.ck_appointments_ends_after_starts c -",
+        "appointments.ck_appointments_reason_code_format c -",
+        "appointments.ck_appointments_status c -",
+        "appointments.ck_appointments_updated_after_created c -",
+        "appointments.fk_appointments_cancelled_by_users f r",
+        "appointments.fk_appointments_clients f r",
+        "appointments.fk_appointments_created_by_users f r",
+        "appointments.fk_appointments_responsible_users f r",
+        "appointments.fk_appointments_updated_by_users f r",
+        "appointments.pk_appointments p -",
+        "responsibles.ck_responsibles_updated_after_created c -",
+        "responsibles.fk_responsibles_users f r",
+        "responsibles.pk_responsibles p -",
+        // PostgreSQL 18 : NOT NULL catalogués dans pg_constraint, noms générés <table>_<colonne>_not_null.
+        .. new[] { "id", "client_id", "starts_at_utc", "ends_at_utc", "reason_code", "status", "created_at_utc", "created_by_user_id", "updated_at_utc", "updated_by_user_id" }
+            .Select(c => $"appointments.appointments_{c}_not_null n -"),
+        .. new[] { "user_id", "is_eligible", "created_at_utc", "updated_at_utc" }
+            .Select(c => $"responsibles.responsibles_{c}_not_null n -"),
+    ];
+
+    private static readonly string[] AppointmentsIndexesExpected =
+    [
+        "ix_appointments_cancelled_by_user_id unique=f",
+        "ix_appointments_client_starts_at unique=f",
+        "ix_appointments_created_by_user_id unique=f",
+        "ix_appointments_responsible_planned unique=f",
+        "ix_appointments_starts_at unique=f",
+        "ix_appointments_unassigned_planned unique=f",
+        "ix_appointments_updated_by_user_id unique=f",
+        "pk_appointments unique=t",
+        "pk_responsibles unique=t",
+    ];
 
     private static readonly string[] ClientsRelations =
     [
@@ -270,7 +368,10 @@ public sealed record SchemaState(
         Section("colonnes clients", ClientsColumns),
         Section("contraintes clients", ClientsConstraints),
         Section("index clients", ClientsIndexes),
-        Section("séquences clients", ClientsSequences));
+        Section("séquences clients", ClientsSequences),
+        Section("colonnes appointments", AppointmentsColumns),
+        Section("contraintes appointments", AppointmentsConstraints),
+        Section("index appointments", AppointmentsIndexes));
 
     private static string Section(string name, IReadOnlyList<string> items) =>
         $"{name} ({items.Count}) : " + (items.Count == 0 ? "—" : string.Join(" | ", items));
@@ -368,7 +469,10 @@ public static class SchemaInspection
                                         WHERE d.objid = c.oid AND d.classid = 'pg_class'::regclass AND d.deptype = 'a'), '-'))
                 FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid JOIN pg_namespace n ON n.oid = c.relnamespace
                 WHERE n.nspname = 'clients'
-                """, cancellationToken));
+                """, cancellationToken),
+            AppointmentsColumns: await ListAsync(connection, ColumnsSql("appointments"), cancellationToken),
+            AppointmentsConstraints: await ListAsync(connection, ConstraintsSql("appointments"), cancellationToken),
+            AppointmentsIndexes: await ListAsync(connection, IndexesSql("appointments"), cancellationToken));
     }
 
     private static string ColumnsSql(string schema) => $"""

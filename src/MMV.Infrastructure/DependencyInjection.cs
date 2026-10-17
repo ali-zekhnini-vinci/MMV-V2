@@ -2,8 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using MMV.Application.Appointments;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
+using MMV.Infrastructure.Appointments;
 using MMV.Infrastructure.Clients;
 using MMV.Infrastructure.Identity;
 using MMV.Infrastructure.Persistence;
@@ -16,7 +18,7 @@ public static class DependencyInjection
     public const string ConnectionStringName = "Mmv";
 
     /// <summary>
-    /// Enregistre la persistance PostgreSQL, les services d'identité et le module Clients. La chaîne de connexion est lue
+    /// Enregistre la persistance PostgreSQL, les services d'identité et les modules Clients et Rendez-vous. La chaîne de connexion est lue
     /// à la première résolution du contexte, jamais au démarrage : l'API démarre sans base configurée.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
@@ -43,6 +45,14 @@ public static class DependencyInjection
         // Clients (phase 03-A2).
         services.TryAddScoped<IClientStore, ClientStore>();
         services.TryAddScoped<ClientService>();
+
+        // Rendez-vous (phase 03-B2). Paramètres du magasin : MMV.Api les lit dans la section « Appointments » et
+        // les enregistre avant cet appel ; à défaut, service non configuré (aucune valeur inventée).
+        services.TryAddSingleton(AppointmentSettings.NotConfigured("Paramètres Appointments non fournis à MMV.Infrastructure."));
+        services.TryAddScoped<IAppointmentStore, AppointmentStore>();
+        services.TryAddScoped<IAppointmentResponsibleStore, AppointmentResponsibleStore>();
+        services.TryAddScoped<AppointmentService>();
+        services.TryAddScoped<ResponsibleAdministrationService>();
 
         return services;
     }

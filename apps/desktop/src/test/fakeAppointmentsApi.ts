@@ -1,9 +1,9 @@
-// Routes /api/appointments du double de test (src/test/fakeMmvApi.ts) — contrat PROPOSÉ en 03-B
-// (docs/phase/03/API_APPOINTMENTS_PROPOSED.md), NON implémenté par MMV.Api. Données FICTIVES fournies par
-// chaque test, en mémoire du processus de test uniquement. Permissions PROPOSÉES appointments.read / write /
-// cancel (D-03-17). Le double reproduit le contrat (statuts, codes, ordre des contrôles) et la règle de conflit
-// PROPOSÉE (D-03-15 : chevauchement de deux rendez-vous non annulés du même responsable, intervalles
-// semi-ouverts) ; il ne prouve aucune règle serveur.
+// Routes /api/appointments du double de test (src/test/fakeMmvApi.ts) — contrat IMPLÉMENTÉ par MMV.Api en 03-B2
+// (docs/phase/03/API_APPOINTMENTS.md, instantané src/api/contract/appointments.openapi.json). Données FICTIVES
+// fournies par chaque test, en mémoire du processus de test uniquement. Permissions appointments.read / write /
+// cancel (D-03-17). Le double reproduit le contrat (statuts, codes, ordre des contrôles), les deux modes
+// d'attribution (D-03-14), le chevauchement par collaborateur et la capacité d'accueil instant par instant
+// (D-03-15) ; il ne prouve aucune règle serveur (prouvées par tests/MMV.Api.Tests et tests/MMV.PostgreSql.Tests).
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { FakeClientRecord } from "./fakeClientsApi.ts";
 
@@ -15,7 +15,7 @@ export interface FakeAppointmentSeed {
   startsAtUtc: string;
   durationMinutes: number;
   reasonCode: string;
-  /** Indice dans `responsibles` des options ; absent = non attribué. */
+  /** Indice dans `responsibles` des options ; absent = non attribué (rendez-vous d'accueil). */
   responsible?: number;
   notes?: string | null;
   cancelled?: { reason: string | null };
@@ -24,9 +24,10 @@ export interface FakeAppointmentSeed {
 export interface FakeAppointmentOptions {
   timeZone: string;
   durationsMinutes: number[];
-  reasons: { code: string; label: string }[];
+  startStepMinutes: number;
+  reasons: { code: string; label: string; responsibleRequired: boolean }[];
   responsibles: { id: string; displayName: string }[];
-  responsibleRequired: boolean;
+  receptionCapacity: number | null;
   displayStartTime: string;
   displayEndTime: string;
   hiddenWeekdays: number[];
@@ -39,6 +40,8 @@ export interface FakeAppointmentsOptions {
   appointmentsListStatus?: number;
   /** Retarde les réponses /api/appointments (états de chargement). */
   appointmentsDelayMs?: number;
+  /** Magasin non configuré côté serveur : 503 `appointments_not_configured` après contrôle des droits. */
+  appointmentsNotConfigured?: boolean;
 }
 
 export interface FakeAppointmentRecord {
@@ -57,6 +60,7 @@ export interface FakeAppointmentRecord {
   version: number;
   notes: string | null;
   cancelledAtUtc: string | null;
+  cancelledByDisplayName: string | null;
   cancellationReason: string | null;
   createdAtUtc: string;
   updatedAtUtc: string;
@@ -64,20 +68,28 @@ export interface FakeAppointmentRecord {
 
 type Send = (response: ServerResponse, status: number, body?: unknown) => void;
 
-/** Paramètres FICTIFS du double : ils n'anticipent aucune décision D-03-13 / D-03-14 / D-03-18. */
+/**
+ * Paramètres du double : motifs et durées APPROUVÉS (D-03-13, D-03-18) ; fuseau, plage affichée, capacité et
+ * collaborateurs sont des valeurs FICTIVES de magasin (aucune localisation réelle n'est présumée).
+ */
 export const FAKE_APPOINTMENT_OPTIONS: FakeAppointmentOptions = {
-  timeZone: "Europe/Paris",
-  durationsMinutes: [15, 30, 45, 60],
+  timeZone: "Europe/Brussels",
+  durationsMinutes: [15, 30, 45, 60, 90, 120],
+  startStepMinutes: 5,
   reasons: [
-    { code: "motif-a", label: "Motif fictif A" },
-    { code: "motif-b", label: "Motif fictif B" },
-    { code: "motif-c", label: "Motif fictif C" },
+    { code: "conseil_devis", label: "Conseil / Devis", responsibleRequired: true },
+    { code: "choix_equipement", label: "Choix de monture et verres", responsibleRequired: true },
+    { code: "prise_mesures", label: "Prise de mesures", responsibleRequired: true },
+    { code: "essayage_ajustement", label: "Essayage / Ajustement", responsibleRequired: true },
+    { code: "retrait_commande", label: "Retrait de commande", responsibleRequired: false },
+    { code: "sav_reparation", label: "SAV / Réparation", responsibleRequired: false },
+    { code: "autre", label: "Autre motif", responsibleRequired: true },
   ],
   responsibles: [
     { id: "0199b000-0000-7000-8000-000000000001", displayName: "Responsable Un" },
     { id: "0199b000-0000-7000-8000-000000000002", displayName: "Responsable Deux" },
   ],
-  responsibleRequired: false,
+  receptionCapacity: 1,
   displayStartTime: "09:00",
   displayEndTime: "19:00",
   hiddenWeekdays: [0],
@@ -111,6 +123,7 @@ export function seedAppointments(
       version: 1,
       notes: seed.notes ?? null,
       cancelledAtUtc: seed.cancelled ? "2026-07-01T08:00:00Z" : null,
+      cancelledByDisplayName: seed.cancelled ? "Agent Fictif" : null,
       cancellationReason: seed.cancelled?.reason ?? null,
       createdAtUtc: "2026-07-01T08:00:00Z",
       updatedAtUtc: "2026-07-01T08:00:00Z",
@@ -134,13 +147,12 @@ const SUMMARY_FIELDS = [
   "version",
 ] as const;
 
-/** Ligne d'agenda : sans notes ni audit (minimisation, comme la liste Clients). */
+/** Ligne d'agenda : sans notes ni audit (minimisation, D-03-17). */
 const summary = (record: FakeAppointmentRecord) => Object.fromEntries(SUMMARY_FIELDS.map((field) => [field, record[field]]));
 
-/** Règle PROPOSÉE D-03-15 : même responsable, rendez-vous non annulés, [début, fin[ qui se recouvrent. */
-const overlaps = (records: readonly FakeAppointmentRecord[], candidate: Pick<FakeAppointmentRecord, "id" | "responsibleUserId" | "startsAtUtc" | "endsAtUtc">) =>
-  candidate.responsibleUserId !== null &&
-  records.some(
+type Slot = Pick<FakeAppointmentRecord, "id" | "responsibleUserId" | "startsAtUtc" | "endsAtUtc">;
+const overlapping = (records: readonly FakeAppointmentRecord[], candidate: Slot) =>
+  records.filter(
     (other) =>
       other.id !== candidate.id &&
       other.status === "planned" &&
@@ -149,18 +161,51 @@ const overlaps = (records: readonly FakeAppointmentRecord[], candidate: Pick<Fak
       Date.parse(candidate.startsAtUtc) < Date.parse(other.endsAtUtc),
   );
 
+/** Occupation maximale simultanée des rendez-vous d'accueil sur le créneau (balayage, fin avant début). */
+function maxConcurrent(others: readonly FakeAppointmentRecord[], candidate: Slot): number {
+  const from = Date.parse(candidate.startsAtUtc);
+  const to = Date.parse(candidate.endsAtUtc);
+  const events = others.flatMap((other) => [
+    [Math.max(from, Date.parse(other.startsAtUtc)), 1],
+    [Math.min(to, Date.parse(other.endsAtUtc)), -1],
+  ]);
+  events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let current = 0;
+  let max = 0;
+  for (const [, delta] of events) {
+    current += delta;
+    max = Math.max(max, current);
+  }
+  return max;
+}
+
+/** `null` si le créneau est disponible, sinon le code 409 du contrat. */
+function availability(records: readonly FakeAppointmentRecord[], candidate: Slot, options: FakeAppointmentOptions): string | null {
+  const others = overlapping(records, candidate);
+  if (candidate.responsibleUserId !== null) return others.length > 0 ? "appointment_conflict" : null;
+  return maxConcurrent(others, candidate) + 1 > (options.receptionCapacity ?? 0) ? "reception_capacity_full" : null;
+}
+
+const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|\+00:00)$/;
+
 function validate(body: Record<string, unknown>, clients: readonly FakeClientRecord[], options: FakeAppointmentOptions): Record<string, string[]> | null {
   const errors: Record<string, string[]> = {};
   const client = clients.find((candidate) => candidate.id === body.clientId);
   if (typeof body.clientId !== "string" || body.clientId === "") errors.clientId = ["required"];
   else if (!client) errors.clientId = ["not_found"];
-  if (typeof body.startsAtUtc !== "string" || Number.isNaN(Date.parse(body.startsAtUtc))) errors.startsAtUtc = ["invalid_format"];
-  if (typeof body.durationMinutes !== "number" || !options.durationsMinutes.includes(body.durationMinutes)) errors.durationMinutes = ["not_allowed"];
-  if (typeof body.reasonCode !== "string" || !options.reasons.some((reason) => reason.code === body.reasonCode)) errors.reasonCode = ["not_allowed"];
-  if (body.responsibleUserId === null) {
-    if (options.responsibleRequired) errors.responsibleUserId = ["required"];
-  } else if (!options.responsibles.some((person) => person.id === body.responsibleUserId)) errors.responsibleUserId = ["not_found"];
-  if (body.notes !== null && (typeof body.notes !== "string" || body.notes.length > 1000)) errors.notes = ["too_long"];
+  if (typeof body.startsAtUtc !== "string" || body.startsAtUtc === "") errors.startsAtUtc = ["required"];
+  else if (!UTC_INSTANT.test(body.startsAtUtc)) errors.startsAtUtc = ["invalid_format"];
+  else if (new Date(body.startsAtUtc).getUTCMinutes() % options.startStepMinutes !== 0) errors.startsAtUtc = ["invalid_step"];
+  if (typeof body.durationMinutes !== "number") errors.durationMinutes = ["required"];
+  else if (!options.durationsMinutes.includes(body.durationMinutes)) errors.durationMinutes = ["not_allowed"];
+  const reason = options.reasons.find((candidate) => candidate.code === body.reasonCode);
+  if (typeof body.reasonCode !== "string" || body.reasonCode === "") errors.reasonCode = ["required"];
+  else if (!reason) errors.reasonCode = ["not_allowed"];
+  if (body.responsibleUserId === null || body.responsibleUserId === undefined) {
+    if (reason?.responsibleRequired) errors.responsibleUserId = ["required"];
+    else if (reason && options.receptionCapacity === null) errors.responsibleUserId = ["reception_not_configured"];
+  } else if (!options.responsibles.some((person) => person.id === body.responsibleUserId)) errors.responsibleUserId = ["not_eligible"];
+  if (body.notes !== null && body.notes !== undefined && (typeof body.notes !== "string" || body.notes.length > 1000)) errors.notes = ["too_long"];
   return Object.keys(errors).length > 0 ? errors : null;
 }
 
@@ -174,6 +219,7 @@ export async function handleAppointments(
     options: FakeAppointmentsOptions;
     send: Send;
     readBody: () => Promise<unknown>;
+    userDisplayName?: string;
   },
 ): Promise<void> {
   const { permissions, appointments, clients, send } = context;
@@ -184,13 +230,14 @@ export async function handleAppointments(
   const can = (permission: string) => permissions.includes(permission);
   if (context.options.appointmentsDelayMs) await new Promise((resolve) => setTimeout(resolve, context.options.appointmentsDelayMs));
 
-  if (method === "GET" && id === "options") {
-    if (!can(APPOINTMENT_PERMISSIONS.read)) return send(response, 403, { code: "forbidden" });
-    return send(response, 200, settings);
-  }
+  const required =
+    method === "GET" ? APPOINTMENT_PERMISSIONS.read : action === undefined ? APPOINTMENT_PERMISSIONS.write : APPOINTMENT_PERMISSIONS.cancel;
+  if (!can(required)) return send(response, 403, { code: "forbidden" });
+  if (context.options.appointmentsNotConfigured) return send(response, 503, { code: "appointments_not_configured" });
+
+  if (method === "GET" && id === "options") return send(response, 200, settings);
 
   if (method === "GET" && id === undefined) {
-    if (!can(APPOINTMENT_PERMISSIONS.read)) return send(response, 403, { code: "forbidden" });
     if (context.options.appointmentsListStatus) return send(response, context.options.appointmentsListStatus, { code: "forced" });
     const from = Date.parse(url.searchParams.get("from") ?? "");
     const to = Date.parse(url.searchParams.get("to") ?? "");
@@ -223,31 +270,37 @@ export async function handleAppointments(
       startsAtUtc: new Date(input.startsAtUtc as string).toISOString().replace(".000Z", "Z"),
       endsAtUtc: addMinutes(input.startsAtUtc as string, input.durationMinutes as number),
       reasonCode: input.reasonCode,
-      notes: (input.notes as string | null) ?? null,
+      notes: typeof input.notes === "string" && input.notes.trim() !== "" ? input.notes.trim() : null,
       updatedAtUtc: now,
     });
   };
 
   if (method === "POST" && id === undefined) {
-    if (!can(APPOINTMENT_PERMISSIONS.write)) return send(response, 403, { code: "forbidden" });
-    if (body === null) return send(response, 400, { code: "invalid_body" });
+    if (body === null || "version" in body) return send(response, 400, { code: "invalid_body" });
     const errors = validate(body, clients, settings);
     if (errors) return send(response, 422, { code: "validation_failed", errors });
     if (clients.find((candidate) => candidate.id === body.clientId)?.status === "archived") return send(response, 409, { code: "client_archived" });
-    const record = { id: fakeId(appointments.length + 1), status: "planned", version: 1, cancelledAtUtc: null, cancellationReason: null, createdAtUtc: now } as FakeAppointmentRecord;
+    const record = {
+      id: fakeId(appointments.length + 1),
+      status: "planned",
+      version: 1,
+      cancelledAtUtc: null,
+      cancelledByDisplayName: null,
+      cancellationReason: null,
+      createdAtUtc: now,
+    } as FakeAppointmentRecord;
     fill(record, body);
-    if (overlaps(appointments, record)) return send(response, 409, { code: "appointment_conflict" });
+    const refusal = availability(appointments, record, settings);
+    if (refusal) return send(response, 409, { code: refusal });
     appointments.push(record);
     return send(response, 201, record);
   }
 
   const record = appointments.find((candidate) => candidate.id === id);
   if (method === "GET" && action === undefined) {
-    if (!can(APPOINTMENT_PERMISSIONS.read)) return send(response, 403, { code: "forbidden" });
     return record ? send(response, 200, record) : send(response, 404, { code: "appointment_not_found" });
   }
 
-  if (!can(action === undefined ? APPOINTMENT_PERMISSIONS.write : APPOINTMENT_PERMISSIONS.cancel)) return send(response, 403, { code: "forbidden" });
   if (!record) return send(response, 404, { code: "appointment_not_found" });
   if (body === null) return send(response, 400, { code: "invalid_body" });
   if (typeof body.version !== "number") return send(response, 400, { code: "version_required" });
@@ -257,25 +310,44 @@ export async function handleAppointments(
     if (record.status === "cancelled") return send(response, 409, { code: "appointment_cancelled" });
     const errors = validate(body, clients, settings);
     if (errors) return send(response, 422, { code: "validation_failed", errors });
+    if (record.clientArchived || clients.find((candidate) => candidate.id === body.clientId)?.status === "archived") {
+      return send(response, 409, { code: "client_archived" });
+    }
     const next = { ...record };
     fill(next, body);
-    if (overlaps(appointments, next)) return send(response, 409, { code: "appointment_conflict" });
+    const refusal = availability(appointments, next, settings);
+    if (refusal) return send(response, 409, { code: refusal });
     Object.assign(record, next, { version: record.version + 1 });
     return send(response, 200, record);
   }
   if (method === "POST" && action === "cancel") {
     if (record.status === "cancelled") return send(response, 409, { code: "appointment_cancelled" });
-    if (body.reason !== null && (typeof body.reason !== "string" || body.reason.length > 200)) {
+    if (body.reason !== null && body.reason !== undefined && (typeof body.reason !== "string" || body.reason.length > 200)) {
       return send(response, 422, { code: "validation_failed", errors: { reason: ["too_long"] } });
     }
-    Object.assign(record, { status: "cancelled", cancelledAtUtc: now, cancellationReason: body.reason || null, version: record.version + 1, updatedAtUtc: now });
+    Object.assign(record, {
+      status: "cancelled",
+      cancelledAtUtc: now,
+      cancelledByDisplayName: context.userDisplayName ?? null,
+      cancellationReason: typeof body.reason === "string" && body.reason.trim() !== "" ? body.reason.trim() : null,
+      version: record.version + 1,
+      updatedAtUtc: now,
+    });
     return send(response, 200, record);
   }
   if (method === "POST" && action === "restore") {
     if (record.status === "planned") return send(response, 409, { code: "appointment_not_cancelled" });
     if (record.clientArchived) return send(response, 409, { code: "client_archived" });
-    if (overlaps(appointments, record)) return send(response, 409, { code: "appointment_conflict" });
-    Object.assign(record, { status: "planned", cancelledAtUtc: null, cancellationReason: null, version: record.version + 1, updatedAtUtc: now });
+    const refusal = availability(appointments, record, settings);
+    if (refusal) return send(response, 409, { code: refusal });
+    Object.assign(record, {
+      status: "planned",
+      cancelledAtUtc: null,
+      cancelledByDisplayName: null,
+      cancellationReason: null,
+      version: record.version + 1,
+      updatedAtUtc: now,
+    });
     return send(response, 200, record);
   }
   return send(response, 404, { code: "not_found" });

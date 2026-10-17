@@ -1,20 +1,21 @@
-// Contrat HTTP Rendez-vous — PROPOSÉ (sous-lot 03-B, 17/10/2026), NON implémenté par MMV.Api.
-// Référence : docs/phase/03/API_APPOINTMENTS_PROPOSED.md. Les décisions D-03-13 à D-03-18 sont `PROPOSED` :
-// tant que le propriétaire ne les a pas ratifiées, aucune route n'existe côté serveur et le service est
-// désactivé côté client (appointments/appointmentsService.ts). Les règles qui dépendent de ces décisions
-// (fuseau, durées, motifs, responsables, conflits, passé) sont fournies ou décidées par le SERVEUR :
-// l'interface ne les déduit pas des maquettes. Parseurs stricts = garde à l'exécution.
+// Contrat HTTP Rendez-vous — IMPLÉMENTÉ par MMV.Api (sous-lot 03-B2, 17/10/2026 ; décisions D-03-13 à D-03-18
+// approuvées). Référence : docs/phase/03/API_APPOINTMENTS.md ; instantané OpenAPI contract/appointments.openapi.json
+// (contrôlé des deux côtés). Fuseau, durées, pas, motifs et leur mode d'attribution, collaborateurs éligibles,
+// capacité d'accueil et plage affichée sont SERVIS par le serveur ; conflits, capacité, passé, changements d'heure
+// et client archivé sont DÉCIDÉS par le serveur. Parseurs stricts = garde à l'exécution.
 import { type ApiResult, requestJson } from "./client.ts";
 
 export type AppointmentStatus = "planned" | "cancelled";
 
-/** Motif proposé par le serveur (code stable + libellé affiché), D-03-18. */
+/** Motif servi par le serveur (code stable + libellé affiché), D-03-18. */
 export interface AppointmentReason {
   code: string;
   label: string;
+  /** D-03-14 : `true` = rendez-vous personnalisé (responsable obligatoire) ; `false` = rendez-vous d'accueil. */
+  responsibleRequired: boolean;
 }
 
-/** Compte MMV actif pouvant être responsable d'un rendez-vous (D-03-14) : identifiant et nom affiché seulement. */
+/** Collaborateur actif ET explicitement éligible (D-03-14) : identifiant et nom affiché seulement. */
 export interface AppointmentResponsible {
   id: string;
   displayName: string;
@@ -26,11 +27,13 @@ export interface AppointmentOptions {
   timeZone: string;
   /** Durées autorisées en minutes (D-03-13), sans valeur par défaut. */
   durationsMinutes: number[];
+  /** Pas du début en minutes (heure du magasin). */
+  startStepMinutes: number;
   reasons: AppointmentReason[];
   responsibles: AppointmentResponsible[];
-  /** D-03-14 : responsable obligatoire ou facultatif. */
-  responsibleRequired: boolean;
-  /** Plage horaire AFFICHÉE (`HH:mm`), non bloquante (D-03-13). */
+  /** Capacité d'accueil (D-03-15) ; `null` = aucun rendez-vous sans responsable. */
+  receptionCapacity: number | null;
+  /** Plage horaire AFFICHÉE (`HH:mm`, fin `24:00` admise), non bloquante (D-03-13). */
   displayStartTime: string;
   displayEndTime: string;
   /** Jours masqués de la grille (0 = dimanche … 6 = samedi), affichage seulement. */
@@ -59,6 +62,8 @@ export interface AppointmentDetail extends AppointmentSummary {
   /** Notes internes (≤ 1000, consigne : aucune donnée de santé). */
   notes: string | null;
   cancelledAtUtc: string | null;
+  /** Auteur de l'annulation (nom affiché), D-03-16. */
+  cancelledByDisplayName: string | null;
   cancellationReason: string | null;
   createdAtUtc: string;
   updatedAtUtc: string;
@@ -87,21 +92,30 @@ export const APPOINTMENT_MAX_RANGE_DAYS = 31;
 export const APPOINTMENT_NOTES_MAX_LENGTH = 1000;
 export const APPOINTMENT_CANCELLATION_REASON_MAX_LENGTH = 200;
 
-/** Codes 409 du contrat proposé (corps `{ code }`), chacun traduit par un message borné côté écran. */
+/** Codes 409 du contrat (corps `{ code }`), chacun traduit par un message borné côté écran. */
 export const APPOINTMENT_CONFLICT_CODES = [
   "version_conflict",
   "appointment_conflict",
+  "reception_capacity_full",
+  "reception_not_configured",
+  "responsible_unavailable",
   "client_archived",
   "appointment_cancelled",
   "appointment_not_cancelled",
   "appointment_past",
 ] as const;
 
+/** 503 : paramètres du magasin non configurés côté serveur (fuseau, plage affichée). */
+export const APPOINTMENTS_NOT_CONFIGURED_CODE = "appointments_not_configured";
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 const isNullableString = (value: unknown): value is string | null => value === null || typeof value === "string";
 const isVersion = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+const END_TIME_PATTERN = /^(([01]\d|2[0-3]):[0-5]\d|24:00)$/;
+const isPositiveInteger = (value: unknown, max: number): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value > 0 && value <= max;
 
 export function parseAppointmentSummary(value: unknown): AppointmentSummary | null {
   if (!isRecord(value)) return null;
@@ -160,17 +174,18 @@ export function parseAppointmentSummary(value: unknown): AppointmentSummary | nu
 export function parseAppointmentDetail(value: unknown): AppointmentDetail | null {
   const summary = parseAppointmentSummary(value);
   if (summary === null || !isRecord(value)) return null;
-  const { notes, cancelledAtUtc, cancellationReason, createdAtUtc, updatedAtUtc } = value;
+  const { notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc } = value;
   if (
     !isNullableString(notes) ||
     !isNullableString(cancelledAtUtc) ||
+    !isNullableString(cancelledByDisplayName) ||
     !isNullableString(cancellationReason) ||
     typeof createdAtUtc !== "string" ||
     typeof updatedAtUtc !== "string"
   ) {
     return null;
   }
-  return { ...summary, notes, cancelledAtUtc, cancellationReason, createdAtUtc, updatedAtUtc };
+  return { ...summary, notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc };
 }
 
 export function parseAppointmentList(body: unknown): AppointmentSummary[] | null {
@@ -186,21 +201,36 @@ export function parseAppointmentList(body: unknown): AppointmentSummary[] | null
 
 export function parseAppointmentOptions(body: unknown): AppointmentOptions | null {
   if (!isRecord(body)) return null;
-  const { timeZone, durationsMinutes, reasons, responsibles, responsibleRequired, displayStartTime, displayEndTime, hiddenWeekdays } = body;
+  const {
+    timeZone,
+    durationsMinutes,
+    startStepMinutes,
+    reasons,
+    responsibles,
+    receptionCapacity,
+    displayStartTime,
+    displayEndTime,
+    hiddenWeekdays,
+  } = body;
   if (
     typeof timeZone !== "string" ||
     timeZone.length === 0 ||
     !Array.isArray(durationsMinutes) ||
-    !durationsMinutes.every((minutes) => typeof minutes === "number" && Number.isSafeInteger(minutes) && minutes > 0 && minutes <= 24 * 60) ||
+    durationsMinutes.length === 0 ||
+    !durationsMinutes.every((minutes) => isPositiveInteger(minutes, 24 * 60)) ||
+    !isPositiveInteger(startStepMinutes, 60) ||
     !Array.isArray(reasons) ||
-    !reasons.every((reason) => isRecord(reason) && typeof reason.code === "string" && typeof reason.label === "string") ||
+    reasons.length === 0 ||
+    !reasons.every(
+      (reason) => isRecord(reason) && typeof reason.code === "string" && typeof reason.label === "string" && typeof reason.responsibleRequired === "boolean",
+    ) ||
     !Array.isArray(responsibles) ||
     !responsibles.every((person) => isRecord(person) && typeof person.id === "string" && typeof person.displayName === "string") ||
-    typeof responsibleRequired !== "boolean" ||
+    !(receptionCapacity === null || isPositiveInteger(receptionCapacity, 10_000)) ||
     typeof displayStartTime !== "string" ||
     typeof displayEndTime !== "string" ||
     !TIME_PATTERN.test(displayStartTime) ||
-    !TIME_PATTERN.test(displayEndTime) ||
+    !END_TIME_PATTERN.test(displayEndTime) ||
     displayEndTime <= displayStartTime ||
     !Array.isArray(hiddenWeekdays) ||
     !hiddenWeekdays.every((day) => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6) ||
@@ -217,9 +247,10 @@ export function parseAppointmentOptions(body: unknown): AppointmentOptions | nul
   return {
     timeZone,
     durationsMinutes: [...(durationsMinutes as number[])],
-    reasons: (reasons as AppointmentReason[]).map(({ code, label }) => ({ code, label })),
+    startStepMinutes,
+    reasons: (reasons as AppointmentReason[]).map(({ code, label, responsibleRequired }) => ({ code, label, responsibleRequired })),
     responsibles: (responsibles as AppointmentResponsible[]).map(({ id, displayName }) => ({ id, displayName })),
-    responsibleRequired,
+    receptionCapacity,
     displayStartTime,
     displayEndTime,
     hiddenWeekdays: [...(hiddenWeekdays as number[])],
