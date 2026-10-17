@@ -1,6 +1,8 @@
 # 03 — IMPLEMENTATION_SPEC
 
-**Statut (17/10/2026, 03-A2) :** sous-lots 03-A1 et 03-A2 **implémentés**. G03-METIER A et B acceptés, C accepté sur le principe : routes `/api/clients`, policies et permissions `clients.*` existent dans le code ; la migration `0003_ClientsModule` est **préparée, non appliquée** — aucune table ni permission n'existe encore en base. Section 03-A2 en fin de document.
+**Statut (17/10/2026, 03-A3) :** migration `0003_ClientsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; intégration réelle vérifiée de bout en bout ; voir « Réalisation 03-A3 » en fin de document.
+
+*Historique — statut 03-A2 (17/10/2026) :* sous-lots 03-A1 et 03-A2 **implémentés**. G03-METIER A et B acceptés, C accepté sur le principe : routes `/api/clients`, policies et permissions `clients.*` existent dans le code ; la migration `0003_ClientsModule` est **préparée, non appliquée** — aucune table ni permission n'existe encore en base. Section 03-A2 en fin de document.
 
 *Historique 03-A :* spécification de travail du sous-lot 03-A (17/10/2026). Les choix métier, le contrat HTTP, les permissions et la migration étaient **PROPOSED** (dossier [`DECISIONS_G03_METIER.md`](DECISIONS_G03_METIER.md)) ; aucune route, table ni permission nouvelle n'existait côté serveur ou en base. Les sections suivantes décrivent l'état 03-A ; les écarts 03-A2 sont signalés dans la dernière section.
 
@@ -130,3 +132,46 @@ apps/desktop              CLIENTS_API_ENABLED = true ; contrat src/api/contract/
 Comportement sans migration : la session, la navigation et les droits fonctionnent ; un compte disposant de `clients.read` obtiendrait une erreur technique (500, table absente) affichée « Impossible de charger les clients » + Réessayer ; un compte sans droit obtient 403 « Accès non autorisé ». Les droits `clients.*` ne peuvent d'ailleurs pas être attribués avant la migration (contrainte `ck_user_permissions_permission`).
 
 Écarts de rendu : aucun écran nouveau ni modifié visuellement (seuls les textes de l'état de repli « Service Clients non activé » sont neutralisés) ; `STATE_MAP_47.md` § Amendement 03-A2.
+
+## Réalisation 03-A3 (17/10/2026) — intégration réelle
+
+**Base.** Migration `20261016230630_ClientsModule` appliquée par `scripts/Invoke-MmvSqlScript.ps1` (script idempotent approuvé) à `mmv_v2_dev` puis `mmv_v2_test` ; jamais au démarrage, jamais `EnsureCreated()` (inchangé). Le « comportement sans migration » décrit ci-dessus est désormais historique.
+
+**Permissions de session (O-03-09).** `apps/desktop/src/clients/clientPermissions.ts` : `clientPermissions(permissions)` → `{ canWrite: clients.write, canArchive: clients.archive }`, lu depuis la session (`useAuth`). Garde **d'affichage** seulement :
+
+| Écran | Sans `clients.write` | Sans `clients.archive` |
+|---|---|---|
+| Liste | « Nouveau client » absent (y compris dans les états vide / aucun résultat) ; icône Modifier absente ; note « Consultation seule… » | icônes Archiver / Réactiver absentes |
+| Fiche | Modifier désactivé (infobulle `clients.write`) ; note « Consultation seule… » | Archiver / Réactiver désactivés (infobulle `clients.archive`) ; note dédiée |
+| Routes | `/clients/nouveau` → liste ; `/clients/:id/modifier` → fiche | — |
+
+`clients.read` absent : inchangé, le serveur répond 403 et l'écran affiche « Accès non autorisé ». L'entrée de navigation « Clients » reste visible (le refus explique au propriétaire qu'un droit manque).
+
+**Recherche.** Surlignage mot par mot (`findFoldedWords`), insensible aux accents et à la casse, aligné sur la recherche serveur (chaque mot doit apparaître).
+
+**Banc natif.** `apps/desktop/e2e/run-native.mjs` : option `--prefix` (défaut `P02_native`, inchangé pour la phase 02), scénarios `clients-admin-only`, `clients-full`, `clients-read`, `clients-write`, aides `fillField`, `setTheme` (thème imposé : la préférence `mmv.theme` persiste dans la WebView), `otherPostUpdate` (écriture d'un « autre poste » sur l'API réelle pour provoquer le 409). Exécution :
+
+```powershell
+# MMV.Api sur mmv_v2_test (chaîne passée au seul processus, jamais affichée)
+$env:ConnectionStrings__Mmv = '<ConnectionStrings:MmvTest des user-secrets mmv-v2-postgresql-tests>'
+dotnet run --project src/MMV.Api --launch-profile https
+# apps/desktop
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"; npx tauri dev
+$env:MMV_E2E_CREDENTIALS_FILE = '<fichier temporaire hors dépôt { suffix, admin, read, write, full }>'
+node --use-system-ca e2e/run-native.mjs clients-full --prefix P03_native --out ../../docs/phase/03/evidence
+```
+
+Les comptes éphémères `e2e-c{admin,read,write,full}-<suffixe>` sont créés et supprimés par un outil local **non versionné** (même principe qu'en phase 02 : `MMV.Infrastructure`, hachage Identity, refus de toute cible autre que `mmv_v2_test` / 5433 / boucle locale avant et après connexion) ; le dépôt ne contient toujours aucun chemin de création de compte hors `bootstrap-admin`.
+
+**Tests ajoutés / corrigés.** `ClientsPostgreSqlTests` : `Duplicates_AreAllowed_WithDistinctReferences`, `ClientsHttpPermissionsAndLifecycle_OnRealPostgreSql`, attente `23001` (O-03-14) ; `ClientServiceTests` / `InMemoryClientStore(TimeProvider?)` : semis sur l'horloge du test ; `ClientsModule.test.tsx` : lecture seule, écriture sans archivage ; `clientForm.test.ts` : surlignage mot par mot.
+
+| Exigence du GO 03-A3 | Mise en œuvre | Preuve |
+|---|---|---|
+| Empreinte, correspondance, 0001/0002 seules, cible réelle, format de référence | contrôles lecture seule + régénération hors connexion | Q-03-80, Q-03-81 |
+| Application séparée dev puis test, rôles propriétaires, script sécurisé | `Invoke-MmvSqlScript.ps1` ×2 | Q-03-82, Q-03-83 |
+| 3 migrations et objets | inspection des catalogues ; `PostMigration` | Q-03-84, Q-03-85 |
+| `ClientsWrite` sur `mmv_v2_test` ; accents, doublons, archivage, réactivation, 409, permissions, champ inconnu, résidus | tests PostgreSQL + matrice HTTP réelle | Q-03-86, Q-03-89, Q-03-96 |
+| Suites complètes | .NET 260/260, frontend 137/137 | Q-03-94, Q-03-95 |
+| Procédure de permissions, aucun compte réel modifié | `PROCEDURE_PERMISSIONS_CLIENTS.md` ; commandes en lecture / refus | Q-03-88 |
+| Actions interdites masquées ou désactivées | `clientPermissions.ts` | Q-03-90, Q-03-93 |
+| Chaîne Tauri → HTTPS → API → PostgreSQL 18, captures, comparaison | banc natif | Q-03-90, Q-03-91 |

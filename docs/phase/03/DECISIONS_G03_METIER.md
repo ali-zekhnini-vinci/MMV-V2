@@ -1,5 +1,9 @@
 # 03 — Dossier d'arbitrage G03-METIER (présenté le 17/10/2026)
 
+## Décision du propriétaire — 17/10/2026 (GO 03-A3)
+
+Source : message de session « GO PHASE 03-A3 — INTÉGRATION RÉELLE CLIENTS », versionné [`prompts/PHASE03_A3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_A3_GO_CLAUDE_CODE.md). Le SQL de `0003_ClientsModule` a été examiné par le propriétaire ; **application autorisée** du script idempotent (SHA-256 imposé), réalisée le 17/10/2026 sur `mmv_v2_dev` puis `mmv_v2_test`. Section **C** : la réserve « SQL non autorisé à l'application » est **levée** ; D-03-11 et D-03-12 sont mis en œuvre et vérifiés sur PostgreSQL 18.6 (QA Q-03-80 à Q-03-89). Précisions D-03-01 (référence `to_char`, au-delà de 999 999 sans troncature) et D-03-08/09 (droits distincts, attribution par l'outil) confirmées en conditions réelles. Le GO ajoute une exigence d'interface : **masquer ou désactiver clairement** les actions interdites pour un compte en lecture seule, le serveur restant l'autorité (O-03-09, réalisé). Section D inchangée (**EN ATTENTE**, 03-B).
+
 ## Décision du propriétaire — 17/10/2026 (GO 03-A2)
 
 Source : message de session « PHASE 03-A2 — GO MÉTIER CLIENTS », versionné [`prompts/PHASE03_A2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_A2_GO_CLAUDE_CODE.md).

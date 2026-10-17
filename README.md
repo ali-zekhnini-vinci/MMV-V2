@@ -2,7 +2,15 @@
 
 ## Statut actuel — phase 03 (17/10/2026)
 
-**`PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A2 du propriétaire : G03-METIER **A et B acceptés**, **C accepté sur le principe** (SQL non autorisé à l'application), D (Rendez-vous) en attente de 03-B.
+**`PHASE03_A3_COMPLETE — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A3 du propriétaire (« intégration réelle Clients », [`prompts/PHASE03_A3_GO_CLAUDE_CODE.md`](prompts/PHASE03_A3_GO_CLAUDE_CODE.md)).
+
+- **Migration `0003_ClientsModule` appliquée** le 17/10/2026 à `mmv_v2_dev` puis `mmv_v2_test` (script idempotent à l'empreinte `4dbb0d84…d3db1c3b`, contrôles préalables en lecture seule conformes) : 3 migrations par base. `mmv_v2_dev` ne contient **aucun client** ; aucun compte réel modifié.
+- **Tests réels :** `PostMigration` 2/2, `ClientsWrite` 7/7, `IdentityWrite` 5/5 sur `mmv_v2_test` ; .NET **260/260** ; frontend **137/137** ; matrice HTTP sur le processus MMV.Api réel **31/31** ; parcours natif Tauri → HTTPS → API → PostgreSQL 18 PASS (22 captures, comparées aux planches Lot 2) ; résidus 0. Détail : [`docs/phase/03/QA_MATRIX.md`](docs/phase/03/QA_MATRIX.md) Q-03-80 à Q-03-99.
+- **Interface :** actions Clients proposées selon les permissions de la session (lecture seule : actions masquées ou désactivées avec motif) ; le serveur reste l'autorité, `system.admin` n'accorde aucun droit Clients.
+- **Action du propriétaire :** attribuer `clients.read`, `clients.write`, `clients.archive` à son compte — [`docs/phase/03/PROCEDURE_PERMISSIONS_CLIENTS.md`](docs/phase/03/PROCEDURE_PERMISSIONS_CLIENTS.md). Jusque-là, l'écran Clients affiche « Accès non autorisé » pour ce compte.
+- 03-B (Rendez-vous) et 03-C non commencés.
+
+*Historique — statut 03-A2 (17/10/2026) :* **`PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO 03-A2 du propriétaire : G03-METIER **A et B acceptés**, **C accepté sur le principe** (SQL non autorisé à l'application), D (Rendez-vous) en attente de 03-B.
 
 - **03-A2 implémenté :** domaine Clients, validation serveur, API `/api/clients` (6 routes, policies `clients.read` / `clients.write` / `clients.archive`, `system.admin` sans droit Clients), persistance EF Core 10 / Npgsql (référence `CLI` par séquence PostgreSQL, concurrence `xmin`), OpenAPI à schémas réels contrôlé contre les types TypeScript, commande `MMV.Maintenance permissions list|grant|revoke`, interface branchée sur la vraie API. Contrat : [`docs/phase/03/API_CLIENTS.md`](docs/phase/03/API_CLIENTS.md).
 - **À revoir avant application :** migration `0003_ClientsModule` et SQL exact ([`docs/phase/03/sql/0003_ClientsModule.sql`](docs/phase/03/sql/0003_ClientsModule.sql), `.idempotent.sql`, `.rollback.sql` ; empreintes dans [`GATES_AND_DECISIONS.md`](docs/phase/03/GATES_AND_DECISIONS.md)) — **non appliquée**, aucun client ni droit en base.
@@ -110,7 +118,7 @@ La chaîne de connexion PostgreSQL (`ConnectionStrings__Mmv`) n'est **pas** requ
 - `docs/phase/00.md` : mission de phase 00, IN/OUT, portes de contrôle (historique).
 - `docs/phase/01.md` et `docs/phase/01/` : phase 01A — périmètre, spécification, QA, gates, preuves.
 - `docs/phase/01b/` : phase 01B (IMPLEMENTED — OWNER_REVIEW_REQUIRED, corrections d'audit appliquées) — source-map, spécification, QA, gates, scripts SQL et preuves (`evidence/`).
-- `docs/phase/03.md` et `docs/phase/03/` : phase 03 (`PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED` ; historique 03-A : `PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`) — décision G03-METIER, correspondance des 47 états, contrat Clients implémenté (`API_CLIENTS.md`) et proposé (historique), SQL 0003 à revoir non appliqué, cadrage Rendez-vous, spécification, QA, gates, source-map.
+- `docs/phase/03.md` et `docs/phase/03/` : phase 03 (`PHASE03_A3_COMPLETE — OWNER_REVIEW_REQUIRED` ; historique : 03-A2 `PHASE03_A2_READY — OWNER_SQL_REVIEW_REQUIRED`, 03-A `PHASE03_A_UI_READY — OWNER_BUSINESS_RULES_AND_SQL_REVIEW_REQUIRED`) — décision G03-METIER, correspondance des 47 états, contrat Clients implémenté (`API_CLIENTS.md`) et proposé (historique), SQL 0003 appliqué le 17/10/2026, procédure de permissions, cadrage Rendez-vous, spécification, QA, gates, source-map.
 - `docs/phase/02.md` et `docs/phase/02/` : phase 02 (**MERGED** dans `main`, `cb79d1f` ; état de livraison `PHASE02_READY_FOR_MANUAL_MERGE`, SEC-02-01 clos) — spécification (dont pile frontend), source-map (provenance des références, logos, polices, dépendances), QA, gates et décisions, manifeste du dossier O-02-01.
 - `docs/ARCHITECTURE_ET_STACK.md` : architecture et comparaison des technologies.
 - `docs/INSTALLATION_RESEAU_SECURITE.md` : parcours serveur/poste, TLS, auth, sauvegardes.

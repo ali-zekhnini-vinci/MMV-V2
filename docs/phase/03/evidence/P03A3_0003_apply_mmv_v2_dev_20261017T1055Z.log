@@ -1,0 +1,18 @@
+﻿# 03-A3 application 0003_ClientsModule sur mmv_v2_dev — 2026-10-17T10:55:17.4584656Z
+PRECHECK OK : mmv_v2_dev / mmv_v2_dev / port 5433 / server_version_num 180006
+SCRIPT : docs/phase/03/sql/0003_ClientsModule.idempotent.sql (SHA-256 4DBB0D84940D0891915ADCE2538FB0FEE66E054BF4B3E9C347429C18D3DB1C3B)
+START TRANSACTION
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+COMMIT
+APPLIQUE : exit 0
+# Note ajoutée 2026-10-17T11:27:50Z : après « APPLIQUE : exit 0 », la requête d'affichage finale du script a échoué sur la console (O-02-15), sortie non capturée par Tee-Object : « psql.exe : ERREUR:  la relation « __efmigrationshistory » n'existe pas » (guillemets retirés par PowerShell 5.1). Migrations relues ensuite en lecture seule : P03A3_postmigration_readonly_20261017T1056Z.log.

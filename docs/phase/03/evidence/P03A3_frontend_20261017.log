@@ -1,0 +1,28 @@
+# 03-A3 2026-10-17T11:17:29Z npm run check ; npm run lint ; npm test ; npm run build
+
+src/clients/searchText.ts(38,25): error TS2550: Property 'at' does not exist on type '[number, number][]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2022' or later.
+check exit=2
+  153:17  warning  Compilation Skipped: Use of incompatible library
+✖ 1 problem (0 errors, 1 warning)
+lint exit=0
+ Test Files  13 passed (13)
+      Tests  137 passed (137)
+test exit=0
+src/clients/searchText.ts(38,25): error TS2550: Property 'at' does not exist on type '[number, number][]'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2022' or later.
+build exit=2
+
+# relance 2026-10-17T11:19:49Z apres correction searchText.ts (Array.at hors cible ES)
+
+check exit=0
+✖ 1 problem (0 errors, 1 warning)
+lint exit=0
+ Test Files  13 passed (13)
+      Tests  137 passed (137)
+test exit=0
+dist/assets/ClientsModule-CmBuwl1V.css 16.03 kB │ gzip: 3.13 kB
+dist/assets/index-BODxdOGg.css 31.11 kB │ gzip: 7.45 kB
+dist/assets/ClientsModule-C4bGOIjC.js 113.51 kB │ gzip: 32.53 kB
+dist/assets/index-BrqSuGDS.js 548.55 kB │ gzip: 174.28 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+[32m✓ built in 1.05s[39m
+build exit=0

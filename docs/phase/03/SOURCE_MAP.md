@@ -78,3 +78,18 @@ Non installés : FullCalendar (03-B), `openapi-typescript` / `openapi-fetch` (O-
 | §5 Tests | `tests/MMV.Api.Tests/Clients/`, `tests/MMV.Maintenance.Tests/BootstrapCommandProcessTests.cs`, `tests/MMV.PostgreSql.Tests/ClientsPostgreSqlTests.cs`, `tests/MMV.PostgreSql.Tests/SchemaInspection.cs`, `tests/MMV.PostgreSql.Tests/RolledBackScope.cs`, `docs/phase/03/QA_MATRIX.md` Q-03-50 à Q-03-77 |
 | §6 Rendez-vous non développé | aucun code ; `docs/phase/03/RDV_03B_PREPARATION.md` inchangé |
 | §7 DOCUMENTATION GATE | `docs/phase/03/GATES_AND_DECISIONS.md` (G03-DOC) |
+
+## Traçabilité 03-A3 (mandat `prompts/PHASE03_A3_GO_CLAUDE_CODE.md`)
+
+Sources supplémentaires lues : `prompts/PHASE03_A3_GO_CLAUDE_CODE.md` (message de session du 17/10/2026, reproduit à l'identique), `docs/phase/02/QA_MATRIX.md` § Exécution O-02-01 et `docs/phase/02/IMPLEMENTATION_SPEC.md` § banc natif (méthode reprise), `references/phase03/LOT2_ETATS_VISUELS.md` (correspondance `data-mount`). Planche `lot2/MMV-Lot2-Clients-RendezVous.dc.html` : empreinte revérifiée **inchangée** (`26df60b6…0ec0a1`) ; rendue dans Edge headless 155 (profil temporaire hors dépôt, `support.js` exécuté par la planche, Lucide chargé depuis unpkg par la planche elle-même) pour 17 états Clients ; rendus conservés **hors dépôt** (`references/` non versionné) ; aucun code ni texte de la planche repris.
+
+| Exigence | Chemin |
+|---|---|
+| §1 Script autorisé, application, preuves | `docs/phase/03/sql/0003_ClientsModule.idempotent.sql`, `scripts/Invoke-MmvSqlScript.ps1` (inchangé), `docs/phase/03/evidence/P03A3_0003_apply_mmv_v2_{dev,test}_20261017T1055Z.log`, `docs/phase/03/evidence/P03A3_postmigration_readonly_20261017T1056Z.log` |
+| §2 Tests réels, résidus | `tests/MMV.PostgreSql.Tests/ClientsPostgreSqlTests.cs`, `tests/MMV.Api.Tests/Clients/ClientTestDoubles.cs`, `tests/MMV.Api.Tests/Clients/ClientServiceTests.cs`, `docs/phase/03/evidence/P03A3_dotnet_20261017.log`, `docs/phase/03/evidence/P03A3_frontend_20261017.log` |
+| §3 Procédure de permissions | `docs/phase/03/PROCEDURE_PERMISSIONS_CLIENTS.md`, `src/MMV.Maintenance/Program.cs` (inchangé), `docs/phase/03/evidence/P03A3_maintenance_permissions_readonly_20261017T1110Z.log` |
+| §3 Actions masquées / désactivées | `apps/desktop/src/clients/clientPermissions.ts`, `apps/desktop/src/api/auth.ts`, `apps/desktop/src/clients/ClientsListView.tsx`, `apps/desktop/src/clients/ClientsTable.tsx`, `apps/desktop/src/clients/ClientDetailView.tsx`, `apps/desktop/src/clients/ClientsModule.tsx`, `apps/desktop/src/clients/Clients.css`, `apps/desktop/src/clients/ClientsModule.test.tsx` |
+| §4 Chaîne native, captures, comparaison | `apps/desktop/e2e/run-native.mjs`, `docs/phase/03/evidence/P03A3_native_clients_e2e_20261017T1120Z.log`, `docs/phase/03/evidence/P03_native_clients_*.png` (22), `docs/phase/03/STATE_MAP_47.md` § Amendement 03-A3 |
+| §4 Écart corrigé (surlignage) | `apps/desktop/src/clients/searchText.ts`, `apps/desktop/src/clients/highlight.tsx`, `apps/desktop/src/clients/clientForm.test.ts` |
+| §5 DOCUMENTATION GATE | `docs/phase/03/GATES_AND_DECISIONS.md` (G03-DOC) |
+| §6 Livraison | branche locale `feat/phase-03-clients-rdv` ; archive `git archive` hors dépôt |

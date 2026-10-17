@@ -80,3 +80,21 @@ Total : 29 états Clients + 18 états Rendez-vous = **47**.
 | 22, 14, 38 | bouton de confirmation en accent (bleu) au lieu d'orange/rouge plein | contraste blanc/orange ≈ 2,3:1 < 4,5:1 (WCAG AA) ; ton porté par l'icône du dialogue |
 | 24, 26 | bandeau de confirmation au lieu d'un toast flottant | aucune bibliothèque ajoutée (Sonner au backlog) |
 | toutes | barre d'état et menu repris du Shell Phase 02 (pas de « Poste 1 », profils du Lot 1, badge de notification) | Shell Phase 02 inchangé |
+
+## Amendement daté 17/10/2026 (03-A3) — démonstration native et comparaison aux planches
+
+Les tableaux ci-dessus restent tels qu'établis. Depuis 03-A3, les lignes `PENDING_SERVICE` des états Clients sont **démontrées en natif** sur la chaîne réelle Tauri → HTTPS → MMV.Api → PostgreSQL 18 (`mmv_v2_test`, comptes et clients éphémères) : QA Q-03-90, captures `evidence/P03_native_clients_*_20261017T1115*.png`. Aucune ligne n'est `APPROVED` : l'approbation visuelle reste au propriétaire.
+
+| Planche (data-mount) | Capture native | Constat |
+|---|---|---|
+| listLight / listDark | `list_light_1920x1080`, `list_dark_1920x1080`, `list_light_1440x900` | structure conforme (en-tête, recherche, « Inclure les clients archivés », Filtres, tri, colonnes, badges, pagination 20/page) ; sans « Importer » (import OUT) |
+| listArchived | `list_with-archived_1920x1080` | conforme (puce active, statut serveur `all`) |
+| searchHit / searchEmpty | `search_hit_1920x1080`, `search_empty_1920x1080` | conforme ; surlignage mot par mot (écart **corrigé** en 03-A3 : une requête à plusieurs mots n'était pas surlignée) |
+| formLight / formErrors / formUnsaved / formEdit | `form_empty`, `form_errors`, `form_filled_unsaved`, `form_edit` | conforme (2 colonnes, sections, Ctrl+S, bandeaux, messages sous les champs, focus) ; sans NSS ni assurance/mutuelle (D-03-03) ; « Enregistrer » reste actif en état d'erreur (planche : grisé) — la validation est rejouée au clic |
+| createSuccess | `create_success_1920x1080` | conforme, sans « Ajouter une ordonnance » (D-03-03) |
+| ficheLight / ficheDark / ficheArchived | `detail_light`, `detail_dark`, `detail_archived` | conforme hors écarts volontaires (planche 16 ci-dessus) ; sur la fiche archivée, la notice « Client archivé » de l'opération précédente s'ajoute au bandeau permanent (O-03-15) |
+| confirmArchive / archivedDone / reactivateDone | `archive_confirm`, `archived_notice` | conforme (bandeau au lieu d'un toast, écart 24/26) |
+| bizError | `conflict_409_1920x1080` | même dialogue « Action impossible » ; depuis le formulaire, actions « Rester sur le formulaire » / « Recharger la fiche » (planche : depuis la liste, « Actualiser la liste ») |
+| — (sans planche) | `forbidden_admin-only`, `list_read-only`, `detail_read-only`, `detail_write-no-archive` | états de droits ajoutés en 03-A3 (O-03-09) : « Accès non autorisé », motif « Consultation seule… », actions masquées (liste) ou désactivées (fiche) |
+
+Écarts propres au Shell Phase 02 constatés sur toutes les captures (hors périmètre 03-A3) : entrées de navigation différentes du Lot 2, recherche globale désactivée, logo sur fond clair en thème sombre.

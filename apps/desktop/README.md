@@ -53,3 +53,10 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 - Service Clients **activé** (`src/clients/clientsService.ts`, `CLIENTS_API_ENABLED = true`) : TanStack Query / Table interrogent les routes réelles `/api/clients` de MMV.Api (contrat `docs/phase/03/API_CLIENTS.md`). Tant que la migration `0003_ClientsModule` n'est pas appliquée, aucun compte ne peut recevoir de droit `clients.*` : l'écran affiche « Accès non autorisé » (403 serveur). L'état « Service Clients non activé » reste disponible comme interrupteur de repli (tests).
 - Contrat : `src/api/contract/clients.openapi.json` (extrait du document OpenAPI réel, mis à jour par `MMV_UPDATE_OPENAPI_SNAPSHOT=1 dotnet test tests/MMV.Api.Tests --filter "FullyQualifiedName~OpenApiContract"`) et `src/api/clientsContract.test.ts` (types, nullabilité, énumérations, bornes, parseurs).
 - Aucune dépendance ajoutée.
+
+## Ajouts phase 03-A3 (17/10/2026)
+
+- Actions Clients selon les permissions de la session (`src/clients/clientPermissions.ts`) : sans `clients.write`, « Nouveau client » et Modifier sont masqués (liste) ou désactivés (fiche) avec motif ; sans `clients.archive`, Archiver/Réactiver de même. Garde d'affichage uniquement, le serveur décide.
+- Surlignage de recherche mot par mot, insensible aux accents (`src/clients/searchText.ts`).
+- Banc natif `e2e/run-native.mjs` : scénarios `clients-admin-only`, `clients-full`, `clients-read`, `clients-write`, option `--prefix`, thème imposé ; exécution avec `node --use-system-ca` (certificat de développement approuvé, aucun contournement TLS). Mode d'emploi : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-A3.
+- Aucune dépendance ajoutée.

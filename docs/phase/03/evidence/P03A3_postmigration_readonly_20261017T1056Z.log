@@ -1,0 +1,233 @@
+# 03-A3 inspection post-migration 0003, sessions default_transaction_read_only=on, 2026-10-17T10:56:04Z
+# Regeneration hors connexion (dotnet ef migrations script --no-build, BOM/CRLF retires) : sql 7f61f0a8..., idempotent 4dbb0d84..., rollback 8481adb0... octet pour octet identiques
+
+### mmv_v2_dev
+﻿SECRET : host=localhost port=5433 database=mmv_v2_dev role=mmv_v2_dev
+== identite
+     db     |    role    | port | version | read_only 
+------------+------------+------+---------+-----------
+ mmv_v2_dev | mmv_v2_dev | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+          MigrationId           | ProductVersion 
+--------------------------------+----------------
+ 20261015125000_InitialBaseline | 10.0.4
+ 20261015223849_AuthIdentity    | 10.0.4
+ 20261016230630_ClientsModule   | 10.0.4
+(3 rows)
+
+== schemas
+ nspname |       owner       
+---------+-------------------
+ auth    | mmv_v2_dev
+ clients | mmv_v2_dev
+ public  | pg_database_owner
+(3 rows)
+
+== objets du schema clients
+            relname            | relkind |   owner    
+-------------------------------+---------+------------
+ client_reference_seq          | S       | mmv_v2_dev
+ ix_clients_active_name        | i       | mmv_v2_dev
+ ix_clients_created_at         | i       | mmv_v2_dev
+ ix_clients_created_by_user_id | i       | mmv_v2_dev
+ ix_clients_updated_by_user_id | i       | mmv_v2_dev
+ pk_clients                    | i       | mmv_v2_dev
+ ux_clients_reference          | i       | mmv_v2_dev
+ clients                       | r       | mmv_v2_dev
+(8 rows)
+
+== colonnes clients.clients
+ pos |    column_name     |        data_type         | len  | is_nullable |                                               column_default                                               
+-----+--------------------+--------------------------+------+-------------+------------------------------------------------------------------------------------------------------------
+   1 | id                 | uuid                     |      | NO          | 
+   2 | reference          | character varying        |   24 | NO          | ('CLI-'::text || to_char(nextval('clients.client_reference_seq'::regclass), 'FM999999999999000000'::text))
+   3 | first_name         | character varying        |  100 | NO          | 
+   4 | last_name          | character varying        |  100 | NO          | 
+   5 | birth_date         | date                     |      | YES         | 
+   6 | phone              | character varying        |   32 | YES         | 
+   7 | email              | character varying        |  254 | YES         | 
+   8 | address_line       | character varying        |  200 | YES         | 
+   9 | city               | character varying        |  100 | YES         | 
+  10 | postal_code        | character varying        |   10 | YES         | 
+  11 | notes              | character varying        | 1000 | YES         | 
+  12 | search_text        | character varying        |  700 | NO          | 
+  13 | created_at_utc     | timestamp with time zone |      | NO          | 
+  14 | created_by_user_id | uuid                     |      | NO          | 
+  15 | updated_at_utc     | timestamp with time zone |      | NO          | 
+  16 | updated_by_user_id | uuid                     |      | NO          | 
+  17 | archived_at_utc    | timestamp with time zone |      | YES         | 
+(17 rows)
+
+== contraintes clients.clients et auth.user_permissions
+          rel          |               conname                | contype |                                                                                                 def                                                                                                  
+-----------------------+--------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions | ck_user_permissions_permission       | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying])::text[])))
+ auth.user_permissions | fk_user_permissions_users            | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions | pk_user_permissions                  | p       | PRIMARY KEY (user_id, permission)
+ auth.user_permissions | user_permissions_permission_not_null | n       | NOT NULL permission
+ auth.user_permissions | user_permissions_user_id_not_null    | n       | NOT NULL user_id
+ clients.clients       | ck_clients_archived_after_created    | c       | CHECK (((archived_at_utc IS NULL) OR (archived_at_utc >= created_at_utc)))
+ clients.clients       | ck_clients_birth_date_range          | c       | CHECK (((birth_date IS NULL) OR (birth_date >= '1900-01-01'::date)))
+ clients.clients       | ck_clients_first_name_not_blank      | c       | CHECK ((btrim((first_name)::text) <> ''::text))
+ clients.clients       | ck_clients_last_name_not_blank       | c       | CHECK ((btrim((last_name)::text) <> ''::text))
+ clients.clients       | ck_clients_reference_format          | c       | CHECK (((reference)::text ~ '^CLI-[0-9]{6,18}$'::text))
+ clients.clients       | ck_clients_updated_after_created     | c       | CHECK ((updated_at_utc >= created_at_utc))
+ clients.clients       | clients_created_at_utc_not_null      | n       | NOT NULL created_at_utc
+ clients.clients       | clients_created_by_user_id_not_null  | n       | NOT NULL created_by_user_id
+ clients.clients       | clients_first_name_not_null          | n       | NOT NULL first_name
+ clients.clients       | clients_id_not_null                  | n       | NOT NULL id
+ clients.clients       | clients_last_name_not_null           | n       | NOT NULL last_name
+ clients.clients       | clients_reference_not_null           | n       | NOT NULL reference
+ clients.clients       | clients_search_text_not_null         | n       | NOT NULL search_text
+ clients.clients       | clients_updated_at_utc_not_null      | n       | NOT NULL updated_at_utc
+ clients.clients       | clients_updated_by_user_id_not_null  | n       | NOT NULL updated_by_user_id
+ clients.clients       | fk_clients_created_by_users          | f       | FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ clients.clients       | fk_clients_updated_by_users          | f       | FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ clients.clients       | pk_clients                           | p       | PRIMARY KEY (id)
+(23 rows)
+
+== index clients
+           indexname           |                                                            indexdef                                                            
+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------
+ ix_clients_active_name        | CREATE INDEX ix_clients_active_name ON clients.clients USING btree (last_name, first_name, id) WHERE (archived_at_utc IS NULL)
+ ix_clients_created_at         | CREATE INDEX ix_clients_created_at ON clients.clients USING btree (created_at_utc, id)
+ ix_clients_created_by_user_id | CREATE INDEX ix_clients_created_by_user_id ON clients.clients USING btree (created_by_user_id)
+ ix_clients_updated_by_user_id | CREATE INDEX ix_clients_updated_by_user_id ON clients.clients USING btree (updated_by_user_id)
+ pk_clients                    | CREATE UNIQUE INDEX pk_clients ON clients.clients USING btree (id)
+ ux_clients_reference          | CREATE UNIQUE INDEX ux_clients_reference ON clients.clients USING btree (reference)
+(6 rows)
+
+== sequence (lecture du catalogue seulement, aucun nextval)
+ schemaname |     sequencename     | start_value | increment_by |     max_value      | cycle | last_value 
+------------+----------------------+-------------+--------------+--------------------+-------+------------
+ clients    | client_reference_seq |           1 |            1 | 999999999999999999 | f     |           
+(1 row)
+
+== donnees
+ clients | users | sessions | bootstrap 
+---------+-------+----------+-----------
+       0 |     1 |        3 |         1
+(1 row)
+
+  permission  | count 
+--------------+-------
+ system.admin |     1
+(1 row)
+
+
+### mmv_v2_test
+﻿SECRET : host=localhost port=5433 database=mmv_v2_test role=mmv_v2_test
+== identite
+     db      |    role     | port | version | read_only 
+-------------+-------------+------+---------+-----------
+ mmv_v2_test | mmv_v2_test | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+          MigrationId           | ProductVersion 
+--------------------------------+----------------
+ 20261015125000_InitialBaseline | 10.0.4
+ 20261015223849_AuthIdentity    | 10.0.4
+ 20261016230630_ClientsModule   | 10.0.4
+(3 rows)
+
+== schemas
+ nspname |       owner       
+---------+-------------------
+ auth    | mmv_v2_test
+ clients | mmv_v2_test
+ public  | pg_database_owner
+(3 rows)
+
+== objets du schema clients
+            relname            | relkind |    owner    
+-------------------------------+---------+-------------
+ client_reference_seq          | S       | mmv_v2_test
+ ix_clients_active_name        | i       | mmv_v2_test
+ ix_clients_created_at         | i       | mmv_v2_test
+ ix_clients_created_by_user_id | i       | mmv_v2_test
+ ix_clients_updated_by_user_id | i       | mmv_v2_test
+ pk_clients                    | i       | mmv_v2_test
+ ux_clients_reference          | i       | mmv_v2_test
+ clients                       | r       | mmv_v2_test
+(8 rows)
+
+== colonnes clients.clients
+ pos |    column_name     |        data_type         | len  | is_nullable |                                               column_default                                               
+-----+--------------------+--------------------------+------+-------------+------------------------------------------------------------------------------------------------------------
+   1 | id                 | uuid                     |      | NO          | 
+   2 | reference          | character varying        |   24 | NO          | ('CLI-'::text || to_char(nextval('clients.client_reference_seq'::regclass), 'FM999999999999000000'::text))
+   3 | first_name         | character varying        |  100 | NO          | 
+   4 | last_name          | character varying        |  100 | NO          | 
+   5 | birth_date         | date                     |      | YES         | 
+   6 | phone              | character varying        |   32 | YES         | 
+   7 | email              | character varying        |  254 | YES         | 
+   8 | address_line       | character varying        |  200 | YES         | 
+   9 | city               | character varying        |  100 | YES         | 
+  10 | postal_code        | character varying        |   10 | YES         | 
+  11 | notes              | character varying        | 1000 | YES         | 
+  12 | search_text        | character varying        |  700 | NO          | 
+  13 | created_at_utc     | timestamp with time zone |      | NO          | 
+  14 | created_by_user_id | uuid                     |      | NO          | 
+  15 | updated_at_utc     | timestamp with time zone |      | NO          | 
+  16 | updated_by_user_id | uuid                     |      | NO          | 
+  17 | archived_at_utc    | timestamp with time zone |      | YES         | 
+(17 rows)
+
+== contraintes clients.clients et auth.user_permissions
+          rel          |               conname                | contype |                                                                                                 def                                                                                                  
+-----------------------+--------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions | ck_user_permissions_permission       | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying])::text[])))
+ auth.user_permissions | fk_user_permissions_users            | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions | pk_user_permissions                  | p       | PRIMARY KEY (user_id, permission)
+ auth.user_permissions | user_permissions_permission_not_null | n       | NOT NULL permission
+ auth.user_permissions | user_permissions_user_id_not_null    | n       | NOT NULL user_id
+ clients.clients       | ck_clients_archived_after_created    | c       | CHECK (((archived_at_utc IS NULL) OR (archived_at_utc >= created_at_utc)))
+ clients.clients       | ck_clients_birth_date_range          | c       | CHECK (((birth_date IS NULL) OR (birth_date >= '1900-01-01'::date)))
+ clients.clients       | ck_clients_first_name_not_blank      | c       | CHECK ((btrim((first_name)::text) <> ''::text))
+ clients.clients       | ck_clients_last_name_not_blank       | c       | CHECK ((btrim((last_name)::text) <> ''::text))
+ clients.clients       | ck_clients_reference_format          | c       | CHECK (((reference)::text ~ '^CLI-[0-9]{6,18}$'::text))
+ clients.clients       | ck_clients_updated_after_created     | c       | CHECK ((updated_at_utc >= created_at_utc))
+ clients.clients       | clients_created_at_utc_not_null      | n       | NOT NULL created_at_utc
+ clients.clients       | clients_created_by_user_id_not_null  | n       | NOT NULL created_by_user_id
+ clients.clients       | clients_first_name_not_null          | n       | NOT NULL first_name
+ clients.clients       | clients_id_not_null                  | n       | NOT NULL id
+ clients.clients       | clients_last_name_not_null           | n       | NOT NULL last_name
+ clients.clients       | clients_reference_not_null           | n       | NOT NULL reference
+ clients.clients       | clients_search_text_not_null         | n       | NOT NULL search_text
+ clients.clients       | clients_updated_at_utc_not_null      | n       | NOT NULL updated_at_utc
+ clients.clients       | clients_updated_by_user_id_not_null  | n       | NOT NULL updated_by_user_id
+ clients.clients       | fk_clients_created_by_users          | f       | FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ clients.clients       | fk_clients_updated_by_users          | f       | FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ clients.clients       | pk_clients                           | p       | PRIMARY KEY (id)
+(23 rows)
+
+== index clients
+           indexname           |                                                            indexdef                                                            
+-------------------------------+--------------------------------------------------------------------------------------------------------------------------------
+ ix_clients_active_name        | CREATE INDEX ix_clients_active_name ON clients.clients USING btree (last_name, first_name, id) WHERE (archived_at_utc IS NULL)
+ ix_clients_created_at         | CREATE INDEX ix_clients_created_at ON clients.clients USING btree (created_at_utc, id)
+ ix_clients_created_by_user_id | CREATE INDEX ix_clients_created_by_user_id ON clients.clients USING btree (created_by_user_id)
+ ix_clients_updated_by_user_id | CREATE INDEX ix_clients_updated_by_user_id ON clients.clients USING btree (updated_by_user_id)
+ pk_clients                    | CREATE UNIQUE INDEX pk_clients ON clients.clients USING btree (id)
+ ux_clients_reference          | CREATE UNIQUE INDEX ux_clients_reference ON clients.clients USING btree (reference)
+(6 rows)
+
+== sequence (lecture du catalogue seulement, aucun nextval)
+ schemaname |     sequencename     | start_value | increment_by |     max_value      | cycle | last_value 
+------------+----------------------+-------------+--------------+--------------------+-------+------------
+ clients    | client_reference_seq |           1 |            1 | 999999999999999999 | f     |           
+(1 row)
+
+== donnees
+ clients | users | sessions | bootstrap 
+---------+-------+----------+-----------
+       0 |     0 |        0 |         0
+(1 row)
+
+ permission | count 
+------------+-------
+(0 rows)
+
