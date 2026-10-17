@@ -11,12 +11,14 @@ import { cn } from "../lib/utils.ts";
 import { clientDisplayName, clientInitials, formatIsoDate, formatUtcDate } from "./clientForm.ts";
 import { ClientNoticeBanner } from "./ClientNoticeBanner.tsx";
 import { useClientLifecycle } from "./ClientLifecycle.tsx";
+import { NO_ARCHIVE_TITLE, NO_WRITE_TITLE, READ_ONLY_HINT, useClientPermissions } from "./clientPermissions.ts";
 import { StateBlock } from "./ClientStates.tsx";
 import { StatusBadge } from "./ClientsTable.tsx";
 
 export function ClientDetailView({ client }: { client: ClientDetail }) {
   const navigate = useNavigate();
   const lifecycle = useClientLifecycle();
+  const { canWrite, canArchive } = useClientPermissions();
   const archived = client.status === "archived";
   const name = clientDisplayName(client);
 
@@ -67,22 +69,36 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
         <div className="clients-actions clients-actions--wrap">
           {archived ? (
             <>
-              <Button disabled title="Réactivez le client pour le modifier">
+              <Button disabled title={canWrite ? "Réactivez le client pour le modifier" : NO_WRITE_TITLE}>
                 <Pencil size={16} aria-hidden="true" />
                 Modifier
               </Button>
-              <Button variant="primary" onClick={() => lifecycle.requestReactivate(client)}>
+              <Button
+                variant="primary"
+                onClick={() => lifecycle.requestReactivate(client)}
+                disabled={!canArchive}
+                title={canArchive ? undefined : NO_ARCHIVE_TITLE}
+              >
                 <ArchiveRestore size={16} aria-hidden="true" />
                 Réactiver
               </Button>
             </>
           ) : (
             <>
-              <Button onClick={() => navigate(`/clients/${client.id}/modifier`)}>
+              <Button
+                onClick={() => navigate(`/clients/${client.id}/modifier`)}
+                disabled={!canWrite}
+                title={canWrite ? undefined : NO_WRITE_TITLE}
+              >
                 <Pencil size={16} aria-hidden="true" />
                 Modifier
               </Button>
-              <Button variant="danger" onClick={() => lifecycle.requestArchive(client)}>
+              <Button
+                variant="danger"
+                onClick={() => lifecycle.requestArchive(client)}
+                disabled={!canArchive}
+                title={canArchive ? undefined : NO_ARCHIVE_TITLE}
+              >
                 <Archive size={16} aria-hidden="true" />
                 Archiver
               </Button>
@@ -90,6 +106,11 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
           )}
         </div>
       </header>
+      {(!canWrite || !canArchive) && (
+        <p className="clients-head__hint" role="note">
+          {!canWrite ? READ_ONLY_HINT : "Votre compte ne permet pas d'archiver ni de réactiver les clients."}
+        </p>
+      )}
 
       <Tabs defaultValue="info" className="client-tabs">
         <TabsList aria-label="Sections de la fiche client">

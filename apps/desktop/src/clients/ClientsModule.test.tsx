@@ -311,6 +311,33 @@ describe("fiche client", () => {
     assert.equal(api.clients.find((client) => client.lastName === "Cherkaoui")?.status, "active");
   });
 
+  test("compte en lecture seule (clients.read) : actions d'écriture masquées ou désactivées, motif affiché", async () => {
+    const { user, api } = await openClients({ permissions: [CLIENT_PERMISSIONS.read] });
+    const table = await screen.findByRole("table");
+    screen.getByRole("note");
+    assert.match(screen.getByRole("note").textContent ?? "", /Consultation seule/);
+    assert.equal(screen.queryByRole("button", { name: "Nouveau client" }), null);
+    assert.equal(within(table).queryByRole("button", { name: /^(Modifier|Archiver|Réactiver) / }), null);
+    await user.click(within(table).getByRole("button", { name: "Consulter BENALI Omar" }));
+    await screen.findByRole("heading", { name: "BENALI Omar", level: 1 });
+    assert.equal((screen.getByRole("button", { name: "Modifier" }) as HTMLButtonElement).disabled, true);
+    assert.equal((screen.getByRole("button", { name: "Archiver" }) as HTMLButtonElement).disabled, true);
+    assert.equal(api.requests.filter((request) => request.method !== "GET" && request.path.startsWith("/api/clients")).length, 0);
+  });
+
+  test("écriture sans archivage (clients.read + clients.write) : création et modification seules", async () => {
+    const { user } = await openClients({ permissions: [CLIENT_PERMISSIONS.read, CLIENT_PERMISSIONS.write] });
+    const table = await screen.findByRole("table");
+    screen.getByRole("button", { name: "Nouveau client" });
+    within(table).getByRole("button", { name: "Modifier BENALI Omar" });
+    assert.equal(within(table).queryByRole("button", { name: /^Archiver / }), null);
+    await user.click(within(table).getByRole("button", { name: "Consulter BENALI Omar" }));
+    await screen.findByRole("heading", { name: "BENALI Omar", level: 1 });
+    assert.equal((screen.getByRole("button", { name: "Modifier" }) as HTMLButtonElement).disabled, false);
+    assert.equal((screen.getByRole("button", { name: "Archiver" }) as HTMLButtonElement).disabled, true);
+    assert.match(screen.getByRole("note").textContent ?? "", /archiver/);
+  });
+
   test("retour à la liste : critères de recherche conservés", async () => {
     const { user } = await openClients();
     await screen.findByRole("table");

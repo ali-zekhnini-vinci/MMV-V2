@@ -20,3 +20,24 @@ export function findFolded(text: string, needle: string): [number, number] | nul
   }
   return null;
 }
+
+/**
+ * Plages [début, fin[ de chaque mot de la requête (≥ 2 caractères) présent dans `text`, triées et fusionnées.
+ * Même découpage que le serveur (chaque mot doit apparaître) : « noemie ducastel » surligne les deux mots.
+ */
+export function findFoldedWords(text: string, query: string): [number, number][] {
+  const ranges = query
+    .trim()
+    .split(/\s+/)
+    .filter((word) => [...word].length >= 2)
+    .map((word) => findFolded(text, word))
+    .filter((range): range is [number, number] => range !== null)
+    .sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [start, end] of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && start <= last[1]) last[1] = Math.max(last[1], end);
+    else merged.push([start, end]);
+  }
+  return merged;
+}

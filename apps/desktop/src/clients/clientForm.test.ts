@@ -14,7 +14,7 @@ import {
   toClientInput,
 } from "./clientForm.ts";
 import { toListParams, INITIAL_LIST_STATE } from "./clientsUi.ts";
-import { findFolded } from "./searchText.ts";
+import { findFolded, findFoldedWords } from "./searchText.ts";
 
 const valid = { ...EMPTY_CLIENT_FORM, firstName: "Test", lastName: "Fictif" };
 const issues = (values: typeof EMPTY_CLIENT_FORM) => {
@@ -84,6 +84,12 @@ describe("recherche et requêtes", () => {
     assert.deepEqual(findFolded("EL AMRANI Yasmine", "amr"), [3, 6]);
     assert.deepEqual(findFolded("Hélène", "helene"), [0, 6]);
     assert.equal(findFolded("Fictif", "zz"), null);
+  });
+
+  test("mise en évidence mot par mot, comme la recherche serveur (03-A3)", () => {
+    assert.deepEqual(findFoldedWords("DUCASTEL-AB12 Noémie", "noemie ducastel-ab12"), [[0, 13], [14, 20]]);
+    assert.deepEqual(findFoldedWords("Hélène Martin", "hel hele"), [[0, 4]]);
+    assert.deepEqual(findFoldedWords("Fictif", "zz x"), []);
   });
 
   test("état de liste -> paramètres de contrat (tri en liste blanche)", () => {

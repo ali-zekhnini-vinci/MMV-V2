@@ -8,6 +8,7 @@ import { Navigate, Route, Routes, useNavigate, useParams } from "react-router";
 import { Button } from "../components/ui/button.tsx";
 import { ClientDetailView } from "./ClientDetailView.tsx";
 import { ClientFormView } from "./ClientFormView.tsx";
+import { useClientPermissions } from "./clientPermissions.ts";
 import { useClientDetail } from "./clientQueries.ts";
 import { useClientsService } from "./clientsService.ts";
 import { ClientsListView } from "./ClientsListView.tsx";
@@ -24,7 +25,7 @@ export function ClientsModule() {
     <ClientsUiContext.Provider value={ui}>
       <Routes>
         <Route index element={<ClientsListView />} />
-        <Route path="nouveau" element={<ClientFormView mode="create" />} />
+        <Route path="nouveau" element={<CreateRoute />} />
         <Route path=":clientId" element={<ClientRoute view="detail" />} />
         <Route path=":clientId/modifier" element={<ClientRoute view="edit" />} />
         <Route path="*" element={<Navigate to="/clients" replace />} />
@@ -33,10 +34,18 @@ export function ClientsModule() {
   );
 }
 
+// Garde d'affichage : sans `clients.write`, le formulaire n'est pas proposé (le serveur refuserait par 403).
+function CreateRoute() {
+  const { enabled } = useClientsService();
+  const { canWrite } = useClientPermissions();
+  return enabled && !canWrite ? <Navigate to="/clients" replace /> : <ClientFormView mode="create" />;
+}
+
 function ClientRoute({ view }: { view: "detail" | "edit" }) {
   const { clientId = "" } = useParams();
   const navigate = useNavigate();
   const { enabled } = useClientsService();
+  const { canWrite } = useClientPermissions();
   const query = useClientDetail(clientId);
   const back = (
     <Button onClick={() => navigate("/clients")}>Retour à la liste</Button>
@@ -86,7 +95,7 @@ function ClientRoute({ view }: { view: "detail" | "edit" }) {
 
   const client = query.data;
   // Un client archivé est en lecture seule : la modification renvoie à la fiche.
-  if (view === "edit" && client.status === "archived") return <Navigate to={`/clients/${client.id}`} replace />;
+  if (view === "edit" && (client.status === "archived" || !canWrite)) return <Navigate to={`/clients/${client.id}`} replace />;
   // Le formulaire conserve la version lue à son ouverture (voir ClientFormView) : un rafraîchissement en
   // arrière-plan ne remplace ni les saisies ni le jeton de concurrence.
   return view === "edit" ? <ClientFormView key={client.id} mode="edit" client={client} /> : <ClientDetailView client={client} />;

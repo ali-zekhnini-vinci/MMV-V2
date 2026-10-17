@@ -10,12 +10,14 @@ public sealed class ClientServiceTests
 {
     private static readonly Guid Author = Guid.CreateVersion7();
 
-    private readonly InMemoryClientStore _store = new();
     private readonly ManualClock _clock = new(new DateTimeOffset(2026, 10, 17, 9, 30, 0, TimeSpan.Zero).AddTicks(1234567));
+    private readonly InMemoryClientStore _store;
     private readonly ClientService _service;
 
     public ClientServiceTests()
     {
+        // 03-A3 : le store sème sur l'horloge du test (auparavant l'heure réelle : échec après 09:35 Z le 17/10/2026).
+        _store = new InMemoryClientStore(_clock);
         _service = new ClientService(_store, _clock);
     }
 

@@ -46,6 +46,13 @@
   color: var(--text-secondary);
 }
 
+/* Compte sans droit d'écriture ou d'archivage : actions masquées (liste) ou désactivées (fiche), motif affiché. */
+.clients-head__hint {
+  margin: 6px 0 0;
+  font-size: var(--text-body);
+  color: var(--text-secondary);
+}
+
 .clients-head__kbd {
   font-family: var(--font-body);
   letter-spacing: 0;

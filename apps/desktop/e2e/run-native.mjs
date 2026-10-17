@@ -16,6 +16,8 @@ const option = (name, fallback) => {
 };
 const port = Number(option("--port", "9222"));
 const outDir = resolve(option("--out", "."));
+// Préfixe des captures : P02_native (phase 02, défaut) ou P03_native (scénarios clients-*, phase 03-A3).
+const prefix = option("--prefix", "P02_native");
 const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
 const log = (step, detail = "") => console.log(`${new Date().toISOString()} ${step}${detail ? ` — ${detail}` : ""}`);
@@ -25,7 +27,7 @@ const check = (condition, label) => {
 };
 
 function capture(name, { width = 0, height = 0 } = {}) {
-  const file = join(outDir, `P02_native_${name}_${stamp}.png`);
+  const file = join(outDir, `${prefix}_${name}_${stamp}.png`);
   const scriptPath = resolve("e2e/capture-window.ps1");
   const extra = width ? ["-ClientWidth", String(width), "-ClientHeight", String(height)] : [];
   const output = execFileSync(
@@ -83,6 +85,52 @@ const navButton = (label) =>
   `[...document.querySelectorAll('nav[aria-label="Navigation"] button')].find(b => (b.getAttribute('aria-label') || b.textContent).startsWith(${JSON.stringify(label)}))`;
 
 const buttonByText = (label) => `[...document.querySelectorAll('button')].find(b => b.textContent.trim() === ${JSON.stringify(label)})`;
+const buttonByName = (label) =>
+  `[...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || b.textContent.trim()) === ${JSON.stringify(label)})`;
+const isDisabled = (label) => `(${buttonByName(label)})?.disabled === true`;
+
+/** Focalise le champ de formulaire désigné par son étiquette (« Prénom », « Nom »…). */
+const focusField = (page, label) =>
+  page.evaluate(`document.getElementById([...document.querySelectorAll('label[for]')]
+    .find(l => l.textContent.replace('*', '').trim() === ${JSON.stringify(label)}).htmlFor).focus()`);
+
+async function fillField(page, label, value) {
+  await focusField(page, label);
+  await page.evaluate("document.activeElement.select && document.activeElement.select()");
+  await page.type(value);
+}
+
+/** Thème du shell imposé (la préférence « mmv.theme » de la WebView persiste entre les sessions). */
+async function setTheme(page, theme) {
+  if ((await page.evaluate("document.documentElement.dataset.theme")) !== theme) {
+    await page.evaluate(`document.querySelector('[aria-label^="Thème"]').click()`);
+    await page.sleep(300);
+  }
+  check((await page.evaluate("document.documentElement.dataset.theme")) === theme, `thème ${theme}`);
+}
+
+async function openClients(page) {
+  await page.evaluate(`${navButton("Clients")}.click()`);
+  await page.waitFor("document.querySelector('h1')?.textContent === 'Clients'", { label: "écran Clients" });
+}
+
+/** Autre poste : modification directe sur l'API réelle avec un autre compte éphémère (jeton jamais affiché). */
+async function otherPostUpdate(account, search, city) {
+  const base = "https://localhost:7267";
+  const json = { "Content-Type": "application/json" };
+  const login = await fetch(`${base}/api/auth/login`, { method: "POST", headers: json, body: JSON.stringify({ userName: account.userName, password: account.password }) });
+  const auth = { Authorization: `Bearer ${(await login.json()).accessToken}` };
+  const page = await (await fetch(`${base}/api/clients?q=${encodeURIComponent(search)}`, { headers: auth })).json();
+  const detail = await (await fetch(`${base}/api/clients/${page.items[0].id}`, { headers: auth })).json();
+  const { firstName, lastName, birthDate, phone, email, addressLine, postalCode, notes, version } = detail;
+  const put = await fetch(`${base}/api/clients/${detail.id}`, {
+    method: "PUT",
+    headers: { ...auth, ...json },
+    body: JSON.stringify({ firstName, lastName, birthDate, phone, email, addressLine, city, postalCode, notes, version }),
+  });
+  await fetch(`${base}/api/auth/logout`, { method: "POST", headers: auth });
+  return put.status;
+}
 
 const scenarios = {
   /** Écran de connexion : focus initial, tabulation, validation, zoom — indépendant de la base. */
@@ -281,6 +329,163 @@ const scenarios = {
     await page.evaluate(`${buttonByText("Revérifier")}.click()`);
     await page.waitFor(hasText("Base de données indisponible"), { label: "base indisponible" });
     capture("shell_db-down_1920x1080", { width: 1920, height: 1080 });
+  },
+
+  // ── Phase 03-A3 : module Clients sur la vraie chaîne Tauri → HTTPS → MMV.Api → PostgreSQL 18 (mmv_v2_test). ──
+  // Comptes éphémères { admin (system.admin seul), read, write, full } ; clients exclusivement fictifs.
+
+  /** system.admin seul : l'écran Clients affiche le refus serveur (403), aucune donnée. */
+  async "clients-admin-only"(page) {
+    await setZoom(page, 1);
+    await signIn(page, credentials().admin);
+    await setTheme(page, "light");
+    await openClients(page);
+    await page.waitFor(hasText("Accès non autorisé"), { label: "403 serveur" });
+    check(!(await page.evaluate("!!document.querySelector('table')")), "aucune table affichée");
+    capture("clients_forbidden_admin-only_1920x1080", { width: 1920, height: 1080 });
+  },
+
+  /** Compte complet : création, validation, fiche, recherche, archivage, réactivation, conflit, thèmes. */
+  async "clients-full"(page) {
+    const accounts = credentials();
+    const suffix = accounts.suffix;
+    await setZoom(page, 1);
+    await signIn(page, accounts.full);
+    await setTheme(page, "light");
+    await openClients(page);
+    await page.waitFor("document.querySelector('table')", { label: "liste réelle" });
+    capture("clients_list_light_1920x1080", { width: 1920, height: 1080 });
+
+    // Validation locale : aucune requête, messages sous les champs.
+    await page.evaluate(`${buttonByText("Nouveau client")}.click()`);
+    await page.waitFor(hasText("Nouveau client") + " && !!document.querySelector('form')", { label: "formulaire" });
+    capture("clients_form_empty_1920x1080");
+    await page.evaluate(`${buttonByText("Enregistrer")}.click()`);
+    await page.waitFor(hasText("Veuillez corriger les erreurs du formulaire"), { label: "erreurs de validation" });
+    check((await page.focused())?.includes("Prénom"), "focus sur le premier champ en erreur");
+    capture("clients_form_errors_1920x1080");
+
+    // Création réelle.
+    await fillField(page, "Prénom", "Noémie");
+    await fillField(page, "Nom", `Ducastel-${suffix}`);
+    await fillField(page, "Date de naissance", "03/02/1990");
+    await fillField(page, "Téléphone", "0471 22 33 44");
+    await fillField(page, "Email", "noemie@exemple.test");
+    await fillField(page, "Ville", "Namur");
+    await page.waitFor(hasText("Modifications non enregistrées"), { label: "bandeau non enregistré" });
+    capture("clients_form_filled_unsaved_1920x1080");
+    await page.evaluate(`${buttonByText("Enregistrer")}.click()`);
+    await page.waitFor(hasText("Client créé"), { label: "client créé" });
+    check(/CLI-\d{6,18}/.test(await text(page)), "référence attribuée par le serveur affichée");
+    capture("clients_create_success_1920x1080");
+    await page.evaluate(`${buttonByText("Voir la fiche")}.click()`);
+    await page.waitFor(`document.querySelector('h1')?.textContent.includes('Noémie')`, { label: "fiche" });
+    capture("clients_detail_light_1920x1080");
+
+    // Recherche sans accents, puis aucun résultat.
+    await openClients(page);
+    await page.waitFor("document.querySelector('table')", { label: "liste" });
+    await page.evaluate("document.querySelector('.clients-search input').focus()");
+    await page.type(`noemie ducastel-${suffix}`);
+    await page.waitFor(`document.querySelectorAll('tbody tr').length === 1 && document.querySelectorAll('tbody mark').length >= 2`, { label: "résultat surligné (2 mots, sans accents)" });
+    capture("clients_search_hit_1920x1080");
+    await page.evaluate("document.querySelector('.clients-search input').select()");
+    await page.type(`introuvable-${suffix}`);
+    await page.waitFor(hasText("Aucun résultat pour"), { label: "aucun résultat" });
+    capture("clients_search_empty_1920x1080");
+    await page.evaluate(`${buttonByText("Effacer la recherche")}.click()`);
+    await page.waitFor("document.querySelectorAll('tbody tr').length === 3", { label: "3 clients actifs (2 doublons + 1 créé)" });
+
+    // Archivage depuis la liste puis inclusion des archivés.
+    await page.evaluate(`${buttonByName(`Archiver DUCASTEL-${suffix.toUpperCase()} Noémie`)}.click()`);
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'archivage" });
+    capture("clients_archive_confirm_1920x1080");
+    await page.evaluate(`${buttonByText("Archiver le client")}.click()`);
+    await page.waitFor(hasText("a été retiré(e) des listes actives"), { label: "client archivé" });
+    await page.waitFor("document.querySelectorAll('tbody tr').length === 2", { label: "liste active : 2" });
+    capture("clients_archived_notice_1920x1080");
+    await page.evaluate(`${buttonByText("Inclure les clients archivés")}.click()`);
+    await page.waitFor("document.querySelectorAll('tbody tr').length === 3", { label: "actifs + archivés : 3" });
+    capture("clients_list_with-archived_1920x1080");
+
+    // Fiche archivée : lecture seule, réactivation.
+    await page.evaluate(`${buttonByName(`Consulter DUCASTEL-${suffix.toUpperCase()} Noémie`)}.click()`);
+    await page.waitFor(hasText("Consultation en lecture seule"), { label: "fiche archivée" });
+    check(await page.evaluate(isDisabled("Modifier")), "fiche archivée : Modifier désactivé");
+    capture("clients_detail_archived_1920x1080");
+    await page.evaluate(`${buttonByText("Réactiver")}.click()`);
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation de réactivation" });
+    await page.evaluate(`${buttonByText("Réactiver le client")}.click()`);
+    await page.waitFor(hasText("est de nouveau actif(ve)"), { label: "client réactivé" });
+    await page.waitFor(`!(${isDisabled("Modifier")})`, { label: "Modifier réactivé" });
+
+    // Conflit : formulaire ouvert, un autre poste enregistre, puis enregistrement ici -> 409 et aucune écriture.
+    await page.evaluate(`${buttonByText("Modifier")}.click()`);
+    await page.waitFor("!!document.querySelector('form')", { label: "formulaire de modification" });
+    capture("clients_form_edit_1920x1080");
+    const otherStatus = await otherPostUpdate(accounts.write, `ducastel-${suffix}`, "Arlon");
+    check(otherStatus === 200, `autre poste : modification enregistrée (${otherStatus})`);
+    await fillField(page, "Ville", "Mons");
+    await page.evaluate(`${buttonByText("Enregistrer")}.click()`);
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "conflit de version" });
+    log("CONFLIT", (await page.evaluate("document.querySelector('[role=alertdialog]').innerText")).replace(/\s+/g, " ").slice(0, 200));
+    capture("clients_conflict_409_1920x1080");
+    await page.evaluate(`${buttonByText("Recharger la fiche")}.click()`);
+    await page.waitFor(hasText("Arlon"), { label: "fiche rechargée avec la version de l'autre poste" });
+    check(!(await text(page)).includes("Mons"), "aucune écriture de la version périmée");
+    capture("clients_detail_after-conflict_1920x1080");
+
+    // Thème sombre et 1440×900.
+    await setTheme(page, "dark");
+    await page.sleep(300);
+    capture("clients_detail_dark_1920x1080");
+    await openClients(page);
+    await page.waitFor("document.querySelector('table')", { label: "liste" });
+    capture("clients_list_dark_1920x1080");
+    await setTheme(page, "light");
+    await page.sleep(300);
+    capture("clients_list_light_1440x900", { width: 1440, height: 900 });
+    check(await page.noHorizontalScroll(), "liste 1440×900 : aucun défilement horizontal");
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+  },
+
+  /** Lecture seule : aucune action d'écriture proposée, motif affiché, fiche aux actions désactivées. */
+  async "clients-read"(page) {
+    await setZoom(page, 1);
+    await signIn(page, credentials().read);
+    await setTheme(page, "light");
+    await openClients(page);
+    await page.waitFor("document.querySelector('table')", { label: "liste en lecture" });
+    check((await text(page)).includes("Consultation seule"), "motif « Consultation seule » affiché");
+    check(!(await page.evaluate(`!!${buttonByText("Nouveau client")}`)), "« Nouveau client » absent");
+    check(await page.evaluate("![...document.querySelectorAll('tbody button')].some(b => /^(Modifier|Archiver|Réactiver) /.test(b.getAttribute('aria-label') || ''))"),
+      "aucune action Modifier/Archiver/Réactiver dans les lignes");
+    capture("clients_list_read-only_1920x1080", { width: 1920, height: 1080 });
+    await page.evaluate("document.querySelector('tbody button[aria-label^=\"Consulter\"]').click()");
+    await page.waitFor("!!document.querySelector('.client-head')", { label: "fiche" });
+    check(await page.evaluate(isDisabled("Modifier")) && await page.evaluate(isDisabled("Archiver")), "fiche : Modifier et Archiver désactivés");
+    capture("clients_detail_read-only_1920x1080");
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+  },
+
+  /** Écriture sans archivage : création/modification proposées, archivage désactivé avec motif. */
+  async "clients-write"(page) {
+    await setZoom(page, 1);
+    await signIn(page, credentials().write);
+    await setTheme(page, "light");
+    await openClients(page);
+    await page.waitFor("document.querySelector('table')", { label: "liste" });
+    check(await page.evaluate(`!!${buttonByText("Nouveau client")}`), "« Nouveau client » présent");
+    check(await page.evaluate("![...document.querySelectorAll('tbody button')].some(b => /^Archiver /.test(b.getAttribute('aria-label') || ''))"),
+      "aucune action Archiver dans les lignes");
+    await page.evaluate("document.querySelector('tbody button[aria-label^=\"Consulter\"]').click()");
+    await page.waitFor("!!document.querySelector('.client-head')", { label: "fiche" });
+    check(!(await page.evaluate(isDisabled("Modifier"))) && await page.evaluate(isDisabled("Archiver")), "fiche : Modifier actif, Archiver désactivé");
+    capture("clients_detail_write-no-archive_1920x1080", { width: 1920, height: 1080 });
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
   },
 
   /** Après redémarrage du processus client : écran de connexion, aucune session restaurée. */

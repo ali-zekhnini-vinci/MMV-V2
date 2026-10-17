@@ -160,6 +160,27 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
     }
 
     [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    public async Task Duplicates_AreAllowed_WithDistinctReferences()
+    {
+        await using var fixture = await RolledBackScope.OpenAsync(output);
+        var author = await AddUserAsync(fixture);
+        var service = fixture.Get<ClientService>();
+        var twin = Eloise with { LastName = $"Lefèvre{Guid.NewGuid():N}"[..20] };
+
+        var first = await service.CreateAsync(twin, author.Id, CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+        var second = await service.CreateAsync(twin, author.Id, CancellationToken.None);
+
+        // D-03-03 : aucun refus ni alerte de doublon ; deux fiches distinctes, deux références distinctes.
+        Assert.Equal(ClientWriteStatus.Success, first.Status);
+        Assert.Equal(ClientWriteStatus.Success, second.Status);
+        Assert.NotEqual(first.Client!.Id, second.Client!.Id);
+        Assert.NotEqual(first.Client.Reference, second.Client.Reference);
+        var page = await service.ListAsync(new ClientListQuery(twin.LastName, ClientStatusFilter.All, ClientSortField.Name, false, 1, 20), CancellationToken.None);
+        Assert.Equal(2, page.TotalCount);
+    }
+
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
     public async Task Constraints_AreEnforcedByPostgreSql()
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
@@ -178,8 +199,9 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
 
         await fixture.ExecuteAsync(Values("Jeanne", "Martin", ", reference", ", 'CLI-000000'"));
         await fixture.ExpectSqlStateAsync(PostgresErrorCodes.UniqueViolation, Values("Jeanne", "Martin", ", reference", ", 'CLI-000000'"));
-        // Restriction : un compte auteur ne peut être supprimé tant que ses clients existent.
-        await fixture.ExpectSqlStateAsync(PostgresErrorCodes.ForeignKeyViolation, $"DELETE FROM auth.users WHERE id = '{author.Id}'");
+        // Restriction : un compte auteur ne peut être supprimé tant que ses clients existent. ON DELETE RESTRICT est
+        // signalé par 23001 (restrict_violation), pas 23503 (constat réel PostgreSQL 18.6, 03-A3).
+        await fixture.ExpectSqlStateAsync(PostgresErrorCodes.RestrictViolation, $"DELETE FROM auth.users WHERE id = '{author.Id}'");
 
         // Permissions Clients admises par la contrainte étendue ; permission inconnue toujours refusée.
         await fixture.ExecuteAsync($"INSERT INTO auth.user_permissions (user_id, permission) VALUES ('{author.Id}', 'clients.read'), ('{author.Id}', 'clients.write'), ('{author.Id}', 'clients.archive')");
@@ -255,6 +277,150 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
             var deleted = await context.Users.Where(u => users.Contains(u.Id)).ExecuteDeleteAsync();
             output.WriteLine($"nettoyage : {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
             Assert.Equal(2, deleted);
+        }
+    }
+
+    /// <summary>
+    /// Matrice des permissions, cycle de vie, doublons, recherche sans accents et corps stricts sur le pipeline HTTP
+    /// réel et PostgreSQL réel (03-A3). Quatre comptes éphémères : <c>system.admin</c> seul, lecture seule,
+    /// lecture + écriture, lecture + écriture + archivage. Nettoyage et contrôle de résidus en fin de test.
+    /// </summary>
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    public async Task ClientsHttpPermissionsAndLifecycle_OnRealPostgreSql()
+    {
+        var connectionString = PostgreSqlTarget.Test.ValidatedBuilder().ConnectionString;
+        await using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Development");
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
+                new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = connectionString }));
+        });
+
+        var suffix = Guid.NewGuid().ToString("N")[..10];
+        var password = SessionTokens.NewToken();
+        Guid[] users;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+            Assert.Equal("mmv_v2_test", context.Database.GetDbConnection().Database);
+            var hashing = scope.ServiceProvider.GetRequiredService<IPasswordHashing>();
+            UserAccount[] accounts =
+            [
+                NewUser(hashing, $"e2e-padmin-{suffix}", password, Permissions.SystemAdmin),
+                NewUser(hashing, $"e2e-pread-{suffix}", password, Permissions.ClientsRead),
+                NewUser(hashing, $"e2e-pwrite-{suffix}", password, Permissions.ClientsRead, Permissions.ClientsWrite),
+                NewUser(hashing, $"e2e-pfull-{suffix}", password, Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive),
+            ];
+            context.Users.AddRange(accounts);
+            await context.SaveChangesAsync();
+            users = [.. accounts.Select(a => a.Id)];
+        }
+
+        output.WriteLine($"4 comptes éphémères créés sur mmv_v2_test (suffixe {suffix})");
+        try
+        {
+            using var http = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+            var admin = await LoginAsync(http, $"e2e-padmin-{suffix}", password);
+            var reader = await LoginAsync(http, $"e2e-pread-{suffix}", password);
+            var writer = await LoginAsync(http, $"e2e-pwrite-{suffix}", password);
+            var full = await LoginAsync(http, $"e2e-pfull-{suffix}", password);
+            var lastName = $"Lefèvre-{suffix}";
+            object Input(string city) => new
+            {
+                firstName = "Éloïse", lastName, birthDate = "1985-04-12", phone = "0470 12 34 56", email = (string?)null,
+                addressLine = (string?)null, city, postalCode = (string?)null, notes = (string?)null,
+            };
+
+            async Task ExpectAsync(HttpStatusCode status, string? code, HttpMethod method, string path, string token, object? body = null)
+            {
+                using var response = await SendAsync(http, method, path, token, body);
+                Assert.Equal(status, response.StatusCode);
+                if (code is not null)
+                {
+                    Assert.Equal(code, (await ReadAsync(response)).GetProperty("code").GetString());
+                }
+            }
+
+            // system.admin n'accorde aucune permission Clients ; aucune écriture sans clients.write.
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Get, "/api/clients", admin);
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Post, "/api/clients", admin, Input("Namur"));
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Post, "/api/clients", reader, Input("Namur"));
+
+            // Champ inconnu (donnée hors périmètre) refusé avant toute écriture.
+            await ExpectAsync(HttpStatusCode.BadRequest, "invalid_body", HttpMethod.Post, "/api/clients", writer, new
+            {
+                firstName = "Éloïse", lastName, socialSecurityNumber = "85041212345",
+            });
+            await ExpectAsync(HttpStatusCode.UnprocessableEntity, "validation_failed", HttpMethod.Post, "/api/clients", writer, new { firstName = "Éloïse" });
+
+            // Doublons autorisés (D-03-03) : deux créations identiques, deux références.
+            using var first = await SendAsync(http, HttpMethod.Post, "/api/clients", writer, Input("Namur"));
+            using var twin = await SendAsync(http, HttpMethod.Post, "/api/clients", writer, Input("Namur"));
+            Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, twin.StatusCode);
+            var detail = await ReadAsync(first);
+            var id = detail.GetProperty("id").GetString();
+            Assert.NotEqual(detail.GetProperty("reference").GetString(), (await ReadAsync(twin)).GetProperty("reference").GetString());
+
+            // Recherche sans accents ni casse, en lecture seule.
+            var page = await ReadAsync(await SendAsync(http, HttpMethod.Get, $"/api/clients?q=ELOISE%20lefevre-{suffix}", reader));
+            Assert.Equal(2, page.GetProperty("totalCount").GetInt32());
+            await ExpectAsync(HttpStatusCode.OK, null, HttpMethod.Get, $"/api/clients/{id}", reader);
+            var version = detail.GetProperty("version").GetUInt32();
+
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Put, $"/api/clients/{id}", reader, new { version, firstName = "Éloïse", lastName });
+            using var updated = await SendAsync(http, HttpMethod.Put, $"/api/clients/{id}", writer, new
+            {
+                firstName = "Éloïse", lastName, birthDate = "1985-04-12", phone = (string?)null, email = (string?)null,
+                addressLine = (string?)null, city = "Liège", postalCode = (string?)null, notes = (string?)null, version,
+            });
+            Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+            var current = (await ReadAsync(updated)).GetProperty("version").GetUInt32();
+            Assert.NotEqual(version, current);
+
+            // Archivage : permission dédiée, version exigée, conflit sur version périmée.
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Post, $"/api/clients/{id}/archive", writer, new { version = current });
+            await ExpectAsync(HttpStatusCode.Conflict, "version_conflict", HttpMethod.Post, $"/api/clients/{id}/archive", full, new { version });
+            using var archived = await SendAsync(http, HttpMethod.Post, $"/api/clients/{id}/archive", full, new { version = current });
+            Assert.Equal(HttpStatusCode.OK, archived.StatusCode);
+            var archivedDetail = await ReadAsync(archived);
+            Assert.Equal("archived", archivedDetail.GetProperty("status").GetString());
+            current = archivedDetail.GetProperty("version").GetUInt32();
+            await ExpectAsync(HttpStatusCode.Conflict, "already_archived", HttpMethod.Post, $"/api/clients/{id}/archive", full, new { version = current });
+            await ExpectAsync(HttpStatusCode.Conflict, "client_archived", HttpMethod.Put, $"/api/clients/{id}", writer, new { version = current, firstName = "Éloïse", lastName });
+            var activeOnly = await ReadAsync(await SendAsync(http, HttpMethod.Get, $"/api/clients?q=lefevre-{suffix}&status=active", reader));
+            Assert.Equal(1, activeOnly.GetProperty("totalCount").GetInt32());
+
+            // Réactivation.
+            await ExpectAsync(HttpStatusCode.Forbidden, "forbidden", HttpMethod.Post, $"/api/clients/{id}/reactivate", reader, new { version = current });
+            await ExpectAsync(HttpStatusCode.Conflict, "version_conflict", HttpMethod.Post, $"/api/clients/{id}/reactivate", full, new { version });
+            using var reactivated = await SendAsync(http, HttpMethod.Post, $"/api/clients/{id}/reactivate", full, new { version = current });
+            Assert.Equal(HttpStatusCode.OK, reactivated.StatusCode);
+            var reactivatedDetail = await ReadAsync(reactivated);
+            Assert.Equal("active", reactivatedDetail.GetProperty("status").GetString());
+            await ExpectAsync(HttpStatusCode.Conflict, "already_active", HttpMethod.Post, $"/api/clients/{id}/reactivate", full,
+                new { version = reactivatedDetail.GetProperty("version").GetUInt32() });
+
+            // Aucune suppression physique exposée.
+            await ExpectAsync(HttpStatusCode.MethodNotAllowed, null, HttpMethod.Delete, $"/api/clients/{id}", full);
+        }
+        finally
+        {
+            using var scope = factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+            var clients = await context.Clients.Where(c => users.Contains(c.CreatedByUserId) || users.Contains(c.UpdatedByUserId)).ExecuteDeleteAsync();
+            var deleted = await context.Users.Where(u => users.Contains(u.Id)).ExecuteDeleteAsync();
+            output.WriteLine($"nettoyage : {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
+            Assert.Equal(4, deleted);
+
+            var residue = await context.Database.SqlQuery<int>(
+                $"""
+                SELECT ((SELECT count(*) FROM clients.clients WHERE last_name LIKE {"%" + suffix})
+                      + (SELECT count(*) FROM auth.users WHERE user_name LIKE {"%" + suffix})
+                      + (SELECT count(*) FROM auth.sessions WHERE user_id = ANY({users})))::int AS "Value"
+                """).SingleAsync();
+            output.WriteLine($"résidus : {residue}");
+            Assert.Equal(0, residue);
         }
     }
 

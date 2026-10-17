@@ -19,9 +19,11 @@ import { Highlight } from "./highlight.tsx";
 
 export interface ClientRowActions {
   onOpen: (client: ClientSummary) => void;
-  onEdit: (client: ClientSummary) => void;
-  onArchive: (client: ClientSummary) => void;
-  onReactivate: (client: ClientSummary) => void;
+  /** Absent : action non proposée (compte sans `clients.write`). */
+  onEdit?: (client: ClientSummary) => void;
+  /** Absents : actions non proposées (compte sans `clients.archive`). */
+  onArchive?: (client: ClientSummary) => void;
+  onReactivate?: (client: ClientSummary) => void;
 }
 
 interface ClientsTableProps extends ClientRowActions {
@@ -127,11 +129,13 @@ export function ClientsTable({
             <div className="clients-rowacts">
               <IconAction label={`Consulter ${name}`} onClick={() => onOpen(client)} icon={<Eye size={16} />} />
               {client.status === "archived" ? (
-                <IconAction label={`Réactiver ${name}`} onClick={() => onReactivate(client)} icon={<ArchiveRestore size={16} />} accent />
+                onReactivate && (
+                  <IconAction label={`Réactiver ${name}`} onClick={() => onReactivate(client)} icon={<ArchiveRestore size={16} />} accent />
+                )
               ) : (
                 <>
-                  <IconAction label={`Modifier ${name}`} onClick={() => onEdit(client)} icon={<Pencil size={16} />} />
-                  <IconAction label={`Archiver ${name}`} onClick={() => onArchive(client)} icon={<Archive size={16} />} />
+                  {onEdit && <IconAction label={`Modifier ${name}`} onClick={() => onEdit(client)} icon={<Pencil size={16} />} />}
+                  {onArchive && <IconAction label={`Archiver ${name}`} onClick={() => onArchive(client)} icon={<Archive size={16} />} />}
                 </>
               )}
             </div>

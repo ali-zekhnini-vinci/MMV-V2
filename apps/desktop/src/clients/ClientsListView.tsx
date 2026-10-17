@@ -19,6 +19,7 @@ import {
 import { cn } from "../lib/utils.ts";
 import { ClientNoticeBanner } from "./ClientNoticeBanner.tsx";
 import { useClientLifecycle } from "./ClientLifecycle.tsx";
+import { READ_ONLY_HINT, useClientPermissions } from "./clientPermissions.ts";
 import { useClientList } from "./clientQueries.ts";
 import { useClientsService } from "./clientsService.ts";
 import { ClientsTable } from "./ClientsTable.tsx";
@@ -48,6 +49,7 @@ export function ClientsListView() {
   const { enabled } = useClientsService();
   const { listState, setListState } = useClientsUi();
   const lifecycle = useClientLifecycle();
+  const { canWrite, canArchive } = useClientPermissions();
   const [searchInput, setSearchInput] = useState(listState.search);
   const searchId = useId();
 
@@ -86,12 +88,14 @@ export function ClientsListView() {
 
   const open = useCallback((client: ClientSummary) => navigate(client.id), [navigate]);
   const edit = useCallback((client: ClientSummary) => navigate(`${client.id}/modifier`), [navigate]);
-  const createButton = (
-    <Button variant="primary" onClick={() => navigate("nouveau")}>
-      <Plus size={16} aria-hidden="true" />
-      Nouveau client
-    </Button>
-  );
+  // Création proposée aux seuls comptes `clients.write` (aperçu du formulaire conservé si le service est désactivé).
+  const createButton =
+    canWrite || !enabled ? (
+      <Button variant="primary" onClick={() => navigate("nouveau")}>
+        <Plus size={16} aria-hidden="true" />
+        Nouveau client
+      </Button>
+    ) : null;
 
   const subtitle = !enabled
     ? "Service Clients désactivé"
@@ -150,7 +154,10 @@ export function ClientsListView() {
           </div>
         }
       >
-        <p>Vérifiez l&apos;orthographe ou essayez un autre nom, numéro de téléphone ou email. Vous pouvez aussi créer ce client.</p>
+        <p>
+          Vérifiez l&apos;orthographe ou essayez un autre nom, numéro de téléphone ou email.
+          {canWrite && " Vous pouvez aussi créer ce client."}
+        </p>
       </StateBlock>
     );
   } else if (query.data.totalCount === 0) {
@@ -161,7 +168,7 @@ export function ClientsListView() {
         </StateBlock>
       ) : (
         <StateBlock tone="accent" icon={Users} title="Aucun client enregistré" action={createButton}>
-          <p>Commencez par créer votre premier client.</p>
+          <p>{canWrite ? "Commencez par créer votre premier client." : "Aucun client n'est encore enregistré sur le serveur MMV."}</p>
         </StateBlock>
       );
   } else {
@@ -177,9 +184,9 @@ export function ClientsListView() {
         onPageChange={(page) => setListState((current) => ({ ...current, page }))}
         fetching={query.isFetching}
         onOpen={open}
-        onEdit={edit}
-        onArchive={lifecycle.requestArchive}
-        onReactivate={lifecycle.requestReactivate}
+        onEdit={canWrite ? edit : undefined}
+        onArchive={canArchive ? lifecycle.requestArchive : undefined}
+        onReactivate={canArchive ? lifecycle.requestReactivate : undefined}
       />
     );
   }
@@ -194,8 +201,13 @@ export function ClientsListView() {
             Clients
           </h1>
           <p className="clients-head__sub">{subtitle}</p>
+          {enabled && !canWrite && (
+            <p className="clients-head__hint" role="note">
+              {READ_ONLY_HINT}
+            </p>
+          )}
         </div>
-        <div className="clients-actions">{createButton}</div>
+        {createButton && <div className="clients-actions">{createButton}</div>}
       </header>
 
       <ClientNoticeBanner />

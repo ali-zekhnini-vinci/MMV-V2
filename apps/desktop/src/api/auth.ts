@@ -5,6 +5,8 @@ import { type ApiResult, noContent, requestJson } from "./client.ts";
 
 /** Permissions techniques connues du client ; le serveur reste seul juge (policies ASP.NET Core). */
 export const PERMISSION_SYSTEM_ADMIN = "system.admin";
+export const PERMISSION_CLIENTS_WRITE = "clients.write";
+export const PERMISSION_CLIENTS_ARCHIVE = "clients.archive";
 
 export interface SessionUser {
   id: string;

@@ -12,7 +12,9 @@ namespace MMV.Api.Tests.Clients;
 /// écriture — sans être un fournisseur EF. La persistance réelle, les contraintes et le conflit de concurrence
 /// au niveau SQL sont prouvés par tests/MMV.PostgreSql.Tests (étape ClientsWrite).
 /// </summary>
-internal sealed class InMemoryClientStore : IClientStore
+/// <param name="clock">Horloge des clients semés ; celle du service testé, pour que création et modification soient
+/// datées sur la même échelle (sinon le résultat dépend de l'heure réelle d'exécution).</param>
+internal sealed class InMemoryClientStore(TimeProvider? clock = null) : IClientStore
 {
     private static readonly PropertyInfo ReferenceProperty = typeof(Client).GetProperty(nameof(Client.Reference))!;
     private static readonly PropertyInfo VersionProperty = typeof(Client).GetProperty(nameof(Client.Version))!;
@@ -126,7 +128,7 @@ internal sealed class InMemoryClientStore : IClientStore
     /// <summary>Client fictif enregistré (données de test uniquement, jamais en base de développement).</summary>
     public Client Seed(string firstName, string lastName, string? city = null, string? email = null, string? phone = null, bool archived = false)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = (clock ?? TimeProvider.System).GetUtcNow();
         var client = Client.Create(
             Guid.CreateVersion7(), new ClientDetails(firstName, lastName, null, phone, email, null, city, null, null), Guid.CreateVersion7(), now);
         if (archived)
