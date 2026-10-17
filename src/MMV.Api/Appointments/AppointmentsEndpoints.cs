@@ -98,7 +98,10 @@ internal static partial class AppointmentsEndpoints
         }
 
         var items = await service.ListAsync(query.Value.From, query.Value.To, query.Value.IncludeCancelled, cancellationToken);
-        return TypedResults.Ok(new AppointmentListResponse([.. items.Select(ToSummary)]));
+        var offsets = AppointmentSchedule.OffsetSegments(service.Settings.TimeZone!, query.Value.From, query.Value.To);
+        return TypedResults.Ok(new AppointmentListResponse(
+            [.. items.Select(ToSummary)],
+            [.. offsets.Select(o => new TimeZoneOffsetResponse(o.FromUtc, o.ToUtc, o.OffsetMinutes))]));
     }
 
     private static async Task<Results<Ok<AppointmentDetailResponse>, NotFound<ErrorResponse>>> GetAsync(
@@ -314,7 +317,8 @@ internal static partial class AppointmentsEndpoints
         return new AppointmentDetailResponse(
             a.Id, a.ClientId, view.ClientReference, view.ClientFirstName, view.ClientLastName, view.ClientArchived,
             a.ResponsibleUserId, view.ResponsibleDisplayName, a.StartsAtUtc, a.EndsAtUtc, a.ReasonCode, Status(a), a.Version,
-            a.Notes, a.CancelledAtUtc, view.CancelledByDisplayName, a.CancellationReason, a.CreatedAtUtc, a.UpdatedAtUtc);
+            a.Notes, a.CancelledAtUtc, view.CancelledByDisplayName, a.CancellationReason, a.CreatedAtUtc, a.UpdatedAtUtc,
+            view.UpdatedByDisplayName);
     }
 
     private static AppointmentStatusValue Status(Appointment appointment) =>
@@ -362,7 +366,10 @@ internal sealed record AppointmentSummaryResponse(
     AppointmentStatusValue Status,
     uint Version);
 
-/// <summary>Détail : ligne d'agenda + notes, annulation (auteur, date, motif) et audit.</summary>
+/// <summary>
+/// Détail : ligne d'agenda + notes, annulation (auteur, date, motif) et audit (création, dernière modification avec
+/// son auteur — O-03-23, 03-B3). Pas d'historique détaillé des modifications (dette produit).
+/// </summary>
 internal sealed record AppointmentDetailResponse(
     Guid Id,
     Guid ClientId,
@@ -382,9 +389,17 @@ internal sealed record AppointmentDetailResponse(
     string? CancelledByDisplayName,
     string? CancellationReason,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    string UpdatedByDisplayName);
 
-internal sealed record AppointmentListResponse(IReadOnlyList<AppointmentSummaryResponse> Items);
+/// <summary>
+/// Rendez-vous de la période et décalages UTC du magasin sur CETTE période selon le serveur (segments contigus
+/// [fromUtc, toUtc[) : l'interface les compare à ses propres conversions et bloque la période en cas d'écart (B2-REV-03).
+/// </summary>
+internal sealed record AppointmentListResponse(IReadOnlyList<AppointmentSummaryResponse> Items, IReadOnlyList<TimeZoneOffsetResponse> TimeZoneOffsets);
+
+/// <summary>Décalage UTC constant du magasin, en minutes, sur [fromUtc, toUtc[.</summary>
+internal sealed record TimeZoneOffsetResponse(DateTimeOffset FromUtc, DateTimeOffset ToUtc, int OffsetMinutes);
 
 /// <summary>Statut exposé : <c>planned</c> | <c>cancelled</c>.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<AppointmentStatusValue>))]
@@ -399,17 +414,20 @@ internal enum AppointmentStatusValue
 
 /// <summary>
 /// Saisie d'un rendez-vous. Les champs sont validés par le serveur (422 par champ) plutôt que par le schéma.
-/// <c>startsAtUtc</c> : instant ISO 8601 UTC ; <c>responsibleUserId</c> <c>null</c> = rendez-vous d'accueil.
+/// <c>startsAtUtc</c> : instant ISO 8601 UTC ; <c>startsAtLocal</c> : heure murale du magasin (<c>AAAA-MM-JJTHH:mm</c>)
+/// d'où le poste l'a calculé, recalculée par le serveur (écart → 422 <c>time_zone_mismatch</c>) ;
+/// <c>responsibleUserId</c> <c>null</c> = rendez-vous d'accueil.
 /// </summary>
 internal sealed record AppointmentInputRequest(
     Guid? ClientId = null,
     Guid? ResponsibleUserId = null,
     string? StartsAtUtc = null,
+    string? StartsAtLocal = null,
     int? DurationMinutes = null,
     string? ReasonCode = null,
     string? Notes = null)
 {
-    public AppointmentInput ToInput() => new(ClientId, ResponsibleUserId, StartsAtUtc, DurationMinutes, ReasonCode, Notes);
+    public AppointmentInput ToInput() => new(ClientId, ResponsibleUserId, StartsAtUtc, StartsAtLocal, DurationMinutes, ReasonCode, Notes);
 }
 
 /// <summary>Modification et déplacement : saisie complète + version lue (obligatoire).</summary>
@@ -417,12 +435,13 @@ internal sealed record AppointmentUpdateRequest(
     Guid? ClientId = null,
     Guid? ResponsibleUserId = null,
     string? StartsAtUtc = null,
+    string? StartsAtLocal = null,
     int? DurationMinutes = null,
     string? ReasonCode = null,
     string? Notes = null,
     uint? Version = null)
 {
-    public AppointmentInput ToInput() => new(ClientId, ResponsibleUserId, StartsAtUtc, DurationMinutes, ReasonCode, Notes);
+    public AppointmentInput ToInput() => new(ClientId, ResponsibleUserId, StartsAtUtc, StartsAtLocal, DurationMinutes, ReasonCode, Notes);
 }
 
 /// <summary>Annulation : version lue (obligatoire) et motif facultatif (≤ 200 caractères).</summary>

@@ -51,8 +51,11 @@ describe("parseurs du contrat", () => {
       cancellationReason: null,
       createdAtUtc: "2026-07-01T08:00:00Z",
       updatedAtUtc: "2026-07-01T08:00:00Z",
+      updatedByDisplayName: "Agent Fictif",
     };
     assert.deepEqual(parseAppointmentDetail(detail), detail);
+    // Auteur de la dernière modification obligatoire (O-03-23, 03-B3).
+    assert.equal(parseAppointmentDetail({ ...detail, updatedByDisplayName: null }), null);
     assert.equal(parseAppointmentDetail({ ...detail, notes: 12 }), null);
     assert.equal(parseAppointmentDetail({ ...detail, cancelledByDisplayName: 1 }), null);
   });
@@ -130,6 +133,8 @@ describe("formulaire", () => {
       clientId: "c-1",
       responsibleUserId: null,
       startsAtUtc: "2026-07-16T08:30:00Z",
+      // Heure murale annoncée au serveur, qui la recalcule (B2-REV-03).
+      startsAtLocal: "2026-07-16T10:30",
       durationMinutes: 45,
       reasonCode: "retrait_commande",
       notes: null,
@@ -153,6 +158,14 @@ describe("formulaire", () => {
     assert.deepEqual(appointmentServerFieldErrors({ startsAtUtc: ["in_past"], responsibleUserId: ["not_eligible"] }), [
       ["time", "Ce créneau est déjà passé"],
       ["responsibleUserId", "Collaborateur inactif ou non habilité à recevoir des rendez-vous"],
+    ]);
+  });
+});
+
+describe("refus serveur des fuseaux (03-B3)", () => {
+  test("startsAtLocal : time_zone_mismatch affiché sous l'heure, sans le texte du serveur", () => {
+    assert.deepEqual(appointmentServerFieldErrors({ startsAtLocal: ["time_zone_mismatch"] }), [
+      ["time", "L'heure de ce poste diffère de celle du serveur MMV pour cette date (données de fuseau horaire différentes) : rien n'a été enregistré"],
     ]);
   });
 });

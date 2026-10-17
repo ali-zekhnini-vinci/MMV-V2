@@ -60,4 +60,76 @@ public static class AppointmentSchedule
         var endsAtMidnight = localEnd.Date == localStart.Date.AddDays(1) && localEnd.TimeOfDay == TimeSpan.Zero;
         return sameDay || endsAtMidnight ? null : OutOfRange;
     }
+
+    /// <summary>
+    /// Heure murale du magasin <c>AAAA-MM-JJTHH:mm</c> que le SERVEUR associe à <paramref name="instant"/> (données de
+    /// fuseaux de Windows). Comparée à l'heure saisie par le poste (B2-REV-03) : un écart signale des données de
+    /// fuseaux divergentes entre le serveur et le poste (O-03-22), qui décaleraient l'heure réelle du rendez-vous.
+    /// </summary>
+    public static string LocalWallTime(TimeZoneInfo zone, DateTimeOffset instant) =>
+        TimeZoneInfo.ConvertTime(instant, zone).ToString(LocalWallTimeFormat, CultureInfo.InvariantCulture);
+
+    public const string LocalWallTimeFormat = "yyyy-MM-dd'T'HH:mm";
+
+    public const string TimeZoneMismatch = "time_zone_mismatch";
+
+    /// <summary>Heure murale stricte <c>AAAA-MM-JJTHH:mm</c> (ni secondes, ni décalage, ni 24:00).</summary>
+    public static bool IsLocalWallTime(string? value) =>
+        value is { Length: 16 }
+        && DateTime.TryParseExact(value, LocalWallTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out _);
+
+    private static readonly TimeSpan OffsetScanStep = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Décalages UTC du magasin sur [<paramref name="fromUtc"/>, <paramref name="toUtc"/>[ selon le SERVEUR : segments
+    /// contigus, triés, chacun à décalage constant, bornes exactes (recherche dichotomique au tick près autour de chaque
+    /// changement détecté par pas de 15 minutes). Servis avec la liste des rendez-vous : l'interface vérifie que ses
+    /// propres données de fuseaux (ICU de WebView2) donnent les mêmes décalages sur la période affichée, sinon elle
+    /// bloque l'agenda de cette période (B2-REV-03).
+    /// </summary>
+    public static IReadOnlyList<UtcOffsetSegment> OffsetSegments(TimeZoneInfo zone, DateTimeOffset fromUtc, DateTimeOffset toUtc)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(fromUtc, toUtc);
+        var segments = new List<UtcOffsetSegment>();
+        var segmentStart = fromUtc;
+        var current = zone.GetUtcOffset(fromUtc);
+        var cursor = fromUtc;
+        while (cursor < toUtc)
+        {
+            var next = cursor + OffsetScanStep < toUtc ? cursor + OffsetScanStep : toUtc;
+            var probe = next < toUtc ? next : toUtc.AddTicks(-1);
+            if (zone.GetUtcOffset(probe) == current)
+            {
+                cursor = next;
+                continue;
+            }
+
+            // Premier instant de ]cursor, probe] au nouveau décalage.
+            var low = cursor;
+            var high = probe;
+            while (high - low > TimeSpan.FromTicks(1))
+            {
+                var middle = low + TimeSpan.FromTicks((high - low).Ticks / 2);
+                if (zone.GetUtcOffset(middle) == current)
+                {
+                    low = middle;
+                }
+                else
+                {
+                    high = middle;
+                }
+            }
+
+            segments.Add(new UtcOffsetSegment(segmentStart, high, (int)current.TotalMinutes));
+            segmentStart = high;
+            current = zone.GetUtcOffset(high);
+            cursor = high;
+        }
+
+        segments.Add(new UtcOffsetSegment(segmentStart, toUtc, (int)current.TotalMinutes));
+        return segments;
+    }
 }
+
+/// <summary>Décalage UTC constant du magasin sur [<see cref="FromUtc"/>, <see cref="ToUtc"/>[, en minutes.</summary>
+public readonly record struct UtcOffsetSegment(DateTimeOffset FromUtc, DateTimeOffset ToUtc, int OffsetMinutes);

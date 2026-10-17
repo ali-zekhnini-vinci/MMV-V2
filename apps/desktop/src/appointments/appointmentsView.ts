@@ -27,6 +27,15 @@ export const clientInitials = (appointment: Pick<AppointmentSummary, "clientFirs
   `${appointment.clientFirstName.charAt(0)}${appointment.clientLastName.charAt(0)}`.toLocaleUpperCase("fr");
 
 /** « 16/07/2026 à 10:30 » dans le fuseau du magasin. */
+/**
+ * Rendez-vous commencé (début passé, même en cours) : sa réservation est figée — client, créneau, durée, responsable —
+ * et seuls le motif et les notes restent corrigeables (B2-REV-02 et O-03-23, 03-B3). Garde d'affichage : le serveur
+ * refuse de toute façon (409 `appointment_past`).
+ */
+export function hasStarted(startsAtUtc: string, now?: () => Date): boolean {
+  return Date.parse(startsAtUtc) < (now ? now().getTime() : Date.now());
+}
+
 export function formatWhen(startsAtUtc: string, timeZone: string): string {
   const wall = utcToWall(startsAtUtc, timeZone);
   return `${formatNumericDate(wall.date)} à ${wall.time}`;
@@ -74,7 +83,11 @@ export function describeAppointmentFailure(error: ApiRequestError, slot?: { star
       case "client_archived":
         return { tone: "warning", title: "Client archivé", text: "Ce client est archivé : le serveur MMV refuse cette opération." };
       case "appointment_past":
-        return { tone: "warning", title: "Créneau passé", text: "Ce créneau a déjà commencé : le serveur MMV refuse de le planifier à nouveau." };
+        return {
+          tone: "warning",
+          title: "Rendez-vous commencé",
+          text: "Ce rendez-vous a déjà commencé : le serveur MMV refuse d'en changer le créneau, le responsable ou le client, et de le rétablir. Seuls le motif et les notes peuvent être corrigés.",
+        };
       case "appointment_cancelled":
         return { tone: "info", title: "Rendez-vous annulé", text: "Ce rendez-vous a été annulé entre-temps. Les données ont été actualisées." };
       case "appointment_not_cancelled":

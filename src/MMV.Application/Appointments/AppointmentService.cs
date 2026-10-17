@@ -2,7 +2,10 @@ using MMV.Domain.Appointments;
 
 namespace MMV.Application.Appointments;
 
-/// <summary>Rendez-vous accompagné des seules données client et collaborateur affichées (minimisation, D-03-17).</summary>
+/// <summary>
+/// Rendez-vous accompagné des seules données client et collaborateur affichées (minimisation, D-03-17), dont
+/// l'auteur de la dernière modification (O-03-23, 03-B3 : correction des notes et du motif tracée par auteur et date).
+/// </summary>
 public sealed record AppointmentView(
     Appointment Appointment,
     string ClientReference,
@@ -10,7 +13,8 @@ public sealed record AppointmentView(
     string ClientLastName,
     bool ClientArchived,
     string? ResponsibleDisplayName,
-    string? CancelledByDisplayName);
+    string? CancelledByDisplayName,
+    string UpdatedByDisplayName);
 
 /// <summary>Collaborateur proposé comme responsable : identifiant et nom affiché seulement.</summary>
 public sealed record ResponsibleOption(Guid Id, string DisplayName);
@@ -192,9 +196,12 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
     }
 
     /// <summary>
-    /// Modification ou déplacement (corps complet). Le créneau est revérifié — passé, éligibilité, chevauchement ou
-    /// capacité, sous verrou — dès que le début, la durée ou le responsable changent ; une modification qui ne touche
-    /// que le motif ou les notes ne réserve rien de nouveau.
+    /// Modification ou déplacement (corps complet). Le créneau est revérifié — passé, éligibilité du responsable,
+    /// chevauchement ou capacité, sous verrou — dès que le début, la durée ou le responsable changent, y compris quand
+    /// le responsable reste le même (B2-REV-01, 03-B3 : un collaborateur désactivé ou retiré ne reçoit aucun nouveau
+    /// créneau) ; une modification qui ne touche que le motif ou les notes ne réserve rien de nouveau. Un rendez-vous
+    /// commencé garde ses informations de réservation — client, créneau, responsable — (B2-REV-02 et O-03-23,
+    /// règles retenues par le propriétaire en 03-B3) : seuls le motif et les notes restent corrigeables.
     /// </summary>
     public async Task<AppointmentWriteResult> UpdateAsync(
         Guid id, AppointmentInput input, uint version, Guid userId, CancellationToken cancellationToken)
@@ -231,12 +238,18 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
         var value = validation.Value!;
         var slotChanged = value.StartsAtUtc != appointment.StartsAtUtc || value.EndsAtUtc != appointment.EndsAtUtc;
         var responsibleChanged = value.ResponsibleUserId != appointment.ResponsibleUserId;
+        var rebooks = slotChanged || responsibleChanged;
+        if ((rebooks || value.ClientId != appointment.ClientId) && appointment.StartsAtUtc < now)
+        {
+            return new AppointmentWriteResult(AppointmentWriteStatus.AppointmentPast);
+        }
+
         if (slotChanged && value.StartsAtUtc < now)
         {
             return AppointmentWriteResult.Invalid("startsAtUtc", InPast);
         }
 
-        if (slotChanged || responsibleChanged)
+        if (rebooks)
         {
             await session.LockAsync([AppointmentLock.For(value.ResponsibleUserId)], cancellationToken);
         }
@@ -248,13 +261,13 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
             return new AppointmentWriteResult(AppointmentWriteStatus.ClientArchived);
         }
 
-        var refusal = await CheckClientAndResponsibleAsync(session, value, checkResponsible: responsibleChanged, cancellationToken);
+        var refusal = await CheckClientAndResponsibleAsync(session, value, checkResponsible: rebooks, cancellationToken);
         if (refusal is not null)
         {
             return refusal;
         }
 
-        if (slotChanged || responsibleChanged)
+        if (rebooks)
         {
             var slot = await CheckAvailabilityAsync(session, value.ResponsibleUserId, value.StartsAtUtc, value.EndsAtUtc, appointment.Id, cancellationToken);
             if (slot is not null)

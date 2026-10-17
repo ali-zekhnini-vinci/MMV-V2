@@ -18,6 +18,9 @@ namespace MMV.Api.Tests.Appointments;
 /// </summary>
 internal sealed class InMemoryAppointmentStore : IAppointmentStore
 {
+    /// <summary>Nom affiché d'un auteur absent des comptes doublés (les auteurs des tests ne sont pas des collaborateurs).</summary>
+    public const string AuthorDisplayName = "Auteur de test";
+
     private static readonly PropertyInfo VersionProperty = typeof(Appointment).GetProperty(nameof(Appointment.Version))!;
 
     private readonly Lock _gate = new();
@@ -38,6 +41,16 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
 
     /// <summary>Témoin négatif : sans verrou, deux postes simultanés passent les contrôles (la garantie vient du verrou).</summary>
     public bool IgnoreLocks { get; set; }
+
+    /// <summary>
+    /// Témoin négatif (03-B3) : chaque session attend, contrôles faits et juste avant d'enregistrer, que ce nombre de
+    /// sessions y soit arrivé — fenêtre de concurrence garantie sans dépendre du minutage (avec <see cref="IgnoreLocks"/>
+    /// seulement : sous verrou, la seconde session n'atteindrait jamais ce point).
+    /// </summary>
+    public int RendezvousBeforeCommit { get; set; }
+
+    private readonly TaskCompletionSource _allArrived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _arrivals;
 
     /// <summary>Simule une écriture concurrente survenue entre la lecture et l'enregistrement.</summary>
     public bool FailNextCommit { get; set; }
@@ -153,7 +166,8 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
         return new AppointmentView(
             a, client.Reference, client.FirstName, client.LastName, client.Archived,
             a.ResponsibleUserId is { } r ? Users[r].DisplayName : null,
-            a.CancelledByUserId is { } c && Users.TryGetValue(c, out var canceller) ? canceller.DisplayName : null);
+            a.CancelledByUserId is { } c && Users.TryGetValue(c, out var canceller) ? canceller.DisplayName : null,
+            Users.TryGetValue(a.UpdatedByUserId, out var updater) ? updater.DisplayName : AuthorDisplayName);
     }
 
     private sealed class Session(InMemoryAppointmentStore store) : IAppointmentWriteSession
@@ -240,8 +254,18 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
 
         public void Add(Appointment appointment) => _added.Add(appointment);
 
-        public Task<bool> CommitAsync(CancellationToken cancellationToken)
+        public async Task<bool> CommitAsync(CancellationToken cancellationToken)
         {
+            if (store.RendezvousBeforeCommit > 0)
+            {
+                if (Interlocked.Increment(ref store._arrivals) >= store.RendezvousBeforeCommit)
+                {
+                    store._allArrived.TrySetResult();
+                }
+
+                await store._allArrived.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+
             lock (store._gate)
             {
                 store.CommitCount++;
@@ -249,7 +273,7 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
                 if (store.FailNextCommit || _tracked.Any(t => t.Key.Version != t.Value))
                 {
                     store.FailNextCommit = false;
-                    return Task.FromResult(false);
+                    return false;
                 }
 
                 foreach (var (appointment, _) in _tracked)
@@ -265,7 +289,7 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
 
                 _added.Clear();
                 _tracked.Clear();
-                return Task.FromResult(true);
+                return true;
             }
         }
 

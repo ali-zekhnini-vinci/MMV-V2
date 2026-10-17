@@ -51,6 +51,89 @@ export function wallTimeToUtc(date: CivilDate, time: string, timeZone: string): 
   return { ok: true, utc: earlier.toInstant().toString() };
 }
 
+/**
+ * Heure murale du magasin `AAAA-MM-JJTHH:mm` calculée par CE poste (ICU de WebView2) pour un instant UTC. Envoyée
+ * avec chaque saisie (`startsAtLocal`) : le serveur la recalcule avec ses propres données de fuseaux (Windows) et
+ * refuse tout écart (422 `time_zone_mismatch`, B2-REV-03, 03-B3).
+ */
+export function localWallDateTime(utc: string, timeZone: string): string {
+  const wall = utcToWall(utc, timeZone);
+  return `${wall.date}T${wall.time}`;
+}
+
+/** Décalage UTC constant du magasin, en minutes, sur [fromUtc, toUtc[. */
+export interface OffsetSegment {
+  fromUtc: string;
+  toUtc: string;
+  offsetMinutes: number;
+}
+
+const offsetAt = (instant: Temporal.Instant, timeZone: string) => instant.toZonedDateTimeISO(timeZone).offsetNanoseconds / 60_000_000_000;
+
+/** Décalages selon CE poste sur [fromUtc, toUtc[ : segments contigus, découpés aux transitions ICU. */
+export function localOffsetSegments(fromUtc: string, toUtc: string, timeZone: string): OffsetSegment[] {
+  const end = Temporal.Instant.from(toUtc);
+  const segments: OffsetSegment[] = [];
+  let start = Temporal.Instant.from(fromUtc);
+  while (Temporal.Instant.compare(start, end) < 0) {
+    const next = start.toZonedDateTimeISO(timeZone).getTimeZoneTransition("next")?.toInstant() ?? null;
+    const stop = next !== null && Temporal.Instant.compare(next, end) < 0 ? next : end;
+    segments.push({ fromUtc: start.toString(), toUtc: stop.toString(), offsetMinutes: offsetAt(start, timeZone) });
+    start = stop;
+  }
+  return segments;
+}
+
+/** Premier écart entre les décalages du serveur et ceux de ce poste, ou `null` s'ils concordent. */
+export interface OffsetDivergence {
+  atUtc: string;
+  serverOffsetMinutes: number | null;
+  localOffsetMinutes: number | null;
+}
+
+/**
+ * B2-REV-03 (03-B3) : compare, sur toute la période couverte par le serveur, ses décalages à ceux de ce poste
+ * (bornes de segments ET décalages). Toute différence signifie que serveur et poste ne placent pas les mêmes heures
+ * murales aux mêmes instants (O-03-22) : l'agenda de cette période est alors bloqué. Une période réclamée non
+ * couverte (`range`) est aussi un écart.
+ */
+export function findOffsetDivergence(
+  server: readonly OffsetSegment[],
+  timeZone: string,
+  range?: { fromUtc: string; toUtc: string },
+): OffsetDivergence | null {
+  if (server.length === 0) return range ? { atUtc: range.fromUtc, serverOffsetMinutes: null, localOffsetMinutes: null } : null;
+  const same = (a: string, b: string) => Temporal.Instant.compare(Temporal.Instant.from(a), Temporal.Instant.from(b)) === 0;
+  const first = server[0].fromUtc;
+  const last = server[server.length - 1].toUtc;
+  if (range && (!same(first, range.fromUtc) || !same(last, range.toUtc))) {
+    return { atUtc: range.fromUtc, serverOffsetMinutes: server[0].offsetMinutes, localOffsetMinutes: offsetAt(Temporal.Instant.from(range.fromUtc), timeZone) };
+  }
+  const earlier = (a: string, b: string) => (Temporal.Instant.compare(Temporal.Instant.from(a), Temporal.Instant.from(b)) <= 0 ? a : b);
+  const serverAt = (utc: string) => {
+    const instant = Temporal.Instant.from(utc);
+    const segment = server.find(
+      (candidate) => Temporal.Instant.compare(Temporal.Instant.from(candidate.fromUtc), instant) <= 0 && Temporal.Instant.compare(instant, Temporal.Instant.from(candidate.toUtc)) < 0,
+    );
+    return segment?.offsetMinutes ?? null;
+  };
+  const divergence = (atUtc: string): OffsetDivergence => ({
+    atUtc,
+    serverOffsetMinutes: serverAt(atUtc),
+    localOffsetMinutes: offsetAt(Temporal.Instant.from(atUtc), timeZone),
+  });
+  const local = localOffsetSegments(first, last, timeZone);
+  for (let index = 0; index < Math.max(local.length, server.length); index += 1) {
+    const mine = local[index];
+    const theirs = server[index];
+    if (!mine || !theirs) return divergence((mine ?? theirs).fromUtc);
+    // Début ou décalage différents : écart dès le début du segment ; sinon à la première des deux fins.
+    if (!same(mine.fromUtc, theirs.fromUtc) || mine.offsetMinutes !== theirs.offsetMinutes) return divergence(earlier(mine.fromUtc, theirs.fromUtc));
+    if (!same(mine.toUtc, theirs.toUtc)) return divergence(earlier(mine.toUtc, theirs.toUtc));
+  }
+  return null;
+}
+
 /** Instant UTC → date civile et heure murale du magasin. */
 export function utcToWall(utc: string, timeZone: string): { date: CivilDate; time: string } {
   const zoned = Temporal.Instant.from(utc).toZonedDateTimeISO(timeZone);

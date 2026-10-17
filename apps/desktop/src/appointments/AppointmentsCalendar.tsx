@@ -13,7 +13,7 @@ import { type KeyboardEvent, useEffect, useMemo, useRef } from "react";
 import type { AppointmentOptions, AppointmentSummary } from "../api/appointments.ts";
 import { cn } from "../lib/utils.ts";
 import { appointmentClientName } from "./appointmentForm.ts";
-import { reasonLabel, reasonTone, shortClientName } from "./appointmentsView.ts";
+import { hasStarted, reasonLabel, reasonTone, shortClientName } from "./appointmentsView.ts";
 import { type CalendarView, type CivilDate, minutesBetween, utcToWall } from "./time.ts";
 
 const FC_VIEW: Record<CalendarView, string> = { day: "timeGridDay", week: "timeGridWeek" };
@@ -62,12 +62,12 @@ export function AppointmentsCalendar({
         title: appointmentClientName(appointment),
         start: appointment.startsAtUtc,
         end: appointment.endsAtUtc,
-        // Seul un rendez-vous planifié se déplace, et seulement avec `appointments.write` (le serveur tranche).
-        startEditable: canWrite && appointment.status === "planned",
+        // Seul un rendez-vous planifié et non commencé se déplace (B2-REV-02), avec `appointments.write` (le serveur tranche).
+        startEditable: canWrite && appointment.status === "planned" && !hasStarted(appointment.startsAtUtc, now),
         durationEditable: false,
         extendedProps: { appointment },
       })),
-    [appointments, canWrite],
+    [appointments, canWrite, now],
   );
 
   const moveFocus = (event: KeyboardEvent<HTMLDivElement>) => {

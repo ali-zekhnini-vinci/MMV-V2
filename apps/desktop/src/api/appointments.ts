@@ -67,6 +67,21 @@ export interface AppointmentDetail extends AppointmentSummary {
   cancellationReason: string | null;
   createdAtUtc: string;
   updatedAtUtc: string;
+  /** Auteur de la dernière modification (O-03-23, 03-B3) ; aucun historique détaillé (dette produit). */
+  updatedByDisplayName: string;
+}
+
+/** Décalage UTC du magasin selon le SERVEUR, constant sur [fromUtc, toUtc[ (B2-REV-03). */
+export interface TimeZoneOffset {
+  fromUtc: string;
+  toUtc: string;
+  offsetMinutes: number;
+}
+
+/** Rendez-vous de la période et décalages du serveur sur CETTE période (comparés à ceux du poste). */
+export interface AppointmentList {
+  items: AppointmentSummary[];
+  timeZoneOffsets: TimeZoneOffset[];
 }
 
 export interface AppointmentInput {
@@ -74,6 +89,11 @@ export interface AppointmentInput {
   responsibleUserId: string | null;
   /** Instant de début ISO 8601 UTC (`…Z`), calculé dans le fuseau du magasin. */
   startsAtUtc: string;
+  /**
+   * Heure murale du magasin `AAAA-MM-JJTHH:mm` d'où ce poste a calculé `startsAtUtc` ; le serveur la recalcule et
+   * refuse tout écart (422 `startsAtLocal: time_zone_mismatch`, B2-REV-03).
+   */
+  startsAtLocal: string;
   durationMinutes: number;
   reasonCode: string;
   notes: string | null;
@@ -174,21 +194,48 @@ export function parseAppointmentSummary(value: unknown): AppointmentSummary | nu
 export function parseAppointmentDetail(value: unknown): AppointmentDetail | null {
   const summary = parseAppointmentSummary(value);
   if (summary === null || !isRecord(value)) return null;
-  const { notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc } = value;
+  const { notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc, updatedByDisplayName } = value;
   if (
     !isNullableString(notes) ||
     !isNullableString(cancelledAtUtc) ||
     !isNullableString(cancelledByDisplayName) ||
     !isNullableString(cancellationReason) ||
     typeof createdAtUtc !== "string" ||
-    typeof updatedAtUtc !== "string"
+    typeof updatedAtUtc !== "string" ||
+    typeof updatedByDisplayName !== "string"
   ) {
     return null;
   }
-  return { ...summary, notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc };
+  return { ...summary, notes, cancelledAtUtc, cancelledByDisplayName, cancellationReason, createdAtUtc, updatedAtUtc, updatedByDisplayName };
 }
 
-export function parseAppointmentList(body: unknown): AppointmentSummary[] | null {
+/** Segments stricts : instants valides, non vides, contigus et triés ; décalage entier borné à ±18 h. */
+export function parseTimeZoneOffsets(value: unknown): TimeZoneOffset[] | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const segments: TimeZoneOffset[] = [];
+  for (const segment of value) {
+    if (!isRecord(segment)) return null;
+    const { fromUtc, toUtc, offsetMinutes } = segment;
+    if (
+      typeof fromUtc !== "string" ||
+      typeof toUtc !== "string" ||
+      Number.isNaN(Date.parse(fromUtc)) ||
+      Number.isNaN(Date.parse(toUtc)) ||
+      Date.parse(toUtc) <= Date.parse(fromUtc) ||
+      typeof offsetMinutes !== "number" ||
+      !Number.isInteger(offsetMinutes) ||
+      Math.abs(offsetMinutes) > 18 * 60
+    ) {
+      return null;
+    }
+    const previous = segments[segments.length - 1];
+    if (previous && Date.parse(previous.toUtc) !== Date.parse(fromUtc)) return null;
+    segments.push({ fromUtc, toUtc, offsetMinutes });
+  }
+  return segments;
+}
+
+export function parseAppointmentList(body: unknown): AppointmentList | null {
   if (!isRecord(body) || !Array.isArray(body.items)) return null;
   const items: AppointmentSummary[] = [];
   for (const item of body.items) {
@@ -196,7 +243,9 @@ export function parseAppointmentList(body: unknown): AppointmentSummary[] | null
     if (parsed === null) return null;
     items.push(parsed);
   }
-  return items;
+  const timeZoneOffsets = parseTimeZoneOffsets(body.timeZoneOffsets);
+  if (timeZoneOffsets === null) return null;
+  return { items, timeZoneOffsets };
 }
 
 export function parseAppointmentOptions(body: unknown): AppointmentOptions | null {
@@ -275,7 +324,7 @@ export const listAppointments = (
   token: string,
   range: AppointmentRange,
   signal?: AbortSignal,
-): Promise<ApiResult<AppointmentSummary[]>> =>
+): Promise<ApiResult<AppointmentList>> =>
   requestJson(baseUrl, `/api/appointments?${appointmentListQuery(range)}`, { token, parse: parseAppointmentList, signal });
 
 export const getAppointment = (baseUrl: URL, token: string, id: string, signal?: AbortSignal): Promise<ApiResult<AppointmentDetail>> =>

@@ -12,6 +12,7 @@ import {
   type AppointmentReason,
   type AppointmentResponsible,
   type AppointmentSummary,
+  type TimeZoneOffset,
   parseAppointmentDetail,
   parseAppointmentList,
   parseAppointmentOptions,
@@ -67,7 +68,9 @@ const DETAIL: Nullability<AppointmentDetail> = {
   cancellationReason: true,
   createdAtUtc: false,
   updatedAtUtc: false,
+  updatedByDisplayName: false,
 };
+const OFFSET: Nullability<TimeZoneOffset> = { fromUtc: false, toUtc: false, offsetMinutes: false };
 const OPTIONS: Nullability<AppointmentOptions> = {
   timeZone: false,
   durationsMinutes: false,
@@ -85,6 +88,7 @@ const INPUT: Nullability<AppointmentInput> = {
   clientId: false,
   responsibleUserId: true,
   startsAtUtc: false,
+  startsAtLocal: false,
   durationMinutes: false,
   reasonCode: false,
   notes: true,
@@ -135,7 +139,9 @@ describe("contrat OpenAPI Rendez-vous ↔ types TypeScript", () => {
     assertResponseSchema("AppointmentOptionsResponse", OPTIONS);
     assertResponseSchema("AppointmentReasonResponse", REASON);
     assertResponseSchema("AppointmentResponsibleResponse", RESPONSIBLE);
-    assertResponseSchema("AppointmentListResponse", { items: false });
+    assertResponseSchema("AppointmentListResponse", { items: false, timeZoneOffsets: false });
+    assertResponseSchema("TimeZoneOffsetResponse", OFFSET);
+    assert.ok(types(props("TimeZoneOffsetResponse").offsetMinutes).includes("integer"), "offsetMinutes : entier strict");
     assert.deepEqual(schemas.AppointmentStatusValue.enum, ["planned", "cancelled"]);
     for (const [owner, key] of [
       ["AppointmentSummaryResponse", "version"],
@@ -187,7 +193,17 @@ describe("contrat OpenAPI Rendez-vous ↔ types TypeScript", () => {
     const detail = sample(schemas.AppointmentDetailResponse, INTERVAL) as Record<string, unknown>;
     assert.notEqual(parseAppointmentDetail(detail), null);
     assert.notEqual(parseAppointmentSummary(sample(schemas.AppointmentSummaryResponse, INTERVAL)), null);
-    assert.notEqual(parseAppointmentList({ items: [sample(schemas.AppointmentSummaryResponse, INTERVAL)] }), null);
+    const offsets = [
+      { fromUtc: "2026-10-18T22:00:00+00:00", toUtc: "2026-10-25T01:00:00+00:00", offsetMinutes: 120 },
+      { fromUtc: "2026-10-25T01:00:00+00:00", toUtc: "2026-10-25T23:00:00+00:00", offsetMinutes: 60 },
+    ];
+    assert.notEqual(parseAppointmentList({ items: [sample(schemas.AppointmentSummaryResponse, INTERVAL)], timeZoneOffsets: offsets }), null);
+    // Décalages absents, vides, discontinus, inversés ou non entiers : réponse refusée (jamais d'heure devinée).
+    assert.equal(parseAppointmentList({ items: [] }), null);
+    assert.equal(parseAppointmentList({ items: [], timeZoneOffsets: [] }), null);
+    assert.equal(parseAppointmentList({ items: [], timeZoneOffsets: [offsets[0], { ...offsets[1], fromUtc: "2026-10-25T02:00:00+00:00" }] }), null);
+    assert.equal(parseAppointmentList({ items: [], timeZoneOffsets: [{ ...offsets[0], toUtc: offsets[0].fromUtc }] }), null);
+    assert.equal(parseAppointmentList({ items: [], timeZoneOffsets: [{ ...offsets[0], offsetMinutes: 60.5 }] }), null);
     const options = sample(schemas.AppointmentOptionsResponse, STORE) as Record<string, unknown>;
     assert.notEqual(parseAppointmentOptions(options), null);
     for (const key of Object.keys(DETAIL)) {

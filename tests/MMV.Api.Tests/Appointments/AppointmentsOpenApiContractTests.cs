@@ -55,7 +55,7 @@ public sealed class AppointmentsOpenApiContractTests
                  {
                      "AppointmentOptionsResponse", "AppointmentReasonResponse", "AppointmentResponsibleResponse", "AppointmentSummaryResponse",
                      "AppointmentDetailResponse", "AppointmentListResponse", "AppointmentInputRequest", "AppointmentUpdateRequest",
-                     "AppointmentCancelRequest", "AppointmentVersionRequest", "ErrorResponse", "ValidationErrorResponse",
+                     "AppointmentCancelRequest", "AppointmentVersionRequest", "ErrorResponse", "ValidationErrorResponse", "TimeZoneOffsetResponse",
                  })
         {
             Assert.True(schemas.TryGetProperty(name, out _), $"Schéma absent : {name}");

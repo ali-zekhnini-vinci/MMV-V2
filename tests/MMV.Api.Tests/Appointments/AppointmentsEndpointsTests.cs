@@ -250,6 +250,71 @@ public sealed class AppointmentsEndpointsTests : IDisposable
             PropertyNames(item));
         Assert.Equal("Alice Opticienne", item.GetProperty("responsibleDisplayName").GetString());
         Assert.Equal(2, all.GetProperty("items").GetArrayLength());
+        // B2-REV-03 : décalages du serveur sur la période demandée (juillet à Bruxelles : UTC+2, un seul segment).
+        var offset = Assert.Single(planned.GetProperty("timeZoneOffsets").EnumerateArray());
+        Assert.Equal(["fromUtc", "offsetMinutes", "toUtc"], PropertyNames(offset));
+        var midnight = new DateTimeOffset(2026, 7, 15, 22, 0, 0, TimeSpan.Zero);
+        Assert.Equal((midnight, midnight.AddDays(1), 120), (offset.GetProperty("fromUtc").GetDateTimeOffset(), offset.GetProperty("toUtc").GetDateTimeOffset(), offset.GetProperty("offsetMinutes").GetInt32()));
+    }
+
+    [Fact]
+    public async Task List_AcrossTheAutumnTransition_ServesBothOffsetsOfTheServer()
+    {
+        using var client = await AuthenticatedAsync(Configured(), "lecture");
+
+        var week = await ReadAsync(await client.GetAsync("/api/appointments?from=2026-10-18T22:00:00Z&to=2026-10-25T23:00:00Z"));
+
+        var offsets = week.GetProperty("timeZoneOffsets").EnumerateArray()
+            .Select(o => (o.GetProperty("fromUtc").GetString(), o.GetProperty("toUtc").GetString(), o.GetProperty("offsetMinutes").GetInt32()))
+            .ToArray();
+        Assert.Equal(
+            [("2026-10-18T22:00:00+00:00", "2026-10-25T01:00:00+00:00", 120), ("2026-10-25T01:00:00+00:00", "2026-10-25T23:00:00+00:00", 60)],
+            offsets);
+    }
+
+    [Fact]
+    public async Task Write_WithALocalTimeThatDiffersFromTheServer_Is422AndWritesNothing()
+    {
+        using var client = await AuthenticatedAsync(Configured(), "complet");
+        var body = Input(At(10, 30));
+        body["startsAtLocal"] = "2026-07-16T09:30";
+
+        using var response = await client.SendAsync(Json("POST", "/api/appointments", body));
+        var error = await ReadAsync(response);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal("time_zone_mismatch", error.GetProperty("errors").GetProperty("startsAtLocal")[0].GetString());
+        Assert.Empty(_appointments.Appointments);
+
+        body.Remove("startsAtLocal");
+        using var missing = await client.SendAsync(Json("POST", "/api/appointments", body));
+        Assert.Equal("required", (await ReadAsync(missing)).GetProperty("errors").GetProperty("startsAtLocal")[0].GetString());
+    }
+
+    [Fact]
+    public async Task Update_OfAStartedAppointment_RefusesBookingChangesButRecordsTheNotesAuthor()
+    {
+        // Mercredi 15/07 09:30–10:30 à Bruxelles : commencé (« maintenant » = 10:00), encore en cours.
+        var start = At(9, 30).AddDays(-1);
+        var started = _appointments.Seed(_client, _alice, start, 60);
+        using var client = await AuthenticatedAsync(Configured(), "complet");
+
+        await AssertErrorAsync(
+            await client.SendAsync(Json("PUT", $"/api/appointments/{started.Id}", Input(At(14), version: started.Version))), HttpStatusCode.Conflict, "appointment_past");
+        await AssertErrorAsync(
+            await client.SendAsync(Json("PUT", $"/api/appointments/{started.Id}", Input(start, version: started.Version, reason: "sav_reparation", unassigned: true))),
+            HttpStatusCode.Conflict, "appointment_past");
+
+        var corrected = Input(start, version: started.Version, notes: "Monture remise");
+        corrected["durationMinutes"] = 60;
+        using var response = await client.SendAsync(Json("PUT", $"/api/appointments/{started.Id}", corrected));
+        var detail = await ReadAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("Monture remise", detail.GetProperty("notes").GetString());
+        Assert.Equal("Agent Complet", detail.GetProperty("updatedByDisplayName").GetString());
+        Assert.Equal(_clock.GetUtcNow(), detail.GetProperty("updatedAtUtc").GetDateTimeOffset());
+        Assert.Equal(start, detail.GetProperty("startsAtUtc").GetDateTimeOffset());
     }
 
     [Fact]
@@ -405,6 +470,7 @@ public sealed class AppointmentsEndpointsTests : IDisposable
             ["clientId"] = clientId ?? _client,
             ["responsibleUserId"] = unassigned ? null : _alice,
             ["startsAtUtc"] = start.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            ["startsAtLocal"] = AppointmentSchedule.LocalWallTime(TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels"), start),
             ["durationMinutes"] = 30,
             ["reasonCode"] = reason,
             ["notes"] = notes,

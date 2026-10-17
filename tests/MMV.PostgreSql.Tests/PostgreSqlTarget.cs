@@ -2,6 +2,11 @@ using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
+// Exécution séquentielle (03-B3) : les rôles de test sont limités à 10 connexions (durcissement Phase 01b) et les
+// tests Rendez-vous VALIDÉS (COMMIT) seraient visibles des tests annulés d'autres classes exécutées en parallèle
+// (constaté : 53300 « trop de connexions » et capacité d'accueil déjà occupée).
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
+
 namespace MMV.PostgreSql.Tests;
 
 /// <summary>
@@ -126,6 +131,19 @@ public sealed record ServerIdentity(
         $"db={Database} role={Role} port={Port} version_num={ServerVersionNum} owner={OwnsDatabase} "
         + $"super={IsSuperuser} createdb={CanCreateDb} createrole={CanCreateRole} replication={CanReplicate} "
         + $"bypassrls={BypassesRls} public_connect={PublicCanConnect}");
+}
+
+/// <summary>Variante paramétrée de <see cref="PostgreSqlFactAttribute"/> (03-B3) : « Skipped » si la cible est absente.</summary>
+public sealed class PostgreSqlTheoryAttribute : TheoryAttribute
+{
+    public PostgreSqlTheoryAttribute(string target)
+    {
+        var resolved = target == nameof(PostgreSqlTarget.Dev) ? PostgreSqlTarget.Dev : PostgreSqlTarget.Test;
+        if (!resolved.IsConfigured)
+        {
+            Skip = $"NOT_TESTED : '{resolved.Key}' non configurée (voir docs/phase/01b/IMPLEMENTATION_SPEC.md).";
+        }
+    }
 }
 
 /// <summary>

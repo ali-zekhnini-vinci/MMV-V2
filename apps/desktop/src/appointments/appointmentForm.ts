@@ -7,7 +7,7 @@ import { z } from "zod";
 import type { AppointmentDetail, AppointmentInput, AppointmentOptions } from "../api/appointments.ts";
 import { APPOINTMENT_CANCELLATION_REASON_MAX_LENGTH, APPOINTMENT_NOTES_MAX_LENGTH } from "../api/appointments.ts";
 import { formatIsoDate, parseFrenchDate } from "../clients/clientForm.ts";
-import { minutesBetween, utcToWall, wallTimeToUtc } from "./time.ts";
+import { localWallDateTime, minutesBetween, utcToWall, wallTimeToUtc } from "./time.ts";
 
 export interface AppointmentFormValues {
   clientId: string;
@@ -59,6 +59,8 @@ export const APPOINTMENT_MESSAGES = {
   clientArchived: "Ce client est archivé : aucun nouveau rendez-vous n'est possible",
   clientUnknown: "Client introuvable",
   past: "Ce créneau est déjà passé",
+  timeZoneMismatch:
+    "L'heure de ce poste diffère de celle du serveur MMV pour cette date (données de fuseau horaire différentes) : rien n'a été enregistré",
 };
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -76,11 +78,16 @@ export function responsibleMode(options: AppointmentOptions, reasonCode: string)
   return options.receptionCapacity === null ? "reception-unavailable" : "optional";
 }
 
-/** Schéma construit à partir des paramètres serveur (listes blanches, mode d'attribution par motif). */
-export function appointmentFormSchema(options: AppointmentOptions) {
+/**
+ * Schéma construit à partir des paramètres serveur (listes blanches, mode d'attribution par motif).
+ * `currentResponsibleId` : responsable actuel d'un rendez-vous modifié, admis même s'il n'est plus éligible (motif et
+ * notes restent corrigeables ; le serveur refuse tout nouveau créneau pour lui — B2-REV-01).
+ */
+export function appointmentFormSchema(options: AppointmentOptions, currentResponsibleId?: string | null) {
   const durations = new Set(options.durationsMinutes.map(String));
   const reasons = new Set(options.reasons.map((reason) => reason.code));
   const responsibles = new Set(options.responsibles.map((person) => person.id));
+  if (currentResponsibleId) responsibles.add(currentResponsibleId);
   return z
     .object({
       clientId: z.string().min(1, APPOINTMENT_MESSAGES.clientRequired),
@@ -129,12 +136,13 @@ export function appointmentFormSchema(options: AppointmentOptions) {
 export function toAppointmentInput(values: AppointmentFormValues, options: AppointmentOptions): AppointmentInput {
   const date = parseFrenchDate(values.date.trim());
   const zoned = date === null ? null : wallTimeToUtc(date, values.time.trim(), options.timeZone);
-  if (zoned === null || !zoned.ok) throw new Error("Valeurs de rendez-vous non validées.");
+  if (date === null || zoned === null || !zoned.ok) throw new Error("Valeurs de rendez-vous non validées.");
   const notes = values.notes.trim();
   return {
     clientId: values.clientId,
     responsibleUserId: values.responsibleUserId === "" ? null : values.responsibleUserId,
     startsAtUtc: zoned.utc,
+    startsAtLocal: `${date}T${values.time.trim()}`,
     durationMinutes: Number(values.durationMinutes),
     reasonCode: values.reasonCode,
     notes: notes === "" ? null : notes,
@@ -157,11 +165,12 @@ export function toAppointmentFormValues(appointment: AppointmentDetail, timeZone
 }
 
 /** Rendez-vous existant → corps complet (déplacement par glisser : seuls début conservé/changé). */
-export function toAppointmentInputFrom(appointment: AppointmentDetail, startsAtUtc: string): AppointmentInput {
+export function toAppointmentInputFrom(appointment: AppointmentDetail, startsAtUtc: string, timeZone: string): AppointmentInput {
   return {
     clientId: appointment.clientId,
     responsibleUserId: appointment.responsibleUserId,
     startsAtUtc,
+    startsAtLocal: localWallDateTime(startsAtUtc, timeZone),
     durationMinutes: minutesBetween(appointment.startsAtUtc, appointment.endsAtUtc),
     reasonCode: appointment.reasonCode,
     notes: appointment.notes,
@@ -179,6 +188,7 @@ type FormField = keyof AppointmentFormValues;
 const SERVER_FIELDS: Record<string, FormField> = {
   clientId: "clientId",
   startsAtUtc: "time",
+  startsAtLocal: "time",
   durationMinutes: "durationMinutes",
   responsibleUserId: "responsibleUserId",
   reasonCode: "reasonCode",
@@ -194,6 +204,7 @@ const SERVER_MESSAGES: Partial<Record<FormField, Record<string, string>>> = {
     out_of_range: APPOINTMENT_MESSAGES.outOfRange,
     time_change: APPOINTMENT_MESSAGES.timeChange,
     in_past: APPOINTMENT_MESSAGES.past,
+    time_zone_mismatch: APPOINTMENT_MESSAGES.timeZoneMismatch,
   },
   durationMinutes: { required: APPOINTMENT_MESSAGES.durationRequired, not_allowed: APPOINTMENT_MESSAGES.durationNotAllowed },
   responsibleUserId: {

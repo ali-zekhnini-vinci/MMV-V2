@@ -13,7 +13,6 @@ internal sealed class AppointmentStore(MmvDbContext context) : IAppointmentStore
         DateTimeOffset fromUtc, DateTimeOffset toUtc, bool includeCancelled, CancellationToken cancellationToken) =>
         await Views(context.Appointments.AsNoTracking()
                 .Where(a => a.StartsAtUtc < toUtc && a.EndsAtUtc > fromUtc && (includeCancelled || a.Status == Appointment.StatusPlanned)))
-            .OrderBy(v => v.Appointment.StartsAtUtc).ThenBy(v => v.Appointment.Id)
             .ToListAsync(cancellationToken);
 
     public Task<AppointmentView?> GetAsync(Guid id, CancellationToken cancellationToken) =>
@@ -43,14 +42,21 @@ internal sealed class AppointmentStore(MmvDbContext context) : IAppointmentStore
     internal static IReadOnlyList<int> LockSequence(IReadOnlyCollection<AppointmentLock> locks) =>
         [.. locks.Select(l => l.Key).Distinct().Order()];
 
-    /// <summary>Client (référence, nom, archivage) et noms affichés des collaborateurs : jointures externes.</summary>
+    /// <summary>
+    /// Client (référence, nom, archivage), noms affichés des collaborateurs (jointures externes) et de l'auteur de la
+    /// dernière modification (clé étrangère obligatoire). Tri par début puis identifiant AVANT la projection : un tri
+    /// sur le résultat construit (<c>AppointmentView</c>) n'est pas traduisible en SQL (constaté sur PostgreSQL réel,
+    /// 03-B3, défaut invisible sur les doubles de test).
+    /// </summary>
     private IQueryable<AppointmentView> Views(IQueryable<Appointment> appointments) =>
         from appointment in appointments
         join client in context.Clients on appointment.ClientId equals client.Id
+        join updater in context.Users on appointment.UpdatedByUserId equals updater.Id
         join responsible in context.Users on appointment.ResponsibleUserId equals (Guid?)responsible.Id into responsibles
         from responsible in responsibles.DefaultIfEmpty()
         join canceller in context.Users on appointment.CancelledByUserId equals (Guid?)canceller.Id into cancellers
         from canceller in cancellers.DefaultIfEmpty()
+        orderby appointment.StartsAtUtc, appointment.Id
         select new AppointmentView(
             appointment,
             client.Reference,
@@ -58,7 +64,8 @@ internal sealed class AppointmentStore(MmvDbContext context) : IAppointmentStore
             client.LastName,
             client.ArchivedAtUtc != null,
             responsible == null ? null : responsible.DisplayName,
-            canceller == null ? null : canceller.DisplayName);
+            canceller == null ? null : canceller.DisplayName,
+            updater.DisplayName);
 
     private sealed class WriteSession(MmvDbContext context, IDbContextTransaction? transaction) : IAppointmentWriteSession
     {

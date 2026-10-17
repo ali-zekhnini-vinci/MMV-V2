@@ -4,7 +4,10 @@
 // serveur, l'écran l'indique (503 `appointments_not_configured`), sans donnée fictive.
 // Route unique `/rendez-vous` : vue, date et panneau sont un état d'écran (rien n'est persisté). Arrivée depuis
 // une fiche client (appointmentLaunch.ts) : formulaire de création ouvert avec ce client, retour à la fiche.
-import { AlertTriangle, ArrowLeft, CalendarCheck, CalendarDays, CalendarX, CheckCircle2, ChevronLeft, ChevronRight, Info, Plus, RefreshCw, ServerOff, Settings, ShieldAlert, X } from "lucide-react";
+// Cohérence des fuseaux (B2-REV-03, 03-B3) : chaque liste porte les décalages UTC du SERVEUR sur la période ; s'ils
+// diffèrent de ceux de ce poste (ICU de WebView2), l'agenda de la période est bloqué (heures potentiellement
+// décalées d'une heure) et aucune création n'y est proposée ; chaque écriture est en outre revérifiée par le serveur.
+import { AlertTriangle, ArrowLeft, CalendarCheck, CalendarDays, CalendarX, CheckCircle2, ChevronLeft, ChevronRight, Clock, Info, Plus, RefreshCw, ServerOff, Settings, ShieldAlert, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -37,6 +40,7 @@ import { describeAppointmentFailure, type FailureView, formatWhen, isStoreNotCon
 import {
   type CalendarView,
   type CivilDate,
+  findOffsetDivergence,
   formatLongDate,
   formatShortDay,
   formatWeekShort,
@@ -113,6 +117,16 @@ export function AppointmentsModule() {
     );
   }
   return <Agenda options={options.data} />;
+}
+
+/** « UTC+1 », « UTC », « UTC+5:30 » ; `null` → « inconnu ». */
+function formatOffset(minutes: number | null): string {
+  if (minutes === null) return "inconnu";
+  if (minutes === 0) return "UTC";
+  const sign = minutes > 0 ? "+" : "−";
+  const absolute = Math.abs(minutes);
+  const rest = absolute % 60;
+  return `UTC${sign}${Math.floor(absolute / 60)}${rest === 0 ? "" : `:${String(rest).padStart(2, "0")}`}`;
 }
 
 function BackButton({ back, onBack }: { back: { label: string; to: string }; onBack: (to: string) => void }) {
@@ -194,7 +208,13 @@ function Agenda({ options }: { options: AppointmentOptions }) {
 
   const range = useMemo(() => ({ ...viewRangeUtc(date, view, options.timeZone), status: showCancelled ? ("all" as const) : ("planned" as const) }), [date, view, options.timeZone, showCancelled]);
   const list = useAppointmentList(range);
-  const appointments = useMemo(() => list.data ?? [], [list.data]);
+  // Période en cours de chargement : la précédente reste affichée, contrôlée sur sa propre couverture.
+  const divergence = useMemo(
+    () => (list.data ? findOffsetDivergence(list.data.timeZoneOffsets, options.timeZone, list.isPlaceholderData ? undefined : range) : null),
+    [list.data, list.isPlaceholderData, options.timeZone, range],
+  );
+  const appointments = useMemo(() => (divergence ? [] : (list.data?.items ?? [])), [list.data, divergence]);
+  const canWrite = permissions.canWrite && divergence === null;
   const days = visibleDays(date, view, options.hiddenWeekdays);
   const visibleCount = appointments.filter((appointment) => days.includes(utcToWall(appointment.startsAtUtc, options.timeZone).date)).length;
 
@@ -260,7 +280,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
         if (error instanceof ApiRequestError) setGridFailure(describeAppointmentFailure(error));
         return;
       }
-      const input = toAppointmentInputFrom(detail, startsAtUtc);
+      const input = toAppointmentInputFrom(detail, startsAtUtc, options.timeZone);
       update.mutate(
         { id: detail.id, input, version: detail.version },
         {
@@ -279,7 +299,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
   };
 
   const onSelectSlot = (startUtc: string, endUtc: string) => {
-    if (!permissions.canWrite) return;
+    if (!canWrite) return;
     const wall = utcToWall(startUtc, options.timeZone);
     const minutes = minutesBetween(startUtc, endUtc);
     openCreate({
@@ -339,7 +359,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
               <CalendarDays size={16} aria-hidden="true" />
               Aujourd&apos;hui
             </Button>
-            {permissions.canWrite && (
+            {canWrite && (
               <Button variant="primary" onClick={() => openCreate()}>
                 <Plus size={16} aria-hidden="true" />
                 Nouveau rendez-vous
@@ -432,6 +452,18 @@ function Agenda({ options }: { options: AppointmentOptions }) {
               >
                 <p>{list.error.error.message}</p>
               </StateBlock>
+            ) : divergence ? (
+              <StateBlock tone="error" icon={Clock} title="Heure incohérente entre ce poste et le serveur MMV" role="alert">
+                <p>
+                  Pour cette période, ce poste et le serveur MMV ne placent pas l&apos;heure du magasin ({options.timeZone}) au même moment : à partir de{" "}
+                  {divergence.atUtc.replace("T", " ").replace(/:00(\.0+)?Z$/, " UTC")}, décalage {formatOffset(divergence.serverOffsetMinutes)} selon le serveur,{" "}
+                  {formatOffset(divergence.localOffsetMinutes)} selon ce poste.
+                </p>
+                <p>
+                  Les heures affichées pourraient être fausses : l&apos;agenda de cette période est bloqué et aucun rendez-vous ne peut y être créé ni
+                  déplacé. Mettez à jour Windows et Microsoft Edge WebView2 sur ce poste et sur le serveur, puis rouvrez l&apos;agenda.
+                </p>
+              </StateBlock>
             ) : (
               <>
                 <AppointmentsCalendar
@@ -440,7 +472,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
                   options={options}
                   appointments={appointments}
                   selectedId={selectedId}
-                  canWrite={permissions.canWrite}
+                  canWrite={canWrite}
                   now={now}
                   onOpen={openDetail}
                   onSelectSlot={onSelectSlot}
@@ -459,9 +491,9 @@ function Agenda({ options }: { options: AppointmentOptions }) {
                       </span>
                       <h2 className="rdv-empty__title">{view === "day" ? "Aucun rendez-vous ce jour" : "Aucun rendez-vous cette semaine"}</h2>
                       <p className="rdv-empty__text">
-                        {view === "day" ? "La journée est libre." : "La semaine est libre."} {permissions.canWrite ? "Planifiez un rendez-vous ou changez de date." : "Changez de date pour consulter l'agenda."}
+                        {view === "day" ? "La journée est libre." : "La semaine est libre."} {canWrite ? "Planifiez un rendez-vous ou changez de date." : "Changez de date pour consulter l'agenda."}
                       </p>
-                      {permissions.canWrite && (
+                      {canWrite && (
                         <Button variant="primary" onClick={() => openCreate()}>
                           <Plus size={16} aria-hidden="true" />
                           Nouveau rendez-vous
@@ -473,7 +505,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
               </>
             )}
             <p className="rdv-sr-only" aria-live="polite">
-              {list.isSuccess ? `${unit} : ${visibleCount} rendez-vous affiché${visibleCount > 1 ? "s" : ""}.` : ""}
+              {list.isSuccess && !divergence ? `${unit} : ${visibleCount} rendez-vous affiché${visibleCount > 1 ? "s" : ""}.` : ""}
             </p>
           </div>
         </section>

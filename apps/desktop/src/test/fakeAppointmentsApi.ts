@@ -5,6 +5,7 @@
 // d'attribution (D-03-14), le chevauchement par collaborateur et la capacité d'accueil instant par instant
 // (D-03-15) ; il ne prouve aucune règle serveur (prouvées par tests/MMV.Api.Tests et tests/MMV.PostgreSql.Tests).
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { localOffsetSegments, localWallDateTime, type OffsetSegment } from "../appointments/time.ts";
 import type { FakeClientRecord } from "./fakeClientsApi.ts";
 
 export const APPOINTMENT_PERMISSIONS = { read: "appointments.read", write: "appointments.write", cancel: "appointments.cancel" } as const;
@@ -42,6 +43,13 @@ export interface FakeAppointmentsOptions {
   appointmentsDelayMs?: number;
   /** Magasin non configuré côté serveur : 503 `appointments_not_configured` après contrôle des droits. */
   appointmentsNotConfigured?: boolean;
+  /**
+   * Décalages « serveur » servis avec la liste (B2-REV-03). Par défaut : ceux de l'ICU du processus de test (serveur
+   * et poste concordants) ; un test peut simuler des données de fuseaux divergentes.
+   */
+  serverOffsets?: (fromUtc: string, toUtc: string, timeZone: string) => OffsetSegment[];
+  /** Instant « serveur » : active le refus 409 `appointment_past` d'un changement de réservation d'un rendez-vous commencé. */
+  appointmentsNow?: string;
 }
 
 export interface FakeAppointmentRecord {
@@ -64,6 +72,7 @@ export interface FakeAppointmentRecord {
   cancellationReason: string | null;
   createdAtUtc: string;
   updatedAtUtc: string;
+  updatedByDisplayName: string;
 }
 
 type Send = (response: ServerResponse, status: number, body?: unknown) => void;
@@ -127,6 +136,7 @@ export function seedAppointments(
       cancellationReason: seed.cancelled?.reason ?? null,
       createdAtUtc: "2026-07-01T08:00:00Z",
       updatedAtUtc: "2026-07-01T08:00:00Z",
+      updatedByDisplayName: "Agent Fictif",
     };
   });
 }
@@ -188,7 +198,16 @@ function availability(records: readonly FakeAppointmentRecord[], candidate: Slot
 
 const UTC_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|\+00:00)$/;
 
-function validate(body: Record<string, unknown>, clients: readonly FakeClientRecord[], options: FakeAppointmentOptions): Record<string, string[]> | null {
+/**
+ * `keptResponsibleId` : responsable actuel d'un rendez-vous modifié SANS changement de réservation (même créneau, même
+ * durée) — comme le serveur, son éligibilité n'est alors pas revérifiée (motif et notes corrigeables, B2-REV-01).
+ */
+function validate(
+  body: Record<string, unknown>,
+  clients: readonly FakeClientRecord[],
+  options: FakeAppointmentOptions,
+  keptResponsibleId: string | null = null,
+): Record<string, string[]> | null {
   const errors: Record<string, string[]> = {};
   const client = clients.find((candidate) => candidate.id === body.clientId);
   if (typeof body.clientId !== "string" || body.clientId === "") errors.clientId = ["required"];
@@ -196,6 +215,11 @@ function validate(body: Record<string, unknown>, clients: readonly FakeClientRec
   if (typeof body.startsAtUtc !== "string" || body.startsAtUtc === "") errors.startsAtUtc = ["required"];
   else if (!UTC_INSTANT.test(body.startsAtUtc)) errors.startsAtUtc = ["invalid_format"];
   else if (new Date(body.startsAtUtc).getUTCMinutes() % options.startStepMinutes !== 0) errors.startsAtUtc = ["invalid_step"];
+  if (typeof body.startsAtLocal !== "string" || body.startsAtLocal === "") errors.startsAtLocal = ["required"];
+  else if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(body.startsAtLocal)) errors.startsAtLocal = ["invalid_format"];
+  else if (typeof body.startsAtUtc === "string" && UTC_INSTANT.test(body.startsAtUtc) && localWallDateTime(body.startsAtUtc, options.timeZone) !== body.startsAtLocal) {
+    errors.startsAtLocal = ["time_zone_mismatch"];
+  }
   if (typeof body.durationMinutes !== "number") errors.durationMinutes = ["required"];
   else if (!options.durationsMinutes.includes(body.durationMinutes)) errors.durationMinutes = ["not_allowed"];
   const reason = options.reasons.find((candidate) => candidate.code === body.reasonCode);
@@ -204,7 +228,9 @@ function validate(body: Record<string, unknown>, clients: readonly FakeClientRec
   if (body.responsibleUserId === null || body.responsibleUserId === undefined) {
     if (reason?.responsibleRequired) errors.responsibleUserId = ["required"];
     else if (reason && options.receptionCapacity === null) errors.responsibleUserId = ["reception_not_configured"];
-  } else if (!options.responsibles.some((person) => person.id === body.responsibleUserId)) errors.responsibleUserId = ["not_eligible"];
+  } else if (body.responsibleUserId !== keptResponsibleId && !options.responsibles.some((person) => person.id === body.responsibleUserId)) {
+    errors.responsibleUserId = ["not_eligible"];
+  }
   if (body.notes !== null && body.notes !== undefined && (typeof body.notes !== "string" || body.notes.length > 1000)) errors.notes = ["too_long"];
   return Object.keys(errors).length > 0 ? errors : null;
 }
@@ -249,7 +275,10 @@ export async function handleAppointments(
       .filter((item) => (status === "all" || item.status === "planned") && Date.parse(item.startsAtUtc) < to && Date.parse(item.endsAtUtc) > from)
       .sort((a, b) => a.startsAtUtc.localeCompare(b.startsAtUtc) || a.id.localeCompare(b.id))
       .map(summary);
-    return send(response, 200, { items });
+    const fromUtc = new Date(from).toISOString();
+    const toUtc = new Date(to).toISOString();
+    const timeZoneOffsets = (context.options.serverOffsets ?? localOffsetSegments)(fromUtc, toUtc, settings.timeZone);
+    return send(response, 200, { items, timeZoneOffsets });
   }
 
   const raw = method === "GET" ? null : await context.readBody();
@@ -258,7 +287,11 @@ export async function handleAppointments(
 
   const fill = (record: FakeAppointmentRecord, input: Record<string, unknown>) => {
     const client = clients.find((candidate) => candidate.id === input.clientId) as FakeClientRecord;
-    const responsible = settings.responsibles.find((person) => person.id === input.responsibleUserId) ?? null;
+    const kept =
+      record.responsibleUserId !== undefined && record.responsibleUserId !== null && input.responsibleUserId === record.responsibleUserId
+        ? { id: record.responsibleUserId, displayName: record.responsibleDisplayName }
+        : null;
+    const responsible = settings.responsibles.find((person) => person.id === input.responsibleUserId) ?? kept;
     Object.assign(record, {
       clientId: client.id,
       clientReference: client.reference,
@@ -272,6 +305,7 @@ export async function handleAppointments(
       reasonCode: input.reasonCode,
       notes: typeof input.notes === "string" && input.notes.trim() !== "" ? input.notes.trim() : null,
       updatedAtUtc: now,
+      updatedByDisplayName: context.userDisplayName ?? "Agent Fictif",
     });
   };
 
@@ -308,13 +342,22 @@ export async function handleAppointments(
 
   if (method === "PUT" && action === undefined) {
     if (record.status === "cancelled") return send(response, 409, { code: "appointment_cancelled" });
-    const errors = validate(body, clients, settings);
+    const sameBooking =
+      body.responsibleUserId === record.responsibleUserId &&
+      typeof body.startsAtUtc === "string" &&
+      Date.parse(body.startsAtUtc) === Date.parse(record.startsAtUtc) &&
+      body.durationMinutes === (Date.parse(record.endsAtUtc) - Date.parse(record.startsAtUtc)) / 60_000;
+    const errors = validate(body, clients, settings, sameBooking ? record.responsibleUserId : null);
     if (errors) return send(response, 422, { code: "validation_failed", errors });
     if (record.clientArchived || clients.find((candidate) => candidate.id === body.clientId)?.status === "archived") {
       return send(response, 409, { code: "client_archived" });
     }
     const next = { ...record };
     fill(next, body);
+    const rebooks =
+      next.startsAtUtc !== record.startsAtUtc || next.endsAtUtc !== record.endsAtUtc || next.responsibleUserId !== record.responsibleUserId || next.clientId !== record.clientId;
+    const serverNow = context.options.appointmentsNow;
+    if (serverNow && rebooks && Date.parse(record.startsAtUtc) < Date.parse(serverNow)) return send(response, 409, { code: "appointment_past" });
     const refusal = availability(appointments, next, settings);
     if (refusal) return send(response, 409, { code: refusal });
     Object.assign(record, next, { version: record.version + 1 });
@@ -332,11 +375,15 @@ export async function handleAppointments(
       cancellationReason: typeof body.reason === "string" && body.reason.trim() !== "" ? body.reason.trim() : null,
       version: record.version + 1,
       updatedAtUtc: now,
+      updatedByDisplayName: context.userDisplayName ?? "Agent Fictif",
     });
     return send(response, 200, record);
   }
   if (method === "POST" && action === "restore") {
     if (record.status === "planned") return send(response, 409, { code: "appointment_not_cancelled" });
+    if (context.options.appointmentsNow && Date.parse(record.startsAtUtc) < Date.parse(context.options.appointmentsNow)) {
+      return send(response, 409, { code: "appointment_past" });
+    }
     if (record.clientArchived) return send(response, 409, { code: "client_archived" });
     const refusal = availability(appointments, record, settings);
     if (refusal) return send(response, 409, { code: refusal });
@@ -347,6 +394,7 @@ export async function handleAppointments(
       cancellationReason: null,
       version: record.version + 1,
       updatedAtUtc: now,
+      updatedByDisplayName: context.userDisplayName ?? "Agent Fictif",
     });
     return send(response, 200, record);
   }

@@ -2,11 +2,16 @@ using MMV.Domain.Appointments;
 
 namespace MMV.Application.Appointments;
 
-/// <summary>Saisie brute d'un rendez-vous (corps HTTP), avant validation.</summary>
+/// <summary>
+/// Saisie brute d'un rendez-vous (corps HTTP), avant validation. <see cref="StartsAtLocal"/> : heure murale du
+/// magasin (<c>AAAA-MM-JJTHH:mm</c>) que le POSTE a convertie en <see cref="StartsAtUtc"/> ; le serveur la recalcule
+/// avec ses propres données de fuseaux et refuse tout écart (B2-REV-03, 03-B3).
+/// </summary>
 public sealed record AppointmentInput(
     Guid? ClientId,
     Guid? ResponsibleUserId,
     string? StartsAtUtc,
+    string? StartsAtLocal,
     int? DurationMinutes,
     string? ReasonCode,
     string? Notes);
@@ -74,11 +79,12 @@ public static class AppointmentInputValidator
         }
 
         DateTimeOffset start = default;
+        var startParsed = false;
         if (string.IsNullOrEmpty(input.StartsAtUtc))
         {
             errors["startsAtUtc"] = [Required];
         }
-        else if (!AppointmentSchedule.TryParseUtcInstant(input.StartsAtUtc, out start))
+        else if (!(startParsed = AppointmentSchedule.TryParseUtcInstant(input.StartsAtUtc, out start)))
         {
             errors["startsAtUtc"] = [InvalidFormat];
         }
@@ -86,6 +92,20 @@ public static class AppointmentInputValidator
                  && AppointmentSchedule.CheckSlot(settings.TimeZone, start, start.AddMinutes(input.DurationMinutes!.Value)) is { } slotError)
         {
             errors["startsAtUtc"] = [slotError];
+        }
+
+        // Heure murale annoncée par le poste : présente, stricte, et IDENTIQUE à celle du serveur pour cet instant.
+        if (string.IsNullOrEmpty(input.StartsAtLocal))
+        {
+            errors["startsAtLocal"] = [Required];
+        }
+        else if (!AppointmentSchedule.IsLocalWallTime(input.StartsAtLocal))
+        {
+            errors["startsAtLocal"] = [InvalidFormat];
+        }
+        else if (startParsed && AppointmentSchedule.LocalWallTime(settings.TimeZone, start) != input.StartsAtLocal)
+        {
+            errors["startsAtLocal"] = [AppointmentSchedule.TimeZoneMismatch];
         }
 
         var responsible = input.ResponsibleUserId == Guid.Empty ? null : input.ResponsibleUserId;

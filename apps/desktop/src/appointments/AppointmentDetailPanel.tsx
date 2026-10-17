@@ -2,7 +2,9 @@
 // (jamais depuis la ligne d'agenda, qui n'a pas les notes). Actions selon les permissions de session (garde
 // d'affichage) et l'état : planifié → Modifier / Déplacer / Annuler ; annulé → Rétablir. Les règles fines
 // (passé, client archivé, créneau ou capacité d'accueil libre au rétablissement) sont décidées par le serveur
-// (D-03-15, D-03-16). L'annulation affiche son auteur et sa date (D-03-16).
+// (D-03-15, D-03-16). L'annulation affiche son auteur et sa date (D-03-16), la fiche l'auteur et la date de la
+// dernière modification (O-03-23, 03-B3). Rendez-vous commencé (B2-REV-02) : « Déplacer » et « Rétablir »
+// désactivés avec leur motif ; « Modifier » ne corrige que le motif et les notes.
 // Écart volontaire : badge « Planifié » au lieu de « Confirmé » (aucun circuit de confirmation décidé).
 import { AlertTriangle, Calendar, CalendarX, Clock, Move, Pencil, RefreshCw, RotateCcw, Stethoscope, Timer, User, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef } from "react";
@@ -14,7 +16,8 @@ import { appointmentClientName } from "./appointmentForm.ts";
 import type { AppointmentPermissions } from "./appointmentPermissions.ts";
 import { NO_APPOINTMENT_CANCEL_TITLE, NO_APPOINTMENT_WRITE_TITLE } from "./appointmentPermissions.ts";
 import { useAppointmentDetail } from "./appointmentQueries.ts";
-import { clientInitials, type FailureView, formatWhen, reasonLabel, STATUS_LABEL } from "./appointmentsView.ts";
+import { useAppointmentsService } from "./appointmentsService.ts";
+import { clientInitials, type FailureView, formatWhen, hasStarted, reasonLabel, STATUS_LABEL } from "./appointmentsView.ts";
 import { formatDuration, formatNumericDate, formatTimeRange, minutesBetween, utcToWall } from "./time.ts";
 
 interface AppointmentDetailPanelProps {
@@ -43,6 +46,7 @@ export function AppointmentDetailPanel({
   onRestore,
 }: AppointmentDetailPanelProps) {
   const navigate = useNavigate();
+  const { now } = useAppointmentsService();
   const query = useAppointmentDetail(appointmentId);
   const heading = useRef<HTMLHeadingElement>(null);
 
@@ -95,6 +99,7 @@ export function AppointmentDetailPanel({
 
   const appointment = query.data;
   const cancelled = appointment.status === "cancelled";
+  const started = hasStarted(appointment.startsAtUtc, now);
   const wall = utcToWall(appointment.startsAtUtc, options.timeZone);
   const name = appointmentClientName(appointment);
 
@@ -165,13 +170,16 @@ export function AppointmentDetailPanel({
           <div className="rdv-detail__label">Notes</div>
           <p>{appointment.notes ?? "Aucune note."}</p>
         </div>
+        <p className="rdv-detail__audit">
+          Dernière modification le {formatWhen(appointment.updatedAtUtc, options.timeZone)} par {appointment.updatedByDisplayName}
+        </p>
       </div>
       <div className="rdv-side__foot rdv-side__foot--stack">
         {cancelled ? (
           <Button
             variant="primary"
-            disabled={!permissions.canCancel || restoring}
-            title={permissions.canCancel ? undefined : NO_APPOINTMENT_CANCEL_TITLE}
+            disabled={!permissions.canCancel || restoring || started}
+            title={!permissions.canCancel ? NO_APPOINTMENT_CANCEL_TITLE : started ? STARTED_TITLE : undefined}
             onClick={() => onRestore(appointment)}
           >
             <RotateCcw size={16} aria-hidden="true" />
@@ -184,7 +192,12 @@ export function AppointmentDetailPanel({
                 <Pencil size={16} aria-hidden="true" />
                 Modifier
               </Button>
-              <Button className="rdv-grow" disabled={!permissions.canWrite} title={permissions.canWrite ? undefined : NO_APPOINTMENT_WRITE_TITLE} onClick={() => onMove(appointment)}>
+              <Button
+                className="rdv-grow"
+                disabled={!permissions.canWrite || started}
+                title={!permissions.canWrite ? NO_APPOINTMENT_WRITE_TITLE : started ? STARTED_TITLE : undefined}
+                onClick={() => onMove(appointment)}
+              >
                 <Move size={16} aria-hidden="true" />
                 Déplacer
               </Button>
@@ -194,6 +207,11 @@ export function AppointmentDetailPanel({
               Annuler le rendez-vous
             </Button>
           </>
+        )}
+        {started && (permissions.canWrite || permissions.canCancel) && (
+          <p className="rdv-side__hint" role="note">
+            {cancelled ? "Rendez-vous déjà commencé : il ne peut plus être rétabli." : "Rendez-vous commencé : seuls le motif et les notes peuvent être corrigés."}
+          </p>
         )}
         {(!permissions.canWrite || !permissions.canCancel) && (
           <p className="rdv-side__hint" role="note">
@@ -208,6 +226,8 @@ export function AppointmentDetailPanel({
     </aside>
   );
 }
+
+const STARTED_TITLE = "Rendez-vous commencé : créneau, responsable et client ne changent plus";
 
 function Row({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (

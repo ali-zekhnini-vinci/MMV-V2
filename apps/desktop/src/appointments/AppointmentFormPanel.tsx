@@ -4,7 +4,8 @@
 // Responsable suit le mode du motif (D-03-14 : personnalisé → obligatoire ; accueil → facultatif si une capacité
 // d'accueil est configurée) ; erreurs serveur par champ sous les champs ; conflit horaire, capacité d'accueil
 // atteinte et autres refus 409 en bandeau. Échap ferme le panneau (confirmation si des modifications ne sont pas
-// enregistrées, y compris depuis le menu du Shell).
+// enregistrées, y compris depuis le menu du Shell). Rendez-vous commencé (B2-REV-02, 03-B3) : la modification ne
+// présente que le motif et les notes, la réservation (client, date, heure, durée, responsable) étant figée.
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, AlertTriangle, ArrowLeft, Calendar, Check, Clock, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useMemo, useRef, useState } from "react";
@@ -25,7 +26,8 @@ import {
   toAppointmentInput,
 } from "./appointmentForm.ts";
 import { useCreateAppointment, useUpdateAppointment } from "./appointmentQueries.ts";
-import { describeAppointmentFailure, type FailureView, formatWhen, reasonLabel } from "./appointmentsView.ts";
+import { useAppointmentsService } from "./appointmentsService.ts";
+import { describeAppointmentFailure, type FailureView, formatWhen, hasStarted, reasonLabel } from "./appointmentsView.ts";
 import { ClientPicker } from "./ClientPicker.tsx";
 import { addMinutesUtc, formatDuration, formatTimeRange } from "./time.ts";
 
@@ -51,8 +53,18 @@ const FIELD_ORDER: (keyof AppointmentFormValues)[] = ["clientId", "date", "time"
 export function AppointmentFormPanel({ mode, options, initialValues, appointment, canPickClient, returnLabel, onClose, onSaved }: AppointmentFormPanelProps) {
   const create = useCreateAppointment();
   const update = useUpdateAppointment();
-  const schema = useMemo(() => appointmentFormSchema(options), [options]);
+  const { now } = useAppointmentsService();
   const [editing] = useState(appointment ?? null);
+  const schema = useMemo(() => appointmentFormSchema(options, editing?.responsibleUserId), [options, editing]);
+  // Rendez-vous commencé : seuls le motif et les notes se corrigent (le serveur refuse le reste : 409 appointment_past).
+  const [locked] = useState(() => mode === "edit" && editing !== null && hasStarted(editing.startsAtUtc, now));
+  // Responsable actuel qui n'est plus habilité : proposé tel quel (motif et notes restent corrigeables).
+  const formerResponsible =
+    editing?.responsibleUserId && !options.responsibles.some((person) => person.id === editing.responsibleUserId)
+      ? { id: editing.responsibleUserId, displayName: `${editing.responsibleDisplayName ?? "Collaborateur"} (n'est plus habilité)` }
+      : null;
+  // Sans responsable, un rendez-vous commencé reste un rendez-vous d'accueil : motifs d'accueil seulement.
+  const reasonChoices = locked && editing?.responsibleUserId === null ? options.reasons.filter((reason) => !reason.responsibleRequired) : options.reasons;
   const {
     register,
     handleSubmit,
@@ -115,6 +127,12 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
     const slot = { startsAtUtc: input.startsAtUtc, endsAtUtc: addMinutesUtc(input.startsAtUtc, input.durationMinutes), timeZone: options.timeZone };
     const onError = (error: ApiRequestError) => {
       const fields = appointmentServerFieldErrors(error.error.fieldErrors);
+      const hidden = locked ? fields.find(([field]) => field !== "reasonCode" && field !== "notes") : undefined;
+      if (error.error.kind === "validation" && hidden) {
+        // Champ non affiché (réservation figée) : message en bandeau plutôt que sous un champ invisible.
+        setFailure({ tone: "error", title: "Données refusées", text: `${hidden[1]}.` });
+        return;
+      }
       if (error.error.kind === "validation" && fields.length > 0) {
         fields.forEach(([field, message]) => setError(field, { type: "server", message }));
         focusField(fields[0][0]);
@@ -186,18 +204,24 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
                 </Button>
               </div>
             )}
-            {move && editing ? (
+            {(move || locked) && editing ? (
               <div className="rdv-form__summary">
                 <p>
                   <b>{clientLabel}</b>
                 </p>
                 <p>
-                  Actuellement : {formatWhen(editing.startsAtUtc, options.timeZone)} ({formatTimeRange(editing.startsAtUtc, editing.endsAtUtc, options.timeZone)})
+                  {locked ? "Commencé" : "Actuellement"} : {formatWhen(editing.startsAtUtc, options.timeZone)} (
+                  {formatTimeRange(editing.startsAtUtc, editing.endsAtUtc, options.timeZone)})
                 </p>
                 <p>
                   {formatDuration(Number(currentDuration))} · {reasonLabel(options, editing.reasonCode)}
-                  {editing.responsibleDisplayName ? ` · ${editing.responsibleDisplayName}` : ""}
+                  {editing.responsibleDisplayName ? ` · ${editing.responsibleDisplayName}` : " · Non attribué"}
                 </p>
+                {locked && (
+                  <p className="rdv-form__locked" role="note">
+                    Rendez-vous commencé : seuls le motif et les notes peuvent être corrigés.
+                  </p>
+                )}
               </div>
             ) : (
               <ClientField
@@ -208,12 +232,15 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
                 onOpen={() => setPicking(true)}
               />
             )}
-            <div className="rdv-form__row">
-              <Field label="Date" required icon={<Calendar size={18} />} error={errors.date?.message} hint="jj/mm/aaaa" registration={register("date")} placeholder="jj/mm/aaaa" autoFocus={move} />
-              <Field label="Heure" required icon={<Clock size={18} />} error={errors.time?.message} hint="hh:mm" registration={register("time")} placeholder="hh:mm" />
-            </div>
+            {!locked && (
+              <div className="rdv-form__row">
+                <Field label="Date" required icon={<Calendar size={18} />} error={errors.date?.message} hint="jj/mm/aaaa" registration={register("date")} placeholder="jj/mm/aaaa" autoFocus={move} />
+                <Field label="Heure" required icon={<Clock size={18} />} error={errors.time?.message} hint="hh:mm" registration={register("time")} placeholder="hh:mm" />
+              </div>
+            )}
             {!move && (
               <>
+                {!locked && (
                 <div className="rdv-form__row">
                   <SelectField label="Durée" required icon={<Timer size={18} />} error={errors.durationMinutes?.message} registration={register("durationMinutes")}>
                     <option value="">Choisir…</option>
@@ -232,16 +259,17 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
                     registration={register("responsibleUserId")}
                   >
                     <option value="">{attribution === "optional" ? "Non attribué (accueil)" : "Choisir…"}</option>
-                    {options.responsibles.map((person) => (
+                    {[...options.responsibles, ...(formerResponsible ? [formerResponsible] : [])].map((person) => (
                       <option key={person.id} value={person.id}>
                         {person.displayName}
                       </option>
                     ))}
                   </SelectField>
                 </div>
+                )}
                 <SelectField label="Motif" required icon={<Stethoscope size={18} />} error={errors.reasonCode?.message} registration={register("reasonCode")}>
                   <option value="">Choisir un motif…</option>
-                  {options.reasons.map((reason) => (
+                  {reasonChoices.map((reason) => (
                     <option key={reason.code} value={reason.code}>
                       {reason.label}
                     </option>

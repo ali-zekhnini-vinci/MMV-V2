@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { Temporal } from "temporal-polyfill";
 import { describe, test } from "vitest";
 import {
+  findOffsetDivergence,
   formatDuration,
   formatLongDate,
   formatNumericDate,
@@ -11,6 +12,8 @@ import {
   formatWeekShort,
   formatWeekTitle,
   isCivilDate,
+  localOffsetSegments,
+  localWallDateTime,
   minutesBetween,
   shiftDate,
   todayIn,
@@ -91,5 +94,73 @@ describe("vues jour et semaine", () => {
     assert.equal(formatDuration(45), "45 minutes");
     assert.equal(formatDuration(60), "1 h");
     assert.equal(formatDuration(90), "1 h 30");
+  });
+});
+
+// B2-REV-03 (03-B3) : cohérence des conversions horaires entre le serveur (Windows) et ce poste (ICU). Les dates de
+// transition citées sont celles des données ICU 2026c de Node 24 (constat Q-03-121, relevé en 03-B3) ; WebView2 est
+// contrôlée à l'exécution par la comparaison des décalages servis avec chaque liste.
+describe("cohérence des fuseaux serveur ↔ poste", () => {
+  test("décalages du poste : semaines avec et sans transition, Bruxelles et Casablanca, dates futures", () => {
+    assert.deepEqual(localOffsetSegments("2026-10-18T22:00:00Z", "2026-10-25T23:00:00Z", "Europe/Brussels"), [
+      { fromUtc: "2026-10-18T22:00:00Z", toUtc: "2026-10-25T01:00:00Z", offsetMinutes: 120 },
+      { fromUtc: "2026-10-25T01:00:00Z", toUtc: "2026-10-25T23:00:00Z", offsetMinutes: 60 },
+    ]);
+    assert.deepEqual(localOffsetSegments("2027-03-21T23:00:00Z", "2027-03-28T22:00:00Z", "Europe/Brussels"), [
+      { fromUtc: "2027-03-21T23:00:00Z", toUtc: "2027-03-28T01:00:00Z", offsetMinutes: 60 },
+      { fromUtc: "2027-03-28T01:00:00Z", toUtc: "2027-03-28T22:00:00Z", offsetMinutes: 120 },
+    ]);
+    assert.deepEqual(localOffsetSegments("2026-09-13T23:00:00Z", "2026-09-21T00:00:00Z", "Africa/Casablanca"), [
+      { fromUtc: "2026-09-13T23:00:00Z", toUtc: "2026-09-20T01:00:00Z", offsetMinutes: 60 },
+      { fromUtc: "2026-09-20T01:00:00Z", toUtc: "2026-09-21T00:00:00Z", offsetMinutes: 0 },
+    ]);
+    assert.deepEqual(localOffsetSegments("2027-02-07T00:00:00Z", "2027-02-14T00:00:00Z", "Africa/Casablanca"), [
+      { fromUtc: "2027-02-07T00:00:00Z", toUtc: "2027-02-14T00:00:00Z", offsetMinutes: 0 },
+    ]);
+    assert.deepEqual(localOffsetSegments("2028-07-02T22:00:00Z", "2028-07-09T22:00:00Z", "Europe/Brussels"), [
+      { fromUtc: "2028-07-02T22:00:00Z", toUtc: "2028-07-09T22:00:00Z", offsetMinutes: 120 },
+    ]);
+  });
+
+  test("décalages concordants (y compris aux transitions) : aucun écart", () => {
+    const week = { fromUtc: "2026-10-18T22:00:00Z", toUtc: "2026-10-25T23:00:00Z" };
+    const server = [
+      { fromUtc: "2026-10-18T22:00:00+00:00", toUtc: "2026-10-25T01:00:00+00:00", offsetMinutes: 120 },
+      { fromUtc: "2026-10-25T01:00:00+00:00", toUtc: "2026-10-25T23:00:00+00:00", offsetMinutes: 60 },
+    ];
+    assert.equal(findOffsetDivergence(server, "Europe/Brussels", week), null);
+    assert.equal(findOffsetDivergence(localOffsetSegments("2026-09-13T23:00:00Z", "2026-09-21T00:00:00Z", "Africa/Casablanca"), "Africa/Casablanca"), null);
+  });
+
+  test("divergence réelle constatée (O-03-22) : Windows place Casablanca à UTC+0 dès le 01/01/2026, ICU le 15/02/2026", () => {
+    // Décalages tels que MMV.Api (Windows) les calcule pour la semaine du 05/01/2026 (sonde 03-B3).
+    const windows = [{ fromUtc: "2026-01-04T23:00:00Z", toUtc: "2026-01-11T23:00:00Z", offsetMinutes: 0 }];
+    assert.deepEqual(findOffsetDivergence(windows, "Africa/Casablanca", { fromUtc: "2026-01-04T23:00:00Z", toUtc: "2026-01-11T23:00:00Z" }), {
+      atUtc: "2026-01-04T23:00:00Z",
+      serverOffsetMinutes: 0,
+      localOffsetMinutes: 60,
+    });
+  });
+
+  test("transition déplacée d'une heure, transition manquante, couverture incomplète : écart signalé", () => {
+    const tz = "Europe/Brussels";
+    const shifted = [
+      { fromUtc: "2026-10-18T22:00:00Z", toUtc: "2026-10-25T02:00:00Z", offsetMinutes: 120 },
+      { fromUtc: "2026-10-25T02:00:00Z", toUtc: "2026-10-25T23:00:00Z", offsetMinutes: 60 },
+    ];
+    assert.deepEqual(findOffsetDivergence(shifted, tz), { atUtc: "2026-10-25T01:00:00Z", serverOffsetMinutes: 120, localOffsetMinutes: 60 });
+    const missing = [{ fromUtc: "2026-10-18T22:00:00Z", toUtc: "2026-10-25T23:00:00Z", offsetMinutes: 120 }];
+    assert.deepEqual(findOffsetDivergence(missing, tz), { atUtc: "2026-10-25T01:00:00Z", serverOffsetMinutes: 120, localOffsetMinutes: 60 });
+    const partial = [{ fromUtc: "2026-11-02T23:00:00Z", toUtc: "2026-11-05T23:00:00Z", offsetMinutes: 60 }];
+    assert.notEqual(findOffsetDivergence(partial, tz, { fromUtc: "2026-11-01T23:00:00Z", toUtc: "2026-11-08T23:00:00Z" }), null);
+    assert.notEqual(findOffsetDivergence([], tz, { fromUtc: "2026-11-01T23:00:00Z", toUtc: "2026-11-08T23:00:00Z" }), null);
+  });
+
+  test("heure murale annoncée au serveur : celle du magasin, de part et d'autre des transitions", () => {
+    assert.equal(localWallDateTime("2026-10-25T00:59:00Z", "Europe/Brussels"), "2026-10-25T02:59");
+    assert.equal(localWallDateTime("2026-10-25T01:00:00Z", "Europe/Brussels"), "2026-10-25T02:00");
+    assert.equal(localWallDateTime("2026-09-20T00:59:00Z", "Africa/Casablanca"), "2026-09-20T01:59");
+    assert.equal(localWallDateTime("2026-09-20T01:00:00Z", "Africa/Casablanca"), "2026-09-20T01:00");
+    assert.equal(localWallDateTime("2027-02-10T09:00:00Z", "Africa/Casablanca"), "2027-02-10T09:00");
   });
 });

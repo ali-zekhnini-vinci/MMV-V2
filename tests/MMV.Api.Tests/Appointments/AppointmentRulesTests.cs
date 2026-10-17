@@ -199,4 +199,63 @@ public sealed class AppointmentRulesTests
         var id = Guid.Parse("0199b000-0000-7000-8000-000000000001");
         Assert.Equal(AppointmentLock.Responsible(id), AppointmentLock.Responsible(Guid.Parse(id.ToString())));
     }
+
+    /// <summary>
+    /// B2-REV-03 (03-B3) : décalages servis à l'interface pour une semaine d'agenda, transitions exactes. Transitions
+    /// futures communes aux données Windows et ICU 2026c (constat Q-03-121, relevé en 03-B3) : Bruxelles 25/10/2026,
+    /// 28/03/2027, 31/10/2027 ; Casablanca 20/09/2026 (UTC+1 → UTC+0), aucune ensuite jusqu'en 2028.
+    /// </summary>
+    [Theory]
+    [InlineData("Europe/Brussels", "2026-10-18T22:00:00Z", "2026-10-25T23:00:00Z", "2026-10-25T01:00:00Z", 120, 60)]
+    [InlineData("Europe/Brussels", "2027-03-21T23:00:00Z", "2027-03-28T22:00:00Z", "2027-03-28T01:00:00Z", 60, 120)]
+    [InlineData("Europe/Brussels", "2027-10-24T22:00:00Z", "2027-10-31T23:00:00Z", "2027-10-31T01:00:00Z", 120, 60)]
+    [InlineData("Africa/Casablanca", "2026-09-13T23:00:00Z", "2026-09-21T00:00:00Z", "2026-09-20T01:00:00Z", 60, 0)]
+    public void OffsetSegments_SplitAWeekExactlyAtTheTransition(string zone, string from, string to, string transition, int before, int after)
+    {
+        var segments = AppointmentSchedule.OffsetSegments(TimeZoneInfo.FindSystemTimeZoneById(zone), Parse(from), Parse(to));
+
+        Assert.Equal(
+            [new UtcOffsetSegment(Parse(from), Parse(transition), before), new UtcOffsetSegment(Parse(transition), Parse(to), after)],
+            segments);
+    }
+
+    [Theory]
+    [InlineData("Europe/Brussels", "2026-11-01T23:00:00Z", "2026-11-08T23:00:00Z", 60)]
+    [InlineData("Europe/Brussels", "2028-07-02T22:00:00Z", "2028-07-09T22:00:00Z", 120)]
+    [InlineData("Africa/Casablanca", "2027-02-07T00:00:00Z", "2027-02-14T00:00:00Z", 0)]
+    [InlineData("Africa/Casablanca", "2028-01-30T00:00:00Z", "2028-02-29T00:00:00Z", 0)]
+    public void OffsetSegments_WithoutTransition_IsASingleSegment(string zone, string from, string to, int offset) =>
+        Assert.Equal(
+            [new UtcOffsetSegment(Parse(from), Parse(to), offset)],
+            AppointmentSchedule.OffsetSegments(TimeZoneInfo.FindSystemTimeZoneById(zone), Parse(from), Parse(to)));
+
+    [Fact]
+    public void OffsetSegments_TransitionOnABoundary_BelongsToTheRangeThatStartsThere()
+    {
+        var transition = Parse("2026-10-25T01:00:00Z");
+        Assert.Equal([new UtcOffsetSegment(transition, transition.AddHours(5), 60)], AppointmentSchedule.OffsetSegments(Brussels, transition, transition.AddHours(5)));
+        Assert.Equal([new UtcOffsetSegment(transition.AddHours(-5), transition, 120)], AppointmentSchedule.OffsetSegments(Brussels, transition.AddHours(-5), transition));
+        // Bornes quelconques (secondes) : couverture exacte, transition au tick près.
+        var from = Parse("2026-10-24T23:59:59Z");
+        var to = Parse("2026-10-25T01:00:07Z");
+        Assert.Equal(
+            [new UtcOffsetSegment(from, transition, 120), new UtcOffsetSegment(transition, to, 60)],
+            AppointmentSchedule.OffsetSegments(Brussels, from, to));
+    }
+
+    [Fact]
+    public void LocalWallTime_IsTheServerConversion_AroundTransitions()
+    {
+        Assert.Equal("2026-10-25T02:59", AppointmentSchedule.LocalWallTime(Brussels, Parse("2026-10-25T00:59:00Z")));
+        Assert.Equal("2026-10-25T02:00", AppointmentSchedule.LocalWallTime(Brussels, Parse("2026-10-25T01:00:00Z")));
+        Assert.Equal("2026-09-20T01:59", AppointmentSchedule.LocalWallTime(Casablanca, Parse("2026-09-20T00:59:00Z")));
+        Assert.Equal("2026-09-20T01:00", AppointmentSchedule.LocalWallTime(Casablanca, Parse("2026-09-20T01:00:00Z")));
+        Assert.True(AppointmentSchedule.IsLocalWallTime("2027-02-10T09:05"));
+        Assert.False(AppointmentSchedule.IsLocalWallTime("2027-02-10T9:05"));
+        Assert.False(AppointmentSchedule.IsLocalWallTime("2027-02-30T09:05"));
+        Assert.False(AppointmentSchedule.IsLocalWallTime(null));
+    }
+
+    private static DateTimeOffset Parse(string utc) =>
+        DateTimeOffset.Parse(utc, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal);
 }

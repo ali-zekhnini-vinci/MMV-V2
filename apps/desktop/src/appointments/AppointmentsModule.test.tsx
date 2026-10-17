@@ -10,7 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, test } from "vitest";
 import { Gate } from "../App.tsx";
 import { AuthProvider } from "../auth/AuthProvider.tsx";
-import { APPOINTMENT_PERMISSIONS, type FakeAppointmentSeed } from "../test/fakeAppointmentsApi.ts";
+import { APPOINTMENT_PERMISSIONS, FAKE_APPOINTMENT_OPTIONS, type FakeAppointmentSeed } from "../test/fakeAppointmentsApi.ts";
 import { CLIENT_PERMISSIONS, type FakeClientSeed } from "../test/fakeClientsApi.ts";
 import { type FakeApi, type FakeApiOptions, startFakeApi } from "../test/fakeMmvApi.ts";
 import { AppointmentsServiceContext } from "./appointmentsService.ts";
@@ -105,7 +105,9 @@ describe("agenda jour / semaine", () => {
     await user.click(screen.getByRole("button", { name: "Semaine" }));
     await screen.findByText("Semaine du 13 au 18 juillet 2026");
     screen.getByText("13 – 18 juil. 2026");
-    assert.equal((await within(agenda()).findAllByRole("button", { name: /O\. Benali/ })).length, 2);
+    // La journée précédente reste affichée pendant le chargement de la semaine (keepPreviousData) : attendre la semaine
+    // (course du test constatée en 03-B3, 1 rendez-vous au lieu de 2 sur une exécution complète sur six).
+    await waitFor(() => assert.equal(within(agenda()).getAllByRole("button", { name: /O\. Benali/ }).length, 2));
     const query = new URLSearchParams(lastRequest(api, "/api/appointments?")?.path.split("?")[1]);
     assert.equal(query.get("from"), "2026-07-12T22:00:00Z");
     assert.equal(query.get("to"), "2026-07-19T22:00:00Z");
@@ -510,5 +512,87 @@ describe("permissions de session (garde d'affichage, D-03-17)", () => {
     const panel = await screen.findByRole("complementary", { name: "Nouveau rendez-vous" });
     assert.equal((within(panel).getByRole("button", { name: /Client/ }) as HTMLButtonElement).disabled, true);
     within(panel).getByText(/ne permet pas de rechercher des clients \(clients\.read\)/);
+  });
+});
+
+describe("cohérence des fuseaux et rendez-vous commencés (03-B3)", () => {
+  async function openDetail(user: ReturnType<typeof userEvent.setup>, name: RegExp) {
+    await user.click(await eventButton(name));
+    const panel = await screen.findByRole("complementary", { name: /Détail du rendez-vous de / });
+    await within(panel).findByText("Responsable");
+    return panel;
+  }
+
+  test("décalages du serveur différents de ceux du poste : agenda de la période bloqué, aucune création proposée", async () => {
+    // Serveur dont les données de fuseaux placeraient Bruxelles à UTC+1 en juillet (écart d'une heure).
+    const { api } = await openAgenda({ serverOffsets: (fromUtc, toUtc) => [{ fromUtc, toUtc, offsetMinutes: 60 }] });
+    const alert = await screen.findByRole("heading", { name: "Heure incohérente entre ce poste et le serveur MMV" });
+    const block = alert.closest("[role='alert']");
+    assert.match(block?.textContent ?? "", /UTC\+1 selon le serveur, UTC\+2 selon ce poste/);
+    assert.equal(within(agenda()).queryByRole("button", { name: /Yasmine El Amrani/ }), null);
+    assert.equal(screen.queryByRole("button", { name: "Nouveau rendez-vous" }), null);
+    assert.equal(writes(api).length, 0);
+  });
+
+  test("décalages concordants : agenda affiché ; l'écriture annonce l'heure murale au serveur", async () => {
+    const { user, api } = await openAgenda();
+    const detail = await openDetail(user, /Yasmine El Amrani/);
+    within(detail).getByText(/Dernière modification le 01\/07\/2026 à 10:00 par Agent Fictif/);
+    await user.click(within(detail).getByRole("button", { name: "Déplacer" }));
+    const form = await screen.findByRole("complementary", { name: "Déplacer le rendez-vous" });
+    const time = within(form).getByLabelText("Heure");
+    await user.clear(time);
+    await user.type(time, "12:30{Enter}");
+    await screen.findByText("Rendez-vous déplacé");
+    // Le double refuse (422 time_zone_mismatch) toute heure murale qui ne correspond pas à l'instant UTC envoyé.
+    const moved = api.appointments.find((item) => item.clientLastName === "El Amrani");
+    assert.equal(moved?.startsAtUtc, "2026-07-16T10:30:00Z");
+    assert.equal(moved?.updatedByDisplayName, "Agent Test");
+  });
+
+  test("rendez-vous commencé : Déplacer désactivé avec motif, modification limitée au motif et aux notes", async () => {
+    // Commencé à 08:30 (Bruxelles) ; « maintenant » = 09:00.
+    const started: FakeAppointmentSeed = { clientLastName: "Benali", startsAtUtc: "2026-07-16T06:30:00Z", durationMinutes: 60, reasonCode: "prise_mesures", responsible: 1 };
+    const { user, api } = await openAgenda({ appointments: [...APPOINTMENTS, started], appointmentsNow: NOW.toISOString() });
+    await user.click(screen.getByRole("button", { name: "Jour" }));
+    const panel = await openDetail(user, /Omar Benali.*08:30|08:30.*Omar Benali/);
+    const move = within(panel).getByRole("button", { name: "Déplacer" }) as HTMLButtonElement;
+    assert.equal(move.disabled, true);
+    assert.match(move.title, /Rendez-vous commencé/);
+    within(panel).getByText("Rendez-vous commencé : seuls le motif et les notes peuvent être corrigés.");
+
+    await user.click(within(panel).getByRole("button", { name: "Modifier" }));
+    const form = await screen.findByRole("complementary", { name: "Modifier le rendez-vous" });
+    for (const label of ["Date", "Heure", "Durée", "Responsable"]) assert.equal(within(form).queryByLabelText(label), null, `${label} affiché`);
+    within(form).getByText(/Commencé : 16\/07\/2026 à 08:30/);
+    await user.type(within(form).getByLabelText("Notes"), "Mesures prises");
+    await user.click(within(form).getByRole("button", { name: "Enregistrer" }));
+    await screen.findByText("Rendez-vous modifié");
+    const saved = api.appointments.find((item) => item.startsAtUtc === "2026-07-16T06:30:00Z");
+    assert.equal(saved?.notes, "Mesures prises");
+    assert.equal(saved?.endsAtUtc, "2026-07-16T07:30:00Z");
+    assert.equal(saved?.responsibleDisplayName, "Responsable Deux");
+  });
+
+  test("responsable qui n'est plus habilité : conservé dans la modification, motif et notes corrigeables", async () => {
+    const { user, api } = await openAgenda({
+      appointmentOptions: { ...FAKE_APPOINTMENT_OPTIONS, responsibles: [FAKE_APPOINTMENT_OPTIONS.responsibles[1]] },
+    });
+    // Rendez-vous attribué à « Responsable Un », retiré depuis de la liste des collaborateurs éligibles.
+    const former = FAKE_APPOINTMENT_OPTIONS.responsibles[0];
+    Object.assign(api.appointments[0], { responsibleUserId: former.id, responsibleDisplayName: former.displayName });
+    const panel = await openDetail(user, /Yasmine El Amrani/);
+    await user.click(within(panel).getByRole("button", { name: "Modifier" }));
+    const form = await screen.findByRole("complementary", { name: "Modifier le rendez-vous" });
+    const select = within(form).getByLabelText("Responsable") as HTMLSelectElement;
+    assert.equal(select.selectedOptions[0]?.textContent, "Responsable Un (n'est plus habilité)");
+    await user.clear(within(form).getByLabelText("Notes"));
+    await user.type(within(form).getByLabelText("Notes"), "Note corrigée");
+    await user.click(within(form).getByRole("button", { name: "Enregistrer" }));
+    await screen.findByText("Rendez-vous modifié");
+    const saved = api.appointments.find((item) => item.clientLastName === "El Amrani");
+    assert.equal(saved?.notes, "Note corrigée");
+    assert.equal(saved?.responsibleDisplayName, "Responsable Un");
+    assert.equal(saved?.startsAtUtc, "2026-07-16T08:30:00Z");
   });
 });
