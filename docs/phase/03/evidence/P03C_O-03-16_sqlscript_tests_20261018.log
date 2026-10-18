@@ -1,0 +1,73 @@
+# 03-C — O-03-16 : tests de scripts/Invoke-MmvSqlScript.ps1 avec psql SIMULÉ (aucune connexion, aucune base), 2026-10-18T13:17:34.7118584+02:00
+# Commande : powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/Invoke-MmvSqlScript.Tests.ps1 [-Target <script>]
+
+## AVANT : script de HEAD 9caf7ed (non corrigé) — échec attendu
+Cible : <bloc-notes>\Invoke-MmvSqlScript.HEAD.ps1 (PowerShell 5.1.26100.9711)
+PASS application : code de sortie 0
+PASS application : contrôle d'identité
+PASS application : script transmis une seule fois par -f
+PASS application : COMMIT signalé
+FAIL O-03-16 : requête de lecture reçue avec ses guillemets doubles
+----
+ARGS -h | localhost | -p | 5433 | -U | mmv_v2_test | -d | mmv_v2_test | -X | -v | ON_ERROR_STOP=1 | -A | -t | -c | SELECT current_database() || '|' || current_user || '|' || inet_server_port() || '|' || current_setting('server_version_num')
+SQL SELECT current_database() || '|' || current_user || '|' || inet_server_port() || '|' || current_setting('server_version_num')
+ARGS -h | localhost | -p | 5433 | -U | mmv_v2_test | -d | mmv_v2_test | -X | -v | ON_ERROR_STOP=1 | -f | C:\Users\Ali Zekhnini\AppData\Local\Temp\mmv-sqlscript-tests-<id>\migration.sql
+ARGS -h | localhost | -p | 5433 | -U | mmv_v2_test | -d | mmv_v2_test | -X | -v | ON_ERROR_STOP=1 | -A | -t | -c | SELECT string_agg(MigrationId, ', ' ORDER BY MigrationId) FROM __EFMigrationsHistory
+SQL SELECT string_agg(MigrationId, ', ' ORDER BY MigrationId) FROM __EFMigrationsHistory
+----
+FAIL O-03-16 : liste des migrations affichée
+----
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : C:\Users\Ali Zekhnini\AppData\Local\Temp\mmv-sqlscript-tests-<id>\migration.sql (SHA-256 D3CD5042F97738960D802AD6B3A548DFA18152215118BA18F04493BC6944B0E4)
+START TRANSACTION
+COMMIT
+APPLIQUE : exit 0
+ERREUR:  la relation « __efmigrationshistory » n'existe pas
+----
+FAIL O-03-16 : aucune erreur après COMMIT
+----
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : C:\Users\Ali Zekhnini\AppData\Local\Temp\mmv-sqlscript-tests-<id>\migration.sql (SHA-256 D3CD5042F97738960D802AD6B3A548DFA18152215118BA18F04493BC6944B0E4)
+START TRANSACTION
+COMMIT
+APPLIQUE : exit 0
+ERREUR:  la relation « __efmigrationshistory » n'existe pas
+----
+PASS lecture en échec : code de sortie 0 (COMMIT déjà effectué)
+FAIL lecture en échec : avertissement
+----
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : C:\Users\Ali Zekhnini\AppData\Local\Temp\mmv-sqlscript-tests-<id>\migration.sql (SHA-256 D3CD5042F97738960D802AD6B3A548DFA18152215118BA18F04493BC6944B0E4)
+START TRANSACTION
+COMMIT
+APPLIQUE : exit 0
+ERREUR:  la relation « __efmigrationshistory » n'existe pas
+----
+PASS lecture en échec : pas d'annonce d'annulation
+PASS garde-fou : empreinte différente, psql jamais appelé
+PASS garde-fou : port 5432 refusé, psql jamais appelé
+PASS garde-fou : hôte non loopback refusé, psql jamais appelé
+PASS garde-fou : base différente de -Database refusée, psql jamais appelé
+PASS garde-fou : PostgreSQL 17 refusé, script jamais transmis
+ÉCHECS : 4
+exit 1
+
+## APRÈS : script corrigé (requête de contrôle transmise par l'entrée standard)
+Cible : C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\scripts\Invoke-MmvSqlScript.ps1 (PowerShell 5.1.26100.9711)
+PASS application : code de sortie 0
+PASS application : contrôle d'identité
+PASS application : script transmis une seule fois par -f
+PASS application : COMMIT signalé
+PASS O-03-16 : requête de lecture reçue avec ses guillemets doubles
+PASS O-03-16 : liste des migrations affichée
+PASS O-03-16 : aucune erreur après COMMIT
+PASS lecture en échec : code de sortie 0 (COMMIT déjà effectué)
+PASS lecture en échec : avertissement
+PASS lecture en échec : pas d'annonce d'annulation
+PASS garde-fou : empreinte différente, psql jamais appelé
+PASS garde-fou : port 5432 refusé, psql jamais appelé
+PASS garde-fou : hôte non loopback refusé, psql jamais appelé
+PASS garde-fou : base différente de -Database refusée, psql jamais appelé
+PASS garde-fou : PostgreSQL 17 refusé, script jamais transmis
+TOUS LES TESTS RÉUSSIS
+exit 0

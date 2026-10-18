@@ -336,3 +336,40 @@ dotnet run <bloc-notes>/native/b3native.cs -- cleanup <suffixe>
 `e2e/cdp.mjs` : `drag()` (événements souris réels du moteur). `e2e/run-native.mjs` : scénarios `rdv-b3` (parcours complet) et `rdv-b3-guard` (garde-fou de fuseau).
 
 **Construction sans perturber le propriétaire.** Worktrees jetables du bloc-notes (`wt` : HEAD + corrections ; `wt-head` : HEAD 03-B2 pour mesurer l'instabilité préexistante) ; aucune compilation dans `src/` en place.
+
+## Réalisation 03-C (18/10/2026) — validation fonctionnelle
+
+**Aucun changement applicatif.** `src/` et `apps/desktop/src/` inchangés ; changements limités à l'outillage et à la documentation.
+
+**O-03-16 — `scripts/Invoke-MmvSqlScript.ps1`.** Cause : Windows PowerShell 5.1 ne protège pas les guillemets doubles d'un argument passé à un exécutable natif ; `-c 'SELECT … "__EFMigrationsHistory"'` arrivait à psql sans guillemets (nom replié en minuscules, relation introuvable). Correction : la requête de contrôle, en lecture seule, est transmise **par l'entrée standard** (`'…' | & $Psql @common -A -t`), indépendante de la version de PowerShell ; son échec après `COMMIT` produit un avertissement explicite (le script ne prétend jamais que la transaction a été annulée). Contrôles préalables, empreinte, cibles et application `-f` **inchangés**. Tests : `scripts/tests/Invoke-MmvSqlScript.Tests.ps1` — faux `psql.exe` compilé à la volée (`Add-Type -OutputType ConsoleApplication`) qui journalise les arguments et l'entrée réellement reçus et refuse, comme PostgreSQL, le nom sans guillemets ; user-secrets fictifs dans un `APPDATA` temporaire ; script exécuté dans un processus `powershell.exe -File` distinct (flux capturés au niveau du processus) ; `-Target` permet de rejouer une autre version (preuve avant / après).
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/tests/Invoke-MmvSqlScript.Tests.ps1
+```
+
+**Banc natif.**
+
+| Fichier | Changement |
+|---|---|
+| `apps/desktop/e2e/run-native.mjs` | scénarios `parcours-03c` et `matrice-03c` ; aides `targetDay` (jour ouvré cible, fuseau du magasin), `storeWall` (heure murale via l'ICU de Node, indépendante du poste), `resize`, `gotoDay`, `tabTo` (tabulations réelles), `mouseScale` (étalonnage CDP ↔ CSS sous zoom), `dragEvent`, `backgroundLuminance`, `reachable` ; une session API par compte (`apiLogoutAll` en fin de scénario) ; `rdv-b3-guard` : `--client-first`, `--responsible` |
+| `apps/desktop/e2e/send-keys.ps1` | levée du verrou de premier plan (frappe Alt) et échec explicite si la fenêtre n'est pas au premier plan |
+| `apps/desktop/e2e/capture-window.ps1` | `-ResizeOnly` (résolution d'essai sans capture) |
+
+```powershell
+# Bloc-notes (hors dépôt) : outil jetable c3native.cs (seed refusé si mmv_v2_test non vide / cleanup / residue), mmv_v2_test seulement
+dotnet run <bloc-notes>/native/c3native.cs -- seed <bloc-notes>/native/creds.json
+# MMV.Api (worktree) : chaîne mmv_v2_test et magasin Europe/Brussels 09:00–19:00, capacité 1, passés au seul processus
+dotnet run --project src/MMV.Api --launch-profile https --no-build
+# apps/desktop (worktree ; CARGO_TARGET_DIR court si le chemin dépasse 260 caractères)
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"; npx tauri dev
+$env:MMV_E2E_CREDENTIALS_FILE = '<bloc-notes>/native/creds.json'
+node --use-system-ca e2e/run-native.mjs parcours-03c --prefix P03C_native --out <dossier> --theme light --size 1920x1080 --zoom 1 --day-offset 5 --first-name Clair
+node --use-system-ca e2e/run-native.mjs parcours-03c --prefix P03C_native --out <dossier> --theme dark --size 1440x900 --zoom 1.5 --day-offset 4 --first-name Zoom --captures key
+node --use-system-ca e2e/run-native.mjs matrice-03c --prefix P03C_native --out <dossier> --day-offset 2   # après un parcours « Parcours » au jour +2
+node --use-system-ca e2e/run-native.mjs rdv-b3-guard --prefix P03C_native --out <dossier> --client-first Existant --responsible "C3N Responsable Deux"   # API en Africa/Casablanca
+dotnet run <bloc-notes>/native/c3native.cs -- cleanup <suffixe>
+```
+
+**Build release.** `npx tauri build --no-bundle` ; dans un worktree profond, `CARGO_TARGET_DIR` court (sinon `LNK1104`, O-03-38). L'exécutable release n'a ni adresse d'API ni `connect-src` : écran « Serveur MMV non configuré sur ce poste » (attendu avant empaquetage).
+
+**Tests.** Aucun test applicatif ajouté (code inchangé) ; `Invoke-MmvSqlScript.Tests.ps1` 15 contrôles. QA : Q-03-170 à Q-03-190.

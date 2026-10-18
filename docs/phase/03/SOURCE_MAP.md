@@ -159,3 +159,19 @@ Sources supplémentaires lues : `prompts/PHASE03_B3_GO_CLAUDE_CODE.md` (message 
 | §5 Configuration et test natif | `docs/phase/03/PROCEDURE_RENDEZ_VOUS_ACTIVATION.md`, `apps/desktop/e2e/cdp.mjs` (`drag`), `apps/desktop/e2e/run-native.mjs` (`rdv-b3`), `apps/desktop/src/appointments/appointmentQueries.ts`, `docs/phase/03/evidence/P03B3_native_rdv_e2e_20261018T1036Z.log`, `P03B3_native_tz_guard_20261018T1038Z.log`, `P03B3_native_rdv_*.png` (15), `P03B3_final_state_readonly_20261018.log` |
 | §6 DOCUMENTATION GATE | `README.md`, `docs/phase/03.md`, `docs/phase/03/GATES_AND_DECISIONS.md` (G03-DOC), `QA_MATRIX.md`, `IMPLEMENTATION_SPEC.md`, `API_APPOINTMENTS.md`, `DECISIONS_03B_RDV_PROPOSITION.md`, `PROCEDURE_RENDEZ_VOUS_ACTIVATION.md`, `docs/ARCHITECTURE_ET_STACK.md`, `docs/ADR_ET_DECISIONS.md`, `docs/PERIMETRE_ET_SEQUENCE.md`, `apps/desktop/README.md` |
 | §7 Livraison | branche locale `feat/phase-03-clients-rdv` (commits locaux, aucun push) ; archive `git archive` hors dépôt (`MMV-V2-phase03-B3.zip`, non suivie) |
+
+## Traçabilité 03-C (mandat `prompts/PHASE03_C_GO_CLAUDE_CODE.md`)
+
+Sources supplémentaires lues : `prompts/PHASE03_C_GO_CLAUDE_CODE.md` (message de session du 18/10/2026, reproduit à l'identique), `docs/phase/03.md`, `PROCEDURE_RENDEZ_VOUS_ACTIVATION.md`, `scripts/Invoke-MmvSqlScript.ps1`, journaux d'application 03-A3 / 03-B3 (O-02-15), `apps/desktop/e2e/*`, `src/MMV.Maintenance/Program.cs`, `src/MMV.Api/Auth/AuthSetup.cs` (limite de connexion), `apps/desktop/src-tauri/tauri.conf.json`. Code applicatif (`src/`, `apps/desktop/src/`) non modifié.
+
+| Exigence | Chemin |
+|---|---|
+| §1 Activation guidée sur `mmv_v2_dev` | `docs/phase/03/VALIDATION_PROPRIETAIRE_03C.md` § 1, `PROCEDURE_RENDEZ_VOUS_ACTIVATION.md` (statut) ; user-secrets `mmv-v2-api` hors dépôt (4 clés `Appointments:*`, sur demande du propriétaire) |
+| §2 Parcours manuel complet | `VALIDATION_PROPRIETAIRE_03C.md` § 2 ; scénario automatisé `apps/desktop/e2e/run-native.mjs` (`parcours-03c`) |
+| §3 Thèmes, résolutions, zooms, clavier, glisser-déposer | `run-native.mjs` (`parcours-03c`, `matrice-03c`, `dragEvent`, `mouseScale`, `tabTo`, `reachable`), `apps/desktop/e2e/capture-window.ps1` (`-ResizeOnly`), `apps/desktop/e2e/send-keys.ps1` (premier plan) ; `evidence/P03C_native_e2e_20261018T1127Z.log`, `evidence/P03C_native_c3_*.png` |
+| §4 Build Tauri, HTTPS, non-régression Clients | `evidence/P03C_regression_20261018.log`, `evidence/P03C_release_launch_1440x900.png`, `P03C_native_e2e_20261018T1127Z.log` § Intégration HTTPS |
+| §5 Protections de fuseaux | aucun changement de code ; `run-native.mjs` (`rdv-b3-guard` paramétrable) ; `evidence/P03C_native_rdv_guard_*.png` ; O-03-22 (amendement) |
+| §6 O-03-16 | `scripts/Invoke-MmvSqlScript.ps1` (requête de contrôle par l'entrée standard), `scripts/tests/Invoke-MmvSqlScript.Tests.ps1` (nouveau), `evidence/P03C_O-03-16_sqlscript_tests_20261018.log` ; amendement O-02-15 dans `docs/phase/02/GATES_AND_DECISIONS.md` |
+| §7 Constats (bloquant / UX) | `VALIDATION_PROPRIETAIRE_03C.md` § 5, O-03-33 à O-03-38 (`GATES_AND_DECISIONS.md`) |
+| §8 Régression et DOCUMENTATION GATE | `README.md`, `docs/phase/03.md`, `docs/PERIMETRE_ET_SEQUENCE.md`, `docs/ADR_ET_DECISIONS.md`, `apps/desktop/README.md`, `docs/phase/03/GATES_AND_DECISIONS.md` (G03-C, G03-DOC), `QA_MATRIX.md` (Q-03-170 à Q-03-190), `IMPLEMENTATION_SPEC.md`, `SOURCE_MAP.md` |
+| Livraison | branche locale `feat/phase-03-clients-rdv` (commits locaux, aucun push, PR ni merge) ; aucune archive demandée par le GO 03-C |
