@@ -3,9 +3,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MMV.Application.Appointments;
+using MMV.Application.Audit;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
 using MMV.Infrastructure.Appointments;
+using MMV.Infrastructure.Audit;
 using MMV.Infrastructure.Clients;
 using MMV.Infrastructure.Identity;
 using MMV.Infrastructure.Persistence;
@@ -41,6 +43,13 @@ public static class DependencyInjection
         services.TryAddScoped<AuthService>();
         services.TryAddScoped<BootstrapService>();
         services.TryAddScoped<PermissionAdministrationService>();
+
+        // Journal d'audit (phase 03-D2) : même contexte EF que les modules métier (même transaction). Contexte de
+        // requête : MMV.Api l'enregistre avant cet appel (session, corrélation) ; à défaut, aucun identifiant technique.
+        services.TryAddScoped<IAuditContext, NoAuditContext>();
+        services.TryAddScoped<IAuditRecorder, AuditRecorder>();
+        services.TryAddScoped<IAuditStore, AuditStore>();
+        services.TryAddScoped<AuditService>();
 
         // Clients (phase 03-A2).
         services.TryAddScoped<IClientStore, ClientStore>();

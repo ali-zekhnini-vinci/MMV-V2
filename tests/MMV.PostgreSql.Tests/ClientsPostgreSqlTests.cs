@@ -208,7 +208,7 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
         await fixture.ExpectSqlStateAsync(PostgresErrorCodes.CheckViolation, $"INSERT INTO auth.user_permissions (user_id, permission) VALUES ('{author.Id}', 'clients.delete')");
     }
 
-    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test), requiresAuditJournal: true)]
     public async Task ClientsHttpMatrix_OnRealPostgreSql()
     {
         var connectionString = PostgreSqlTarget.Test.ValidatedBuilder().ConnectionString;
@@ -285,7 +285,7 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
     /// réel et PostgreSQL réel (03-A3). Quatre comptes éphémères : <c>system.admin</c> seul, lecture seule,
     /// lecture + écriture, lecture + écriture + archivage. Nettoyage et contrôle de résidus en fin de test.
     /// </summary>
-    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test), requiresAuditJournal: true)]
     public async Task ClientsHttpPermissionsAndLifecycle_OnRealPostgreSql()
     {
         var connectionString = PostgreSqlTarget.Test.ValidatedBuilder().ConnectionString;

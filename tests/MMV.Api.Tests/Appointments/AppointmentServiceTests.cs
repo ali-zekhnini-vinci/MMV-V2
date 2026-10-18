@@ -31,7 +31,7 @@ public sealed class AppointmentServiceTests
     }
 
     private AppointmentService Service(int? capacity = 1, string timeZone = "Europe/Brussels") =>
-        new(_store, AppointmentTestSettings.Configured(timeZone, capacity), _clock);
+        new(_store, AppointmentTestSettings.Configured(timeZone, capacity), _clock, _store.Audit);
 
     /// <summary>Jeudi 16/07/2026 à <paramref name="hour"/>:<paramref name="minute"/> heure de Bruxelles (UTC+2).</summary>
     private static string At(int hour, int minute = 0) => new DateTimeOffset(2026, 7, 16, hour - 2, minute, 0, TimeSpan.Zero).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture);
@@ -523,7 +523,7 @@ public sealed class AppointmentServiceTests
     [Fact]
     public async Task NotConfigured_EveryWriteIsRefused()
     {
-        var service = new AppointmentService(_store, AppointmentSettings.From(null), _clock);
+        var service = new AppointmentService(_store, AppointmentSettings.From(null), _clock, _store.Audit);
         var appointment = _store.Seed(_client, _alice, Instant(10), 30);
 
         Assert.Equal(AppointmentWriteStatus.NotConfigured, (await service.CreateAsync(Personal(_alice, At(10)), Author, CancellationToken.None)).Status);

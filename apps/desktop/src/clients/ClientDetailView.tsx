@@ -4,7 +4,8 @@
 // 03-B2 : « Prendre un rendez-vous » ouvre l'agenda avec ce client présélectionné (appointmentLaunch.ts), proposé
 // avec `appointments.write` ; désactivé pour un client archivé (D-03-16). Le serveur reste seul juge.
 // 03-D1 : onglet « Rendez-vous » (historique servi par le module Rendez-vous), présent avec `appointments.read` seulement.
-import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarDays, CalendarPlus, ClipboardList, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
+// 03-D2 : onglet « Historique » (journal d'audit du dossier), présent avec le droit dédié `audit.read` seulement.
+import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarDays, CalendarPlus, ClipboardList, History, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { ClientDetail } from "../api/clients.ts";
@@ -13,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.
 import { appointmentLaunchFor } from "../appointments/appointmentLaunch.ts";
 import { useAppointmentPermissions } from "../appointments/appointmentPermissions.ts";
 import { ClientAppointmentsTab } from "../appointments/ClientAppointmentsTab.tsx";
+import { useAuditPermission } from "../audit/auditPermissions.ts";
+import { ClientHistoryTab } from "../audit/ClientHistoryTab.tsx";
 import { cn } from "../lib/utils.ts";
 import { clientDisplayName, clientInitials, formatIsoDate, formatUtcDate } from "./clientForm.ts";
 import { ClientNoticeBanner } from "./ClientNoticeBanner.tsx";
@@ -26,6 +29,7 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
   const lifecycle = useClientLifecycle();
   const { canWrite, canArchive } = useClientPermissions();
   const { canWrite: canBook, canRead: canReadAppointments } = useAppointmentPermissions();
+  const canReadAudit = useAuditPermission();
   const archived = client.status === "archived";
   const name = clientDisplayName(client);
   const book = () => navigate("/rendez-vous", { state: appointmentLaunchFor(client, name) });
@@ -143,6 +147,12 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
               Rendez-vous
             </TabsTrigger>
           )}
+          {canReadAudit && (
+            <TabsTrigger value="history">
+              <History size={16} aria-hidden="true" />
+              Historique
+            </TabsTrigger>
+          )}
           <TabsTrigger value="prescriptions">
             <ClipboardList size={16} aria-hidden="true" />
             Ordonnances
@@ -158,6 +168,11 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
         {canReadAppointments && (
           <TabsContent value="appointments">
             <ClientAppointmentsTab client={client} clientName={name} onBook={canBook && !archived ? book : null} />
+          </TabsContent>
+        )}
+        {canReadAudit && (
+          <TabsContent value="history">
+            <ClientHistoryTab client={client} clientName={name} canOpenAppointments={canReadAppointments} />
           </TabsContent>
         )}
         <TabsContent value="prescriptions">

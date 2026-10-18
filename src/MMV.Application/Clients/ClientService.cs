@@ -1,3 +1,5 @@
+using MMV.Application.Audit;
+using MMV.Domain.Audit;
 using MMV.Domain.Clients;
 
 namespace MMV.Application.Clients;
@@ -65,9 +67,11 @@ public interface IClientStore
 /// <summary>
 /// Cas d'usage Clients (D-03-01 à D-03-07). Aucune suppression physique ; un client archivé est en lecture
 /// seule ; toute écriture porte la version lue et échoue en conflit si elle est périmée (jamais d'écrasement
-/// silencieux). L'auteur de l'écriture est le compte authentifié transmis par MMV.Api.
+/// silencieux). L'auteur de l'écriture est le compte authentifié transmis par MMV.Api. 03-D2 : chaque écriture
+/// réussie produit son événement d'audit dans le même enregistrement (création, modification des informations,
+/// archivage, réactivation ; champs modifiés par leur nom seulement).
 /// </summary>
-public sealed class ClientService(IClientStore store, TimeProvider clock)
+public sealed class ClientService(IClientStore store, TimeProvider clock, IAuditRecorder audit)
 {
     public Task<ClientPage> ListAsync(ClientListQuery query, CancellationToken cancellationToken) =>
         store.ListAsync(query, cancellationToken);
@@ -85,6 +89,7 @@ public sealed class ClientService(IClientStore store, TimeProvider clock)
 
         var client = Client.Create(Guid.CreateVersion7(now), validation.Details!, userId, now);
         store.Add(client);
+        Record(client, AuditActions.ClientCreated, ClientAuditChanges.Between(null, validation.Details!), userId, now);
         await store.SaveChangesAsync(cancellationToken);
         return new ClientWriteResult(ClientWriteStatus.Success, client);
     }
@@ -115,7 +120,14 @@ public sealed class ClientService(IClientStore store, TimeProvider clock)
             return new ClientWriteResult(ClientWriteStatus.ValidationFailed, Errors: validation.Errors);
         }
 
+        var before = ClientAuditChanges.Snapshot(client);
         client.Update(validation.Details!, userId, now);
+        var changes = ClientAuditChanges.Between(before, validation.Details!);
+        if (changes.Count > 0)
+        {
+            Record(client, AuditActions.ClientUpdated, changes, userId, now);
+        }
+
         return await SaveAsync(client, cancellationToken);
     }
 
@@ -154,6 +166,8 @@ public sealed class ClientService(IClientStore store, TimeProvider clock)
             client.Reactivate(userId, now);
         }
 
+        Record(client, archive ? AuditActions.ClientArchived : AuditActions.ClientReactivated, [], userId, now);
+
         return await SaveAsync(client, cancellationToken);
     }
 
@@ -161,6 +175,9 @@ public sealed class ClientService(IClientStore store, TimeProvider clock)
         await store.SaveChangesAsync(cancellationToken)
             ? new ClientWriteResult(ClientWriteStatus.Success, client)
             : new ClientWriteResult(ClientWriteStatus.VersionConflict);
+
+    private void Record(Client client, string action, IReadOnlyList<AuditChange> changes, Guid userId, DateTimeOffset now) =>
+        audit.Record(new AuditRecord(userId, now, client.Id, AuditActions.ClientsModule, action, AuditActions.ClientEntity, client.Id, changes));
 
     // Précision PostgreSQL (microseconde) : la valeur renvoyée est identique à celle relue ensuite.
     private DateTimeOffset Now()

@@ -30,30 +30,37 @@ public sealed record SchemaState(
     IReadOnlyList<string> ClientsSequences,
     IReadOnlyList<string> AppointmentsColumns,
     IReadOnlyList<string> AppointmentsConstraints,
-    IReadOnlyList<string> AppointmentsIndexes)
+    IReadOnlyList<string> AppointmentsIndexes,
+    IReadOnlyList<string> AuditColumns,
+    IReadOnlyList<string> AuditConstraints,
+    IReadOnlyList<string> AuditIndexes)
 {
     public const string BaselineMigrationId = "20261015125000_InitialBaseline";
     public const string AuthIdentityMigrationId = "20261015223849_AuthIdentity";
     public const string ClientsModuleMigrationId = "20261016230630_ClientsModule";
     public const string AppointmentsModuleMigrationId = "20261017150504_AppointmentsModule";
-
-    /// <summary>Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule).</summary>
-    public static readonly string[] AllMigrationIds =
-        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId];
+    public const string AuditJournalMigrationId = "20261018163108_AuditJournal";
 
     /// <summary>
-    /// Base vide, baseline seule, baseline + identité, + clients, ou + rendez-vous : aucun autre état n'est
-    /// accepté. Les différences rapportées sont celles de l'état le plus récent.
+    /// Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule ;
+    /// phase 03-D2 : + AuditJournal, préparée, revue du propriétaire requise avant toute application).
+    /// </summary>
+    public static readonly string[] AllMigrationIds =
+        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId];
+
+    /// <summary>
+    /// Base vide, baseline seule, baseline + identité, + clients, + rendez-vous ou + journal d'audit : aucun autre
+    /// état n'est accepté. Les différences rapportées sont celles de l'état le plus récent.
     /// </summary>
     public IReadOnlyList<string> KnownStateDifferences(string role)
     {
         if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0
-            || ClientsModuleDifferences(role).Count == 0)
+            || ClientsModuleDifferences(role).Count == 0 || AppointmentsModuleDifferences(role).Count == 0)
         {
             return [];
         }
 
-        return AppointmentsModuleDifferences(role);
+        return AuditJournalDifferences(role);
     }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));
@@ -113,19 +120,29 @@ public sealed record SchemaState(
     /// </summary>
     public IReadOnlyList<string> AppointmentsModuleDifferences(string role) => IdentityDifferences(role, Stage.Appointments);
 
+    /// <summary>
+    /// Exactement l'état produit par 0001 à 0005_AuditJournal (docs/phase/03/sql/, 03-D2) : schémas précédents
+    /// inchangés (contrainte de permissions recréée sous le même nom), schéma <c>audit</c> exact, fonction et
+    /// déclencheurs d'ajout seul.
+    /// </summary>
+    public IReadOnlyList<string> AuditJournalDifferences(string role) => IdentityDifferences(role, Stage.Audit);
+
     private enum Stage
     {
         Auth,
         Clients,
         Appointments,
+        Audit,
     }
 
     private List<string> IdentityDifferences(string role, Stage stage)
     {
         var withClients = stage >= Stage.Clients;
         var withAppointments = stage >= Stage.Appointments;
+        var withAudit = stage >= Stage.Audit;
         var differences = new List<string>();
-        string[] schemas = withAppointments ? ["appointments", "auth", "clients"] : withClients ? ["auth", "clients"] : ["auth"];
+        string[] schemas = withAudit ? ["appointments", "audit", "auth", "clients"]
+            : withAppointments ? ["appointments", "auth", "clients"] : withClients ? ["auth", "clients"] : ["auth"];
         Expect(differences, "schémas", ExtraSchemas, schemas);
         string[] authRelations =
         [
@@ -141,17 +158,21 @@ public sealed record SchemaState(
             .. authRelations.Select(r => $"auth.{r} owner={role} acl=default"),
             .. (withClients ? ClientsRelations : []).Select(r => $"clients.{r} owner={role} acl=default"),
             .. (withAppointments ? AppointmentsRelations : []).Select(r => $"appointments.{r} owner={role} acl=default"),
+            .. (withAudit ? AuditRelations : []).Select(r => $"audit.{r} owner={role} acl=default"),
         ]);
-        Expect(differences, "routines", Routines, []);
+        Expect(differences, "routines", Routines, withAudit ? ["audit.reject_event_mutation"] : []);
         Expect(differences, "types", Types, []);
         Expect(differences, "extensions", Extensions, []);
-        Expect(differences, "décorations", Decorations, []);
+        Expect(differences, "décorations", Decorations, withAudit
+            ? ["trigger trg_events_append_only on audit.events", "trigger trg_events_no_truncate on audit.events"]
+            : []);
         Expect(differences, "lignes", HistoryRows,
         [
             $"{BaselineMigrationId} 10.0.4",
             $"{AuthIdentityMigrationId} 10.0.4",
             .. (withClients ? [$"{ClientsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
             .. (withAppointments ? [$"{AppointmentsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
+            .. (withAudit ? [$"{AuditJournalMigrationId} 10.0.4"] : Array.Empty<string>()),
         ]);
         Expect(differences, "colonnes auth", AuthColumns,
         [
@@ -222,8 +243,52 @@ public sealed record SchemaState(
         Expect(differences, "colonnes appointments", AppointmentsColumns, withAppointments ? AppointmentsColumnsExpected : []);
         Expect(differences, "contraintes appointments", AppointmentsConstraints, withAppointments ? AppointmentsConstraintsExpected : []);
         Expect(differences, "index appointments", AppointmentsIndexes, withAppointments ? AppointmentsIndexesExpected : []);
+        Expect(differences, "colonnes audit", AuditColumns, withAudit ? AuditColumnsExpected : []);
+        Expect(differences, "contraintes audit", AuditConstraints, withAudit ? AuditConstraintsExpected : []);
+        Expect(differences, "index audit", AuditIndexes, withAudit ? AuditIndexesExpected : []);
         return differences;
     }
+
+    private static readonly string[] AuditRelations =
+    [
+        "events kind=r", "pk_events kind=i", "ix_events_actor_user_id kind=i", "ix_events_client_occurred kind=i", "ix_events_entity kind=i",
+    ];
+
+    // Aucune valeur personnelle en colonne : champs modifiés en jsonb (politique de masquage) ; identifiants techniques.
+    private static readonly string[] AuditColumnsExpected =
+    [
+        "events.action character varying(64) notnull=t",
+        "events.actor_user_id uuid notnull=t",
+        "events.changes jsonb notnull=f",
+        "events.client_id uuid notnull=f",
+        "events.entity_id uuid notnull=t",
+        "events.entity_type character varying(32) notnull=t",
+        "events.id uuid notnull=t",
+        "events.module character varying(32) notnull=t",
+        "events.occurred_at_utc timestamp with time zone notnull=t",
+        "events.session_id uuid notnull=f",
+        "events.trace_id character varying(64) notnull=f",
+    ];
+
+    private static readonly string[] AuditConstraintsExpected =
+    [
+        "events.ck_events_action_format c -",
+        "events.ck_events_changes_array c -",
+        "events.ck_events_entity_type_format c -",
+        "events.ck_events_module_format c -",
+        "events.fk_events_actor_users f r",
+        "events.fk_events_clients f r",
+        "events.pk_events p -",
+        .. new[] { "id", "occurred_at_utc", "actor_user_id", "module", "action", "entity_type", "entity_id" }.Select(c => $"events.events_{c}_not_null n -"),
+    ];
+
+    private static readonly string[] AuditIndexesExpected =
+    [
+        "ix_events_actor_user_id unique=f",
+        "ix_events_client_occurred unique=f",
+        "ix_events_entity unique=f",
+        "pk_events unique=t",
+    ];
 
     private static readonly string[] AppointmentsRelations =
     [
@@ -371,7 +436,10 @@ public sealed record SchemaState(
         Section("séquences clients", ClientsSequences),
         Section("colonnes appointments", AppointmentsColumns),
         Section("contraintes appointments", AppointmentsConstraints),
-        Section("index appointments", AppointmentsIndexes));
+        Section("index appointments", AppointmentsIndexes),
+        Section("colonnes audit", AuditColumns),
+        Section("contraintes audit", AuditConstraints),
+        Section("index audit", AuditIndexes));
 
     private static string Section(string name, IReadOnlyList<string> items) =>
         $"{name} ({items.Count}) : " + (items.Count == 0 ? "—" : string.Join(" | ", items));
@@ -395,6 +463,12 @@ public static class SchemaInspection
     {
         await using var connection = new NpgsqlConnection(target.ReadOnlyConnectionString());
         await connection.OpenAsync(cancellationToken);
+        return await ReadAsync(connection, cancellationToken);
+    }
+
+    /// <summary>Inventaire relu sur une connexion existante (03-D2 : dans la transaction annulée d'une simulation de migration).</summary>
+    public static async Task<SchemaState> ReadAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    {
 
         var historyExists = (bool)(await ScalarAsync(
             connection, "SELECT to_regclass('public.\"__EFMigrationsHistory\"') IS NOT NULL", cancellationToken))!;
@@ -472,7 +546,10 @@ public static class SchemaInspection
                 """, cancellationToken),
             AppointmentsColumns: await ListAsync(connection, ColumnsSql("appointments"), cancellationToken),
             AppointmentsConstraints: await ListAsync(connection, ConstraintsSql("appointments"), cancellationToken),
-            AppointmentsIndexes: await ListAsync(connection, IndexesSql("appointments"), cancellationToken));
+            AppointmentsIndexes: await ListAsync(connection, IndexesSql("appointments"), cancellationToken),
+            AuditColumns: await ListAsync(connection, ColumnsSql("audit"), cancellationToken),
+            AuditConstraints: await ListAsync(connection, ConstraintsSql("audit"), cancellationToken),
+            AuditIndexes: await ListAsync(connection, IndexesSql("audit"), cancellationToken));
     }
 
     private static string ColumnsSql(string schema) => $"""

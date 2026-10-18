@@ -54,6 +54,8 @@ function useClientWrite<TVariables>(write: (url: URL, token: string, variables: 
     onSuccess: async (client: ClientDetail) => {
       queryClient.setQueryData(clientKeys.detail(client.id), client);
       await queryClient.invalidateQueries({ queryKey: clientKeys.lists() });
+      // 03-D2 : l'historique du dossier a changé côté serveur.
+      await queryClient.invalidateQueries({ queryKey: ["audit"] });
     },
     onError: async (error) => {
       // Conflit (modifié ailleurs) ou disparition : la vérité serveur est rechargée.

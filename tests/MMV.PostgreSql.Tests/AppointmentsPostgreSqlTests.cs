@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MMV.Application.Appointments;
+using MMV.Application.Audit;
 using MMV.Domain.Appointments;
 using MMV.Domain.Clients;
 using MMV.Domain.Identity;
@@ -40,7 +41,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
 
         var created = await service.CreateAsync(In(client, responsible, Ten, 30, "conseil_devis", "Note de test"), author, CancellationToken.None);
         Assert.Equal(AppointmentWriteStatus.Success, created.Status);
@@ -85,7 +86,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
 
         var late = (await service.CreateAsync(In(client, responsible, Ten.AddHours(2), 30, "conseil_devis"), author, CancellationToken.None)).Appointment!;
         fixture.Context.ChangeTracker.Clear();
@@ -108,7 +109,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, _, client) = await SeedAsync(fixture, eligible: true);
         var two = AppointmentSettings.From(new AppointmentsOptions { TimeZone = "Europe/Brussels", DisplayStartTime = "08:00", DisplayEndTime = "20:00", ReceptionCapacity = 2 });
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), two, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), two, TimeProvider.System, fixture.Get<IAuditRecorder>());
 
         async Task<AppointmentWriteStatus> BookAsync(DateTimeOffset start, int minutes)
         {
@@ -128,7 +129,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: false);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
 
         var refused = await service.CreateAsync(In(client, responsible, Ten, 30, "prise_mesures"), author, CancellationToken.None);
         Assert.Equal(AppointmentWriteStatus.ValidationFailed, refused.Status);
@@ -146,10 +147,12 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
         var booked = (await service.CreateAsync(In(client, responsible, Ten, 30, "conseil_devis"), author, CancellationToken.None)).Appointment!.Appointment;
 
-        await fixture.ExecuteAsync($"UPDATE appointments.responsibles SET is_eligible = false, updated_at_utc = now() WHERE user_id = '{responsible}'");
+        // clock_timestamp() et non now() (début de transaction) : depuis 03-D2 la transaction peut commencer par la
+        // simulation de 0005, avant la création de la ligne.
+        await fixture.ExecuteAsync($"UPDATE appointments.responsibles SET is_eligible = false, updated_at_utc = clock_timestamp() WHERE user_id = '{responsible}'");
         fixture.Context.ChangeTracker.Clear();
         var moved = await service.UpdateAsync(booked.Id, In(client, responsible, Ten.AddHours(1), 30, "conseil_devis"), booked.Version, author, CancellationToken.None);
 
@@ -165,7 +168,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
         var id = Guid.CreateVersion7();
         await fixture.ExecuteAsync(
             $"""
@@ -224,7 +227,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     /// (<c>pg_stat_activity.wait_event = 'advisory'</c>, <c>pg_blocking_pids</c> = A) et la transaction de A est toujours
     /// annulée avant libération. Le scénario avec COMMIT réel est AppointmentsConcurrencyPostgreSqlTests.
     /// </summary>
-    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test), requiresAuditJournal: true)]
     public async Task SimultaneousReceptionBookings_TwoConnections_SecondWaitsForTheFirst()
     {
         await using var first = await RolledBackScope.OpenAsync(output);
@@ -233,8 +236,8 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
         var (authorB, _, clientB) = await SeedAsync(second, eligible: true);
         var pidA = await first.ScalarAsync<int>("SELECT pg_backend_pid()");
         var pidB = await second.ScalarAsync<int>("SELECT pg_backend_pid()");
-        var serviceA = new AppointmentService(first.Get<IAppointmentStore>(), Settings, TimeProvider.System);
-        var serviceB = new AppointmentService(second.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var serviceA = new AppointmentService(first.Get<IAppointmentStore>(), Settings, TimeProvider.System, first.Get<IAuditRecorder>());
+        var serviceB = new AppointmentService(second.Get<IAppointmentStore>(), Settings, TimeProvider.System, second.Get<IAuditRecorder>());
 
         // Poste A : réserve la place d'accueil et garde sa transaction ouverte (verrou consultatif tenu).
         var booked = await serviceA.CreateAsync(In(clientA, null, Ten, 30, "retrait_commande"), authorA, CancellationToken.None);
@@ -264,7 +267,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
         // Complément du test précédent : une fois la première réservation visible, la seconde est refusée.
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, _, client) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
 
         Assert.Equal(AppointmentWriteStatus.Success,
             (await service.CreateAsync(In(client, null, Ten, 30, "retrait_commande"), author, CancellationToken.None)).Status);
@@ -284,7 +287,7 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
         var (_, _, otherClient) = await SeedAsync(fixture, eligible: true);
-        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
         async Task<Appointment> Create(Guid owner, DateTimeOffset start, Guid? person, string reason)
         {
             var result = await service.CreateAsync(In(owner, person, start, 30, reason), author, CancellationToken.None);

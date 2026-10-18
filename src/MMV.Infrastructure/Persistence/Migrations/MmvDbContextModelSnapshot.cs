@@ -170,6 +170,84 @@ namespace MMV.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MMV.Domain.Audit.AuditEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<string>("Changes")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("changes");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_id");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("module");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at_utc");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("TraceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("trace_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_events");
+
+                    b.HasIndex("ActorUserId")
+                        .HasDatabaseName("ix_events_actor_user_id");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("ix_events_entity");
+
+                    b.HasIndex("ClientId", "OccurredAtUtc", "Id")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_events_client_occurred");
+
+                    b.ToTable("events", "audit", t =>
+                        {
+                            t.HasCheckConstraint("ck_events_action_format", "action ~ '^[a-z][a-z_]{0,30}\\.[a-z][a-z_]{0,31}$'");
+
+                            t.HasCheckConstraint("ck_events_changes_array", "changes IS NULL OR jsonb_typeof(changes) = 'array'");
+
+                            t.HasCheckConstraint("ck_events_entity_type_format", "entity_type ~ '^[a-z][a-z_]{0,31}$'");
+
+                            t.HasCheckConstraint("ck_events_module_format", "module ~ '^[a-z][a-z_]{0,31}$'");
+                        });
+                });
+
             modelBuilder.Entity("MMV.Domain.Clients.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -337,7 +415,7 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                     b.ToTable("user_permissions", "auth", t =>
                         {
-                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive', 'appointments.read', 'appointments.write', 'appointments.cancel')");
+                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive', 'appointments.read', 'appointments.write', 'appointments.cancel', 'audit.read')");
                         });
                 });
 
@@ -497,6 +575,22 @@ namespace MMV.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_responsibles_users");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Audit.AuditEvent", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_events_actor_users");
+
+                    b.HasOne("MMV.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_events_clients");
                 });
 
             modelBuilder.Entity("MMV.Domain.Clients.Client", b =>

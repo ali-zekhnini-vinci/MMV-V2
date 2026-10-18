@@ -137,11 +137,21 @@ public sealed record ServerIdentity(
 public sealed class PostgreSqlTheoryAttribute : TheoryAttribute
 {
     public PostgreSqlTheoryAttribute(string target)
+        : this(target, requiresAuditJournal: false)
+    {
+    }
+
+    /// <summary>Voir <see cref="PostgreSqlFactAttribute(string, bool)"/>.</summary>
+    public PostgreSqlTheoryAttribute(string target, bool requiresAuditJournal)
     {
         var resolved = target == nameof(PostgreSqlTarget.Dev) ? PostgreSqlTarget.Dev : PostgreSqlTarget.Test;
         if (!resolved.IsConfigured)
         {
             Skip = $"NOT_TESTED : '{resolved.Key}' non configurée (voir docs/phase/01b/IMPLEMENTATION_SPEC.md).";
+        }
+        else if (requiresAuditJournal && !PostgreSqlFactAttribute.AuditJournalPresent(resolved))
+        {
+            Skip = $"NOT_TESTED : exige la migration 0005_AuditJournal appliquée à {resolved.Database} (revue du propriétaire requise).";
         }
     }
 }
@@ -152,11 +162,40 @@ public sealed class PostgreSqlTheoryAttribute : TheoryAttribute
 public sealed class PostgreSqlFactAttribute : FactAttribute
 {
     public PostgreSqlFactAttribute(string target)
+        : this(target, requiresAuditJournal: false)
+    {
+    }
+
+    /// <summary>
+    /// <paramref name="requiresAuditJournal"/> (03-D2) : test à données VALIDÉES ou à plusieurs connexions, qui ne peut
+    /// pas simuler 0005 dans une transaction annulée — « Skipped » (NOT_TESTED) tant que <c>audit.events</c> n'existe
+    /// pas dans la base cible (migration soumise à la revue du propriétaire), jamais « Passed ».
+    /// </summary>
+    public PostgreSqlFactAttribute(string target, bool requiresAuditJournal)
     {
         var resolved = target == nameof(PostgreSqlTarget.Dev) ? PostgreSqlTarget.Dev : PostgreSqlTarget.Test;
         if (!resolved.IsConfigured)
         {
             Skip = $"NOT_TESTED : '{resolved.Key}' non configurée (voir docs/phase/01b/IMPLEMENTATION_SPEC.md).";
+        }
+        else if (requiresAuditJournal && !AuditJournalPresent(resolved))
+        {
+            Skip = $"NOT_TESTED : exige la migration 0005_AuditJournal appliquée à {resolved.Database} (revue du propriétaire requise).";
+        }
+    }
+
+    internal static bool AuditJournalPresent(PostgreSqlTarget target)
+    {
+        try
+        {
+            using var connection = new NpgsqlConnection(target.ReadOnlyConnectionString());
+            connection.Open();
+            using var command = new NpgsqlCommand("SELECT to_regclass('audit.events') IS NOT NULL", connection);
+            return (bool)command.ExecuteScalar()!;
+        }
+        catch (NpgsqlException)
+        {
+            return false;
         }
     }
 }

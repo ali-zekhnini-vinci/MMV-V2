@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MMV.Api.Tests.Identity;
+using MMV.Application.Audit;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
@@ -51,6 +52,8 @@ public sealed class ClientsEndpointsTests : IDisposable
                 services.AddScoped<IIdentityStore>(_ => _identity);
                 services.RemoveAll<IClientStore>();
                 services.AddScoped<IClientStore>(_ => _clients);
+                services.RemoveAll<IAuditRecorder>();
+                services.AddScoped<IAuditRecorder>(_ => _clients.Audit);
             });
         });
     }

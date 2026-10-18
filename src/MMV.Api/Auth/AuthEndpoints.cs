@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using MMV.Api.Appointments;
+using MMV.Api.Audit;
 using MMV.Api.Clients;
 using MMV.Api.Cors;
 using MMV.Application.Identity;
@@ -45,6 +46,9 @@ internal static class AuthEndpoints
 
         // Phase 03-B2 : même groupe /api.
         api.MapAppointmentsEndpoints();
+
+        // Phase 03-D2 : historique des actions (lecture seule, audit.read).
+        api.MapAuditEndpoints();
 
         return app;
     }

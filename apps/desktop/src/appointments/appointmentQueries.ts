@@ -103,6 +103,8 @@ function useAppointmentWrite<TVariables>(write: (url: URL, token: string, variab
     onSuccess: async (appointment: AppointmentDetail) => {
       queryClient.setQueryData(appointmentKeys.detail(appointment.id), appointment);
       await queryClient.invalidateQueries({ queryKey: appointmentKeys.lists() });
+      // 03-D2 : l'historique du dossier client a changé côté serveur.
+      await queryClient.invalidateQueries({ queryKey: ["audit"] });
     },
     onError: async (error) => {
       // Version périmée ou disparition : la vérité serveur est rechargée (un conflit horaire ne change rien).

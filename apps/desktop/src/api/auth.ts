@@ -12,6 +12,8 @@ export const PERMISSION_CLIENTS_READ = "clients.read";
 export const PERMISSION_APPOINTMENTS_READ = "appointments.read";
 export const PERMISSION_APPOINTMENTS_WRITE = "appointments.write";
 export const PERMISSION_APPOINTMENTS_CANCEL = "appointments.cancel";
+/** Historique des actions (03-D2) : droit dédié, distinct des droits métier et de `system.admin`. */
+export const PERMISSION_AUDIT_READ = "audit.read";
 
 export interface SessionUser {
   id: string;

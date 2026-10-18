@@ -4,6 +4,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { type FakeAppointmentRecord, type FakeAppointmentsOptions, FAKE_APPOINTMENT_OPTIONS, handleAppointments, seedAppointments } from "./fakeAppointmentsApi.ts";
+import { type FakeAuditOptions, handleAudit } from "./fakeAuditApi.ts";
 import { type FakeClientRecord, type FakeClientsOptions, handleClients, seedClients } from "./fakeClientsApi.ts";
 
 export interface FakeAccount {
@@ -14,7 +15,7 @@ export interface FakeAccount {
   active?: boolean;
 }
 
-export interface FakeApiOptions extends FakeClientsOptions, FakeAppointmentsOptions {
+export interface FakeApiOptions extends FakeClientsOptions, FakeAppointmentsOptions, FakeAuditOptions {
   accounts?: FakeAccount[];
   /** Simule une base indisponible (/health/ready 503). */
   databaseDown?: boolean;
@@ -167,6 +168,9 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
           readBody: () => readBody(request),
           userDisplayName: auth.account.displayName,
         });
+      }
+      if (auth && path.startsWith("/api/audit/")) {
+        return handleAudit(request, response, { permissions: auth.account.permissions, clients, options, send });
       }
       return send(response, 404, { code: "not_found" });
     })();

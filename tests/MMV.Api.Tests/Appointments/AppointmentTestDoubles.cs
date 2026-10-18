@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using MMV.Api.Tests.Audit;
 using MMV.Application.Appointments;
 using MMV.Domain.Appointments;
 using MMV.Infrastructure.Appointments;
@@ -56,6 +57,9 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
     public bool FailNextCommit { get; set; }
 
     public int CommitCount { get; private set; }
+
+    /// <summary>Journal d'audit doublé (03-D2) : événements validés avec la transaction, abandonnés sinon.</summary>
+    public InMemoryAuditRecorder Audit { get; } = new();
 
     public sealed record FakeClient(string Reference, string FirstName, string LastName, bool Archived);
 
@@ -288,6 +292,7 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
                 if (store.FailNextCommit || _tracked.Any(t => t.Key.Version != t.Value))
                 {
                     store.FailNextCommit = false;
+                    store.Audit.Discard();
                     return false;
                 }
 
@@ -304,12 +309,15 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
 
                 _added.Clear();
                 _tracked.Clear();
+                store.Audit.Commit();
                 return true;
             }
         }
 
         public ValueTask DisposeAsync()
         {
+            // Transaction non validée (refus, erreur) : rien de ce qui était en attente n'est écrit.
+            store.Audit.Discard();
             foreach (var semaphore in _held)
             {
                 semaphore.Release();

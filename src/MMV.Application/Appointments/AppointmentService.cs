@@ -1,4 +1,6 @@
+using MMV.Application.Audit;
 using MMV.Domain.Appointments;
+using MMV.Domain.Audit;
 
 namespace MMV.Application.Appointments;
 
@@ -137,8 +139,10 @@ public sealed record AppointmentWriteResult(
 /// d'abord la ressource visée — agenda du collaborateur ou pool d'accueil, clés croissantes — puis le client en
 /// partage, contrôle chevauchements ou capacité, et enregistre : deux postes simultanés ne peuvent pas réserver le
 /// même créneau. Aucune suppression physique ; toute écriture porte la version lue (jamais d'écrasement silencieux).
+/// 03-D2 : chaque écriture réussie produit ses événements d'audit dans la MÊME transaction (enregistrés avant la
+/// validation ; annulés avec elle en cas de refus, de conflit ou d'erreur).
 /// </summary>
-public sealed class AppointmentService(IAppointmentStore store, AppointmentSettings settings, TimeProvider clock)
+public sealed class AppointmentService(IAppointmentStore store, AppointmentSettings settings, TimeProvider clock, IAuditRecorder audit)
 {
     public const string InPast = "in_past";
     public const string NotFoundCode = "not_found";
@@ -198,6 +202,7 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
 
         var appointment = Appointment.Create(Guid.CreateVersion7(now), value.ToDetails(), userId, now);
         session.Add(appointment);
+        Record(appointment.ClientId, appointment.Id, AuditActions.AppointmentCreated, AppointmentAuditChanges.Created(appointment), userId, now);
         await session.CommitAsync(cancellationToken);
         return await SuccessAsync(appointment.Id, cancellationToken);
     }
@@ -283,7 +288,17 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
             }
         }
 
+        var before = AppointmentAuditChanges.Snapshot(appointment);
         appointment.Update(value.ToDetails(), userId, now);
+        foreach (var (action, changes) in AppointmentAuditChanges.Updated(before, value.ToDetails()))
+        {
+            Record(appointment.ClientId, appointment.Id, action, changes, userId, now);
+            // Changement de client : la sortie du rendez-vous figure aussi au dossier d'origine.
+            if (before.ClientId != appointment.ClientId && action == AuditActions.AppointmentUpdated)
+            {
+                Record(before.ClientId, appointment.Id, action, changes, userId, now);
+            }
+        }
 
         return await session.CommitAsync(cancellationToken)
             ? await SuccessAsync(appointment.Id, cancellationToken)
@@ -321,7 +336,10 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
             return AppointmentWriteResult.Invalid("reason", AppointmentInputValidator.TooLong);
         }
 
-        appointment.Cancel(normalized, userId, Now());
+        var cancelledAt = Now();
+        appointment.Cancel(normalized, userId, cancelledAt);
+        Record(appointment.ClientId, appointment.Id, AuditActions.AppointmentCancelled,
+            normalized is null ? [] : [AuditFieldPolicy.Change("cancellationReason", null, null)], userId, cancelledAt);
         return await session.CommitAsync(cancellationToken)
             ? await SuccessAsync(appointment.Id, cancellationToken)
             : new AppointmentWriteResult(AppointmentWriteStatus.VersionConflict);
@@ -387,6 +405,7 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
         }
 
         appointment.Restore(userId, now);
+        Record(appointment.ClientId, appointment.Id, AuditActions.AppointmentRestored, [], userId, now);
         return await session.CommitAsync(cancellationToken)
             ? await SuccessAsync(appointment.Id, cancellationToken)
             : new AppointmentWriteResult(AppointmentWriteStatus.VersionConflict);
@@ -438,6 +457,9 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
             ? AppointmentWriteStatus.ReceptionCapacityFull
             : null;
     }
+
+    private void Record(Guid clientId, Guid appointmentId, string action, IReadOnlyList<AuditChange> changes, Guid userId, DateTimeOffset now) =>
+        audit.Record(new AuditRecord(userId, now, clientId, AuditActions.AppointmentsModule, action, AuditActions.AppointmentEntity, appointmentId, changes));
 
     private async Task<AppointmentWriteResult> SuccessAsync(Guid id, CancellationToken cancellationToken) =>
         await store.GetAsync(id, cancellationToken) is { } view

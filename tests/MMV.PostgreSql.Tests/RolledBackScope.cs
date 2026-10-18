@@ -44,7 +44,53 @@ internal sealed class RolledBackScope : IAsyncDisposable
         Assert.True(identity, "Cible d'écriture refusée (mmv_v2_test/5433 attendu).");
         await scope.Context.Database.BeginTransactionAsync();
         output.WriteLine("transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)");
+        await scope.SimulatePendingAuditJournalAsync();
         return scope;
+    }
+
+    /// <summary>
+    /// 03-D2 : vrai si la migration 0005_AuditJournal n'était pas appliquée et a été exécutée DANS cette transaction
+    /// (simulation annulée au ROLLBACK : rien n'est conservé, la base reste à l'état revu par le propriétaire).
+    /// </summary>
+    public bool AuditJournalSimulated { get; private set; }
+
+    /// <summary>
+    /// Les écritures métier insèrent leur événement d'audit dans la même transaction : tant que 0005 n'est pas appliquée
+    /// (revue du propriétaire), le script exact À APPLIQUER <c>docs/phase/03/sql/0005_AuditJournal.idempotent.sql</c> —
+    /// sans ses <c>START TRANSACTION</c> / <c>COMMIT</c> — est exécuté dans la transaction du test, puis annulé avec elle.
+    /// Délai de verrou borné : jamais d'attente indéfinie derrière une autre transaction.
+    /// </summary>
+    private async Task SimulatePendingAuditJournalAsync()
+    {
+        if (await ScalarAsync<bool>("SELECT to_regclass('audit.events') IS NOT NULL"))
+        {
+            return;
+        }
+
+        await ExecuteAsync("SET LOCAL lock_timeout = '10s'");
+        await ExecutePendingScriptAsync(AuditJournalScript);
+        AuditJournalSimulated = true;
+        _output.WriteLine("0005_AuditJournal absente : script exact exécuté DANS la transaction annulée (simulation, rien n'est conservé)");
+    }
+
+    public const string AuditJournalScript = "0005_AuditJournal.idempotent.sql";
+
+    /// <summary>Script de <c>docs/phase/03/sql/</c> exécuté dans la transaction en cours, sans ses <c>START TRANSACTION</c> / <c>COMMIT</c>.</summary>
+    public async Task ExecutePendingScriptAsync(string fileName)
+    {
+        var script = await File.ReadAllTextAsync(Path.Combine(RepositoryRoot(), "docs", "phase", "03", "sql", fileName));
+        await ExecuteAsync(string.Join('\n', script.ReplaceLineEndings("\n").Split('\n').Where(line => line.Trim() is not ("START TRANSACTION;" or "COMMIT;"))));
+    }
+
+    internal static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MMV.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("Racine du dépôt (MMV.slnx) introuvable.");
     }
 
     public T Get<T>() where T : notnull => _scope.ServiceProvider.GetRequiredService<T>();

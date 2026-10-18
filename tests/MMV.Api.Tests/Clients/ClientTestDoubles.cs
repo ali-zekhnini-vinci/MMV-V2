@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Reflection;
+using MMV.Api.Tests.Audit;
 using MMV.Application.Clients;
 using MMV.Domain.Clients;
 using MMV.Infrastructure.Clients;
@@ -97,6 +98,9 @@ internal sealed class InMemoryClientStore(TimeProvider? clock = null) : IClientS
         }
     }
 
+    /// <summary>Journal d'audit doublé (03-D2) : événements validés avec l'enregistrement, abandonnés avec son échec.</summary>
+    public InMemoryAuditRecorder Audit { get; } = new();
+
     public Task<bool> SaveChangesAsync(CancellationToken cancellationToken)
     {
         lock (_gate)
@@ -106,6 +110,7 @@ internal sealed class InMemoryClientStore(TimeProvider? clock = null) : IClientS
             {
                 FailNextSave = false;
                 _pending.Clear();
+                Audit.Discard();
                 return Task.FromResult(false);
             }
 
@@ -121,6 +126,7 @@ internal sealed class InMemoryClientStore(TimeProvider? clock = null) : IClientS
             }
 
             _pending.Clear();
+            Audit.Commit();
             return Task.FromResult(true);
         }
     }

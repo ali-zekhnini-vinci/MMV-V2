@@ -21,6 +21,9 @@ internal static class AuthSetup
     public const string AppointmentsWritePolicy = "AppointmentsWrite";
     public const string AppointmentsCancelPolicy = "AppointmentsCancel";
 
+    /// <summary>Policy Audit (03-D2) : droit dédié ; aucun droit métier ni <c>system.admin</c> ne la satisfait.</summary>
+    public const string AuditReadPolicy = "AuditRead";
+
     /// <summary>Limitation de débit de <c>POST /api/auth/login</c>, par adresse IP distante.</summary>
     public const string LoginRateLimitPolicy = "login";
 
@@ -52,7 +55,10 @@ internal static class AuthSetup
                 .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsWrite))
             .AddPolicy(AppointmentsCancelPolicy, policy => policy
                 .RequireAuthenticatedUser()
-                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsCancel));
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsCancel))
+            .AddPolicy(AuditReadPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AuditRead));
 
         var permitPerMinute = configuration.GetValue("Auth:LoginAttemptsPerMinute", 10);
         services.AddRateLimiter(options =>

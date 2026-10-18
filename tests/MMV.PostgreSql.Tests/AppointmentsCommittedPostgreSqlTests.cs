@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MMV.Application.Appointments;
+using MMV.Application.Audit;
 using MMV.Application.Identity;
 using MMV.Domain.Appointments;
 using MMV.Domain.Clients;
@@ -169,7 +170,7 @@ public sealed class AppointmentsConcurrencyPostgreSqlTests(ITestOutputHelper out
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
-    [PostgreSqlTheory(nameof(PostgreSqlTarget.Test))]
+    [PostgreSqlTheory(nameof(PostgreSqlTarget.Test), requiresAuditJournal: true)]
     [InlineData(true)]
     [InlineData(false)]
     public async Task TwoStations_SameSlot_ACommits_BWaitsThenIsRefused(bool reception)
@@ -193,8 +194,8 @@ public sealed class AppointmentsConcurrencyPostgreSqlTests(ITestOutputHelper out
             var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var serviceA = new AppointmentService(
                 new PausedBeforeCommitStore(scopeA.ServiceProvider.GetRequiredService<IAppointmentStore>(), reached, release.Task),
-                AppointmentsPostgreSqlTests.Settings, TimeProvider.System);
-            var serviceB = new AppointmentService(scopeB.ServiceProvider.GetRequiredService<IAppointmentStore>(), AppointmentsPostgreSqlTests.Settings, TimeProvider.System);
+                AppointmentsPostgreSqlTests.Settings, TimeProvider.System, scopeA.ServiceProvider.GetRequiredService<IAuditRecorder>());
+            var serviceB = new AppointmentService(scopeB.ServiceProvider.GetRequiredService<IAppointmentStore>(), AppointmentsPostgreSqlTests.Settings, TimeProvider.System, scopeB.ServiceProvider.GetRequiredService<IAuditRecorder>());
             // Journée propre à ce test (10/03/2027) : aucun autre test n'y réserve.
             var start = AppointmentsPostgreSqlTests.Ten.AddDays(7);
 
@@ -328,7 +329,7 @@ public sealed class AppointmentsConcurrencyPostgreSqlTests(ITestOutputHelper out
 [Trait("Stage", "AppointmentsWrite")]
 public sealed class AppointmentsHttpPostgreSqlTests(ITestOutputHelper output)
 {
-    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test), requiresAuditJournal: true)]
     public async Task AppointmentsHttpMatrix_RightsConflictsAndInputValidation_OnRealPostgreSql()
     {
         var connectionString = PostgreSqlTarget.Test.ValidatedBuilder().ConnectionString;

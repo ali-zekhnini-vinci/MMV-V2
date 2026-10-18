@@ -1,5 +1,6 @@
 using MMV.Api.Tests.Identity;
 using MMV.Application.Clients;
+using MMV.Application.Audit;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 
@@ -18,7 +19,7 @@ public sealed class ClientServiceTests
     {
         // 03-A3 : le store sème sur l'horloge du test (auparavant l'heure réelle : échec après 09:35 Z le 17/10/2026).
         _store = new InMemoryClientStore(_clock);
-        _service = new ClientService(_store, _clock);
+        _service = new ClientService(_store, _clock, _store.Audit);
     }
 
     private static ClientInput Input(string firstName = "Jeanne", string lastName = "Martin", string? city = null) =>
@@ -206,10 +207,11 @@ public sealed class PermissionAdministrationServiceTests
     [Fact]
     public void SystemAdmin_ImpliesNoClientsPermission()
     {
-        // 17/10/2026 (03-B2, D-03-17) : + appointments.read|write|cancel ; system.admin reste non attribuable.
+        // 17/10/2026 (03-B2, D-03-17) : + appointments.read|write|cancel ; 18/10/2026 (03-D2) : + audit.read ;
+        // system.admin reste non attribuable.
         Assert.Equal(
             [Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive,
-             Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel],
+             Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel, Permissions.AuditRead],
             Permissions.Grantable);
         Assert.DoesNotContain(Permissions.SystemAdmin, Permissions.Grantable);
     }

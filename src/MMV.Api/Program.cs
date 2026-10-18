@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization;
 using MMV.Api.Appointments;
+using MMV.Api.Audit;
 using MMV.Api.Auth;
 using MMV.Api.Cors;
 using MMV.Api.Health;
+using MMV.Application.Audit;
 using MMV.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +18,9 @@ builder.Services.AddReadinessCheck();
 builder.Services.AddDesktopCors(builder.Configuration);
 builder.Services.AddMmvAuth(builder.Configuration);
 builder.Services.AddAppointmentSettings(builder.Configuration);
+// Journal d'audit (03-D2) : session et corrélation de la requête, enregistrés avant MMV.Infrastructure.
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();

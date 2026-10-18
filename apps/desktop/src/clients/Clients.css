@@ -945,7 +945,7 @@ th[aria-sort] .clients-sort {
   }
 }
 
-/* ---------- Fiche client : onglet Rendez-vous (03-D1) ---------- */
+/* ---------- Fiche client : onglet Rendez-vous (03-D1) et Historique (03-D2) ---------- */
 .clients-badge--neutral {
   background: var(--surface-sunken);
   color: var(--text-primary);
@@ -1046,4 +1046,111 @@ th[aria-sort] .clients-sort {
 .client-rdv__pager {
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+.client-history__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.client-history__filters .clients-field__label {
+  margin: 0;
+}
+
+.client-history__select {
+  min-width: 190px;
+  height: 38px;
+}
+
+.client-history__list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.client-history__item {
+  position: relative;
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.client-history__item:last-child {
+  border-bottom: 0;
+}
+
+.client-history__dot {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.client-history__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.client-history__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.client-history__action {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.client-history__time,
+.client-history__actor {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.client-history__actor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.client-history__changes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.client-history__change {
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.client-history__change--masked {
+  color: var(--text-secondary);
+}
+
+.client-history__open {
+  align-self: flex-start;
+  margin-left: -8px;
 }

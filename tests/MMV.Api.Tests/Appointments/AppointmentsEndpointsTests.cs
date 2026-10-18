@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MMV.Api.Tests.Identity;
 using MMV.Application.Appointments;
+using MMV.Application.Audit;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 
@@ -87,6 +88,8 @@ public sealed class AppointmentsEndpointsTests : IDisposable
                 services.AddScoped<IIdentityStore>(_ => _identity);
                 services.RemoveAll<IAppointmentStore>();
                 services.AddScoped<IAppointmentStore>(_ => _appointments);
+                services.RemoveAll<IAuditRecorder>();
+                services.AddScoped<IAuditRecorder>(_ => _appointments.Audit);
                 if (settings is not null)
                 {
                     services.RemoveAll<AppointmentSettings>();

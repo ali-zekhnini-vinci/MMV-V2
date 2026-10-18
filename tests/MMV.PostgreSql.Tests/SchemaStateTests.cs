@@ -59,7 +59,7 @@ public sealed class SchemaStateTests(ITestOutputHelper output)
 
         var state = await SchemaInspection.ReadAsync(target, timeout.Token);
         output.WriteLine(state.ToString());
-        Assert.Empty(state.AppointmentsModuleDifferences(target.Role));
+        Assert.Empty(state.AuditJournalDifferences(target.Role));
 
         // Vue EF Core (lecture seule) : toutes les migrations de l'assembly appliquées, rien en attente.
         var options = new DbContextOptionsBuilder<MmvDbContext>().UseNpgsql(target.ReadOnlyConnectionString()).Options;
