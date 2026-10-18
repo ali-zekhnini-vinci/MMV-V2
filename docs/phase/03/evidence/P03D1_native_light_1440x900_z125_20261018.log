@@ -1,0 +1,56 @@
+2026-10-18T16:22:47.454Z SCÉNARIO — parcours-03d1
+2026-10-18T16:22:47.469Z PARCOURS 03-D1 — light_1440x900_z125, jour 2026-10-28, heure 16:30
+2026-10-18T16:22:48.825Z PASS — fenêtre 1440×900 (client 1440x900)
+2026-10-18T16:22:53.404Z PASS — zoom WebView2 effectif 125 %
+2026-10-18T16:22:53.404Z PASS — thème light
+2026-10-18T16:22:53.405Z PASS — barre d'état : aucun libellé tronqué
+2026-10-18T16:22:53.405Z BARRE — libellés complets
+2026-10-18T16:22:53.974Z PASS — Nouveau rendez-vous
+2026-10-18T16:22:53.986Z PASS — formulaire : aucun défilement horizontal
+2026-10-18T16:22:53.987Z PASS — panneau à côté de l'agenda (agenda visible sur 416 px)
+2026-10-18T16:22:53.987Z PASS — « Créer » accessible à l'écran
+2026-10-18T16:22:54.510Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_01_formulaire_20261018T162247Z.png 1440x900
+2026-10-18T16:22:54.547Z PASS — ouverture du calendrier
+2026-10-18T16:22:54.569Z PASS — calendrier : Choisir l'année = 2026
+2026-10-18T16:22:54.784Z PASS — calendrier : Choisir le mois = 9
+2026-10-18T16:22:55.510Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_02_calendrier_20261018T162247Z.png 1440x900
+2026-10-18T16:22:55.544Z PASS — jour 2026-10-28
+2026-10-18T16:22:55.546Z PASS — date affichée 28/10/2026
+2026-10-18T16:22:55.572Z PASS — ouverture de la liste des heures
+2026-10-18T16:22:55.577Z PASS — heure proposée visible à l'ouverture (09:00)
+2026-10-18T16:22:55.577Z PASS — liste : journée entière au pas de 5 minutes (288 heures)
+2026-10-18T16:22:55.577Z PASS — liste défilante bornée (264 px)
+2026-10-18T16:22:56.094Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_03_heures_20261018T162247Z.png 1440x900
+2026-10-18T16:22:56.112Z PASS — heure 16:30
+2026-10-18T16:22:56.113Z PASS — heure affichée 16:30
+2026-10-18T16:22:56.118Z PASS — ouverture du sélecteur de client
+2026-10-18T16:22:56.514Z PASS — client Existant choisi
+2026-10-18T16:22:56.516Z PASS — Durée = 30 minutes
+2026-10-18T16:22:56.537Z PASS — Motif = Conseil / Devis
+2026-10-18T16:22:56.539Z PASS — Responsable = D1N Responsable Un
+2026-10-18T16:22:57.065Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_04_saisie_20261018T162247Z.png 1440x900
+2026-10-18T16:22:57.067Z PASS — Créer
+2026-10-18T16:22:57.251Z PASS — notice « NOM Prénom » (O-03-36)
+2026-10-18T16:22:57.369Z PASS — API : rendez-vous à 16:30 heure du magasin (2026-10-28T15:30:00+00:00)
+2026-10-18T16:22:57.892Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_05_cree_20261018T162247Z.png 1440x900
+2026-10-18T16:22:59.549Z PASS — préremplissage depuis la grille : 28/10/2026 15:00
+2026-10-18T16:23:00.064Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_06_preremplissage_20261018T162247Z.png 1440x900
+2026-10-18T16:23:00.081Z PASS — Annuler la saisie
+2026-10-18T16:23:00.110Z PASS — ouverture de « FICTIF-D1N-5EF06D74 Existant »
+2026-10-18T16:23:00.494Z PASS — clavier : focus sur « Annuler le rendez-vous » (4 tabulations)
+2026-10-18T16:23:02.957Z PASS — focus rendu au bouton (BUTTON Annuler le rendez-vous)
+2026-10-18T16:23:02.964Z PASS — rien n'a été annulé
+2026-10-18T16:23:03.337Z PASS — Consulter la fiche
+2026-10-18T16:23:03.501Z PASS — onglet Rendez-vous
+2026-10-18T16:23:03.665Z PASS — catégories : À venir (2) | Passés (3) | Annulés (1) | Tous (6)
+2026-10-18T16:23:03.665Z PASS — fiche : aucun défilement horizontal
+2026-10-18T16:23:04.193Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_07_fiche_a_venir_20261018T162247Z.png 1440x900
+2026-10-18T16:23:04.198Z PASS — Passés
+2026-10-18T16:23:04.877Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_08_fiche_passes_20261018T162247Z.png 1440x900
+2026-10-18T16:23:04.883Z PASS — Annulés
+2026-10-18T16:23:05.052Z PASS — À venir
+2026-10-18T16:23:05.054Z PASS — Voir le détail
+2026-10-18T16:23:05.222Z PASS — retour à la fiche proposé
+2026-10-18T16:23:05.750Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1440x900_z125_09_detail_depuis_fiche_20261018T162247Z.png 1440x900
+2026-10-18T16:23:05.851Z FIN — light_1440x900_z125
+2026-10-18T16:23:05.851Z TERMINÉ — parcours-03d1

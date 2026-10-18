@@ -1,0 +1,56 @@
+2026-10-18T16:21:30.252Z SCÉNARIO — parcours-03d1
+2026-10-18T16:21:30.266Z PARCOURS 03-D1 — light_1920x1080_z100, jour 2026-10-27, heure 14:00
+2026-10-18T16:21:31.636Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-18T16:21:33.476Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T16:21:33.797Z PASS — thème light
+2026-10-18T16:21:33.797Z PASS — barre d'état : aucun libellé tronqué
+2026-10-18T16:21:33.798Z BARRE — libellés complets
+2026-10-18T16:21:34.365Z PASS — Nouveau rendez-vous
+2026-10-18T16:21:34.372Z PASS — formulaire : aucun défilement horizontal
+2026-10-18T16:21:34.373Z PASS — panneau à côté de l'agenda (agenda visible sur 1196 px)
+2026-10-18T16:21:34.373Z PASS — « Créer » accessible à l'écran
+2026-10-18T16:21:34.914Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_01_formulaire_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:34.948Z PASS — ouverture du calendrier
+2026-10-18T16:21:34.964Z PASS — calendrier : Choisir l'année = 2026
+2026-10-18T16:21:35.191Z PASS — calendrier : Choisir le mois = 9
+2026-10-18T16:21:35.928Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_02_calendrier_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:35.961Z PASS — jour 2026-10-27
+2026-10-18T16:21:35.963Z PASS — date affichée 27/10/2026
+2026-10-18T16:21:35.996Z PASS — ouverture de la liste des heures
+2026-10-18T16:21:36.004Z PASS — heure proposée visible à l'ouverture (09:00)
+2026-10-18T16:21:36.004Z PASS — liste : journée entière au pas de 5 minutes (288 heures)
+2026-10-18T16:21:36.004Z PASS — liste défilante bornée (264 px)
+2026-10-18T16:21:36.530Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_03_heures_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:36.549Z PASS — heure 14:00
+2026-10-18T16:21:36.550Z PASS — heure affichée 14:00
+2026-10-18T16:21:36.554Z PASS — ouverture du sélecteur de client
+2026-10-18T16:21:36.946Z PASS — client Existant choisi
+2026-10-18T16:21:36.948Z PASS — Durée = 30 minutes
+2026-10-18T16:21:36.967Z PASS — Motif = Conseil / Devis
+2026-10-18T16:21:36.968Z PASS — Responsable = D1N Responsable Un
+2026-10-18T16:21:37.497Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_04_saisie_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:37.500Z PASS — Créer
+2026-10-18T16:21:37.682Z PASS — notice « NOM Prénom » (O-03-36)
+2026-10-18T16:21:37.794Z PASS — API : rendez-vous à 14:00 heure du magasin (2026-10-27T13:00:00+00:00)
+2026-10-18T16:21:38.327Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_05_cree_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:39.982Z PASS — préremplissage depuis la grille : 27/10/2026 15:00
+2026-10-18T16:21:40.513Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_06_preremplissage_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:40.531Z PASS — Annuler la saisie
+2026-10-18T16:21:40.564Z PASS — ouverture de « FICTIF-D1N-5EF06D74 Existant »
+2026-10-18T16:21:40.944Z PASS — clavier : focus sur « Annuler le rendez-vous » (4 tabulations)
+2026-10-18T16:21:43.330Z PASS — focus rendu au bouton (BUTTON Annuler le rendez-vous)
+2026-10-18T16:21:43.340Z PASS — rien n'a été annulé
+2026-10-18T16:21:43.724Z PASS — Consulter la fiche
+2026-10-18T16:21:43.902Z PASS — onglet Rendez-vous
+2026-10-18T16:21:44.067Z PASS — catégories : À venir (2) | Passés (3) | Annulés (1) | Tous (6)
+2026-10-18T16:21:44.068Z PASS — fiche : aucun défilement horizontal
+2026-10-18T16:21:44.645Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_07_fiche_a_venir_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:44.650Z PASS — Passés
+2026-10-18T16:21:45.353Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_08_fiche_passes_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:45.358Z PASS — Annulés
+2026-10-18T16:21:45.519Z PASS — À venir
+2026-10-18T16:21:45.522Z PASS — Voir le détail
+2026-10-18T16:21:45.687Z PASS — retour à la fiche proposé
+2026-10-18T16:21:46.212Z CAPTURE — <EVIDENCE>\P03D_native_d1_light_1920x1080_z100_09_detail_depuis_fiche_20261018T162130Z.png 1920x1080
+2026-10-18T16:21:46.300Z FIN — light_1920x1080_z100
+2026-10-18T16:21:46.300Z TERMINÉ — parcours-03d1

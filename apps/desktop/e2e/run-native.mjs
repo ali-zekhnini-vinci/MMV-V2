@@ -17,7 +17,7 @@ const option = (name, fallback) => {
 const port = Number(option("--port", "9222"));
 const outDir = resolve(option("--out", "."));
 // Préfixe des captures : P02_native (phase 02, défaut) ou P03_native (scénarios clients-*, phase 03-A3) ;
-// P03B3_native (rdv-b3*), P03C_native (parcours-03c, matrice-03c).
+// P03B3_native (rdv-b3*), P03C_native (parcours-03c, matrice-03c), P03D_native (parcours-03d1).
 const prefix = option("--prefix", "P02_native");
 const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
@@ -209,8 +209,9 @@ async function pickClient(page, firstName, lastName) {
 
 async function fillAppointment(page, { client, last, date, time, duration, responsible, reason, notes }) {
   if (client) await pickClient(page, client, last);
-  if (date) await fillField(page, "Date", date);
-  if (time) await fillField(page, "Heure", time);
+  // 03-D1 : date et heure choisies dans les sélecteurs (date attendue jj/mm/aaaa, comme avant).
+  if (date) await pickDateNative(page, date.split("/").reverse().join("-"));
+  if (time) await pickTimeNative(page, time);
   if (duration) await setSelect(page, "Durée", duration);
   if (reason) await setSelect(page, "Motif", reason);
   if (responsible) await setSelect(page, "Responsable", responsible);
@@ -305,7 +306,181 @@ const reachable = (page, expression) =>
   page.evaluate(`(() => { const e = ${expression}; if (!e) return false; e.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     const r = e.getBoundingClientRect(); return r.width > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth + 0.5 && r.bottom <= innerHeight + 0.5; })()`);
 
+// ——— 03-D1 : sélecteurs de date (calendrier) et d'heure (liste), historique des rendez-vous sur la fiche ———
+/** Déclencheur d'un sélecteur du formulaire (bouton nommé par l'étiquette du champ puis la valeur). */
+const pickerButton = (label) =>
+  `[...document.querySelectorAll('aside button[aria-haspopup]')].find(b => (b.getAttribute('aria-labelledby') || '').split(' ')
+    .some(id => document.getElementById(id)?.textContent.replace('*', '').trim() === ${J(label)}))`;
+const calendarOpen = "!!document.querySelector('[role=dialog][aria-label=\"Calendrier\"]')";
+const timeListOpen = "!!document.querySelector('[role=listbox][aria-labelledby]') && !document.querySelector('[aria-label=\"Rechercher un client actif\"]')";
+
+/** Libellé DayPicker d'un jour (« jeudi 16 juillet 2026 »), sans le jour de la semaine. */
+const dayLabel = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" }).format(new Date(Date.UTC(y, m - 1, d, 12)));
+};
+
+async function chooseDropdown(page, label, value) {
+  const ok = await page.evaluate(`(() => {
+    const s = document.querySelector(${J(`[role=dialog][aria-label="Calendrier"] select[aria-label="${label}"]`)});
+    if (!s) return false;
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, ${J(String(value))});
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  })()`);
+  check(ok, `calendrier : ${label} = ${value}`);
+  await page.sleep(200);
+}
+
+/** Date choisie dans le calendrier (années / mois par listes, jour par clic). */
+async function pickDateNative(page, iso, { shot } = {}) {
+  await click(page, pickerButton("Date"), "ouverture du calendrier");
+  await page.waitFor(calendarOpen, { label: "calendrier" });
+  const [y, m] = iso.split("-").map(Number);
+  await chooseDropdown(page, "Choisir l'année", y);
+  await chooseDropdown(page, "Choisir le mois", m - 1);
+  if (shot) await shot();
+  const day = `[...document.querySelectorAll('[role=dialog][aria-label="Calendrier"] button')].find(b => (b.getAttribute('aria-label') || '').includes(${J(dayLabel(iso))}))`;
+  await click(page, day, `jour ${iso}`);
+  await page.waitFor(`!${calendarOpen}`, { label: "calendrier fermé" });
+}
+
+/** Heure choisie dans la liste déroulante. */
+async function pickTimeNative(page, time, { shot } = {}) {
+  await click(page, pickerButton("Heure"), "ouverture de la liste des heures");
+  await page.waitFor(timeListOpen, { label: "liste des heures" });
+  if (shot) await shot();
+  const option = `[...document.querySelectorAll('[role=listbox] [role=option]')].find(o => o.firstElementChild?.textContent === ${J(time)})`;
+  await page.evaluate(`(${option}).scrollIntoView({ block: 'center' })`);
+  await click(page, option, `heure ${time}`);
+  await page.waitFor(`!document.querySelector('[role=listbox][aria-labelledby]')`, { label: "liste fermée" });
+}
+
+const pickerText = (label) => `(${pickerButton(label)})?.textContent.trim()`;
+const tabByName = (label) => `[...document.querySelectorAll('[role=tab]')].find(t => t.textContent.trim() === ${J(label)})`;
+const historyRows = "[...document.querySelectorAll('section.client-rdv tbody tr')]";
+
 const scenarios = {
+  /**
+   * 03-D1 — sélecteurs de date et d'heure, préremplissage depuis la grille, historique des rendez-vous sur la fiche,
+   * corrections O-03-33 (focus après Échap), O-03-34 (barre d'état étroite), O-03-35 (panneau superposé), O-03-36
+   * (« NOM Prénom »). Données fictives d1n-* / « Fictif-D1N-* » sur mmv_v2_test (outil jetable), nettoyées après.
+   */
+  async "parcours-03d1"(page) {
+    const { agent, clientLastName: last } = credentials();
+    const theme = option("--theme", "light");
+    const [width, height] = option("--size", "1920x1080").split("x").map(Number);
+    const zoom = Number(option("--zoom", "1"));
+    const day = targetDay(Number(option("--day-offset", "3")));
+    const time = option("--time", "10:30");
+    const tag = `${theme}_${width}x${height}_z${Math.round(zoom * 100)}`;
+    const shot = (name) => capture(`d1_${tag}_${name}`);
+    const upper = last.toUpperCase();
+    log("PARCOURS 03-D1", `${tag}, jour ${day.iso}, heure ${time}`);
+
+    resize(width, height);
+    await signIn(page, agent);
+    await setZoom(page, zoom);
+    await setTheme(page, theme);
+
+    // O-03-34 : barre d'état sans libellé tronqué.
+    const truncated = await page.evaluate(`[...document.querySelectorAll('.statusbar__item')].filter(i => i.scrollWidth > i.clientWidth + 1).length`);
+    check(truncated === 0, "barre d'état : aucun libellé tronqué");
+    const shortShown = await page.evaluate("getComputedStyle(document.querySelector('.statusbar__short')).display !== 'none'");
+    log("BARRE", shortShown ? "libellés compacts (fenêtre étroite)" : "libellés complets");
+
+    // 1. Nouveau rendez-vous : calendrier et liste des heures.
+    await openRdv(page);
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await page.waitFor("!!document.querySelector('aside form')", { label: "formulaire" });
+    check(await page.noHorizontalScroll(), "formulaire : aucun défilement horizontal");
+    // O-03-35 : à 960 px CSS le panneau se superpose (agenda toujours visible à gauche, boutons à l'écran).
+    const layout = await page.evaluate(`(() => { const a = document.querySelector('aside.rdv-side').getBoundingClientRect();
+      const c = document.querySelector('section.rdv-cal').getBoundingClientRect(); return { asideTop: a.top, calBottom: c.bottom, calVisible: a.left - c.left }; })()`);
+    check(layout.asideTop < layout.calBottom && layout.calVisible > 150, `panneau à côté de l'agenda (agenda visible sur ${Math.round(layout.calVisible)} px)`);
+    check(await reachable(page, inAside("Créer")), "« Créer » accessible à l'écran");
+    shot("01_formulaire");
+    await pickDateNative(page, day.iso, { shot: () => shot("02_calendrier") });
+    check((await page.evaluate(pickerText("Date"))) === day.fr, `date affichée ${day.fr}`);
+    await pickTimeNative(page, time, {
+      shot: async () => {
+        const info = await page.evaluate(`(() => { const l = document.querySelector('[role=listbox][aria-labelledby]');
+          const a = document.getElementById(l.getAttribute('aria-activedescendant')); const lr = l.getBoundingClientRect(); const ar = a.getBoundingClientRect();
+          return { count: l.querySelectorAll('[role=option]').length, height: lr.height, first: l.querySelector('[role=option]').textContent,
+            active: a.firstElementChild.textContent, visible: ar.top >= lr.top - 1 && ar.bottom <= lr.bottom + 1 }; })()`);
+        check(info.visible, `heure proposée visible à l'ouverture (${info.active})`);
+        check(info.count === 288 && info.first === "00:00", `liste : journée entière au pas de 5 minutes (${info.count} heures)`);
+        check(info.height <= 300, `liste défilante bornée (${Math.round(info.height)} px)`);
+        shot("03_heures");
+      },
+    });
+    check((await page.evaluate(pickerText("Heure"))) === time, `heure affichée ${time}`);
+    await pickClient(page, "Existant", last);
+    await setSelect(page, "Durée", "30 minutes");
+    await setSelect(page, "Motif", "Conseil / Devis");
+    await setSelect(page, "Responsable", "D1N Responsable Un");
+    shot("04_saisie");
+    await click(page, inAside("Créer"), "Créer");
+    await page.waitFor(hasText("Rendez-vous créé"), { label: "Rendez-vous créé" });
+    check((await text(page)).includes(`${upper} Existant ·`), "notice « NOM Prénom » (O-03-36)");
+    const created = (await dayList(agent, day.iso)).find((item) => item.clientFirstName === "Existant" && item.status === "planned" && storeWall(item.startsAtUtc) === time);
+    check(created && storeWall(created.startsAtUtc) === time, `API : rendez-vous à ${time} heure du magasin (${created?.startsAtUtc})`);
+    shot("05_cree");
+
+    // 2. Créneau sélectionné sur la grille → date et heure préremplies.
+    await gotoDay(page, day);
+    await page.evaluate("document.querySelector('section[aria-label=\"Agenda\"] .rdv-fc__slot[data-time=\"15:00:00\"]').scrollIntoView({ block: 'center' })");
+    await page.sleep(300);
+    const lane = await page.evaluate(`(() => { const r = document.querySelector('section[aria-label=\"Agenda\"] .rdv-fc__slot[data-time="15:00:00"]').getBoundingClientRect();
+      return [r.left + r.width * 0.6, r.top + 3, r.bottom - 3]; })()`);
+    const scale = await mouseScale(page);
+    await page.drag(lane[0] * scale, lane[1] * scale, lane[0] * scale, lane[2] * scale);
+    await page.waitFor("!!document.querySelector('aside form')", { label: "formulaire prérempli" });
+    check((await page.evaluate(pickerText("Date"))) === day.fr && (await page.evaluate(pickerText("Heure"))) === "15:00", `préremplissage depuis la grille : ${day.fr} 15:00`);
+    shot("06_preremplissage");
+    await abandonForm(page);
+
+    // 3. O-03-33 : Échap dans la confirmation d'annulation rend le focus au bouton.
+    await openEvent(page, `${upper} Existant`);
+    await tabTo(page, "Annuler le rendez-vous");
+    osKeys("{ENTER}");
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'annulation" });
+    osKeys("{ESC}");
+    await page.waitFor("!document.querySelector('[role=alertdialog]')", { label: "confirmation fermée" });
+    await page.sleep(300);
+    check((await page.focused()) === "BUTTON Annuler le rendez-vous", `focus rendu au bouton (${await page.focused()})`);
+    check((await dayList(agent, day.iso)).some((item) => item.id === created.id && item.status === "planned"), "rien n'a été annulé");
+    await page.press("Escape");
+
+    // 4. Fiche client : onglet Rendez-vous (historique servi par l'API).
+    await openClients(page);
+    await page.evaluate("document.querySelector('.clients-search input').focus(); document.querySelector('.clients-search input').select()");
+    await page.type(`Historique ${last}`);
+    await click(page, buttonByName(`Consulter ${upper} Historique`), "Consulter la fiche");
+    await page.waitFor(`!!${tabByName("Rendez-vous")}`, { label: "onglet Rendez-vous" });
+    // Onglets Radix : activation à l'appui du bouton de la souris (mousedown), pas au clic synthétique.
+    await click(page, `(() => { const t = ${tabByName("Rendez-vous")}; t?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })); return t; })()`, "onglet Rendez-vous");
+    await page.waitFor(`${historyRows}.length === 2`, { label: "rendez-vous à venir" });
+    const chips = await page.evaluate("[...document.querySelectorAll('.client-rdv__scopes button')].map(b => b.textContent.trim()).join(' | ')");
+    check(chips === "À venir (2) | Passés (3) | Annulés (1) | Tous (6)", `catégories : ${chips}`);
+    check(await page.noHorizontalScroll(), "fiche : aucun défilement horizontal");
+    shot("07_fiche_a_venir");
+    await click(page, buttonByText("Passés (3)"), "Passés");
+    await page.waitFor(`${historyRows}.length === 3 && ${historyRows}.every(r => r.textContent.includes('Passé'))`, { label: "rendez-vous passés" });
+    shot("08_fiche_passes");
+    await click(page, buttonByText("Annulés (1)"), "Annulés");
+    await page.waitFor(`${historyRows}.length === 1 && ${historyRows}[0].textContent.includes('Annulé')`, { label: "rendez-vous annulé" });
+    await click(page, buttonByText("À venir (2)"), "À venir");
+    await page.waitFor(`${historyRows}.length === 2`, { label: "rendez-vous à venir" });
+    await click(page, `${historyRows}[0].querySelector('button')`, "Voir le détail");
+    await page.waitFor("document.querySelector('aside[aria-label^=\"Détail du rendez-vous de\"]')?.textContent.includes('Responsable')", { label: "détail dans l'agenda" });
+    check(!!(await page.evaluate(`!!${buttonByText(`Retour à la fiche de ${upper} Historique`)}`)), "retour à la fiche proposé");
+    shot("09_detail_depuis_fiche");
+    await page.press("Escape");
+    await page.waitFor(`document.querySelector('h1')?.textContent === ${J(`${upper} Historique`)}`, { label: "retour sur la fiche" });
+    log("FIN", tag);
+  },
+
   /**
    * 03-C — parcours fonctionnel complet : accueil → recherche (absent) → création du client (Ctrl+S) → fiche →
    * recherche (présent) → prise de rendez-vous depuis la fiche → modification → déplacement au clavier → glisser-déposer
