@@ -1,5 +1,7 @@
 # 03 — Procédure : attribuer les permissions Clients au compte du propriétaire (03-A3, 17/10/2026)
 
+**Constat du 17/10/2026 (03-B3, lecture seule, QA_MATRIX Q-03-142) :** sur `mmv_v2_dev`, le compte réel porte désormais `system.admin`, `clients.read`, `clients.write` et `clients.archive` — attribution faite **par le propriétaire** (l'agent n'a modifié aucun compte). Procédure considérée comme exécutée ; le texte ci-dessous reste comme référence.
+
 **À exécuter par le propriétaire lui-même**, sur le poste serveur, dans un terminal interactif. L'agent **n'a modifié aucun compte réel** : `permissions list` montre aujourd'hui sur `mmv_v2_dev` un seul compte, actif, avec `system.admin` seul (`evidence/P03A3_maintenance_permissions_readonly_20261017T1110Z.log`).
 
 ## Principes

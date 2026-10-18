@@ -1,0 +1,20 @@
+﻿# 03-B3 application 0004_AppointmentsModule sur mmv_v2_test — 2026-10-17T18:57:52.2797737Z
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : docs/phase/03/sql/0004_AppointmentsModule.idempotent.sql (SHA-256 9BD07D90B2578E95226C290E9A3EF1FD3BB83F79A7CEE24B0E00CBCD07122399)
+START TRANSACTION
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+COMMIT
+APPLIQUE : exit 0
+ERREUR CAPTUREE : ERREUR:  la relation « __efmigrationshistory » n'existe pas

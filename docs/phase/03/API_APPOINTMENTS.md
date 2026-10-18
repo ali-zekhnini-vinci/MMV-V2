@@ -1,6 +1,6 @@
-# 03 — Contrat HTTP Rendez-vous (IMPLEMENTED, 03-B2, 17/10/2026)
+# 03 — Contrat HTTP Rendez-vous (IMPLEMENTED, 03-B2 ; élargi et éprouvé en conditions réelles, 03-B3)
 
-**Statut : `IMPLEMENTED` dans MMV.Api — migration `0004_AppointmentsModule` NON appliquée.** Tant que la migration n'est pas appliquée et que les paramètres du magasin ne sont pas configurés, les routes répondent `503 appointments_not_configured` (après authentification et autorisation) et aucune donnée n'est lue ni écrite. Décisions : D-03-13 à D-03-18 approuvées le 17/10/2026 ([`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md) § Décision du propriétaire). Remplace le contrat proposé [`API_APPOINTMENTS_PROPOSED.md`](API_APPOINTMENTS_PROPOSED.md) (historique 03-B).
+**Statut (18/10/2026, 03-B3) : `IMPLEMENTED` — migration `0004_AppointmentsModule` APPLIQUÉE** (`mmv_v2_dev`, `mmv_v2_test`, 17/10/2026). Contrat élargi en 03-B3 (B2-REV-02, B2-REV-03, O-03-23) : `startsAtLocal` (saisie), `timeZoneOffsets` (liste), `updatedByDisplayName` (détail), `appointment_past` en modification. Éprouvé sur PostgreSQL 18 réel (matrice HTTP 39/39) et en natif (QA_MATRIX Q-03-159, Q-03-160). Tant que les paramètres du magasin ne sont pas configurés dans MMV.Api, les routes répondent `503 appointments_not_configured` (après authentification et autorisation). *Historique 03-B2 : migration non appliquée.* Décisions : D-03-13 à D-03-18 approuvées le 17/10/2026 ([`DECISIONS_03B_RDV_PROPOSITION.md`](DECISIONS_03B_RDV_PROPOSITION.md) § Décision du propriétaire). Remplace le contrat proposé [`API_APPOINTMENTS_PROPOSED.md`](API_APPOINTMENTS_PROPOSED.md) (historique 03-B).
 
 Sources : `src/MMV.Api/Appointments/AppointmentsEndpoints.cs`, `src/MMV.Application/Appointments/`, `src/MMV.Domain/Appointments/`, `src/MMV.Infrastructure/Appointments/`. Instantané OpenAPI contrôlé des deux côtés : [`apps/desktop/src/api/contract/appointments.openapi.json`](../../../apps/desktop/src/api/contract/appointments.openapi.json) (`AppointmentsOpenApiContractTests.cs` côté .NET, `appointmentsContract.test.ts` côté TypeScript).
 
@@ -31,9 +31,10 @@ Une installation MMV = un magasin en V1. **Aucune valeur par défaut n'est inven
 |---|---|---|
 | `AppointmentOptionsResponse` | `AppointmentOptions` | `timeZone`, `durationsMinutes` (15, 30, 45, 60, 90, 120), `startStepMinutes` (5), `reasons` (`{ code, label, responsibleRequired }`, liste fermée D-03-18), `responsibles` (actifs ET éligibles : `{ id, displayName }`), `receptionCapacity` (`int | null`), `displayStartTime`, `displayEndTime`, `hiddenWeekdays` |
 | `AppointmentSummaryResponse` | `AppointmentSummary` | `id`, `clientId`, `clientReference`, `clientFirstName`, `clientLastName`, `clientArchived`, `responsibleUserId|null`, `responsibleDisplayName|null`, `startsAtUtc`, `endsAtUtc`, `reasonCode`, `status` (`planned|cancelled`), `version` — **ni** téléphone, **ni** email, **ni** notes |
-| `AppointmentDetailResponse` | `AppointmentDetail` | Summary + `notes|null`, `cancelledAtUtc|null`, `cancelledByDisplayName|null`, `cancellationReason|null`, `createdAtUtc`, `updatedAtUtc` |
-| `AppointmentListResponse` | `AppointmentSummary[]` (`items`) | rendez-vous qui **recoupent** la période, triés par début puis `id` |
-| `AppointmentInputRequest` | `AppointmentInput` | `clientId`, `responsibleUserId|null`, `startsAtUtc`, `durationMinutes`, `reasonCode`, `notes|null` |
+| `AppointmentDetailResponse` | `AppointmentDetail` | Summary + `notes|null`, `cancelledAtUtc|null`, `cancelledByDisplayName|null`, `cancellationReason|null`, `createdAtUtc`, `updatedAtUtc`, `updatedByDisplayName` (03-B3 : auteur de la dernière modification ; aucun historique détaillé, O-03-30) |
+| `AppointmentListResponse` | `AppointmentList` (`items`, `timeZoneOffsets`) | rendez-vous qui **recoupent** la période, triés **par PostgreSQL** par début puis `id` ; `timeZoneOffsets` (03-B3) : décalages UTC du magasin **selon le serveur** sur exactement [`from`, `to`[ |
+| `TimeZoneOffsetResponse` | `TimeZoneOffset` | `fromUtc`, `toUtc`, `offsetMinutes` (entier) : segments contigus, triés, à décalage constant, coupés à chaque changement d'heure (au tick près) |
+| `AppointmentInputRequest` | `AppointmentInput` | `clientId`, `responsibleUserId|null`, `startsAtUtc`, `startsAtLocal` (03-B3 : heure murale `AAAA-MM-JJTHH:mm` d'où le poste a calculé `startsAtUtc`), `durationMinutes`, `reasonCode`, `notes|null` |
 | `AppointmentUpdateRequest` | `AppointmentInput & { version }` | modification et déplacement (corps complet) |
 | `AppointmentCancelRequest` | `{ version, reason|null }` | annulation (motif ≤ 200, rogné, vide → `null`) |
 | `AppointmentVersionRequest` | `{ version }` | rétablissement |
@@ -46,11 +47,11 @@ Une installation MMV = un magasin en V1. **Aucune valeur par défaut n'est inven
 | `GET /api/appointments?from&to[&status=planned|all]` | `appointments.read` | 200 | 400 `invalid_query` (paramètre inconnu ou répété, instant non UTC, `to ≤ from`, écart > 31 jours) |
 | `GET /api/appointments/{id}` | `appointments.read` | 200 | 404 `appointment_not_found` |
 | `POST /api/appointments` | `appointments.write` | **201** + `Location` | 400 ; 422 ; 409 `client_archived` / `appointment_conflict` / `reception_capacity_full` |
-| `PUT /api/appointments/{id}` | `appointments.write` | 200 | 400 / `version_required` ; 404 ; 409 `version_conflict` / `appointment_cancelled` / `client_archived` / `appointment_conflict` / `reception_capacity_full` ; 422 |
+| `PUT /api/appointments/{id}` | `appointments.write` | 200 | 400 / `version_required` ; 404 ; 409 `version_conflict` / `appointment_cancelled` / `appointment_past` (03-B3) / `client_archived` / `appointment_conflict` / `reception_capacity_full` ; 422 |
 | `POST /api/appointments/{id}/cancel` | `appointments.cancel` | 200 | 400 ; 404 ; 409 `version_conflict` / `appointment_cancelled` ; 422 `reason: too_long` |
 | `POST /api/appointments/{id}/restore` | `appointments.cancel` | 200 | 400 ; 404 ; 409 `version_conflict` / `appointment_not_cancelled` / `appointment_past` / `client_archived` / `reception_not_configured` / `responsible_unavailable` / `appointment_conflict` / `reception_capacity_full` |
 
-Ordre des contrôles (écritures) : authentification → policy → paramètres du magasin (503) → corps (400) → existence (404) → version (409) → état (annulé / non annulé) → validation de saisie (422) → passé → **verrou de la ressource visée** → client (verrou partagé ; introuvable 422, archivé 409) → éligibilité du responsable (422) → chevauchement ou capacité (409) → enregistrement.
+Ordre des contrôles (écritures) : authentification → policy → paramètres du magasin (503) → corps (400) → existence (404) → version (409) → état (annulé / non annulé) → validation de saisie (422, dont `startsAtLocal`) → passé (rendez-vous commencé : 409 `appointment_past` ; nouveau créneau passé : 422 `in_past`) → **verrou de la ressource visée** → client (verrou partagé ; introuvable 422, archivé 409) → éligibilité du responsable (422) → chevauchement ou capacité (409) → enregistrement.
 
 ## Codes de validation par champ (422)
 
@@ -58,6 +59,7 @@ Ordre des contrôles (écritures) : authentification → policy → paramètres 
 |---|---|
 | `clientId` | `required`, `not_found` |
 | `startsAtUtc` | `required`, `invalid_format` (non UTC), `invalid_step` (pas de 5 min, heure du magasin), `out_of_range` (franchit minuit ; finir à 00:00 est admis), `time_change` (début ou fin dans une heure ambiguë, ou créneau enjambant un changement d'heure), `in_past` (création ; modification qui change le créneau) |
+| `startsAtLocal` (03-B3) | `required`, `invalid_format` (autre que `AAAA-MM-JJTHH:mm`), `time_zone_mismatch` (le serveur ne place pas cette heure murale à l'instant `startsAtUtc` : données de fuseaux divergentes, rien n'est écrit) |
 | `durationMinutes` | `required`, `not_allowed` |
 | `responsibleUserId` | `required` (motif personnalisé), `reception_not_configured` (motif d'accueil sans capacité configurée), `not_eligible` (compte inexistant, désactivé ou non éligible) |
 | `reasonCode` | `required`, `not_allowed` |
@@ -68,17 +70,26 @@ Ordre des contrôles (écritures) : authentification → policy → paramètres 
 
 - **Rendez-vous personnalisé** (`conseil_devis`, `choix_equipement`, `prise_mesures`, `essayage_ajustement`, `autre`) : responsable obligatoire, actif et éligible ; chevauchement refusé avec un autre rendez-vous **planifié** du même collaborateur (`a.début < b.fin ET b.début < a.fin` : bout à bout admis) → 409 `appointment_conflict`.
 - **Rendez-vous d'accueil** (`retrait_commande`, `sav_reparation`) : avec responsable → même contrôle que ci-dessus ; sans responsable → **capacité d'accueil** : l'occupation maximale simultanée des autres rendez-vous d'accueil planifiés, calculée **à chaque instant** du créneau (balayage des bornes), plus un, ne doit pas dépasser `ReceptionCapacity` → sinon 409 `reception_capacity_full`. Capacité absente → aucun rendez-vous sans responsable.
-- **Transactions** : `READ COMMITTED` ; `pg_advisory_xact_lock(1296913746, clé)` sur la ressource visée (agenda du collaborateur : clé dérivée de son identifiant ; pool d'accueil : clé 0), clés croissantes sans doublon (ordre stable, aucun interblocage) ; puis `SELECT … FROM clients.clients … FOR SHARE` (un archivage concurrent attend) ; puis contrôles et écriture. Deux postes simultanés : le second attend le verrou du premier, puis voit sa réservation.
-- Une modification qui ne change ni le créneau ni le responsable (motif, notes) ne réserve rien : ni verrou, ni contrôle de chevauchement, de capacité, d'éligibilité ou de passé.
+- **Transactions** : `READ COMMITTED` ; `pg_advisory_xact_lock(1296914002, clé)` (*correction 03-B3 : 03-B2 indiquait 1296913746 ; `0x4D4D5652` = 1296914002, O-03-27*) sur la ressource visée (agenda du collaborateur : clé dérivée de son identifiant ; pool d'accueil : clé 0), clés croissantes sans doublon (ordre stable, aucun interblocage) ; puis `SELECT … FROM clients.clients … FOR SHARE` (un archivage concurrent attend) ; puis contrôles et écriture. Deux postes simultanés : le second attend le verrou du premier, puis voit sa réservation.
+- Une modification qui ne change ni le créneau, ni la durée, ni le responsable (motif, notes) ne réserve rien : ni verrou, ni contrôle de chevauchement, de capacité, d'éligibilité ou de passé. **03-B3 (B2-REV-01)** : tout changement de créneau ou de durée revérifie l'éligibilité du responsable, même inchangé (422 `not_eligible`). **03-B3 (B2-REV-02, O-03-23)** : un rendez-vous **commencé** (début passé) garde sa réservation — tout changement de client, de créneau, de durée ou de responsable → 409 `appointment_past` ; motif et notes restent corrigeables.
+
+## Cohérence des fuseaux serveur ↔ poste (B2-REV-03, 03-B3)
+
+MMV.Api convertit avec les données de fuseaux de Windows, l'interface avec celles de WebView2 (ICU) : elles peuvent diverger (constat O-03-22 : Casablanca, 01/01–15/02/2026). Deux contrôles rendent toute divergence visible et sans effet sur l'heure réelle d'un rendez-vous :
+
+1. **Lecture** : chaque `GET /api/appointments` renvoie `timeZoneOffsets`, décalages du serveur sur la période. L'interface calcule les siens sur la même période (bornes des segments et décalages) ; au moindre écart, l'agenda de la période est **bloqué** (« Heure incohérente entre ce poste et le serveur MMV ») : aucun rendez-vous affiché, aucune création ni déplacement.
+2. **Écriture** : chaque création ou modification annonce `startsAtLocal` ; le serveur recalcule l'heure murale de `startsAtUtc` et refuse tout écart (422 `startsAtLocal: time_zone_mismatch`).
+
+Remède : mettre à jour Windows (serveur) et Microsoft Edge WebView2 (postes). Limite : deux jeux de données identiques mais périmés face à une décision officielle ne sont pas détectables (O-03-22).
 
 ## Annulation et rétablissement (D-03-16)
 
-Annulation logique (`cancelled`, auteur et date conservés, motif facultatif ≤ 200), permise pour un client archivé et pour un rendez-vous passé ; libère le créneau ou la place d'accueil. Rétablissement : nouveau contrôle complet (client actif, collaborateur actif et éligible, chevauchement ou capacité) ; refusé si le créneau a commencé (`appointment_past`, interprétation de « création dans le passé interdite » — O-03-23). Rendez-vous annulé non modifiable. Aucune suppression physique.
+Annulation logique (`cancelled`, auteur et date conservés, motif facultatif ≤ 200), permise pour un client archivé et pour un rendez-vous passé ; libère le créneau ou la place d'accueil. Rétablissement : nouveau contrôle complet (client actif, collaborateur actif et éligible, chevauchement ou capacité) ; refusé si le créneau a commencé (`appointment_past`, interprétation de « création dans le passé interdite » — O-03-23, **retenue par le propriétaire le 17/10/2026, GO 03-B3**). Rendez-vous annulé non modifiable. Aucune suppression physique.
 
 ## Éligibilité des collaborateurs (D-03-14, D-03-17)
 
 Table `appointments.responsibles` (`user_id`, `is_eligible`, dates), indépendante des permissions ; gérée par `MMV.Maintenance responsibles list | enable <identifiant> | disable <identifiant>` (cible stricte `mmv_v2_dev`, confirmation interactive ; retrait = `is_eligible = false`, jamais de suppression). Un collaborateur désactivé ou retiré n'est plus proposé ; ses rendez-vous existants restent affichés avec son nom ; leurs notes et motif restent modifiables, leur créneau ne peut être modifié qu'en réattribuant à un collaborateur éligible.
 
-## Persistance (migration `0004_AppointmentsModule`, NON appliquée)
+## Persistance (migration `0004_AppointmentsModule`, APPLIQUÉE le 17/10/2026 — *historique 03-B2 : non appliquée*)
 
 Dossier SQL exact et empreintes : [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Dossier de migration 0004 — version 03-B2.

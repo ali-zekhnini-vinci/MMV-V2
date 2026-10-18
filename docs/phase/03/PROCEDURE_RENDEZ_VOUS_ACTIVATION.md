@@ -1,6 +1,8 @@
 # 03-B2 — Procédure d'activation du module Rendez-vous (à exécuter par le propriétaire)
 
-**Statut (17/10/2026) : NON EXÉCUTÉE.** Aucune étape n'a été réalisée par l'agent : aucune base modifiée, aucune configuration du magasin renseignée, aucun droit ni éligibilité attribué. L'ordre est impératif ; chaque étape suppose la précédente réussie. La revue du SQL exact (étape 1) précède tout GO d'application.
+**Statut (18/10/2026, 03-B3) : étapes 1 et 2 EXÉCUTÉES** (revue SQL par le propriétaire, GO 03-B3 ; application de 0004 à `mmv_v2_dev` puis `mmv_v2_test` le 17/10/2026 par l'agent, contrôles conformes — QA_MATRIX Q-03-141 à Q-03-145). **Étape 3 : valeurs fournies par le propriétaire** (Europe/Brussels, 09:00–19:00, aucun jour masqué, capacité d'accueil 1), **non enregistrées** dans la configuration de MMV.Api (choix du propriétaire : test natif sur `mmv_v2_test` avec ces valeurs passées au seul processus de test). **Étapes 3 (enregistrement), 4 et 5 : à exécuter par le propriétaire.** Étape 6 : réalisée sur `mmv_v2_test` (Q-03-160, Q-03-163). Après mise à jour du code, relancer MMV.Api **et** le poste ensemble (contrat élargi en 03-B3, O-03-31).
+
+*Historique — statut (17/10/2026) : NON EXÉCUTÉE.* Aucune étape n'a été réalisée par l'agent : aucune base modifiée, aucune configuration du magasin renseignée, aucun droit ni éligibilité attribué. L'ordre est impératif ; chaque étape suppose la précédente réussie. La revue du SQL exact (étape 1) précède tout GO d'application.
 
 ## 1. Revue du SQL exact (propriétaire)
 
@@ -23,6 +25,17 @@ dotnet test tests/MMV.PostgreSql.Tests --filter "Stage=AppointmentsWrite"
 ## 3. Paramètres du magasin (section `Appointments` de MMV.Api)
 
 À renseigner hors Git (user-secrets `mmv-v2-api` ou variables d'environnement `Appointments__…`), avec les valeurs **réelles** du magasin. Aucune valeur n'est fournie par défaut : sans `TimeZone` ni plage affichée, l'agenda affiche « Agenda non configuré » (503).
+
+Valeurs fournies par le propriétaire le 18/10/2026 (aucun jour masqué : ne pas renseigner `HiddenWeekdays`) :
+
+```powershell
+dotnet user-secrets set "Appointments:TimeZone" "Europe/Brussels" --id mmv-v2-api
+dotnet user-secrets set "Appointments:DisplayStartTime" "09:00" --id mmv-v2-api
+dotnet user-secrets set "Appointments:DisplayEndTime" "19:00" --id mmv-v2-api
+dotnet user-secrets set "Appointments:ReceptionCapacity" "1" --id mmv-v2-api
+```
+
+Forme générale (référence 03-B2) :
 
 ```powershell
 dotnet user-secrets set "Appointments:TimeZone" "<Africa/Casablanca | Europe/Brussels>" --id mmv-v2-api
@@ -56,6 +69,6 @@ dotnet run --project src/MMV.Maintenance -- responsibles disable <identifiant>  
 
 Chaque écriture demande la confirmation du nom de la base et n'est admise que sur `mmv_v2_dev` (même politique de cible que `permissions grant`).
 
-## 6. Vérifications après activation (à prévoir en 03-C ou sous-lot dédié)
+## 6. Vérifications après activation — *réalisées le 18/10/2026 sur `mmv_v2_test` avec les valeurs du magasin (03-B3, QA_MATRIX Q-03-160, Q-03-163) ; à refaire brièvement sur la configuration réelle après les étapes 3 à 5*
 
 Parcours natif Tauri → HTTPS → API → PostgreSQL 18 : création personnalisée et d'accueil, conflit, capacité atteinte, deux postes simultanés, annulation / rétablissement, prise de rendez-vous depuis la fiche client, glisser-déposer (O-03-18), affichage dans le fuseau configuré.

@@ -1,5 +1,24 @@
 # 03-B — Proposition métier consolidée Rendez-vous (présentée le 17/10/2026)
 
+## Clarifications du propriétaire — 17/10/2026 (« GO PHASE 03-B3 », point O-03-23)
+
+Mandat : [`prompts/PHASE03_B3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B3_GO_CLAUDE_CODE.md) § 3. Règles **retenues provisoirement** (elles précisent les « précisions de mise en œuvre » ci-dessous, qui restent comme historique) :
+
+| Règle | Mise en œuvre (03-B3) |
+|---|---|
+| Rétablissement refusé lorsque l'heure de début est passée | 409 `appointment_past` (inchangé depuis 03-B2) |
+| Changement de créneau ou de responsable dans le passé interdit | rendez-vous **commencé** (début passé, même en cours) : tout changement de client, de créneau, de durée ou de responsable → 409 `appointment_past` (B2-REV-02 ; en 03-B2, un rendez-vous passé pouvait être déplacé vers le futur) ; interface : « Déplacer » et glisser-déposer désactivés, modification limitée au motif et aux notes |
+| Correction des notes et du motif d'un ancien rendez-vous permise, avec auteur et date de dernière modification | permise, sans nouveau contrôle de créneau ni d'éligibilité ; `updatedAtUtc` et **`updatedByDisplayName`** exposés et affichés (« Dernière modification le … par … ») |
+| Annulation d'un rendez-vous passé permise | inchangé (auteur, date, motif conservés) |
+| Fin exactement à 00:00 acceptée | inchangé |
+| Rendez-vous traversant un changement d'heure problématique refusé | inchangé (`time_change`) ; s'y ajoute le refus d'une heure saisie que le serveur ne place pas au même instant (`time_zone_mismatch`, B2-REV-03) |
+
+**Dette produit (conservée) :** historique détaillé des modifications, annulations et rétablissements (O-03-30). Seuls l'auteur et la date de la création, de la **dernière** modification et de l'annulation sont conservés : aucune traçabilité exhaustive n'est annoncée.
+
+**Correction B2-REV-01 (audit) :** l'éligibilité du responsable est revérifiée à tout déplacement ou changement de durée, même quand son identifiant ne change pas (en 03-B2, elle ne l'était qu'en cas de réattribution) — conforme à « tout changement de créneau ou réattribution exige un collaborateur actif et éligible » ci-dessous.
+
+**Paramètres du magasin fournis le 18/10/2026 :** `Europe/Brussels`, grille 09:00–19:00, aucun jour masqué, capacité d'accueil 1 (utilisés pour le parcours natif sur `mmv_v2_test` ; **à enregistrer** par le propriétaire dans la configuration de MMV.Api). Collaborateurs éligibles et droits réels : à désigner par le propriétaire.
+
 ## Décision du propriétaire — 17/10/2026 (« GO MÉTIER PHASE 03-B2 — RENDEZ-VOUS »)
 
 Mandat : [`prompts/PHASE03_B2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B2_GO_CLAUDE_CODE.md). **D-03-13 à D-03-18 : `ACCEPTED`**, avec les écarts suivants par rapport à la proposition (décision consolidée du propriétaire, qui prévaut). Mise en œuvre : [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md) ; migration 0004 **préparée, non appliquée** (revue SQL requise).
@@ -17,7 +36,7 @@ Mandat : [`prompts/PHASE03_B2_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B2_GO
 
 Intégration demandée : depuis la fiche client, « Prendre un rendez-vous » conserve le client, ouvre le formulaire prérempli, permet de revenir à la fiche, sans seconde recherche (réalisé, `apps/desktop/src/appointments/appointmentLaunch.ts`).
 
-### Paramètres par magasin encore à renseigner (aucune valeur inventée)
+### Paramètres par magasin encore à renseigner (aucune valeur inventée) — *voir les valeurs fournies le 18/10/2026 ci-dessus*
 
 | Paramètre | Clé serveur | État au 17/10/2026 |
 |---|---|---|

@@ -1,6 +1,8 @@
 # 03 — IMPLEMENTATION_SPEC
 
-**Statut (17/10/2026, 03-A3) :** migration `0003_ClientsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; intégration réelle vérifiée de bout en bout ; voir « Réalisation 03-A3 » en fin de document.
+**Statut (18/10/2026, 03-B3) :** migration `0004_AppointmentsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; corrections d'audit B2-REV-01 à B2-REV-04, cohérence des fuseaux serveur ↔ poste, tests PostgreSQL réels et parcours natif Rendez-vous — voir « Réalisation 03-B3 » en fin de document. *Mise à jour 18/10/2026 : ce statut d'en-tête n'avait pas été actualisé en 03-B et 03-B2 (sections « Réalisation 03-B » et « Réalisation 03-B2 » à jour) ; corrigé sans modifier les statuts historiques ci-dessous.*
+
+*Historique — statut 03-A3 (17/10/2026) :* migration `0003_ClientsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; intégration réelle vérifiée de bout en bout ; voir « Réalisation 03-A3 » en fin de document.
 
 *Historique — statut 03-A2 (17/10/2026) :* sous-lots 03-A1 et 03-A2 **implémentés**. G03-METIER A et B acceptés, C accepté sur le principe : routes `/api/clients`, policies et permissions `clients.*` existent dans le code ; la migration `0003_ClientsModule` est **préparée, non appliquée** — aucune table ni permission n'existe encore en base. Section 03-A2 en fin de document.
 
@@ -248,6 +250,7 @@ src/MMV.Infrastructure/Appointments/
   AppointmentModel.cs            schéma appointments : 2 tables, contraintes, index partiels
   AppointmentStore.cs            lectures jointes ; session d'écriture : transaction READ COMMITTED,
                                  pg_advisory_xact_lock(1296913746, clé) par clés croissantes, FOR SHARE client
+                                 (correction 03-B3 : la valeur réelle de 0x4D4D5652 est 1296914002, O-03-27)
 src/MMV.Infrastructure/Persistence/Migrations/20261017150504_AppointmentsModule(.Designer).cs, instantané du modèle
 src/MMV.Api/Appointments/
   AppointmentsSetup.cs           lecture des paramètres au démarrage, journal 3100 / 3103 (jamais d'arrêt de l'API)
@@ -278,3 +281,58 @@ src/MMV.Maintenance/Program.cs   responsibles list | enable | disable <identifia
 **Tests ajoutés ou adaptés.** .NET : `tests/MMV.Api.Tests/Appointments/` — `AppointmentRulesTests` (27), `AppointmentServiceTests` (37), `AppointmentsEndpointsTests` (39), `AppointmentsOpenApiContractTests` (2), `AppointmentTestDoubles.cs` (double transactionnel à verrous réels) ; `ClientsOpenApiContractTests` (extraction partagée), 2 tests préexistants mis à jour (commentaires datés). PostgreSQL : `AppointmentsPostgreSqlTests` (`Stage=AppointmentsWrite`, 6, NOT_TESTED), `SchemaInspection` / `SchemaStateTests` étendus à l'état 0004. Frontend : `time.test.ts` (9), `appointmentForm.test.ts` (7), `AppointmentsModule.test.tsx` (25), `api/appointmentsContract.test.ts` (4), `Shell.test.tsx` (+1). Résultats : QA Q-03-120 à Q-03-138.
 
 **Construction sans perturber le propriétaire.** `MMV.Api.exe` du propriétaire actif : compilation et tests .NET dans un worktree jetable (`git worktree add --detach <bloc-notes>/wt HEAD`, copie des fichiers modifiés) ; migration et scripts générés hors connexion dans ce worktree puis copiés dans `src/` et `docs/phase/03/sql/`.
+
+## Réalisation 03-B3 (17–18/10/2026) — migration 0004 et validation réelle
+
+GO : [`prompts/PHASE03_B3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_B3_GO_CLAUDE_CODE.md). Commits locaux `c2387ff` (corrections serveur, interface et tests) et `990d04f` (correctifs issus du parcours natif, scénarios natifs) ; documentation dans le commit suivant.
+
+**Migration.** `0004_AppointmentsModule.idempotent.sql` appliqué par `scripts/Invoke-MmvSqlScript.ps1` à `mmv_v2_dev` puis `mmv_v2_test` après contrôles (empreinte, régénération hors connexion octet pour octet identique, identité serveur, migrations 0001–0003 seules, absence d'objets `appointments`, structures dev = test) — [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Exécution 03-B3. Aucun nouveau modèle EF : les corrections 03-B3 ne changent pas le schéma.
+
+**Corrections serveur.**
+
+| Fichier | Changement |
+|---|---|
+| `src/MMV.Application/Appointments/AppointmentService.cs` | `UpdateAsync` : `rebooks` = créneau, durée ou responsable modifiés → verrou, éligibilité (B2-REV-01), disponibilité ; rendez-vous commencé + changement de client / créneau / durée / responsable → `AppointmentPast` (B2-REV-02) ; `AppointmentView.UpdatedByDisplayName` |
+| `src/MMV.Application/Appointments/AppointmentSchedule.cs` | `LocalWallTime`, `IsLocalWallTime`, `OffsetSegments` (décalages du serveur par segments, pas de 15 min, transition au tick près), `UtcOffsetSegment` |
+| `src/MMV.Application/Appointments/AppointmentInputValidator.cs` | `AppointmentInput.StartsAtLocal` obligatoire, format strict, `time_zone_mismatch` si l'heure murale du serveur diffère |
+| `src/MMV.Infrastructure/Appointments/AppointmentStore.cs` | `Views()` : tri `orderby` **avant** la projection (défaut trouvé sur PostgreSQL réel : tri après projection non traduisible) ; jointure de l'auteur de la dernière modification |
+| `src/MMV.Api/Appointments/AppointmentsEndpoints.cs` | `startsAtLocal` dans les corps ; `timeZoneOffsets` dans la liste ; `updatedByDisplayName` dans le détail ; instantané OpenAPI régénéré (3 ajouts) |
+
+**Cohérence des fuseaux (B2-REV-03).** Détail et limites : [`API_APPOINTMENTS.md`](API_APPOINTMENTS.md) § Cohérence des fuseaux. Lecture : décalages du serveur comparés par l'interface (`findOffsetDivergence`, `localOffsetSegments` dans `apps/desktop/src/appointments/time.ts`), période bloquée en cas d'écart ; écriture : `startsAtLocal` recalculé par le serveur.
+
+**Interface.**
+
+| Fichier | Changement |
+|---|---|
+| `api/appointments.ts` | `AppointmentInput.startsAtLocal`, `AppointmentList` / `TimeZoneOffset` (parseur strict : segments contigus, non vides, entiers), `updatedByDisplayName` |
+| `appointments/time.ts` | `localWallDateTime`, `localOffsetSegments` (transitions ICU via Temporal), `findOffsetDivergence` |
+| `appointments/AppointmentsModule.tsx` | contrôle des décalages de la période (y compris pendant le chargement, sur la couverture de la période affichée) ; état bloquant « Heure incohérente… » ; aucune création ni déplacement sur une période divergente |
+| `appointments/appointmentForm.ts` | `startsAtLocal` dans les deux constructeurs de saisie ; message `time_zone_mismatch` ; responsable actuel admis même s'il n'est plus éligible |
+| `appointments/AppointmentFormPanel.tsx` | rendez-vous commencé : résumé figé, seuls motif et notes ; responsable retiré proposé « (n'est plus habilité) » ; refus serveur sur un champ masqué (déplacement, réservation figée) affiché en bandeau |
+| `appointments/AppointmentDetailPanel.tsx` | « Dernière modification le … par … » ; « Déplacer » et « Rétablir » désactivés pour un rendez-vous commencé, avec motif |
+| `appointments/AppointmentsCalendar.tsx`, `appointmentsView.ts` | glisser-déposer désactivé pour un rendez-vous commencé (`hasStarted`) ; message `appointment_past` |
+| `appointments/appointmentQueries.ts` | liste des éligibles relue après un refus `not_eligible` / `responsible_unavailable` |
+| `test/fakeAppointmentsApi.ts` | décalages servis (ou divergents, option `serverOffsets`), `startsAtLocal`, auteur de modification, garde du passé (option `appointmentsNow`), éligibilité non revérifiée sans changement de réservation |
+
+**Tests.** .NET 314 (+28) et 50 ; PostgreSQL 40 dont `AppointmentsCommittedPostgreSqlTests.cs` (nouveau : données validées `CommittedTestData`, B2-REV-04 `AppointmentsConcurrencyPostgreSqlTests`, matrice HTTP `AppointmentsHttpPostgreSqlTests`) ; assembly PostgreSQL exécutée séquentiellement (O-03-28) ; `PostgreSqlTheoryAttribute`. Frontend 196 (+11). Témoin négatif rendu déterministe (`InMemoryAppointmentStore.RendezvousBeforeCommit`). QA : Q-03-140 à Q-03-169.
+
+**Parcours natif.**
+
+```powershell
+# Bloc-notes (hors dépôt) : outil jetable des données fictives (seed / eligibility / cleanup), mmv_v2_test seulement
+dotnet run <bloc-notes>/native/b3native.cs -- seed <bloc-notes>/native/creds.json
+# MMV.Api (worktree, code 03-B3) : chaîne mmv_v2_test et paramètres du magasin passés au seul processus
+$env:ConnectionStrings__Mmv = '<secret mmv-v2-postgresql-tests>'; $env:Appointments__TimeZone = 'Europe/Brussels'
+$env:Appointments__DisplayStartTime = '09:00'; $env:Appointments__DisplayEndTime = '19:00'; $env:Appointments__ReceptionCapacity = '1'
+dotnet run --project src/MMV.Api --launch-profile https --no-build
+# apps/desktop
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"; npx tauri dev
+$env:MMV_E2E_CREDENTIALS_FILE = '<bloc-notes>/native/creds.json'; $env:MMV_E2E_TOOL = '<bloc-notes>/native/b3native.cs'
+node --use-system-ca e2e/run-native.mjs rdv-b3 --prefix P03B3_native --out <dossier>
+node --use-system-ca e2e/run-native.mjs rdv-b3-guard --prefix P03B3_native --out <dossier>   # API de test en Africa/Casablanca
+dotnet run <bloc-notes>/native/b3native.cs -- cleanup <suffixe>
+```
+
+`e2e/cdp.mjs` : `drag()` (événements souris réels du moteur). `e2e/run-native.mjs` : scénarios `rdv-b3` (parcours complet) et `rdv-b3-guard` (garde-fou de fuseau).
+
+**Construction sans perturber le propriétaire.** Worktrees jetables du bloc-notes (`wt` : HEAD + corrections ; `wt-head` : HEAD 03-B2 pour mesurer l'instabilité préexistante) ; aucune compilation dans `src/` en place.

@@ -1,0 +1,24 @@
+# P03B3 — frontend (apps/desktop), état final après correctifs du parcours natif, 2026-10-18T10:38Z
+## npm run check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+## npm run lint
+✖ 1 problem (0 errors, 1 warning)
+
+## npm test (3 exécutions complètes)
+ Test Files  17 passed (17)
+      Tests  196 passed (196)
+ Test Files  17 passed (17)
+      Tests  196 passed (196)
+ Test Files  17 passed (17)
+      Tests  196 passed (196)
+## npm run build
+dist/assets/AppointmentsModule-GoDgBxWF.css                         14.22 kB │ gzip:   3.35 kB
+dist/assets/appointmentLaunch-DYtABzqQ.css                          16.03 kB │ gzip:   3.12 kB
+dist/assets/index-Dz30binx.css                                      31.77 kB │ gzip:   7.65 kB
+dist/assets/appointmentLaunch-AKmjeQ7_.js                           27.60 kB │ gzip:   9.46 kB
+dist/assets/ClientsModule-g-ml4FBY.js                               88.37 kB │ gzip:  24.92 kB
+dist/assets/AppointmentsModule-B7uUXoog.js                         379.42 kB │ gzip: 108.04 kB
+dist/assets/index-CSv2EQWB.js                                      550.17 kB │ gzip: 174.71 kB
+[plugin builtin:vite-reporter] 
+✓ built in 949ms

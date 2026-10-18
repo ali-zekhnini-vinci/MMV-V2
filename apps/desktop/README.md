@@ -76,3 +76,9 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 - Formulaire aligné sur D-03-13 à D-03-18 : champ Responsable selon le mode du motif (personnalisé : obligatoire ; accueil : « Non attribué (accueil) » seulement si une capacité est configurée), pas de 5 minutes, heures inexistantes **et ambiguës** refusées (`src/appointments/time.ts`), messages des nouveaux codes serveur (capacité d'accueil atteinte, collaborateur non éligible, changement d'heure).
 - Fiche client : « Prendre un rendez-vous » (`src/clients/ClientDetailView.tsx`, `src/appointments/appointmentLaunch.ts`) ouvre l'agenda avec le client présélectionné et permet de revenir à la fiche ; proposé avec `appointments.write`, désactivé pour un client archivé.
 - Contrat OpenAPI : `src/api/contract/appointments.openapi.json`, contrôlé par `src/api/appointmentsContract.test.ts` (et côté .NET). Aucune dépendance ajoutée.
+
+## Ajouts phase 03-B3 (18/10/2026)
+
+- Contrat Rendez-vous élargi (`docs/phase/03/API_APPOINTMENTS.md`) : chaque saisie envoie `startsAtLocal` ; la liste reçoit `timeZoneOffsets`, comparés aux conversions du poste (`src/appointments/time.ts`, `findOffsetDivergence`) — en cas d'écart, l'agenda de la période est bloqué (« Heure incohérente entre ce poste et le serveur MMV »). Le poste et MMV.Api doivent être à la même version.
+- Rendez-vous commencé : « Déplacer », glisser-déposer et « Rétablir » désactivés ; « Modifier » limité au motif et aux notes ; « Dernière modification le … par … » dans le détail.
+- Parcours natif : `e2e/cdp.mjs` (`drag`, glisser-déposer à la souris), `e2e/run-native.mjs` scénarios `rdv-b3` et `rdv-b3-guard` ; données fictives créées et nettoyées par un outil jetable hors dépôt (variables `MMV_E2E_CREDENTIALS_FILE`, `MMV_E2E_TOOL`) — commandes : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-B3.

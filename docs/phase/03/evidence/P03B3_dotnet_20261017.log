@@ -1,0 +1,4 @@
+# P03B3 — suites .NET (worktree jetable, HEAD f1af9ad + corrections 03-B3), 2026-10-17T19:56Z
+# dotnet build MMV.slnx --no-incremental : 0 avertissement, 0 erreur
+Réussi!  - échec :     0, réussite :   314, ignorée(s) :     0, total :   314, durée : 22 s - MMV.Api.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 6 s - MMV.Maintenance.Tests.dll (net10.0)
