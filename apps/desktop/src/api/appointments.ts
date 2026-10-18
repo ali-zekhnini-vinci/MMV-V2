@@ -99,6 +99,51 @@ export interface AppointmentInput {
   notes: string | null;
 }
 
+/** Historique d'un client (03-D1) : catégorie demandée. */
+export type ClientAppointmentScope = "upcoming" | "past" | "cancelled" | "all";
+
+export interface ClientAppointmentQuery {
+  scope: ClientAppointmentScope;
+  /** Absent : ordre par défaut du serveur (à venir croissant, autres décroissant). */
+  direction?: "asc" | "desc";
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Ligne de l'historique d'un client : aucune donnée du client (déjà sur la fiche), ni notes ni motif d'annulation.
+ * `startsAtLocal` / `endsAtLocal` : heure murale du magasin calculée par le SERVEUR (`AAAA-MM-JJTHH:mm`).
+ */
+export interface ClientAppointmentItem {
+  id: string;
+  startsAtUtc: string;
+  endsAtUtc: string;
+  startsAtLocal: string;
+  endsAtLocal: string;
+  reasonCode: string;
+  status: AppointmentStatus;
+  responsibleUserId: string | null;
+  responsibleDisplayName: string | null;
+  cancelledAtUtc: string | null;
+}
+
+export interface ClientAppointmentCounts {
+  upcoming: number;
+  past: number;
+  cancelled: number;
+}
+
+export interface ClientAppointmentPage {
+  items: ClientAppointmentItem[];
+  page: number;
+  pageSize: number;
+  /** Effectif de la catégorie demandée. */
+  totalCount: number;
+  counts: ClientAppointmentCounts;
+}
+
+export const CLIENT_APPOINTMENTS_PAGE_SIZE = 10;
+
 export type AppointmentStatusFilter = "planned" | "all";
 
 export interface AppointmentRange {
@@ -305,6 +350,73 @@ export function parseAppointmentOptions(body: unknown): AppointmentOptions | nul
     hiddenWeekdays: [...(hiddenWeekdays as number[])],
   };
 }
+
+const LOCAL_WALL_PATTERN = /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/;
+const isCount = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+
+export function parseClientAppointmentItem(value: unknown): ClientAppointmentItem | null {
+  if (!isRecord(value)) return null;
+  const { id, startsAtUtc, endsAtUtc, startsAtLocal, endsAtLocal, reasonCode, status, responsibleUserId, responsibleDisplayName, cancelledAtUtc } = value;
+  if (
+    typeof id !== "string" ||
+    typeof startsAtUtc !== "string" ||
+    typeof endsAtUtc !== "string" ||
+    Number.isNaN(Date.parse(startsAtUtc)) ||
+    Number.isNaN(Date.parse(endsAtUtc)) ||
+    Date.parse(endsAtUtc) <= Date.parse(startsAtUtc) ||
+    typeof startsAtLocal !== "string" ||
+    typeof endsAtLocal !== "string" ||
+    !LOCAL_WALL_PATTERN.test(startsAtLocal) ||
+    !LOCAL_WALL_PATTERN.test(endsAtLocal) ||
+    typeof reasonCode !== "string" ||
+    (status !== "planned" && status !== "cancelled") ||
+    !isNullableString(responsibleUserId) ||
+    !isNullableString(responsibleDisplayName) ||
+    !isNullableString(cancelledAtUtc) ||
+    (status === "cancelled") !== (cancelledAtUtc !== null)
+  ) {
+    return null;
+  }
+  return { id, startsAtUtc, endsAtUtc, startsAtLocal, endsAtLocal, reasonCode, status, responsibleUserId, responsibleDisplayName, cancelledAtUtc };
+}
+
+export function parseClientAppointmentPage(body: unknown): ClientAppointmentPage | null {
+  if (!isRecord(body) || !Array.isArray(body.items) || !isRecord(body.counts)) return null;
+  const { page, pageSize, totalCount } = body;
+  const { upcoming, past, cancelled } = body.counts;
+  if (!isPositiveInteger(page, 100_000) || !isPositiveInteger(pageSize, 100) || !isCount(totalCount) || !isCount(upcoming) || !isCount(past) || !isCount(cancelled)) {
+    return null;
+  }
+  const items: ClientAppointmentItem[] = [];
+  for (const item of body.items) {
+    const parsed = parseClientAppointmentItem(item);
+    if (parsed === null) return null;
+    items.push(parsed);
+  }
+  return { items, page, pageSize, totalCount, counts: { upcoming, past, cancelled } };
+}
+
+export function clientAppointmentsQuery(query: ClientAppointmentQuery): string {
+  const params = new URLSearchParams();
+  params.set("scope", query.scope);
+  if (query.direction) params.set("dir", query.direction);
+  params.set("page", String(query.page));
+  params.set("pageSize", String(query.pageSize));
+  return params.toString();
+}
+
+export const listClientAppointments = (
+  baseUrl: URL,
+  token: string,
+  clientId: string,
+  query: ClientAppointmentQuery,
+  signal?: AbortSignal,
+): Promise<ApiResult<ClientAppointmentPage>> =>
+  requestJson(baseUrl, `/api/appointments/by-client/${encodeURIComponent(clientId)}?${clientAppointmentsQuery(query)}`, {
+    token,
+    parse: parseClientAppointmentPage,
+    signal,
+  });
 
 export function appointmentListQuery(range: AppointmentRange): string {
   const query = new URLSearchParams();

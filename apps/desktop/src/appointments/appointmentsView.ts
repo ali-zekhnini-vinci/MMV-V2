@@ -2,6 +2,7 @@
 // Les messages traduisent des CODES du contrat (docs/phase/03/API_APPOINTMENTS.md), jamais un texte serveur.
 import { type AppointmentOptions, type AppointmentSummary, APPOINTMENTS_NOT_CONFIGURED_CODE } from "../api/appointments.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
+import { cn } from "../lib/utils.ts";
 import { formatNumericDate, formatTimeRange, utcToWall } from "./time.ts";
 
 /** Cinq teintes d'agenda (Lot 2, planches 28–31) attribuées par POSITION du motif dans la liste serveur :
@@ -13,15 +14,31 @@ export function reasonTone(options: AppointmentOptions, reasonCode: string): num
   return index < 0 ? -1 : index % EVENT_TONES;
 }
 
+/**
+ * Classes d'un bloc de la grille. Sans rendez-vous attaché : aperçu de la sélection d'un créneau (`selectMirror`) —
+ * 03-D1 : le glisser sur un créneau libre faisait planter l'agenda (aperçu sans données, défaut latent depuis 03-B).
+ */
+export function eventClassName(options: AppointmentOptions, appointment: AppointmentSummary | undefined, selectedId: string | null, isMirror: boolean): string {
+  if (!appointment) return cn("rdv-ev", "rdv-ev--tone-none", isMirror && "rdv-ev--mirror");
+  const tone = reasonTone(options, appointment.reasonCode);
+  return cn(
+    "rdv-ev",
+    tone >= 0 ? `rdv-ev--tone-${tone}` : "rdv-ev--tone-none",
+    appointment.status === "cancelled" && "rdv-ev--cancelled",
+    appointment.id === selectedId && "rdv-ev--selected",
+    isMirror && "rdv-ev--mirror",
+  );
+}
+
 export function reasonLabel(options: AppointmentOptions, reasonCode: string): string {
   return options.reasons.find((reason) => reason.code === reasonCode)?.label ?? "Motif non répertorié";
 }
 
 export const STATUS_LABEL = { planned: "Planifié", cancelled: "Annulé" } as const;
 
-/** « Y. El Amrani » (vue semaine, colonnes étroites). */
+/** « EL AMRANI Y. » (vue semaine, colonnes étroites) : même ordre « NOM Prénom » que partout ailleurs (O-03-36). */
 export const shortClientName = (appointment: Pick<AppointmentSummary, "clientFirstName" | "clientLastName">) =>
-  `${appointment.clientFirstName.charAt(0).toLocaleUpperCase("fr")}. ${appointment.clientLastName}`;
+  `${appointment.clientLastName.toLocaleUpperCase("fr")} ${appointment.clientFirstName.charAt(0).toLocaleUpperCase("fr")}.`;
 
 export const clientInitials = (appointment: Pick<AppointmentSummary, "clientFirstName" | "clientLastName">) =>
   `${appointment.clientFirstName.charAt(0)}${appointment.clientLastName.charAt(0)}`.toLocaleUpperCase("fr");

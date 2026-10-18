@@ -32,6 +32,8 @@ internal static partial class AppointmentsEndpoints
 
     private static readonly HashSet<string> ListParameters = new(StringComparer.Ordinal) { "from", "to", "status" };
 
+    private static readonly HashSet<string> ClientListParameters = new(StringComparer.Ordinal) { "scope", "dir", "page", "pageSize" };
+
     public static RouteGroupBuilder MapAppointmentsEndpoints(this RouteGroupBuilder api)
     {
         var appointments = api.MapGroup("/appointments")
@@ -47,6 +49,12 @@ internal static partial class AppointmentsEndpoints
             .AddOpenApiOperationTransformer((operation, _, _) =>
             {
                 DescribeListParameters(operation);
+                return Task.CompletedTask;
+            });
+        appointments.MapGet("/by-client/{clientId:guid}", ListForClientAsync).WithName("ListClientAppointments").RequireAuthorization(AuthSetup.AppointmentsReadPolicy)
+            .AddOpenApiOperationTransformer((operation, _, _) =>
+            {
+                DescribeClientListParameters(operation);
                 return Task.CompletedTask;
             });
         appointments.MapGet("/{id:guid}", GetAsync).WithName("GetAppointment").RequireAuthorization(AuthSetup.AppointmentsReadPolicy);
@@ -102,6 +110,38 @@ internal static partial class AppointmentsEndpoints
         return TypedResults.Ok(new AppointmentListResponse(
             [.. items.Select(ToSummary)],
             [.. offsets.Select(o => new TimeZoneOffsetResponse(o.FromUtc, o.ToUtc, o.OffsetMinutes))]));
+    }
+
+    /// <summary>
+    /// Historique des rendez-vous d'un client (03-D1) : <c>appointments.read</c> seul (aucune donnée sans ce droit,
+    /// <c>clients.read</c> ne suffit pas). Lignes minimisées : ni nom ni coordonnées du client (déjà sur la fiche), ni
+    /// notes, ni motif d'annulation ; heures murales du magasin calculées par le SERVEUR (aucune conversion du poste).
+    /// Client inconnu : page vide (rien n'est révélé au-delà de ce que l'agenda montre déjà).
+    /// </summary>
+    private static async Task<Results<Ok<ClientAppointmentPageResponse>, BadRequest<ErrorResponse>>> ListForClientAsync(
+        Guid clientId,
+        HttpRequest request,
+        AppointmentService service,
+        CancellationToken cancellationToken,
+        string? scope = null,
+        string? dir = null,
+        string? page = null,
+        string? pageSize = null)
+    {
+        var query = HasOnlyParameters(request.Query, ClientListParameters) ? ParseClientListQuery(clientId, scope, dir, page, pageSize) : null;
+        if (query is null)
+        {
+            return TypedResults.BadRequest(new ErrorResponse("invalid_query"));
+        }
+
+        var result = await service.ListForClientAsync(query, cancellationToken);
+        var zone = service.Settings.TimeZone!;
+        return TypedResults.Ok(new ClientAppointmentPageResponse(
+            [.. result.Items.Select(view => ToClientItem(view, zone))],
+            result.Page,
+            result.PageSize,
+            result.TotalCount,
+            new ClientAppointmentCountsResponse(result.Counts.Upcoming, result.Counts.Past, result.Counts.Cancelled)));
     }
 
     private static async Task<Results<Ok<AppointmentDetailResponse>, NotFound<ErrorResponse>>> GetAsync(
@@ -252,8 +292,82 @@ internal static partial class AppointmentsEndpoints
     }
 
     /// <summary>Aucun paramètre inconnu ni répété (liste blanche stricte).</summary>
-    internal static bool HasOnlyListParameters(IQueryCollection query) =>
-        query.All(p => ListParameters.Contains(p.Key) && p.Value.Count == 1);
+    internal static bool HasOnlyListParameters(IQueryCollection query) => HasOnlyParameters(query, ListParameters);
+
+    private static bool HasOnlyParameters(IQueryCollection query, HashSet<string> allowed) =>
+        query.All(p => allowed.Contains(p.Key) && p.Value.Count == 1);
+
+    private static void DescribeClientListParameters(OpenApiOperation operation)
+    {
+        static OpenApiSchema Integer(int minimum, int maximum, int fallback) => new()
+        {
+            Type = JsonSchemaType.Integer,
+            Format = "int32",
+            Minimum = minimum.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Maximum = maximum.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Default = JsonValue.Create(fallback),
+        };
+
+        foreach (var parameter in operation.Parameters?.OfType<OpenApiParameter>() ?? [])
+        {
+            parameter.Schema = parameter.Name switch
+            {
+                "scope" => new OpenApiSchema
+                {
+                    Type = JsonSchemaType.String,
+                    Enum = [JsonValue.Create("upcoming"), JsonValue.Create("past"), JsonValue.Create("cancelled"), JsonValue.Create("all")],
+                    Default = JsonValue.Create("upcoming"),
+                },
+                "dir" => new OpenApiSchema
+                {
+                    Type = JsonSchemaType.String,
+                    Enum = [JsonValue.Create("asc"), JsonValue.Create("desc")],
+                    Description = "Défaut : asc pour upcoming, desc sinon.",
+                },
+                "page" => Integer(1, ClientAppointmentQuery.MaxPage, 1),
+                "pageSize" => Integer(1, ClientAppointmentQuery.MaxPageSize, ClientAppointmentQuery.DefaultPageSize),
+                _ => parameter.Schema,
+            };
+        }
+    }
+
+    /// <summary>Catégorie, ordre, page et taille en liste blanche et bornes ; toute autre valeur → <c>null</c> (400).</summary>
+    internal static ClientAppointmentQuery? ParseClientListQuery(Guid clientId, string? scope, string? dir, string? page, string? pageSize)
+    {
+        ClientAppointmentScope? category = (scope ?? "upcoming") switch
+        {
+            "upcoming" => ClientAppointmentScope.Upcoming,
+            "past" => ClientAppointmentScope.Past,
+            "cancelled" => ClientAppointmentScope.Cancelled,
+            "all" => ClientAppointmentScope.All,
+            _ => null,
+        };
+        if (category is null)
+        {
+            return null;
+        }
+
+        bool? descending = dir switch
+        {
+            null => ClientAppointmentQuery.DefaultDescending(category.Value),
+            "asc" => false,
+            "desc" => true,
+            _ => null,
+        };
+        var pageNumber = ClientsEndpoints.BoundedInteger(page ?? "1", 1, ClientAppointmentQuery.MaxPage);
+        var size = ClientsEndpoints.BoundedInteger(pageSize ?? "20", 1, ClientAppointmentQuery.MaxPageSize);
+        return descending is null || pageNumber is null || size is null
+            ? null
+            : new ClientAppointmentQuery(clientId, category.Value, descending.Value, pageNumber.Value, size.Value);
+    }
+
+    private static ClientAppointmentItemResponse ToClientItem(AppointmentView view, TimeZoneInfo zone)
+    {
+        var a = view.Appointment;
+        return new ClientAppointmentItemResponse(
+            a.Id, a.StartsAtUtc, a.EndsAtUtc, AppointmentSchedule.LocalWallTime(zone, a.StartsAtUtc), AppointmentSchedule.LocalWallTime(zone, a.EndsAtUtc),
+            a.ReasonCode, Status(a), a.ResponsibleUserId, view.ResponsibleDisplayName, a.CancelledAtUtc);
+    }
 
     /// <summary>Période [from, to[ en instants UTC, <c>to &gt; from</c>, au plus 31 jours ; statut <c>planned</c> | <c>all</c>.</summary>
     internal static (DateTimeOffset From, DateTimeOffset To, bool IncludeCancelled)? ParseListQuery(string? from, string? to, string? status)
@@ -397,6 +511,30 @@ internal sealed record AppointmentDetailResponse(
 /// [fromUtc, toUtc[) : l'interface les compare à ses propres conversions et bloque la période en cas d'écart (B2-REV-03).
 /// </summary>
 internal sealed record AppointmentListResponse(IReadOnlyList<AppointmentSummaryResponse> Items, IReadOnlyList<TimeZoneOffsetResponse> TimeZoneOffsets);
+
+/// <summary>
+/// Ligne de l'historique d'un client (03-D1) : créneau en UTC ET en heure murale du magasin calculée par le serveur
+/// (<c>AAAA-MM-JJTHH:mm</c>), motif, statut, responsable, date d'annulation. Ni nom ni coordonnées du client, ni
+/// notes, ni motif d'annulation (détail du rendez-vous : <c>GET /api/appointments/{id}</c>).
+/// </summary>
+internal sealed record ClientAppointmentItemResponse(
+    Guid Id,
+    DateTimeOffset StartsAtUtc,
+    DateTimeOffset EndsAtUtc,
+    string StartsAtLocal,
+    string EndsAtLocal,
+    string ReasonCode,
+    AppointmentStatusValue Status,
+    Guid? ResponsibleUserId,
+    string? ResponsibleDisplayName,
+    DateTimeOffset? CancelledAtUtc);
+
+/// <summary>Effectifs du client par catégorie (à venir, passés, annulés), indépendants de la page demandée.</summary>
+internal sealed record ClientAppointmentCountsResponse(int Upcoming, int Past, int Cancelled);
+
+/// <summary>Page de l'historique d'un client ; <c>totalCount</c> = effectif de la catégorie demandée.</summary>
+internal sealed record ClientAppointmentPageResponse(
+    IReadOnlyList<ClientAppointmentItemResponse> Items, int Page, int PageSize, int TotalCount, ClientAppointmentCountsResponse Counts);
 
 /// <summary>Décalage UTC constant du magasin, en minutes, sur [fromUtc, toUtc[.</summary>
 internal sealed record TimeZoneOffsetResponse(DateTimeOffset FromUtc, DateTimeOffset ToUtc, int OffsetMinutes);

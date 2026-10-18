@@ -62,6 +62,9 @@ public interface IAppointmentStore
 
     Task<AppointmentView?> GetAsync(Guid id, CancellationToken cancellationToken);
 
+    /// <summary>Rendez-vous d'un client (03-D1) : page triée par début puis identifiant, et effectifs par catégorie.</summary>
+    Task<ClientAppointmentPage> ListForClientAsync(ClientAppointmentQuery query, DateTimeOffset now, CancellationToken cancellationToken);
+
     /// <summary>Collaborateurs actifs ET explicitement éligibles, triés par nom affiché.</summary>
     Task<IReadOnlyList<ResponsibleOption>> ListEligibleResponsiblesAsync(CancellationToken cancellationToken);
 
@@ -150,6 +153,10 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
         store.ListAsync(fromUtc, toUtc, includeCancelled, cancellationToken);
 
     public Task<AppointmentView?> GetAsync(Guid id, CancellationToken cancellationToken) => store.GetAsync(id, cancellationToken);
+
+    /// <summary>Historique des rendez-vous d'un client (03-D1) ; « à venir » et « passés » selon l'horloge du serveur.</summary>
+    public Task<ClientAppointmentPage> ListForClientAsync(ClientAppointmentQuery query, CancellationToken cancellationToken) =>
+        store.ListForClientAsync(query, Now(), cancellationToken);
 
     public Task<IReadOnlyList<ResponsibleOption>> ListResponsiblesAsync(CancellationToken cancellationToken) =>
         store.ListEligibleResponsiblesAsync(cancellationToken);
@@ -277,6 +284,7 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
         }
 
         appointment.Update(value.ToDetails(), userId, now);
+
         return await session.CommitAsync(cancellationToken)
             ? await SuccessAsync(appointment.Id, cancellationToken)
             : new AppointmentWriteResult(AppointmentWriteStatus.VersionConflict);

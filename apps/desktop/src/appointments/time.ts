@@ -134,6 +134,47 @@ export function findOffsetDivergence(
   return null;
 }
 
+export const TIME_OPTION_REASONS = {
+  past: "passée",
+  nonexistent: "n'existe pas ce jour-là",
+  ambiguous: "existe deux fois ce jour-là",
+} as const;
+
+/**
+ * Heures de début proposées (03-D1) : journée ENTIÈRE du magasin au pas serveur (jamais limitée à la plage affichée
+ * de la grille). Désactivées, avec leur motif : heures déjà passées le jour même (fuseau du magasin), heures
+ * inexistantes ou ambiguës d'un jour de changement d'heure (D-03-13). Sans date choisie, toutes sont proposées. Le
+ * serveur revérifie tout (passé, créneau entier, conflits, capacité) : aucune heure n'est dite « disponible ».
+ */
+export function startTimeOptions(
+  date: CivilDate | null,
+  stepMinutes: number,
+  timeZone: string,
+  now: Temporal.Instant = Temporal.Now.instant(),
+): { value: string; disabledReason?: string }[] {
+  const values: string[] = [];
+  for (let minutes = 0; minutes < 24 * 60; minutes += stepMinutes) {
+    values.push(`${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`);
+  }
+  if (date === null || !isCivilDate(date)) return values.map((value) => ({ value }));
+  const nowWall = now.toZonedDateTimeISO(timeZone);
+  const today = nowWall.toPlainDate().toString();
+  const nowTime = nowWall.toPlainTime().toString({ smallestUnit: "minute" });
+  // Jour sans changement d'heure (cas courant) : décalage identique à 00:00 et le lendemain, journée de 24 h.
+  const day = Temporal.PlainDate.from(date);
+  const start = day.toZonedDateTime({ timeZone });
+  const next = day.add({ days: 1 }).toZonedDateTime({ timeZone });
+  const regular = start.offsetNanoseconds === next.offsetNanoseconds && start.until(next).total("hours") === 24 && start.hour === 0;
+  return values.map((value) => {
+    if (date < today || (date === today && value <= nowTime)) return { value, disabledReason: TIME_OPTION_REASONS.past };
+    if (!regular) {
+      const zoned = wallTimeToUtc(date, value, timeZone);
+      if (!zoned.ok && zoned.reason !== "invalid") return { value, disabledReason: TIME_OPTION_REASONS[zoned.reason] };
+    }
+    return { value };
+  });
+}
+
 /** Instant UTC → date civile et heure murale du magasin. */
 export function utcToWall(utc: string, timeZone: string): { date: CivilDate; time: string } {
   const zoned = Temporal.Instant.from(utc).toZonedDateTimeISO(timeZone);

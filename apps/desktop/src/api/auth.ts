@@ -9,6 +9,7 @@ export const PERMISSION_CLIENTS_WRITE = "clients.write";
 export const PERMISSION_CLIENTS_ARCHIVE = "clients.archive";
 export const PERMISSION_CLIENTS_READ = "clients.read";
 /** Rendez-vous : droits approuvés (D-03-17, 03-B2), contrôlés par les policies serveur `appointments.*`. */
+export const PERMISSION_APPOINTMENTS_READ = "appointments.read";
 export const PERMISSION_APPOINTMENTS_WRITE = "appointments.write";
 export const PERMISSION_APPOINTMENTS_CANCEL = "appointments.cancel";
 

@@ -50,6 +50,8 @@ export interface FakeAppointmentsOptions {
   serverOffsets?: (fromUtc: string, toUtc: string, timeZone: string) => OffsetSegment[];
   /** Instant « serveur » : active le refus 409 `appointment_past` d'un changement de réservation d'un rendez-vous commencé. */
   appointmentsNow?: string;
+  /** Heure murale « serveur » de l'historique client (03-D1) ; par défaut celle de l'ICU du processus (concordante). */
+  serverWallTime?: (utc: string, timeZone: string) => string;
 }
 
 export interface FakeAppointmentRecord {
@@ -262,6 +264,46 @@ export async function handleAppointments(
   if (context.options.appointmentsNotConfigured) return send(response, 503, { code: "appointments_not_configured" });
 
   if (method === "GET" && id === "options") return send(response, 200, settings);
+
+  // 03-D1 : historique d'un client (à venir / passés / annulés / tous), lignes minimisées, heures murales du magasin.
+  if (method === "GET" && id === "by-client") {
+    if (context.options.appointmentsListStatus) return send(response, context.options.appointmentsListStatus, { code: "forced" });
+    const scope = url.searchParams.get("scope") ?? "upcoming";
+    const dir = url.searchParams.get("dir") ?? (scope === "upcoming" ? "asc" : "desc");
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const pageSize = Number(url.searchParams.get("pageSize") ?? "20");
+    if (!["upcoming", "past", "cancelled", "all"].includes(scope) || !["asc", "desc"].includes(dir) || !(page >= 1) || !(pageSize >= 1 && pageSize <= 100)) {
+      return send(response, 400, { code: "invalid_query" });
+    }
+    const serverNow = Date.parse(context.options.appointmentsNow ?? new Date().toISOString());
+    const own = appointments.filter((item) => item.clientId === action);
+    const inScope = (item: FakeAppointmentRecord, candidate: string) =>
+      candidate === "all" ||
+      (candidate === "cancelled" ? item.status === "cancelled" : item.status === "planned" && (Date.parse(item.endsAtUtc) > serverNow) === (candidate === "upcoming"));
+    const selected = own
+      .filter((item) => inScope(item, scope))
+      .sort((a, b) => (a.startsAtUtc.localeCompare(b.startsAtUtc) || a.id.localeCompare(b.id)) * (dir === "asc" ? 1 : -1));
+    const items = selected.slice((page - 1) * pageSize, page * pageSize).map((item) => ({
+      id: item.id,
+      startsAtUtc: item.startsAtUtc,
+      endsAtUtc: item.endsAtUtc,
+      startsAtLocal: (context.options.serverWallTime ?? localWallDateTime)(item.startsAtUtc, settings.timeZone),
+      endsAtLocal: (context.options.serverWallTime ?? localWallDateTime)(item.endsAtUtc, settings.timeZone),
+      reasonCode: item.reasonCode,
+      status: item.status,
+      responsibleUserId: item.responsibleUserId,
+      responsibleDisplayName: item.responsibleDisplayName,
+      cancelledAtUtc: item.cancelledAtUtc,
+    }));
+    const count = (candidate: string) => own.filter((item) => inScope(item, candidate)).length;
+    return send(response, 200, {
+      items,
+      page,
+      pageSize,
+      totalCount: selected.length,
+      counts: { upcoming: count("upcoming"), past: count("past"), cancelled: count("cancelled") },
+    });
+  }
 
   if (method === "GET" && id === undefined) {
     if (context.options.appointmentsListStatus) return send(response, context.options.appointmentsListStatus, { code: "forced" });

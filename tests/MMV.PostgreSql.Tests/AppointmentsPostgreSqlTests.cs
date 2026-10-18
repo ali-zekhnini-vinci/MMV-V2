@@ -274,6 +274,57 @@ public sealed class AppointmentsPostgreSqlTests(ITestOutputHelper output)
     }
 
     /// <summary>Compte auteur, collaborateur (éligible ou non) et client fictifs, dans la transaction du test.</summary>
+    /// <summary>
+    /// 03-D1 : historique d'un client traduit et exécuté PAR POSTGRESQL (filtres par catégorie, tri croissant et
+    /// décroissant, pagination par sous-requête avant jointures, effectifs), autre client exclu.
+    /// </summary>
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    public async Task ClientHistory_FiltersOrdersPaginatesAndCounts_OnPostgreSql()
+    {
+        await using var fixture = await RolledBackScope.OpenAsync(output);
+        var (author, responsible, client) = await SeedAsync(fixture, eligible: true);
+        var (_, _, otherClient) = await SeedAsync(fixture, eligible: true);
+        var service = new AppointmentService(fixture.Get<IAppointmentStore>(), Settings, TimeProvider.System);
+        async Task<Appointment> Create(Guid owner, DateTimeOffset start, Guid? person, string reason)
+        {
+            var result = await service.CreateAsync(In(owner, person, start, 30, reason), author, CancellationToken.None);
+            Assert.Equal(AppointmentWriteStatus.Success, result.Status);
+            fixture.Context.ChangeTracker.Clear();
+            return result.Appointment!.Appointment;
+        }
+
+        var a = await Create(client, Ten, responsible, "conseil_devis");
+        var b = await Create(client, Ten.AddHours(2), null, "retrait_commande");
+        var c = await Create(client, Ten.AddHours(4), responsible, "prise_mesures");
+        var d = await Create(client, Ten.AddDays(1), responsible, "conseil_devis");
+        await Create(otherClient, Ten.AddHours(6), responsible, "conseil_devis");
+        Assert.Equal(AppointmentWriteStatus.Success, (await service.CancelAsync(c.Id, c.Version, null, author, CancellationToken.None)).Status);
+        fixture.Context.ChangeTracker.Clear();
+
+        // « Maintenant » = 12:15 : A terminé (passé), B en cours (à venir), C annulé, D demain.
+        var store = fixture.Get<IAppointmentStore>();
+        var now = Ten.AddHours(2).AddMinutes(15);
+        async Task<ClientAppointmentPage> Page(ClientAppointmentScope scope, bool descending, int page = 1, int size = 20) =>
+            await store.ListForClientAsync(new ClientAppointmentQuery(client, scope, descending, page, size), now, CancellationToken.None);
+
+        var upcoming = await Page(ClientAppointmentScope.Upcoming, descending: false);
+        Assert.Equal([b.Id, d.Id], upcoming.Items.Select(v => v.Appointment.Id));
+        Assert.Equal(new ClientAppointmentCounts(2, 1, 1), upcoming.Counts);
+        Assert.Equal("Responsable PG", upcoming.Items[1].ResponsibleDisplayName);
+        Assert.Null(upcoming.Items[0].ResponsibleDisplayName);
+        Assert.Equal([a.Id], (await Page(ClientAppointmentScope.Past, descending: true)).Items.Select(v => v.Appointment.Id));
+        Assert.Equal([c.Id], (await Page(ClientAppointmentScope.Cancelled, descending: true)).Items.Select(v => v.Appointment.Id));
+        var all = await Page(ClientAppointmentScope.All, descending: true);
+        Assert.Equal([d.Id, c.Id, b.Id, a.Id], all.Items.Select(v => v.Appointment.Id));
+        Assert.Equal(4, all.TotalCount);
+        Assert.Equal([a.Id, b.Id, c.Id, d.Id], (await Page(ClientAppointmentScope.All, descending: false)).Items.Select(v => v.Appointment.Id));
+        var second = await Page(ClientAppointmentScope.All, descending: true, page: 2, size: 1);
+        Assert.Equal([c.Id], second.Items.Select(v => v.Appointment.Id));
+        Assert.Equal(4, second.TotalCount);
+        Assert.Empty((await Page(ClientAppointmentScope.All, descending: true, page: 9, size: 1)).Items);
+        output.WriteLine($"historique : {all.Items.Count} rendez-vous, effectifs {upcoming.Counts}");
+    }
+
     private static async Task<(Guid Author, Guid Responsible, Guid Client)> SeedAsync(RolledBackScope fixture, bool eligible)
     {
         var now = DateTimeOffset.UtcNow;

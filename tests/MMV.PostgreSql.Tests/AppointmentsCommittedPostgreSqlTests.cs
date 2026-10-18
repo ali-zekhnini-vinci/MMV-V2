@@ -279,6 +279,9 @@ public sealed class AppointmentsConcurrencyPostgreSqlTests(ITestOutputHelper out
 
         public Task<AppointmentView?> GetAsync(Guid id, CancellationToken cancellationToken) => inner.GetAsync(id, cancellationToken);
 
+        public Task<ClientAppointmentPage> ListForClientAsync(ClientAppointmentQuery query, DateTimeOffset now, CancellationToken cancellationToken) =>
+            inner.ListForClientAsync(query, now, cancellationToken);
+
         public Task<IReadOnlyList<ResponsibleOption>> ListEligibleResponsiblesAsync(CancellationToken cancellationToken) =>
             inner.ListEligibleResponsiblesAsync(cancellationToken);
 

@@ -3,7 +3,8 @@
 // explicitement, sans compteur ni ligne simulés. Un client archivé est en lecture seule.
 // 03-B2 : « Prendre un rendez-vous » ouvre l'agenda avec ce client présélectionné (appointmentLaunch.ts), proposé
 // avec `appointments.write` ; désactivé pour un client archivé (D-03-16). Le serveur reste seul juge.
-import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarPlus, ClipboardList, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
+// 03-D1 : onglet « Rendez-vous » (historique servi par le module Rendez-vous), présent avec `appointments.read` seulement.
+import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarDays, CalendarPlus, ClipboardList, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { ClientDetail } from "../api/clients.ts";
@@ -11,6 +12,7 @@ import { Button } from "../components/ui/button.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs.tsx";
 import { appointmentLaunchFor } from "../appointments/appointmentLaunch.ts";
 import { useAppointmentPermissions } from "../appointments/appointmentPermissions.ts";
+import { ClientAppointmentsTab } from "../appointments/ClientAppointmentsTab.tsx";
 import { cn } from "../lib/utils.ts";
 import { clientDisplayName, clientInitials, formatIsoDate, formatUtcDate } from "./clientForm.ts";
 import { ClientNoticeBanner } from "./ClientNoticeBanner.tsx";
@@ -23,9 +25,10 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
   const navigate = useNavigate();
   const lifecycle = useClientLifecycle();
   const { canWrite, canArchive } = useClientPermissions();
-  const { canWrite: canBook } = useAppointmentPermissions();
+  const { canWrite: canBook, canRead: canReadAppointments } = useAppointmentPermissions();
   const archived = client.status === "archived";
   const name = clientDisplayName(client);
+  const book = () => navigate("/rendez-vous", { state: appointmentLaunchFor(client, name) });
 
   return (
     <section className="clients-view" aria-labelledby="client-title">
@@ -77,7 +80,7 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
               variant={archived ? undefined : "primary"}
               disabled={archived}
               title={archived ? "Client archivé : aucun nouveau rendez-vous n'est possible" : undefined}
-              onClick={() => navigate("/rendez-vous", { state: appointmentLaunchFor(client, name) })}
+              onClick={book}
             >
               <CalendarPlus size={16} aria-hidden="true" />
               Prendre un rendez-vous
@@ -134,6 +137,12 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
             <User size={16} aria-hidden="true" />
             Informations
           </TabsTrigger>
+          {canReadAppointments && (
+            <TabsTrigger value="appointments">
+              <CalendarDays size={16} aria-hidden="true" />
+              Rendez-vous
+            </TabsTrigger>
+          )}
           <TabsTrigger value="prescriptions">
             <ClipboardList size={16} aria-hidden="true" />
             Ordonnances
@@ -146,6 +155,11 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
         <TabsContent value="info">
           <InformationTab client={client} />
         </TabsContent>
+        {canReadAppointments && (
+          <TabsContent value="appointments">
+            <ClientAppointmentsTab client={client} clientName={name} onBook={canBook && !archived ? book : null} />
+          </TabsContent>
+        )}
         <TabsContent value="prescriptions">
           <StateBlock tone="neutral" icon={ClipboardList} title="Ordonnances — phase ultérieure">
             <p>

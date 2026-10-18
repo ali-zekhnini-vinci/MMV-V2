@@ -13,7 +13,7 @@ import { type KeyboardEvent, useEffect, useMemo, useRef } from "react";
 import type { AppointmentOptions, AppointmentSummary } from "../api/appointments.ts";
 import { cn } from "../lib/utils.ts";
 import { appointmentClientName } from "./appointmentForm.ts";
-import { hasStarted, reasonLabel, reasonTone, shortClientName } from "./appointmentsView.ts";
+import { eventClassName, hasStarted, reasonLabel, shortClientName } from "./appointmentsView.ts";
 import { type CalendarView, type CivilDate, minutesBetween, utcToWall } from "./time.ts";
 
 const FC_VIEW: Record<CalendarView, string> = { day: "timeGridDay", week: "timeGridWeek" };
@@ -124,17 +124,9 @@ export function AppointmentsCalendar({
         dayLaneClass="rdv-fc__daylane"
         nowIndicatorLineClass="rdv-fc__now"
         highlightClass="rdv-fc__highlight"
-        eventClass={(info) => {
-          const appointment = info.event.extendedProps.appointment as AppointmentSummary;
-          const tone = reasonTone(options, appointment.reasonCode);
-          return cn(
-            "rdv-ev",
-            tone >= 0 ? `rdv-ev--tone-${tone}` : "rdv-ev--tone-none",
-            appointment.status === "cancelled" && "rdv-ev--cancelled",
-            appointment.id === selectedId && "rdv-ev--selected",
-            info.isMirror && "rdv-ev--mirror",
-          );
-        }}
+        eventClass={(info) =>
+          eventClassName(options, info.event.extendedProps.appointment as AppointmentSummary | undefined, selectedId, info.isMirror)
+        }
         eventContent={(info) => {
           const appointment = info.event.extendedProps.appointment as AppointmentSummary | undefined;
           if (!appointment) return <div className="rdv-ev__inner">{info.timeText}</div>;

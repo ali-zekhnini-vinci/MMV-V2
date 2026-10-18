@@ -7,6 +7,8 @@ import {
   type AppointmentInput,
   type AppointmentRange,
   cancelAppointment,
+  type ClientAppointmentQuery,
+  listClientAppointments,
   createAppointment,
   getAppointment,
   getAppointmentOptions,
@@ -46,6 +48,21 @@ export function useAppointmentList(range: AppointmentRange | null) {
     queryFn: async ({ signal }) => unwrap(await authorized((url, token) => listAppointments(url, token, range as AppointmentRange, signal))),
     enabled: enabled && range !== null,
     // Navigation jour/semaine : la période précédente reste affichée pendant le chargement de la suivante.
+    placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Historique des rendez-vous d'un client (03-D1). Clé sous `appointmentKeys.lists()` : toute écriture de rendez-vous
+ * l'invalide. `allowed` = droit appointments.read de la session (garde d'affichage ; le serveur décide).
+ */
+export function useClientAppointments(clientId: string, query: ClientAppointmentQuery, allowed: boolean) {
+  const { authorized } = useAuth();
+  const { enabled } = useAppointmentsService();
+  return useQuery({
+    queryKey: [...appointmentKeys.lists(), "client", clientId, query] as const,
+    queryFn: async ({ signal }) => unwrap(await authorized((url, token) => listClientAppointments(url, token, clientId, query, signal))),
+    enabled: enabled && allowed,
     placeholderData: keepPreviousData,
   });
 }

@@ -75,7 +75,8 @@ describe("Shell", () => {
   test("Rendez-vous : system.admin seul n'a aucun droit Rendez-vous -> 403 -> « Accès non autorisé », aucun calendrier", async () => {
     const user = await signIn(ADMIN);
     await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
-    await screen.findByRole("heading", { name: "Rendez-vous", level: 1 });
+    // Module différé (FullCalendar, calendrier 03-D1) : première transformation plus longue que le délai par défaut.
+    await screen.findByRole("heading", { name: "Rendez-vous", level: 1 }, { timeout: 10_000 });
     await screen.findByRole("heading", { name: "Accès non autorisé" });
     assert.equal(screen.queryByRole("grid"), null);
     const optionsCall = api.requests.find((request) => request.path === "/api/appointments/options");

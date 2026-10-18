@@ -143,6 +143,21 @@ internal sealed class InMemoryAppointmentStore : IAppointmentStore
         }
     }
 
+    public Task<ClientAppointmentPage> ListForClientAsync(ClientAppointmentQuery query, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            int Count(ClientAppointmentScope scope) => Appointments.Count(ClientAppointmentFilters.For(query.ClientId, scope, now).Compile());
+            var counts = new ClientAppointmentCounts(Count(ClientAppointmentScope.Upcoming), Count(ClientAppointmentScope.Past), Count(ClientAppointmentScope.Cancelled));
+            var filtered = Appointments.Where(ClientAppointmentFilters.For(query.ClientId, query.Scope, now).Compile()).ToList();
+            var ordered = query.Descending
+                ? filtered.OrderByDescending(a => a.StartsAtUtc).ThenByDescending(a => a.Id)
+                : filtered.OrderBy(a => a.StartsAtUtc).ThenBy(a => a.Id);
+            IReadOnlyList<AppointmentView> items = [.. ordered.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).Select(View)];
+            return Task.FromResult(new ClientAppointmentPage(items, query.Page, query.PageSize, filtered.Count, counts));
+        }
+    }
+
     public Task<IReadOnlyList<ResponsibleOption>> ListEligibleResponsiblesAsync(CancellationToken cancellationToken)
     {
         lock (_gate)

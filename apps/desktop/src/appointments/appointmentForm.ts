@@ -6,7 +6,7 @@
 import { z } from "zod";
 import type { AppointmentDetail, AppointmentInput, AppointmentOptions } from "../api/appointments.ts";
 import { APPOINTMENT_CANCELLATION_REASON_MAX_LENGTH, APPOINTMENT_NOTES_MAX_LENGTH } from "../api/appointments.ts";
-import { formatIsoDate, parseFrenchDate } from "../clients/clientForm.ts";
+import { clientDisplayName, formatIsoDate, parseFrenchDate } from "../clients/clientForm.ts";
 import { localWallDateTime, minutesBetween, utcToWall, wallTimeToUtc } from "./time.ts";
 
 export interface AppointmentFormValues {
@@ -164,6 +164,16 @@ export function toAppointmentFormValues(appointment: AppointmentDetail, timeZone
   };
 }
 
+/**
+ * Créneau sélectionné sur la grille FullCalendar → date, heure et durée préremplies (03-D1), dans le fuseau du
+ * magasin ; durée reprise seulement si le serveur la propose. Le créneau n'est pas « réservé » : le serveur décide.
+ */
+export function slotFormPreset(startUtc: string, endUtc: string, options: AppointmentOptions): Pick<AppointmentFormValues, "date" | "time" | "durationMinutes"> {
+  const wall = utcToWall(startUtc, options.timeZone);
+  const minutes = minutesBetween(startUtc, endUtc);
+  return { date: formatIsoDate(wall.date), time: wall.time, durationMinutes: options.durationsMinutes.includes(minutes) ? String(minutes) : "" };
+}
+
 /** Rendez-vous existant → corps complet (déplacement par glisser : seuls début conservé/changé). */
 export function toAppointmentInputFrom(appointment: AppointmentDetail, startsAtUtc: string, timeZone: string): AppointmentInput {
   return {
@@ -177,8 +187,9 @@ export function toAppointmentInputFrom(appointment: AppointmentDetail, startsAtU
   };
 }
 
+/** « NOM Prénom », même ordre que la liste, la fiche et le sélecteur de clients (O-03-36, 03-D1). */
 export const appointmentClientName = (appointment: { clientFirstName: string; clientLastName: string }) =>
-  `${appointment.clientFirstName} ${appointment.clientLastName}`;
+  clientDisplayName({ firstName: appointment.clientFirstName, lastName: appointment.clientLastName });
 
 export const appointmentClientLabel = (appointment: { clientFirstName: string; clientLastName: string; clientReference: string }) =>
   `${appointmentClientName(appointment)} · ${appointment.clientReference}`;

@@ -26,6 +26,7 @@ import {
   type AppointmentFormValues,
   cancellationSchema,
   EMPTY_APPOINTMENT_FORM,
+  slotFormPreset,
   toAppointmentFormValues,
   toAppointmentInputFrom,
 } from "./appointmentForm.ts";
@@ -182,21 +183,24 @@ function Agenda({ options }: { options: AppointmentOptions }) {
   const today = useCallback(() => todayIn(options.timeZone, now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : undefined), [options.timeZone, now]);
 
   const [view, setView] = useState<CalendarView>("day");
-  const [date, setDate] = useState<CivilDate>(today);
-  const [showCancelled, setShowCancelled] = useState(false);
+  const [date, setDate] = useState<CivilDate>(() => launch?.openAppointment?.date ?? today());
+  // Rendez-vous ouvert depuis l'historique de la fiche (03-D1) : annulés affichés, il peut l'être.
+  const [showCancelled, setShowCancelled] = useState(launch?.openAppointment !== undefined);
   const [panel, setPanel] = useState<Panel>(() =>
-    launch
+    launch?.newAppointmentFor
       ? {
           kind: "form",
           mode: "create",
           values: { ...EMPTY_APPOINTMENT_FORM, ...launch.newAppointmentFor, date: formatIsoDate(todayIn(options.timeZone, now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : undefined)) },
           key: 0,
         }
-      : { kind: "none" },
+      : launch?.openAppointment
+        ? { kind: "detail", id: launch.openAppointment.id }
+        : { kind: "none" },
   );
   // Une seule opération rattachée à la fiche d'origine : après elle, l'agenda reprend son fonctionnement normal.
   const [origin, setOrigin] = useState<AppointmentLaunchState | null>(launch);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(launch?.openAppointment?.id ?? null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [gridFailure, setGridFailure] = useState<FailureView | null>(null);
   const [detailFailure, setDetailFailure] = useState<FailureView | null>(null);
@@ -300,13 +304,7 @@ function Agenda({ options }: { options: AppointmentOptions }) {
 
   const onSelectSlot = (startUtc: string, endUtc: string) => {
     if (!canWrite) return;
-    const wall = utcToWall(startUtc, options.timeZone);
-    const minutes = minutesBetween(startUtc, endUtc);
-    openCreate({
-      date: formatIsoDate(wall.date),
-      time: wall.time,
-      durationMinutes: options.durationsMinutes.includes(minutes) ? String(minutes) : "",
-    });
+    openCreate(slotFormPreset(startUtc, endUtc, options));
   };
 
   const confirmCancel = () => {
@@ -350,6 +348,11 @@ function Agenda({ options }: { options: AppointmentOptions }) {
 
   return (
     <div className="clients-view rdv-view">
+      {origin?.openAppointment && (
+        <div>
+          <BackButton back={{ label: `Retour à la fiche de ${origin.returnLabel}`, to: origin.returnTo }} onBack={(to) => navigate(to)} />
+        </div>
+      )}
       <PageHead
         subtitle={subtitle}
         hint={permissions.canWrite ? undefined : APPOINTMENTS_READ_ONLY_HINT}
@@ -517,7 +520,14 @@ function Agenda({ options }: { options: AppointmentOptions }) {
             permissions={permissions}
             failure={detailFailure}
             restoring={restore.isPending}
-            onClose={() => setPanel({ kind: "none" })}
+            onClose={() => {
+              // Détail ouvert depuis l'historique de la fiche (03-D1) : fermer = revenir à cette fiche.
+              if (origin?.openAppointment && origin.openAppointment.id === panel.id) {
+                navigate(origin.returnTo);
+                return;
+              }
+              setPanel({ kind: "none" });
+            }}
             onEdit={(appointment) => openForm("edit", toAppointmentFormValues(appointment, options.timeZone), appointment)}
             onMove={(appointment) => openForm("move", toAppointmentFormValues(appointment, options.timeZone), appointment)}
             onCancel={(appointment) => {

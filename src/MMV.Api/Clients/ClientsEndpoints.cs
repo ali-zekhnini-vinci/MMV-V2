@@ -256,7 +256,7 @@ internal static partial class ClientsEndpoints
     }
 
     // Chiffres ASCII seulement (ni signe, ni espace, ni séparateur), dans les bornes.
-    private static int? BoundedInteger(string value, int min, int max)
+    internal static int? BoundedInteger(string value, int min, int max)
     {
         if (value.Length is 0 or > 9 || !value.All(char.IsAsciiDigit))
         {

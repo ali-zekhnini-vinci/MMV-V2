@@ -42,6 +42,7 @@ public sealed class AppointmentsEndpointsTests : IDisposable
         _identity.AddUser(hashing, "aucun", Password);
         _identity.AddUser(hashing, "admin", Password, Permissions.SystemAdmin);
         _identity.AddUser(hashing, "lecture", Password, Permissions.AppointmentsRead);
+        _identity.AddUser(hashing, "clients", Password, Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive);
         _identity.AddUser(hashing, "ecriture", Password, Permissions.AppointmentsRead, Permissions.AppointmentsWrite);
         _identity.AddUser(hashing, "annulation", Password, Permissions.AppointmentsRead, Permissions.AppointmentsCancel);
         var complete = _identity.AddUser(
@@ -107,6 +108,7 @@ public sealed class AppointmentsEndpointsTests : IDisposable
         { "GET", "/api/appointments/options" },
         { "GET", "/api/appointments?from=2026-07-16T00:00:00Z&to=2026-07-17T00:00:00Z" },
         { "GET", $"/api/appointments/{Guid.Empty}" },
+        { "GET", $"/api/appointments/by-client/{Guid.Empty}" },
         { "POST", "/api/appointments" },
         { "PUT", $"/api/appointments/{Guid.Empty}" },
         { "POST", $"/api/appointments/{Guid.Empty}/cancel" },
@@ -460,6 +462,111 @@ public sealed class AppointmentsEndpointsTests : IDisposable
     }
 
     /// <summary>Jeudi 16/07/2026 à <paramref name="hour"/>:<paramref name="minute"/> heure de Bruxelles (UTC+2).</summary>
+    [Fact]
+    public async Task ClientHistory_SplitsUpcomingPastCancelled_WithServerWallTimesAndMinimizedRows()
+    {
+        // « Maintenant » = 15/07/2026 10:00 (Bruxelles).
+        var past = _appointments.Seed(_client, _alice, new DateTimeOffset(2026, 7, 14, 8, 0, 0, TimeSpan.Zero), 30);
+        var inProgress = _appointments.Seed(_client, null, new DateTimeOffset(2026, 7, 15, 7, 45, 0, TimeSpan.Zero), 30, "retrait_commande");
+        var future = _appointments.Seed(_client, _alice, At(10), 45);
+        var cancelled = _appointments.Seed(_client, _alice, At(14), 30, cancelled: true);
+        var other = _appointments.Seed(_archivedClient, _alice, At(11), 30);
+        using var client = await AuthenticatedAsync(Configured(), "lecture");
+
+        var upcoming = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}"));
+        Assert.Equal([inProgress.Id, future.Id], upcoming.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+        Assert.Equal("""{"upcoming":2,"past":1,"cancelled":1}""", upcoming.GetProperty("counts").GetRawText());
+        Assert.Equal(2, upcoming.GetProperty("totalCount").GetInt32());
+        var row = upcoming.GetProperty("items")[1];
+        Assert.Equal("2026-07-16T10:00", row.GetProperty("startsAtLocal").GetString());
+        Assert.Equal("2026-07-16T10:45", row.GetProperty("endsAtLocal").GetString());
+        Assert.Equal("Alice Opticienne", row.GetProperty("responsibleDisplayName").GetString());
+        Assert.Equal("planned", row.GetProperty("status").GetString());
+        // Minimisation : ni nom ni coordonnées du client, ni notes, ni motif d'annulation, ni version.
+        Assert.Equal(
+            ["cancelledAtUtc", "endsAtLocal", "endsAtUtc", "id", "reasonCode", "responsibleDisplayName", "responsibleUserId", "startsAtLocal", "startsAtUtc", "status"],
+            PropertyNames(row));
+
+        var pastPage = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?scope=past"));
+        Assert.Equal([past.Id], pastPage.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+        var cancelledPage = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?scope=cancelled"));
+        var cancelledRow = Assert.Single(cancelledPage.GetProperty("items").EnumerateArray());
+        Assert.Equal(cancelled.Id, cancelledRow.GetProperty("id").GetGuid());
+        Assert.Equal("cancelled", cancelledRow.GetProperty("status").GetString());
+        Assert.NotEqual(JsonValueKind.Null, cancelledRow.GetProperty("cancelledAtUtc").ValueKind);
+
+        // Tous : du plus récent au plus ancien par défaut ; ordre croissant sur demande ; autre client jamais inclus.
+        var all = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?scope=all"));
+        Assert.Equal([cancelled.Id, future.Id, inProgress.Id, past.Id], all.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+        var ascending = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?scope=all&dir=asc"));
+        Assert.Equal([past.Id, inProgress.Id, future.Id, cancelled.Id], ascending.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+        Assert.DoesNotContain(other.Id, all.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+    }
+
+    [Fact]
+    public async Task ClientHistory_PaginatesAndReturnsEmptyPageForUnknownClient()
+    {
+        var ids = Enumerable.Range(0, 5).Select(day => _appointments.Seed(_client, _alice, At(10).AddDays(day), 30).Id).ToList();
+        using var client = await AuthenticatedAsync(Configured(), "lecture");
+
+        var second = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?pageSize=2&page=2"));
+        Assert.Equal(ids[2..4], second.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()));
+        Assert.Equal(5, second.GetProperty("totalCount").GetInt32());
+        Assert.Equal(2, second.GetProperty("page").GetInt32());
+        Assert.Equal(2, second.GetProperty("pageSize").GetInt32());
+        var beyond = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}?pageSize=2&page=9"));
+        Assert.Empty(beyond.GetProperty("items").EnumerateArray());
+
+        var unknown = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{Guid.NewGuid()}"));
+        Assert.Empty(unknown.GetProperty("items").EnumerateArray());
+        Assert.Equal("""{"upcoming":0,"past":0,"cancelled":0}""", unknown.GetProperty("counts").GetRawText());
+    }
+
+    [Fact]
+    public async Task ClientHistory_RequiresAppointmentsRead_ClientsPermissionsAreNotEnough()
+    {
+        _appointments.Seed(_client, _alice, At(10), 30);
+        var factory = Configured();
+        foreach (var account in new[] { "clients", "admin", "aucun" })
+        {
+            using var client = await AuthenticatedAsync(factory, account);
+            using var response = await client.GetAsync($"/api/appointments/by-client/{_client}");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.DoesNotContain("Jeanne", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        }
+
+        using var notConfigured = await AuthenticatedAsync(Factory(), "lecture");
+        await AssertErrorAsync(await notConfigured.GetAsync($"/api/appointments/by-client/{_client}"), HttpStatusCode.ServiceUnavailable, "appointments_not_configured");
+    }
+
+    [Theory]
+    [InlineData("?scope=planned")]
+    [InlineData("?dir=up")]
+    [InlineData("?page=0")]
+    [InlineData("?page=-1")]
+    [InlineData("?pageSize=101")]
+    [InlineData("?pageSize=1e2")]
+    [InlineData("?q=martin")]
+    [InlineData("?scope=past&scope=all")]
+    public async Task ClientHistory_InvalidQuery_Gets400(string query)
+    {
+        using var client = await AuthenticatedAsync(Configured(), "lecture");
+
+        await AssertErrorAsync(await client.GetAsync($"/api/appointments/by-client/{_client}{query}"), HttpStatusCode.BadRequest, "invalid_query");
+    }
+
+    [Fact]
+    public async Task ClientHistory_WallTimesFollowTheStoreTimeZone_Morocco()
+    {
+        _appointments.Seed(_client, _alice, At(10), 30);
+        using var client = await AuthenticatedAsync(Factory(AppointmentTestSettings.Configured("Africa/Casablanca")), "lecture");
+
+        var page = await ReadAsync(await client.GetAsync($"/api/appointments/by-client/{_client}"));
+
+        // 08:00 UTC = 09:00 à Casablanca (UTC+1) le 16/07/2026.
+        Assert.Equal("2026-07-16T09:00", page.GetProperty("items")[0].GetProperty("startsAtLocal").GetString());
+    }
+
     private static DateTimeOffset At(int hour, int minute = 0) => new(2026, 7, 16, hour - 2, minute, 0, TimeSpan.Zero);
 
     /// <summary>Corps de création (sans <c>version</c> : champ inconnu refusé) ou de modification (avec).</summary>

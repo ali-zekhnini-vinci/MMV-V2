@@ -944,3 +944,106 @@ th[aria-sort] .clients-sort {
     flex-wrap: wrap;
   }
 }
+
+/* ---------- Fiche client : onglet Rendez-vous (03-D1) ---------- */
+.clients-badge--neutral {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.client-rdv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.client-rdv__head,
+.client-rdv__tools,
+.client-rdv__pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.client-rdv__head {
+  justify-content: space-between;
+}
+
+.client-rdv__head .clients-card__title {
+  margin: 0;
+}
+
+.client-rdv__tools {
+  justify-content: space-between;
+}
+
+.client-rdv__scopes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.client-rdv__scroll {
+  overflow-x: auto;
+}
+
+.client-rdv__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body);
+}
+
+.client-rdv__table th {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.client-rdv__table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.client-rdv__table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.client-rdv__row--cancelled td:not(.client-rdv__action) {
+  color: var(--text-secondary);
+}
+
+.client-rdv__day {
+  color: var(--text-secondary);
+}
+
+.client-rdv__action {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.client-rdv__empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-2);
+  color: var(--text-secondary);
+}
+
+.client-rdv__empty p {
+  margin: 0;
+}
+
+.client-rdv__pager {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}

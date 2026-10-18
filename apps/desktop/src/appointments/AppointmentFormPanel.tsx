@@ -6,16 +6,22 @@
 // atteinte et autres refus 409 en bandeau. Échap ferme le panneau (confirmation si des modifications ne sont pas
 // enregistrées, y compris depuis le menu du Shell). Rendez-vous commencé (B2-REV-02, 03-B3) : la modification ne
 // présente que le motif et les notes, la réservation (client, date, heure, durée, responsable) étant figée.
+// 03-D1 : date choisie dans un calendrier (dates passées du magasin désactivées), heure dans une liste au pas serveur
+// couvrant toute la journée (heures passées, inexistantes ou ambiguës désactivées avec leur motif) ; aucune saisie
+// manuelle ; valeurs inchangées dans le formulaire (`jj/mm/aaaa`, `hh:mm`), le serveur reste seul juge.
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, AlertTriangle, ArrowLeft, Calendar, Check, Clock, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, ArrowLeft, Check, Info, Search, Stethoscope, Timer, User, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useMemo, useRef, useState } from "react";
-import { type FieldErrors, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
+import { Controller, type FieldErrors, useForm, type UseFormRegisterReturn, useWatch } from "react-hook-form";
+import { Temporal } from "temporal-polyfill";
 import type { AppointmentDetail, AppointmentOptions } from "../api/appointments.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
-import { clientDisplayName } from "../clients/clientForm.ts";
+import { clientDisplayName, formatIsoDate, parseFrenchDate } from "../clients/clientForm.ts";
 import { ConfirmDialog } from "../components/ui/alert-dialog.tsx";
 import { Button } from "../components/ui/button.tsx";
+import { DatePicker } from "../components/ui/date-picker.tsx";
 import { Label } from "../components/ui/label.tsx";
+import { TimePicker } from "../components/ui/time-picker.tsx";
 import { cn } from "../lib/utils.ts";
 import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import {
@@ -29,7 +35,10 @@ import { useCreateAppointment, useUpdateAppointment } from "./appointmentQueries
 import { useAppointmentsService } from "./appointmentsService.ts";
 import { describeAppointmentFailure, type FailureView, formatWhen, hasStarted, reasonLabel } from "./appointmentsView.ts";
 import { ClientPicker } from "./ClientPicker.tsx";
-import { addMinutesUtc, formatDuration, formatTimeRange } from "./time.ts";
+import { addMinutesUtc, formatDuration, formatTimeRange, startTimeOptions, todayIn } from "./time.ts";
+
+/** Navigation du calendrier : années proposées au-delà de l'année en cours (affichage seulement, aucune règle). */
+const CALENDAR_YEARS_AHEAD = 5;
 
 export type FormMode = "create" | "edit" | "move";
 
@@ -90,6 +99,15 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
   const clientLabel = useWatch({ control, name: "clientLabel" });
   const clientId = useWatch({ control, name: "clientId" });
   const reasonCode = useWatch({ control, name: "reasonCode" });
+  const civilDate = parseFrenchDate(useWatch({ control, name: "date" }) ?? "");
+  const nowInstant = now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : Temporal.Now.instant();
+  const today = todayIn(options.timeZone, nowInstant);
+  const nowMinute = Math.floor(nowInstant.epochMilliseconds / 60_000);
+  // Recalculé quand la date ou la minute courante changent (le serveur revérifie à l'enregistrement).
+  const timeOptions = useMemo(
+    () => startTimeOptions(civilDate, options.startStepMinutes, options.timeZone, Temporal.Instant.fromEpochMilliseconds(nowMinute * 60_000)),
+    [civilDate, options.startStepMinutes, options.timeZone, nowMinute],
+  );
   const attribution = responsibleMode(options, reasonCode);
   const responsibleHint =
     attribution === "optional"
@@ -236,8 +254,51 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
             )}
             {!locked && (
               <div className="rdv-form__row">
-                <Field label="Date" required icon={<Calendar size={18} />} error={errors.date?.message} hint="jj/mm/aaaa" registration={register("date")} placeholder="jj/mm/aaaa" autoFocus={move} />
-                <Field label="Heure" required icon={<Clock size={18} />} error={errors.time?.message} hint="hh:mm" registration={register("time")} placeholder="hh:mm" />
+                <Controller
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <PickerField label="Date" error={errors.date?.message}>
+                      {(ids) => (
+                        <DatePicker
+                          {...ids}
+                          buttonRef={field.ref}
+                          autoFocus={move}
+                          value={parseFrenchDate(field.value) ?? ""}
+                          onChange={(civil) => field.onChange(formatIsoDate(civil))}
+                          onBlur={field.onBlur}
+                          today={today}
+                          minDate={today}
+                          maxYear={Number(today.slice(0, 4)) + CALENDAR_YEARS_AHEAD}
+                          invalid={errors.date !== undefined}
+                          required
+                        />
+                      )}
+                    </PickerField>
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="time"
+                  render={({ field }) => (
+                    <PickerField label="Heure" error={errors.time?.message}>
+                      {(ids) => (
+                        <TimePicker
+                          {...ids}
+                          buttonRef={field.ref}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          options={timeOptions}
+                          initialFocus={options.displayStartTime}
+                          invalid={errors.time !== undefined}
+                          required
+                          footnote="Disponibilité vérifiée par le serveur à l'enregistrement."
+                        />
+                      )}
+                    </PickerField>
+                  )}
+                />
               </div>
             )}
             {!move && (
@@ -372,6 +433,25 @@ function ClientField({
           Votre compte ne permet pas de rechercher des clients (clients.read).
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Libellé et erreur d'un sélecteur (bouton déclencheur nommé par le libellé puis la valeur affichée). */
+function PickerField({ label, error, children }: { label: string; error?: string; children: (ids: { labelledBy: string; describedBy?: string }) => ReactNode }) {
+  const id = useId();
+  return (
+    <div className="clients-field">
+      <span className="clients-field__label" id={`${id}-label`} data-required>
+        {label}
+      </span>
+      {children({ labelledBy: `${id}-label`, describedBy: error ? `${id}-error` : undefined })}
+      {error && (
+        <div className="clients-field__error" id={`${id}-error`}>
+          <AlertCircle size={14} aria-hidden="true" />
+          {error}
+        </div>
+      )}
     </div>
   );
 }

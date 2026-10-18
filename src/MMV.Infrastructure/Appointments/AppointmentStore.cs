@@ -18,6 +18,38 @@ internal sealed class AppointmentStore(MmvDbContext context) : IAppointmentStore
     public Task<AppointmentView?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         Views(context.Appointments.AsNoTracking().Where(a => a.Id == id)).SingleOrDefaultAsync(cancellationToken);
 
+    /// <summary>
+    /// Historique d'un client (03-D1), index <c>ix_appointments_client_starts_at</c>. La page est découpée sur les
+    /// rendez-vous triés (sous-requête ORDER BY … LIMIT/OFFSET) avant les jointures de <see cref="Views"/>, qui trient
+    /// toujours par ordre croissant : l'ordre décroissant est rétabli en mémoire sur la seule page lue.
+    /// </summary>
+    public async Task<ClientAppointmentPage> ListForClientAsync(ClientAppointmentQuery query, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var appointments = context.Appointments.AsNoTracking();
+        var counts = new ClientAppointmentCounts(
+            await appointments.CountAsync(ClientAppointmentFilters.For(query.ClientId, ClientAppointmentScope.Upcoming, now), cancellationToken),
+            await appointments.CountAsync(ClientAppointmentFilters.For(query.ClientId, ClientAppointmentScope.Past, now), cancellationToken),
+            await appointments.CountAsync(ClientAppointmentFilters.For(query.ClientId, ClientAppointmentScope.Cancelled, now), cancellationToken));
+        var filtered = appointments.Where(ClientAppointmentFilters.For(query.ClientId, query.Scope, now));
+        var total = query.Scope switch
+        {
+            ClientAppointmentScope.Upcoming => counts.Upcoming,
+            ClientAppointmentScope.Past => counts.Past,
+            ClientAppointmentScope.Cancelled => counts.Cancelled,
+            _ => counts.Upcoming + counts.Past + counts.Cancelled,
+        };
+        var ordered = query.Descending
+            ? filtered.OrderByDescending(a => a.StartsAtUtc).ThenByDescending(a => a.Id)
+            : filtered.OrderBy(a => a.StartsAtUtc).ThenBy(a => a.Id);
+        var page = await Views(ordered.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize)).ToListAsync(cancellationToken);
+        if (query.Descending)
+        {
+            page.Reverse();
+        }
+
+        return new ClientAppointmentPage(page, query.Page, query.PageSize, total, counts);
+    }
+
     public async Task<IReadOnlyList<ResponsibleOption>> ListEligibleResponsiblesAsync(CancellationToken cancellationToken) =>
         await (from user in context.Users.AsNoTracking()
                join responsible in context.AppointmentResponsibles.AsNoTracking() on user.Id equals responsible.UserId

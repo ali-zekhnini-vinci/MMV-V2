@@ -125,3 +125,216 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-focus);
 }
+
+/* ---------- Fenêtre contextuelle, calendrier et liste des heures (03-D1) ---------- */
+.mmv-popover {
+  z-index: 30;
+  max-height: var(--radix-popover-content-available-height);
+  overflow: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-3);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  outline: none;
+}
+
+.mmv-picker__trigger {
+  color: var(--text-tertiary);
+}
+
+.mmv-picker__trigger .rdv-input__value {
+  color: var(--text-primary);
+}
+
+.mmv-picker__trigger:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* React DayPicker : variables du style de base remplacées par les jetons MMV (clair et sombre). */
+.mmv-calendar {
+  --rdp-accent-color: var(--accent);
+  --rdp-accent-background-color: var(--accent-soft);
+  --rdp-day-height: 36px;
+  --rdp-day-width: 36px;
+  --rdp-day_button-height: 34px;
+  --rdp-day_button-width: 34px;
+  --rdp-day_button-border-radius: var(--radius-sm);
+  --rdp-selected-border: 2px solid var(--accent);
+  --rdp-today-color: var(--accent);
+  --rdp-disabled-opacity: 0.38;
+  --rdp-outside-opacity: 0.5;
+  --rdp-nav-height: 40px;
+  --rdp-nav_button-height: 32px;
+  --rdp-nav_button-width: 32px;
+  --rdp-dropdown-gap: var(--space-2);
+  color: var(--text-primary);
+}
+
+.mmv-calendar .rdp-month_caption {
+  font-family: var(--font-heading);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.mmv-calendar .rdp-dropdown_root {
+  border-radius: var(--radius-xs);
+}
+
+.mmv-calendar .rdp-dropdown {
+  color: var(--text-primary);
+  background: var(--surface-raised);
+}
+
+.mmv-calendar .rdp-caption_label {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-xs);
+}
+
+.mmv-calendar .rdp-dropdown:focus-visible + .rdp-caption_label {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.mmv-calendar .rdp-chevron {
+  fill: var(--text-secondary);
+}
+
+.mmv-calendar .rdp-button_previous,
+.mmv-calendar .rdp-button_next {
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+.mmv-calendar .rdp-button_previous:hover:not([aria-disabled="true"]),
+.mmv-calendar .rdp-button_next:hover:not([aria-disabled="true"]) {
+  background: var(--surface-hover);
+}
+
+.mmv-calendar .rdp-weekday {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  text-transform: capitalize;
+}
+
+.mmv-calendar .rdp-day_button {
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+
+.mmv-calendar .rdp-day:not(.rdp-disabled):not(.rdp-selected) .rdp-day_button:hover {
+  background: var(--surface-hover);
+}
+
+.mmv-calendar .rdp-today:not(.rdp-outside) {
+  font-weight: var(--weight-bold);
+}
+
+.mmv-calendar .rdp-selected .rdp-day_button {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.mmv-calendar .rdp-day_button:focus-visible,
+.mmv-calendar .rdp-button_previous:focus-visible,
+.mmv-calendar .rdp-button_next:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+}
+
+.mmv-calendar .rdp-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-2);
+}
+
+.mmv-calendar__today {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  color: var(--text-link);
+  cursor: pointer;
+}
+
+.mmv-calendar__today:hover {
+  background: var(--accent-soft);
+}
+
+.mmv-calendar__today:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.mmv-popover--time {
+  width: var(--radix-popover-trigger-width);
+  min-width: 180px;
+  padding: var(--space-2);
+}
+
+.mmv-timelist {
+  position: relative; /* repère de offsetTop des options (défilement de la liste seule) */
+  max-height: 264px; /* ≈ 8 lignes : liste défilante, jamais un panneau géant */
+  margin: 0;
+  padding: 2px;
+  overflow-y: auto;
+  list-style: none;
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.mmv-timelist:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.mmv-timelist__option {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.mmv-timelist__option--active {
+  background: var(--surface-hover);
+  box-shadow: inset 0 0 0 1px var(--border-focus);
+}
+
+.mmv-timelist__option--selected {
+  background: var(--accent-soft);
+  font-weight: var(--weight-semibold);
+  color: var(--accent);
+}
+
+.mmv-timelist__option[aria-disabled="true"] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.mmv-timelist__reason {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.mmv-timelist__foot {
+  margin: var(--space-2) 2px 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}

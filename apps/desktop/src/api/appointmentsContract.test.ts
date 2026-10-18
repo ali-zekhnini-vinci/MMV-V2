@@ -12,11 +12,14 @@ import {
   type AppointmentReason,
   type AppointmentResponsible,
   type AppointmentSummary,
+  type ClientAppointmentCounts,
+  type ClientAppointmentItem,
   type TimeZoneOffset,
   parseAppointmentDetail,
   parseAppointmentList,
   parseAppointmentOptions,
   parseAppointmentSummary,
+  parseClientAppointmentPage,
 } from "./appointments.ts";
 
 interface Schema {
@@ -214,5 +217,43 @@ describe("contrat OpenAPI Rendez-vous ↔ types TypeScript", () => {
       const incomplete = Object.fromEntries(Object.entries(options).filter(([name]) => name !== key));
       assert.equal(parseAppointmentOptions(incomplete), null, `${key} manquant accepté`);
     }
+  });
+});
+
+// 03-D1 : historique des rendez-vous d'un client (GET /api/appointments/by-client/{clientId}).
+const CLIENT_ITEM: Nullability<ClientAppointmentItem> = {
+  id: false,
+  startsAtUtc: false,
+  endsAtUtc: false,
+  startsAtLocal: false,
+  endsAtLocal: false,
+  reasonCode: false,
+  status: false,
+  responsibleUserId: true,
+  responsibleDisplayName: true,
+  cancelledAtUtc: true,
+};
+const COUNTS: Nullability<ClientAppointmentCounts> = { upcoming: false, past: false, cancelled: false };
+
+describe("contrat OpenAPI historique des rendez-vous d'un client (03-D1)", () => {
+  test("réponse typée, paramètres en liste blanche, lecture seule, 503 si magasin non configuré", () => {
+    assertResponseSchema("ClientAppointmentItemResponse", CLIENT_ITEM);
+    assertResponseSchema("ClientAppointmentCountsResponse", COUNTS);
+    assertResponseSchema("ClientAppointmentPageResponse", { items: false, page: false, pageSize: false, totalCount: false, counts: false });
+    const route = contract.paths["/api/appointments/by-client/{clientId}"];
+    assert.deepEqual(Object.keys(route), ["get"]);
+    assert.ok("503" in route.get.responses && "403" in route.get.responses);
+    const parameters = Object.fromEntries((route.get.parameters ?? []).map((parameter) => [parameter.name, parameter]));
+    assert.deepEqual(sorted(Object.keys(parameters)), ["clientId", "dir", "page", "pageSize", "scope"]);
+    assert.deepEqual(parameters.scope.schema.enum, ["upcoming", "past", "cancelled", "all"]);
+  });
+
+  test("le parseur strict accepte un exemple conforme et refuse une heure murale invalide ou une annulation incohérente", () => {
+    const item = { ...(sample(schemas.ClientAppointmentItemResponse, INTERVAL) as Record<string, unknown>), startsAtLocal: "2026-10-17T11:00", endsAtLocal: "2026-10-17T11:30", status: "planned", cancelledAtUtc: null };
+    const page = { items: [item], page: 1, pageSize: 10, totalCount: 1, counts: { upcoming: 1, past: 0, cancelled: 0 } };
+    assert.notEqual(parseClientAppointmentPage(page), null);
+    assert.equal(parseClientAppointmentPage({ ...page, items: [{ ...item, startsAtLocal: "2026-10-17 11:00" }] }), null);
+    assert.equal(parseClientAppointmentPage({ ...page, items: [{ ...item, status: "cancelled" }] }), null);
+    assert.equal(parseClientAppointmentPage({ ...page, counts: { upcoming: 1, past: 0 } }), null);
   });
 });

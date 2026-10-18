@@ -37,7 +37,7 @@ public sealed class AppointmentsOpenApiContractTests
         var paths = document.RootElement.GetProperty("paths");
 
         Assert.Equal(
-            ["/api/appointments", "/api/appointments/options", "/api/appointments/{id}", "/api/appointments/{id}/cancel", "/api/appointments/{id}/restore"],
+            ["/api/appointments", "/api/appointments/by-client/{clientId}", "/api/appointments/options", "/api/appointments/{id}", "/api/appointments/{id}/cancel", "/api/appointments/{id}/restore"],
             paths.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));
         Assert.Equal(["get", "post"], Methods(paths.GetProperty("/api/appointments")));
         Assert.Equal(["get", "put"], Methods(paths.GetProperty("/api/appointments/{id}")));
@@ -46,6 +46,8 @@ public sealed class AppointmentsOpenApiContractTests
             [.. paths.GetProperty(path).GetProperty(method).GetProperty("responses").EnumerateObject().Select(r => r.Name).Order(StringComparer.Ordinal)];
         Assert.Equal(["200", "401", "403", "503"], Statuses("/api/appointments/options", "get"));
         Assert.Equal(["200", "400", "401", "403", "503"], Statuses("/api/appointments", "get"));
+        Assert.Equal(["200", "400", "401", "403", "503"], Statuses("/api/appointments/by-client/{clientId}", "get"));
+        Assert.Equal(["get"], Methods(paths.GetProperty("/api/appointments/by-client/{clientId}")));
         Assert.Equal(["201", "400", "401", "403", "409", "422", "503"], Statuses("/api/appointments", "post"));
         Assert.Equal(["200", "400", "401", "403", "404", "409", "422", "503"], Statuses("/api/appointments/{id}", "put"));
         Assert.Equal(["200", "400", "401", "403", "404", "409", "422", "503"], Statuses("/api/appointments/{id}/restore", "post"));
@@ -56,6 +58,7 @@ public sealed class AppointmentsOpenApiContractTests
                      "AppointmentOptionsResponse", "AppointmentReasonResponse", "AppointmentResponsibleResponse", "AppointmentSummaryResponse",
                      "AppointmentDetailResponse", "AppointmentListResponse", "AppointmentInputRequest", "AppointmentUpdateRequest",
                      "AppointmentCancelRequest", "AppointmentVersionRequest", "ErrorResponse", "ValidationErrorResponse", "TimeZoneOffsetResponse",
+                     "ClientAppointmentPageResponse", "ClientAppointmentItemResponse", "ClientAppointmentCountsResponse",
                  })
         {
             Assert.True(schemas.TryGetProperty(name, out _), $"Schéma absent : {name}");
