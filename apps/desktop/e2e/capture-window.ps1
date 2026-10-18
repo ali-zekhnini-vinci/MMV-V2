@@ -8,7 +8,9 @@ param(
     [Parameter(Mandatory)] [string] $Out,
     [int] $ClientWidth = 0,
     [int] $ClientHeight = 0,
-    [switch] $ClientOnly
+    [switch] $ClientOnly,
+    # 03-C : redimensionnement seul (résolution d'essai), sans capture.
+    [switch] $ResizeOnly
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -39,6 +41,11 @@ if ($ClientWidth -gt 0 -and $ClientHeight -gt 0) {
     $extraW = ($w.Right - $w.Left) - $c.Right; $extraH = ($w.Bottom - $w.Top) - $c.Bottom
     [void][MmvWin32]::SetWindowPos($hwnd, [IntPtr]::Zero, 0, 0, $ClientWidth + $extraW, $ClientHeight + $extraH, 0x0014) # NOZORDER|NOACTIVATE
     Start-Sleep -Milliseconds 900
+}
+if ($ResizeOnly) {
+    $c = New-Object MmvWin32+RECT; [void][MmvWin32]::GetClientRect($hwnd, [ref]$c)
+    "client $($c.Right)x$($c.Bottom)"
+    return
 }
 
 $w = New-Object MmvWin32+RECT; [void][MmvWin32]::GetWindowRect($hwnd, [ref]$w)
