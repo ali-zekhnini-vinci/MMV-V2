@@ -1,6 +1,15 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-## Statut actuel — phase 03 (18/10/2026)
+## Statut actuel — phase 03-D (18/10/2026)
+
+**Phase 03-D (18/10/2026) : `PHASE03_D — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge ; `PHASE03_COMPLETE` **non déclaré**). Mandat : [`prompts/PHASE03_D_GO_CLAUDE_CODE.md`](prompts/PHASE03_D_GO_CLAUDE_CODE.md).
+
+- **03-D1 (livré, aucune migration)** : date au calendrier et heure dans une liste (pas de 5 min, journée entière, heures passées / inexistantes / ambiguës désactivées, fuseau du magasin), préremplissage depuis la grille, onglet « Rendez-vous » de la fiche client (`GET /api/appointments/by-client/{clientId}`, `appointments.read`), O-03-33 à O-03-36 corrigés, défaut latent du glisser sur créneau libre corrigé (O-03-39) ; natif Tauri → HTTPS → API → PostgreSQL 18 (`mmv_v2_test`) 3 × 42 contrôles (clair 100 %, clair 125 %, sombre 150 %).
+- **03-D2 (implémenté, migration `0005_AuditJournal` préparée NON appliquée)** : journal d'audit des actions Clients et Rendez-vous (schéma `audit`, ajout seul, écriture dans la transaction métier, permission dédiée `audit.read`, onglet « Historique ») — **revue du SQL par le propriétaire requise** : [`docs/phase/03/AUDIT_JOURNAL_03D.md`](docs/phase/03/AUDIT_JOURNAL_03D.md) § 8. Tant que 0005 n'est pas appliquée, le code 03-D2 refuse les écritures (O-03-40) : utiliser le commit 03-D1 (`3b5803b`).
+- **Tests** : .NET 349/349 + 50/50 ; PostgreSQL 18 réel 38 PASS, 5 `NOT_TESTED` (exigent 0005), 2 échecs `PostMigration` attendus ; frontend 225/225. Détail : [`docs/phase/03/QA_MATRIX.md`](docs/phase/03/QA_MATRIX.md) Q-03-200 à Q-03-232.
+- **Incident** O-03-41 : archive non suivie `apps/desktop/desktop.zip` endommagée par l'agent (fins de ligne) ; récupération décrite dans le rapport de session.
+
+## Historique — statut phase 03-C (18/10/2026)
 
 **`PHASE03_C — OWNER_FUNCTIONAL_VALIDATION_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge). GO technique 03-C après audit indépendant de 03-B3 (« Validation fonctionnelle finale », [`prompts/PHASE03_C_GO_CLAUDE_CODE.md`](prompts/PHASE03_C_GO_CLAUDE_CODE.md)). **`PHASE03_COMPLETE` non déclaré.**
 

@@ -1,0 +1,9 @@
+# 03-D — frontend (18/10/2026) : npm run check ; npm run lint ; vitest run ; vite build (sortie hors dépôt)
+check : 0 erreur
+✖ 1 problem (0 errors, 1 warning)
+ Test Files  20 passed (20)
+      Tests  225 passed (225)
+assets/ClientsModule-Ck_2-dnv.js                              106.87 kB │ gzip:  30.14 kB
+assets/AppointmentsModule-BA7Bm2LK.js                         394.88 kB │ gzip: 111.25 kB
+assets/index-CjP8iM8I.js                                      554.10 kB │ gzip: 175.79 kB
+✓ built in 999ms

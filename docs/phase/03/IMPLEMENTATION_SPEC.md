@@ -373,3 +373,40 @@ dotnet run <bloc-notes>/native/c3native.cs -- cleanup <suffixe>
 **Build release.** `npx tauri build --no-bundle` ; dans un worktree profond, `CARGO_TARGET_DIR` court (sinon `LNK1104`, O-03-38). L'exécutable release n'a ni adresse d'API ni `connect-src` : écran « Serveur MMV non configuré sur ce poste » (attendu avant empaquetage).
 
 **Tests.** Aucun test applicatif ajouté (code inchangé) ; `Invoke-MmvSqlScript.Tests.ps1` 15 contrôles. QA : Q-03-170 à Q-03-190.
+
+## Réalisation 03-D (18/10/2026) — UX Clients et traçabilité
+
+**03-D1 — sélecteurs, préremplissage, historique des rendez-vous.**
+
+| Élément | Mise en œuvre |
+|---|---|
+| Date | `components/ui/date-picker.tsx` : React DayPicker 10 (`mode="single"`, `locale=fr`, semaine au lundi, listes Mois / Année, `fixedWeeks`) dans `PopoverContent` ; valeur = date civile `AAAA-MM-JJ` du magasin portée par un `Date` local **à midi** (`picker-values.ts`) — jamais `toISOString` ; « aujourd'hui » et la première date admise = `todayIn(timeZone)` ; affichage `JJ/MM/AAAA` ; le formulaire garde ses valeurs `jj/mm/aaaa` (schéma Zod et contrat inchangés) |
+| Heure | `components/ui/time-picker.tsx` : `listbox` ARIA à `aria-activedescendant`, 8 lignes visibles, flèches / Page (± 1 h) / Début / Fin / chiffres tapés, Entrée ou Espace ; options = `startTimeOptions(date, pas serveur, fuseau, maintenant)` : journée entière, motif d'indisponibilité (passée, inexistante, existe deux fois) calculé seulement les jours de changement d'heure ; focus et défilement initiaux dans `onOpenAutoFocus` (contenu de portail monté un rendu plus tard) |
+| Échap | `PopoverContent` arrête la propagation d'Échap : le panneau parent ne se ferme pas |
+| Grille → formulaire | `slotFormPreset` (date, heure, durée si proposée) ; aperçu de sélection sans rendez-vous géré par `eventClassName` (O-03-39) |
+| Historique des rendez-vous | `GET /api/appointments/by-client/{clientId}` (`ClientAppointmentQuery`, filtres `ClientAppointmentFilters` partagés par EF et les doubles, effectifs par catégorie, page découpée sur les rendez-vous triés avant jointures, heures murales calculées par le serveur) ; onglet `ClientAppointmentsTab` (catégories, tri, pagination, avertissement d'écart de fuseau, « Voir le détail » → agenda positionné, annulés affichés, Échap → retour à la fiche) |
+| O-03-33 à O-03-36 | `ConfirmDialog` (élément ouvrant mémorisé dans `onOpenAutoFocus`, refocalisé dans `onCloseAutoFocus`) ; `compactIndicatorText` + bascule CSS sous 1100 px ; panneau `position: absolute` sous 1100 px ; `appointmentClientName` = `clientDisplayName` |
+
+**03-D2 — journal d'audit.** Voir [`AUDIT_JOURNAL_03D.md`](AUDIT_JOURNAL_03D.md). Points d'implémentation : `IAuditRecorder` enregistré en portée de requête sur le **même** `MmvDbContext` ; `ClientService` / `AppointmentService` reçoivent l'enregistreur (constructeur, dépendance obligatoire — aucun repli silencieux « sans audit ») ; `HttpAuditContext` (MMV.Api) fournit `SessionId` et `TraceId` ; `NoAuditContext` hors HTTP ; identifiants UUIDv7 strictement croissants dans l'unité de travail ; lecture `AuditStore` triée par instant puis identifiant décroissants, jointure du nom affiché de l'auteur ; `AuditEndpoints` résout les libellés (heure murale du magasin si configuré, nom affiché actuel des responsables, libellé du motif).
+
+**Tests PostgreSQL avant 0005.** `RolledBackScope` exécute le script **à appliquer** (`0005_AuditJournal.idempotent.sql`, sans `START TRANSACTION` / `COMMIT`) dans la transaction du test si `audit.events` n'existe pas, puis l'annule (`lock_timeout` 10 s). Les tests à données validées ou à deux connexions portent `requiresAuditJournal: true` et sont **ignorés** (`NOT_TESTED`) tant que 0005 n'est pas appliquée. `SchemaInspection` connaît l'état 0001–0005 ; `AuditJournalScript_ProducesExactlyTheExpectedSchema` le vérifie dans les catalogues de la transaction et prouve l'idempotence.
+
+**Génération de la migration sans compiler dans `src/`.** `UseArtifactsOutput=true` et `ArtifactsPath=<dépôt>/.agent-artifacts-ef` (variables d'environnement MSBuild), puis `dotnet restore src/MMV.Infrastructure`, `dotnet tool run dotnet-ef migrations add AuditJournal …` et `migrations script` (direct, `--idempotent`, retour arrière) ; fins de ligne normalisées en LF ; déclencheurs ajoutés à la main dans `Up` / `Down`.
+
+**Banc natif 03-D1.**
+
+```powershell
+# Bloc-notes (hors dépôt) : outil jetable d1native.cs (seed refusé si mmv_v2_test non vide / cleanup / residue / api), mmv_v2_test seulement
+dotnet run <bloc-notes>/native/d1native.cs -- seed <bloc-notes>/native/creds.json
+dotnet build MMV.slnx --artifacts-path .agent-artifacts           # aucune compilation dans src/
+dotnet run <bloc-notes>/native/d1native.cs -- api .agent-artifacts/bin/MMV.Api/debug/MMV.Api.dll <bloc-notes>/native/api.log   # chaîne mmv_v2_test et magasin passés au seul processus
+# apps/desktop
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=9222"; npx tauri dev
+$env:MMV_E2E_CREDENTIALS_FILE = '<bloc-notes>/native/creds.json'
+node --use-system-ca e2e/run-native.mjs parcours-03d1 --prefix P03D_native --out <dossier> --theme light --size 1920x1080 --zoom 1 --day-offset 9 --time 14:00
+node --use-system-ca e2e/run-native.mjs parcours-03d1 --prefix P03D_native --out <dossier> --theme light --size 1440x900 --zoom 1.25 --day-offset 10 --time 16:30
+node --use-system-ca e2e/run-native.mjs parcours-03d1 --prefix P03D_native --out <dossier> --theme dark --size 1440x900 --zoom 1.5 --day-offset 8 --time 11:45
+dotnet run <bloc-notes>/native/d1native.cs -- cleanup <suffixe>
+```
+
+**Tests.** .NET 349 (+35) et 50 ; PostgreSQL 45 (38 PASS, 5 `NOT_TESTED`, 2 `PostMigration` en échec attendu) ; frontend 225 (+29). QA : Q-03-200 à Q-03-232.

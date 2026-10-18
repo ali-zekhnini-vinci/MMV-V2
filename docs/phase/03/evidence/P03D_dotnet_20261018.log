@@ -1,0 +1,5 @@
+# 03-D — suites .NET (18/10/2026), build hors src/ (--artifacts-path), commit de base 981161e + changements 03-D
+    0 Avertissement(s)
+    0 Erreur(s)
+Réussi!  - échec :     0, réussite :   349, ignorée(s) :     0, total :   349, durée : 26 s - MMV.Api.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 6 s - MMV.Maintenance.Tests.dll (net10.0)

@@ -87,3 +87,11 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 
 - Aucun changement de `src/`. Banc natif : scénarios `parcours-03c` (parcours complet accueil → client → fiche → rendez-vous → modification → déplacement clavier et glisser-déposer → annulation / rétablissement au clavier → fiche ; options `--theme`, `--size`, `--zoom`, `--day-offset`, `--first-name`, `--captures`) et `matrice-03c` (2 thèmes × 1440×900 / 1920×1080 × 100 / 125 / 150 %) ; `rdv-b3-guard` paramétrable (`--client-first`, `--responsible`).
 - Corrections du banc : `e2e/send-keys.ps1` lève le verrou de premier plan de Windows et échoue si la fenêtre n'est pas au premier plan ; `e2e/capture-window.ps1 -ResizeOnly` ; une seule session API par compte et par scénario (limite de connexion du serveur) ; zoom réglé après la connexion (qui recharge la page). Commandes : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-C.
+
+## Ajouts phase 03-D (18/10/2026)
+
+- Dépendances (versions figées, MIT) : `react-day-picker` **10.0.2** (+ `date-fns` 4.4.0, `@date-fns/tz` 1.5.0) et `@radix-ui/react-popover` **1.3.1**.
+- Sélecteurs : `src/components/ui/date-picker.tsx` (calendrier dans un Popover, jours portés par des dates civiles, aucune conversion UTC), `time-picker.tsx` (liste ARIA défilante, saisie de chiffres, heures désactivées avec motif), `popover.tsx`, `picker-values.ts`. Formulaire Rendez-vous : aucune saisie manuelle de date ni d'heure.
+- Fiche client : onglet « Rendez-vous » (`src/appointments/ClientAppointmentsTab.tsx`, droit `appointments.read`) et onglet « Historique » (`src/audit/ClientHistoryTab.tsx`, droit dédié `audit.read`, exige la migration 0005 côté serveur).
+- Corrections : focus rendu après Échap dans les confirmations (`components/ui/alert-dialog.tsx`), barre d'état compacte sous 1100 px, panneau Rendez-vous superposé en fenêtre étroite, ordre « NOM Prénom » partout, glisser sur un créneau libre (aperçu de sélection sans rendez-vous).
+- Banc natif : scénario `parcours-03d1` (`e2e/run-native.mjs`, aides `pickDateNative`, `pickTimeNative` ; `fillAppointment` passe par les sélecteurs).

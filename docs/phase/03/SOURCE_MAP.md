@@ -48,6 +48,15 @@ Non installés en 03-A : FullCalendar (installé en 03-B, ci-dessous), `openapi-
 
 Choix de version : 7.1.0 (05/09/2026) est la seule 7.x publiée depuis au moins deux semaines le 17/10/2026 (7.1.1 : 06/10, 7.1.2 : 12/10, 7.1.3 : 16/10) ; `temporal-polyfill` 1.0.5 (11/09/2026) plutôt que 1.0.6 (13/10/2026). Repli 6.1.22 non retenu (publiée le 16/10/2026).
 
+03-D1 (18/10/2026) — ajoutées à versions figées (`npm install --save-exact`, Q-03-201) :
+
+| Paquet | Version | Licence | Raison |
+|---|---|---|---|
+| `react-day-picker` (+ `date-fns` 4.4.0, `@date-fns/tz` 1.5.0) | 10.0.2 | MIT | calendrier du sélecteur de date (mandat : « React DayPicker si nécessaire »), libellés français fournis (`react-day-picker/locale`) |
+| `@radix-ui/react-popover` | 1.3.1 | MIT | fenêtre contextuelle des sélecteurs (shadcn/ui Popover) ; même publication Radix que `@radix-ui/react-dropdown-menu` 2.2.1 déjà installé (dépendances partagées, `react-popper` 1.4.0) |
+
+Choix de version : `react-day-picker` 10.0.2 publié le 30/09/2026 (≥ deux semaines) ; `@radix-ui/react-popover` 1.3.1 (12/10/2026) retenu pour rester sur la publication déjà installée (1.2.0 aurait exigé `react-popper` 1.3.8 en double). Backend : **aucune** dépendance ajoutée (NuGet inchangé).
+
 03-A2 (17/10/2026) : **aucune dépendance ajoutée** (npm ni NuGet ; verrous inchangés). Backend : EF Core 10.0.4, Npgsql EF 10.0.3, `Microsoft.AspNetCore.OpenApi` 10.0.13 (Microsoft.OpenApi 2.x transitif) déjà présents.
 
 ## Traçabilité exigence → chemin
@@ -175,3 +184,19 @@ Sources supplémentaires lues : `prompts/PHASE03_C_GO_CLAUDE_CODE.md` (message d
 | §7 Constats (bloquant / UX) | `VALIDATION_PROPRIETAIRE_03C.md` § 5, O-03-33 à O-03-38 (`GATES_AND_DECISIONS.md`) |
 | §8 Régression et DOCUMENTATION GATE | `README.md`, `docs/phase/03.md`, `docs/PERIMETRE_ET_SEQUENCE.md`, `docs/ADR_ET_DECISIONS.md`, `apps/desktop/README.md`, `docs/phase/03/GATES_AND_DECISIONS.md` (G03-C, G03-DOC), `QA_MATRIX.md` (Q-03-170 à Q-03-190), `IMPLEMENTATION_SPEC.md`, `SOURCE_MAP.md` |
 | Livraison | branche locale `feat/phase-03-clients-rdv` (commits locaux, aucun push, PR ni merge) ; aucune archive demandée par le GO 03-C |
+
+## Traçabilité 03-D (mandat `prompts/PHASE03_D_GO_CLAUDE_CODE.md`)
+
+Sources supplémentaires lues : `prompts/PHASE03_D_GO_CLAUDE_CODE.md` (message de session du 18/10/2026, reproduit à l'identique), `docs/phase/03.md`, `VALIDATION_PROPRIETAIRE_03C.md`, `GATES_AND_DECISIONS.md`, code Clients et Rendez-vous, banc natif.
+
+| Exigence | Chemin |
+|---|---|
+| §1 DatePicker | `apps/desktop/src/components/ui/date-picker.tsx`, `popover.tsx`, `picker-values.ts` (dates civiles sans conversion UTC), `overlays.css` ; intégration `appointments/AppointmentFormPanel.tsx` (aujourd'hui et minimum dans le fuseau du magasin, `time.ts` `todayIn`) |
+| §2 TimePicker, préremplissage | `components/ui/time-picker.tsx` ; `appointments/time.ts` `startTimeOptions` (pas serveur, journée entière, passé / inexistant / ambigu) ; `appointmentForm.ts` `slotFormPreset`, `AppointmentsModule.tsx` ; `AppointmentsCalendar.tsx` + `appointmentsView.ts` `eventClassName` (O-03-39) |
+| §3 Onglet « Rendez-vous » | serveur : `src/MMV.Application/Appointments/ClientAppointments.cs`, `AppointmentService.ListForClientAsync`, `src/MMV.Infrastructure/Appointments/AppointmentStore.cs` `ListForClientAsync`, `src/MMV.Api/Appointments/AppointmentsEndpoints.cs` (`/by-client/{clientId}`) ; interface : `appointments/ClientAppointmentsTab.tsx`, `appointmentQueries.ts` `useClientAppointments`, `appointmentLaunch.ts` (`openAppointment`), `clients/ClientDetailView.tsx` ; contrat `api/appointments.ts`, `contract/appointments.openapi.json`, `API_APPOINTMENTS.md` |
+| §4–5 Architecture et fiabilité de l'audit | `src/MMV.Domain/Audit/AuditEvent.cs`, `src/MMV.Application/Audit/AuditJournal.cs`, `src/MMV.Infrastructure/Audit/`, intégration `ClientService`, `AppointmentService`, `DependencyInjection.cs`, `MmvDbContext.cs` ; `src/MMV.Api/Audit/AuditEndpoints.cs`, `Auth/AuthSetup.cs` (`AuditRead`), `Program.cs` (`HttpAuditContext`) ; `src/MMV.Domain/Identity/Permissions.cs` (`audit.read`) ; décisions `AUDIT_JOURNAL_03D.md` |
+| §6 Onglet « Historique » | `apps/desktop/src/audit/` (`ClientHistoryTab.tsx`, `auditView.ts`, `auditPermissions.ts`), `api/audit.ts`, `contract/audit.openapi.json`, `clients/Clients.css` |
+| §7 Migration 0005 | `src/MMV.Infrastructure/Persistence/Migrations/20261018163108_AuditJournal*.cs`, `MmvDbContextModelSnapshot.cs` ; `docs/phase/03/sql/0005_AuditJournal{,.idempotent,.rollback}.sql` ; tests `tests/MMV.PostgreSql.Tests/AuditPostgreSqlTests.cs`, `RolledBackScope.cs` (simulation en transaction annulée), `SchemaInspection.cs` (état 0001–0005), `PostgreSqlTarget.cs` (`requiresAuditJournal`) |
+| Qualité | `tests/MMV.Api.Tests/Audit/`, `Appointments/AppointmentsEndpointsTests.cs` (historique client), `apps/desktop/src/appointments/pickers.test.ts`, `AppointmentsModule.test.tsx`, `audit/ClientHistoryTab.test.tsx`, `api/auditContract.test.ts`, `api/appointmentsContract.test.ts`, `apps/desktop/src/test/fakeAuditApi.ts`, `fakeAppointmentsApi.ts` ; natif `apps/desktop/e2e/run-native.mjs` (`parcours-03d1`) |
+| O-03-33 à O-03-36 | `components/ui/alert-dialog.tsx` ; `shell/StatusBar.tsx`, `statusBarView.ts`, `Shell.css` ; `appointments/Appointments.css` ; `appointmentForm.ts` `appointmentClientName`, `appointmentsView.ts` `shortClientName` |
+| Livraison | branche locale `feat/phase-03-clients-rdv` (commits locaux, aucun push, PR ni merge) ; archive `git archive` hors dépôt |

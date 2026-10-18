@@ -98,3 +98,20 @@ Contrôle facultatif, en lecture seule, de la forme de requête du correctif O-0
 ```
 
 Attendu : les 4 identifiants de migration sur une ligne, sans « la relation « __efmigrationshistory » n'existe pas ».
+
+## 7. Suite donnée — 18/10/2026 (GO 03-D)
+
+Le propriétaire a testé 03-C et jugé le fonctionnement Clients → Rendez-vous satisfaisant ; GO « PHASE 03-D — UX CLIENTS ET TRAÇABILITÉ » ([`prompts/PHASE03_D_GO_CLAUDE_CODE.md`](../../../prompts/PHASE03_D_GO_CLAUDE_CODE.md)). Les lignes du § 5 et du § 6 ci-dessus sont conservées telles qu'à la livraison 03-C ; état au 18/10/2026 :
+
+| Constat / décision | Suite |
+|---|---|
+| C3-01 / O-03-33 | **corrigé** (03-D1) — focus rendu au bouton après Échap |
+| C3-02 / O-03-34 | **corrigé** (03-D1) — libellés compacts sous 1100 px |
+| C3-03 / O-03-35 | **corrigé** (03-D1) — panneau superposé à l'agenda en fenêtre étroite |
+| C3-04 / O-03-36 | **appliqué par l'agent, à confirmer** — « NOM Prénom » partout |
+| C3-06 / O-03-37, D1 | **réalisé** (03-D1) — onglet « Rendez-vous » de la fiche |
+| D2 | tranchée par le GO 03-D (corriger) |
+| D3 (O-03-16) | **toujours ouverte** |
+| D4 (GO final) | **toujours ouverte** ; s'ajoutent la validation de 03-D1, la revue du SQL 0005 et les décisions D-03-19 à D-03-23 ([`AUDIT_JOURNAL_03D.md`](AUDIT_JOURNAL_03D.md)) |
+
+Parcours complémentaire proposé au propriétaire (commit 03-D1 (`3b5803b`), aucune migration) : Rendez-vous → Nouveau rendez-vous → choisir la date au calendrier et l'heure dans la liste ; glisser sur un créneau libre de la grille (formulaire prérempli) ; fiche client → onglet « Rendez-vous » → « Voir le détail » → Échap (retour à la fiche) ; confirmation d'annulation → Échap (focus sur le bouton). Thèmes clair / sombre, 100 / 125 / 150 %.

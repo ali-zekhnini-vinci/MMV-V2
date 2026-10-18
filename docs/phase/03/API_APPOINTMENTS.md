@@ -38,6 +38,8 @@ Une installation MMV = un magasin en V1. **Aucune valeur par défaut n'est inven
 | `AppointmentUpdateRequest` | `AppointmentInput & { version }` | modification et déplacement (corps complet) |
 | `AppointmentCancelRequest` | `{ version, reason|null }` | annulation (motif ≤ 200, rogné, vide → `null`) |
 | `AppointmentVersionRequest` | `{ version }` | rétablissement |
+| `ClientAppointmentPageResponse` (03-D1) | `ClientAppointmentPage` | `items`, `page`, `pageSize`, `totalCount` (effectif de la catégorie demandée), `counts` (`upcoming`, `past`, `cancelled`, indépendants de la page) |
+| `ClientAppointmentItemResponse` (03-D1) | `ClientAppointmentItem` | `id`, `startsAtUtc`, `endsAtUtc`, `startsAtLocal` / `endsAtLocal` (heure murale du magasin `AAAA-MM-JJTHH:mm` calculée par le **serveur**), `reasonCode`, `status`, `responsibleUserId|null`, `responsibleDisplayName|null`, `cancelledAtUtc|null` ; **ni** nom ni coordonnées du client, **ni** notes, **ni** motif d'annulation, **ni** version |
 
 ## Routes
 
@@ -46,6 +48,7 @@ Une installation MMV = un magasin en V1. **Aucune valeur par défaut n'est inven
 | `GET /api/appointments/options` | `appointments.read` | 200 | 503 |
 | `GET /api/appointments?from&to[&status=planned|all]` | `appointments.read` | 200 | 400 `invalid_query` (paramètre inconnu ou répété, instant non UTC, `to ≤ from`, écart > 31 jours) |
 | `GET /api/appointments/{id}` | `appointments.read` | 200 | 404 `appointment_not_found` |
+| `GET /api/appointments/by-client/{clientId}[?scope=upcoming|past|cancelled|all&dir=asc|desc&page&pageSize]` (03-D1) | `appointments.read` (`clients.read` ne suffit pas) | 200 (client inconnu : page vide) | 400 `invalid_query` (paramètre inconnu ou répété, valeur hors liste, page ∉ [1 ; 100 000], taille ∉ [1 ; 100]) ; 503 |
 | `POST /api/appointments` | `appointments.write` | **201** + `Location` | 400 ; 422 ; 409 `client_archived` / `appointment_conflict` / `reception_capacity_full` |
 | `PUT /api/appointments/{id}` | `appointments.write` | 200 | 400 / `version_required` ; 404 ; 409 `version_conflict` / `appointment_cancelled` / `appointment_past` (03-B3) / `client_archived` / `appointment_conflict` / `reception_capacity_full` ; 422 |
 | `POST /api/appointments/{id}/cancel` | `appointments.cancel` | 200 | 400 ; 404 ; 409 `version_conflict` / `appointment_cancelled` ; 422 `reason: too_long` |
@@ -93,3 +96,10 @@ Table `appointments.responsibles` (`user_id`, `is_eligible`, dates), indépendan
 ## Persistance (migration `0004_AppointmentsModule`, APPLIQUÉE le 17/10/2026 — *historique 03-B2 : non appliquée*)
 
 Dossier SQL exact et empreintes : [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Dossier de migration 0004 — version 03-B2.
+
+## Amendement 18/10/2026 (03-D1) — historique des rendez-vous d'un client
+
+Route **ajoutée** (aucune route existante modifiée) : `GET /api/appointments/by-client/{clientId}`, requête filtrée par client dans le module Rendez-vous, index existant `ix_appointments_client_starts_at` (aucune migration). Catégories selon l'horloge du **serveur** : **à venir** = planifiés non encore terminés (en cours compris), tri croissant par défaut ; **passés** = planifiés terminés ; **annulés** ; **tous** — tri décroissant par défaut ; `dir` force l'ordre ; ordre total par début puis identifiant ; pagination par sous-requête triée avant jointures (prouvée sur PostgreSQL 18 réel, Q-03-206). Instantané OpenAPI : `apps/desktop/src/api/contract/appointments.openapi.json` (ajout pur). Interface : onglet « Rendez-vous » de la fiche (`apps/desktop/src/appointments/ClientAppointmentsTab.tsx`).
+
+03-D2 (même date) : toute écriture réussie produit son événement d'audit dans la même transaction ([`AUDIT_JOURNAL_03D.md`](AUDIT_JOURNAL_03D.md)) ; aucun changement de contrat pour les routes ci-dessus.
+
