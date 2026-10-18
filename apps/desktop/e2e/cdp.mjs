@@ -65,6 +65,24 @@ export async function connect(port, urlPrefix = "http://localhost:1420") {
       await send("Input.insertText", { text });
       await sleep(50);
     },
+    /**
+     * Glisser-déposer à la souris (03-B3) : vrais événements pointeur du moteur (Input.dispatchMouseEvent), bouton
+     * gauche pressé en (x1, y1), déplacé par paliers, relâché en (x2, y2). Coordonnées CSS de la vue.
+     */
+    async drag(x1, y1, x2, y2, steps = 12) {
+      await send("Input.dispatchMouseEvent", { type: "mouseMoved", x: x1, y: y1 });
+      await send("Input.dispatchMouseEvent", { type: "mousePressed", x: x1, y: y1, button: "left", buttons: 1, clickCount: 1 });
+      await sleep(150);
+      for (let step = 1; step <= steps; step++) {
+        const x = x1 + ((x2 - x1) * step) / steps;
+        const y = y1 + ((y2 - y1) * step) / steps;
+        await send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y, button: "left", buttons: 1 });
+        await sleep(40);
+      }
+      await sleep(150);
+      await send("Input.dispatchMouseEvent", { type: "mouseReleased", x: x2, y: y2, button: "left", buttons: 0, clickCount: 1 });
+      await sleep(300);
+    },
     async waitFor(predicate, { timeoutMs = 15000, label = predicate } = {}) {
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {

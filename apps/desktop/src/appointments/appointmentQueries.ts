@@ -92,6 +92,11 @@ function useAppointmentWrite<TVariables>(write: (url: URL, token: string, variab
       if (error.error.code === "version_conflict" || error.error.kind === "not-found") {
         await queryClient.invalidateQueries({ queryKey: appointmentKeys.all });
       }
+      // Collaborateur retiré entre-temps (03-B3, constaté en natif) : la liste des éligibles est relue sans attendre
+      // l'expiration du cache, pour ne plus le proposer comme éligible.
+      if (error.error.code === "responsible_unavailable" || error.error.fieldErrors?.responsibleUserId?.includes("not_eligible")) {
+        await queryClient.invalidateQueries({ queryKey: appointmentKeys.options() });
+      }
     },
   });
 }

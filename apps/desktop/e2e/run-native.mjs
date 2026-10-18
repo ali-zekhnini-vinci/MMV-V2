@@ -132,7 +132,299 @@ async function otherPostUpdate(account, search, city) {
   return put.status;
 }
 
+// ——— Rendez-vous (03-B3) : magasin configuré par le propriétaire (Europe/Brussels, grille 09:00–19:00, aucun jour
+// masqué, capacité d'accueil 1), données FICTIVES validées sur mmv_v2_test par l'outil jetable désigné par
+// MMV_E2E_TOOL (comptes b3n-*, clients « Fictif-B3N-* »), nettoyées après la passe.
+const J = JSON.stringify;
+const API = "https://localhost:7267";
+
+/** Lecture de l'état réel par l'API (compte éphémère ; jeton jamais affiché). */
+async function apiGet(account, path) {
+  const json = { "Content-Type": "application/json" };
+  const login = await fetch(`${API}/api/auth/login`, { method: "POST", headers: json, body: J({ userName: account.userName, password: account.password }) });
+  const auth = { Authorization: `Bearer ${(await login.json()).accessToken}` };
+  const response = await fetch(`${API}${path}`, { headers: auth });
+  const body = await response.json();
+  await fetch(`${API}/api/auth/logout`, { method: "POST", headers: auth });
+  return body;
+}
+
+function tool(...toolArgs) {
+  const path = process.env.MMV_E2E_TOOL;
+  if (!path) throw new Error("MMV_E2E_TOOL absent.");
+  const output = execFileSync("dotnet", ["run", path, "--", ...toolArgs], { encoding: "utf8" }).trim();
+  log("OUTIL", output.split("\n").pop());
+}
+
+async function setSelect(page, label, optionText) {
+  const ok = await page.evaluate(`(() => {
+    const l = [...document.querySelectorAll('label[for]')].find(l => l.textContent.replace('*', '').trim() === ${J(label)});
+    const s = l && document.getElementById(l.htmlFor);
+    if (!s || s.tagName !== 'SELECT') return false;
+    const o = [...s.options].find(o => o.textContent.trim() === ${J(optionText)});
+    if (!o) return false;
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value);
+    s.dispatchEvent(new Event('change', { bubbles: true }));
+    return true;
+  })()`);
+  check(ok, `${label} = ${optionText}`);
+}
+
+const click = (page, expression, label) => page.evaluate(`(() => { const e = ${expression}; if (!e) return false; e.click(); return true; })()`).then((ok) => check(ok, label));
+const inAside = (label) =>
+  `[...document.querySelectorAll('aside button')].find(b => (b.getAttribute('aria-label') || b.textContent.trim()) === ${J(label)})`;
+const inDialog = (label) => `[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent.trim() === ${J(label)})`;
+const eventFor = (text) =>
+  `[...document.querySelectorAll('section[aria-label="Agenda"] [data-appointment-id]')].map(e => e.closest('[role=button]')).find(b => b && b.textContent.includes(${J(text)}))`;
+
+async function openRdv(page) {
+  await page.evaluate(`${navButton("Rendez-vous")}.click()`);
+  await page.waitFor("document.querySelector('h1')?.textContent === 'Rendez-vous' && !!document.querySelector('section[aria-label=\"Agenda\"]')", { label: "agenda" });
+}
+
+async function pickClient(page, firstName, lastName) {
+  await click(page, "document.querySelector('aside button[aria-haspopup=\"listbox\"]')", "ouverture du sélecteur de client");
+  await page.waitFor("!!document.querySelector('[aria-label=\"Rechercher un client actif\"]')", { label: "sélecteur de client" });
+  await page.evaluate("document.querySelector('[aria-label=\"Rechercher un client actif\"]').focus()");
+  await page.type(lastName);
+  // Libellé « NOM Prénom » (clientDisplayName) : nom comparé sans casse.
+  const option = `[...document.querySelectorAll('[role=option]')].find(o => o.textContent.toUpperCase().includes(${J(lastName.toUpperCase())}) && o.textContent.includes(${J(` ${firstName}`)}))`;
+  await page.waitFor(`!!${option}`, { label: `client ${firstName}` });
+  await click(page, option, `client ${firstName} choisi`);
+  await page.waitFor(`document.querySelector('aside button[aria-haspopup="listbox"]')?.textContent.includes(${J(firstName)})`, { label: "client affiché" });
+}
+
+async function fillAppointment(page, { client, last, date, time, duration, responsible, reason, notes }) {
+  if (client) await pickClient(page, client, last);
+  if (date) await fillField(page, "Date", date);
+  if (time) await fillField(page, "Heure", time);
+  if (duration) await setSelect(page, "Durée", duration);
+  if (reason) await setSelect(page, "Motif", reason);
+  if (responsible) await setSelect(page, "Responsable", responsible);
+  if (notes !== undefined) await fillField(page, "Notes", notes);
+}
+
+async function abandonForm(page) {
+  await click(page, inAside("Annuler"), "Annuler la saisie");
+  if (await page.evaluate(`!!${inDialog("Abandonner")}`)) await click(page, inDialog("Abandonner"), "abandon confirmé");
+  await page.waitFor("!document.querySelector('aside form')", { label: "formulaire fermé" });
+}
+
+async function openEvent(page, text) {
+  await page.waitFor(`!!${eventFor(text)}`, { label: `rendez-vous « ${text} » affiché` });
+  await click(page, eventFor(text), `ouverture de « ${text} »`);
+  await page.waitFor("document.querySelector('aside[aria-label^=\"Détail du rendez-vous de\"]')?.textContent.includes('Responsable')", { label: "détail" });
+}
+
+const dayList = async (account, day) => (await apiGet(account, `/api/appointments?from=${day}T00:00:00Z&to=${day}T23:00:00Z&status=all`)).items;
+
 const scenarios = {
+  /**
+   * Garde-fou B2-REV-03 sur la divergence RÉELLE de ce poste (O-03-22) : MMV.Api de TEST configuré en
+   * Africa/Casablanca (essai du garde-fou, pas la configuration du magasin). Windows place UTC+0 dès le 01/01/2026,
+   * WebView2 le 15/02/2026 : la semaine du 05/01/2026 doit être bloquée et une saisie au 15/01/2026 refusée par le
+   * serveur ; la semaine courante (données concordantes) reste utilisable.
+   */
+  async "rdv-b3-guard"(page) {
+    const { agent, clientLastName: last } = credentials();
+    await setZoom(page, 1);
+    await signIn(page, agent);
+    await setTheme(page, "light");
+    await openRdv(page);
+    await click(page, buttonByName("Semaine"), "vue Semaine");
+    await page.waitFor(hasText("Semaine du"), { label: "vue Semaine" });
+    check(!(await text(page)).includes("Heure incohérente"), "semaine courante (Casablanca) : décalages Windows = WebView2");
+    for (let i = 0; i < 60 && !(await text(page)).includes("Semaine du 5 au 11 janvier 2026"); i++) {
+      await click(page, buttonByName("Semaine précédente"), `Semaine précédente (${i + 1})`);
+      await page.sleep(120);
+    }
+    await page.waitFor(hasText("Semaine du 5 au 11 janvier 2026"), { label: "semaine du 05/01/2026" });
+    await page.waitFor(hasText("Heure incohérente entre ce poste et le serveur MMV"), { label: "agenda de la période bloqué" });
+    check((await text(page)).includes("UTC selon le serveur, UTC+1 selon ce poste"), "écart affiché : serveur UTC, poste UTC+1");
+    check(!(await page.evaluate(`!!${buttonByText("Nouveau rendez-vous")}`)), "aucune création proposée sur la période bloquée");
+    capture("rdv_guard_week_blocked_1920x1080", { width: 1920, height: 1080 });
+
+    await click(page, buttonByText("Aujourd'hui"), "Aujourd'hui");
+    await page.waitFor("!document.body.innerText.includes('Heure incohérente')", { label: "semaine courante débloquée" });
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await fillAppointment(page, { client: "Natif", last, date: "15/01/2026", time: "10:00", duration: "30 minutes", reason: "Conseil / Devis", responsible: "B3N Responsable Deux" });
+    await click(page, inAside("Créer"), "Créer (15/01/2026)");
+    await page.waitFor("document.querySelector('aside form')?.textContent.includes(\"L'heure de ce poste diffère de celle du serveur MMV\")", { label: "refus serveur time_zone_mismatch" });
+    capture("rdv_guard_write_refused_1920x1080", { width: 1920, height: 1080 });
+    await abandonForm(page);
+    const january = await apiGet(agent, "/api/appointments?from=2026-01-01T00:00:00Z&to=2026-01-31T00:00:00Z&status=all");
+    check(january.items.length === 0, "API : aucun rendez-vous enregistré en janvier 2026");
+    log("DÉCALAGES SERVEUR (semaine du 05/01/2026)", J(january.timeZoneOffsets.slice(0, 3)));
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+  },
+
+  /**
+   * Parcours Rendez-vous complet (03-B3) : création, conflit, capacité d'accueil, modification, déplacement (clavier
+   * et glisser-déposer), responsable retiré de l'éligibilité, annulation / rétablissement, création depuis la fiche
+   * client sans seconde recherche, semaine du changement d'heure (25/10/2026) sans écart de fuseau.
+   */
+  async "rdv-b3"(page) {
+    const { agent, other, suffix, clientLastName: last } = credentials();
+    await setZoom(page, 1);
+    await signIn(page, agent);
+    await setTheme(page, "light");
+    await openRdv(page);
+    check(!(await text(page)).includes("Agenda non configuré"), "magasin configuré (pas de 503)");
+    check(!(await text(page)).includes("Heure incohérente"), "aujourd'hui : décalages serveur = poste");
+    for (let i = 0; i < 3 && !(await text(page)).includes("Lundi 19 octobre 2026"); i++) {
+      await click(page, buttonByName("Jour suivant"), "Jour suivant");
+      await page.sleep(400);
+    }
+    await page.waitFor(hasText("Lundi 19 octobre 2026"), { label: "lundi 19/10/2026" });
+    capture("rdv_day_empty_1920x1080", { width: 1920, height: 1080 });
+
+    // 1. Création d'un rendez-vous personnalisé.
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await page.waitFor("!!document.querySelector('aside[aria-label=\"Nouveau rendez-vous\"]')", { label: "formulaire" });
+    check((await text(page)).includes("Heures du magasin (Europe/Brussels)"), "fuseau du magasin affiché");
+    await fillAppointment(page, { client: "Natif", last, date: "19/10/2026", time: "10:00", duration: "30 minutes", reason: "Conseil / Devis", responsible: "B3N Responsable Un", notes: "Note native fictive" });
+    capture("rdv_form_filled_1920x1080", { width: 1920, height: 1080 });
+    await click(page, inAside("Créer"), "Créer");
+    await page.waitFor(hasText("Rendez-vous créé"), { label: "création" });
+    let items = await dayList(agent, "2026-10-19");
+    check(items.length === 1 && items[0].startsAtUtc.startsWith("2026-10-19T08:00:00") && items[0].responsibleDisplayName === "B3N Responsable Un",
+      "API : 10:00 Bruxelles = 08:00Z, responsable Un");
+    capture("rdv_created_1920x1080", { width: 1920, height: 1080 });
+
+    // 2. Conflit horaire (même responsable).
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await fillAppointment(page, { client: "Accueil", last, date: "19/10/2026", time: "10:15", duration: "30 minutes", reason: "Conseil / Devis", responsible: "B3N Responsable Un" });
+    await click(page, inAside("Créer"), "Créer (conflit)");
+    await page.waitFor("document.querySelector('aside [role=alert]')?.textContent.includes('Conflit horaire')", { label: "conflit" });
+    capture("rdv_conflict_1920x1080", { width: 1920, height: 1080 });
+    await abandonForm(page);
+
+    // 3. Capacité d'accueil (1) : une place prise, la seconde refusée.
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await fillAppointment(page, { client: "Accueil", last, date: "19/10/2026", time: "11:00", duration: "30 minutes", reason: "Retrait de commande", responsible: "Non attribué (accueil)" });
+    await click(page, inAside("Créer"), "Créer (accueil)");
+    await page.waitFor(hasText("Rendez-vous créé"), { label: "accueil 11:00" });
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous");
+    await fillAppointment(page, { client: "Fiche", last, date: "19/10/2026", time: "11:15", duration: "30 minutes", reason: "SAV / Réparation", responsible: "Non attribué (accueil)" });
+    await click(page, inAside("Créer"), "Créer (accueil complet)");
+    await page.waitFor("document.querySelector('aside [role=alert]')?.textContent.includes(\"Capacité d'accueil atteinte\")", { label: "capacité atteinte" });
+    capture("rdv_capacity_full_1920x1080", { width: 1920, height: 1080 });
+    await abandonForm(page);
+
+    // 4. Modification (notes) : auteur et date de la dernière modification affichés.
+    await openEvent(page, `Natif ${last}`);
+    await click(page, inAside("Modifier"), "Modifier");
+    await page.waitFor("!!document.querySelector('aside[aria-label=\"Modifier le rendez-vous\"]')", { label: "formulaire de modification" });
+    await fillField(page, "Notes", "Note modifiée");
+    await click(page, inAside("Enregistrer"), "Enregistrer");
+    await page.waitFor(hasText("Rendez-vous modifié"), { label: "modification" });
+    await page.waitFor(hasText("par B3N Agent"), { label: "auteur de la dernière modification" });
+    capture("rdv_detail_modified_1920x1080", { width: 1920, height: 1080 });
+
+    // 5. Déplacement au clavier (commande « Déplacer ») : 10:00 → 12:00.
+    await click(page, inAside("Déplacer"), "Déplacer");
+    await page.waitFor("!!document.querySelector('aside[aria-label=\"Déplacer le rendez-vous\"]')", { label: "formulaire de déplacement" });
+    await fillField(page, "Heure", "12:00");
+    await page.press("Enter");
+    await page.waitFor(hasText("Rendez-vous déplacé"), { label: "déplacement" });
+    items = await dayList(agent, "2026-10-19");
+    check(items.some((i) => i.clientFirstName === "Natif" && i.startsAtUtc.startsWith("2026-10-19T10:00:00")), "API : déplacé à 12:00 Bruxelles (10:00Z)");
+
+    // 6. Glisser-déposer réel (souris) : 12:00 → 13:00 (deux hauteurs d'un rendez-vous de 30 min).
+    await click(page, inAside("Fermer le détail"), "fermeture du détail");
+    await page.waitFor(`!!${eventFor(`Natif ${last}`)}`, { label: "rendez-vous visible" });
+    const [x, y, h] = await page.evaluate(`(() => { const r = (${eventFor(`Natif ${last}`)}).getBoundingClientRect(); return [r.left + r.width / 2, r.top + 6, r.height]; })()`);
+    log("GLISSER", `départ (${Math.round(x)}, ${Math.round(y)}), hauteur ${Math.round(h)} px`);
+    await page.drag(x, y, x, y + 2 * h);
+    await page.waitFor(hasText("Rendez-vous déplacé"), { label: "glisser-déposer accepté", timeoutMs: 15000 });
+    await page.sleep(800);
+    items = await dayList(agent, "2026-10-19");
+    const dropped = items.find((i) => i.clientFirstName === "Natif");
+    check(dropped?.startsAtUtc.startsWith("2026-10-19T11:00:00"), `API : déposé à 13:00 Bruxelles (11:00Z) — obtenu ${dropped?.startsAtUtc}`);
+    capture("rdv_drag_drop_1920x1080", { width: 1920, height: 1080 });
+
+    // 7. Responsable retiré de l'éligibilité : déplacement refusé (B2-REV-01), notes toujours corrigeables.
+    tool("eligibility", suffix, "off");
+    await openEvent(page, `Natif ${last}`);
+    await click(page, inAside("Déplacer"), "Déplacer (responsable retiré)");
+    await page.waitFor("!!document.querySelector('aside[aria-label=\"Déplacer le rendez-vous\"]')", { label: "formulaire de déplacement" });
+    await fillField(page, "Heure", "15:00");
+    await page.press("Enter");
+    await page.waitFor("document.querySelector('aside [role=alert]')?.textContent.includes('non habilité')", { label: "refus : responsable non habilité" });
+    capture("rdv_responsible_ineligible_1920x1080", { width: 1920, height: 1080 });
+    await abandonForm(page);
+    items = await dayList(agent, "2026-10-19");
+    check(items.find((i) => i.clientFirstName === "Natif")?.startsAtUtc.startsWith("2026-10-19T11:00:00"), "API : créneau inchangé");
+    await openEvent(page, `Natif ${last}`);
+    await click(page, inAside("Modifier"), "Modifier (responsable retiré)");
+    await page.waitFor("[...document.querySelectorAll('aside select option')].some(o => o.selected && o.textContent.includes(\"n'est plus habilité\"))", { label: "responsable actuel conservé" });
+    await fillField(page, "Notes", "Note après retrait");
+    await click(page, inAside("Enregistrer"), "Enregistrer (notes)");
+    await page.waitFor(hasText("Rendez-vous modifié"), { label: "notes corrigées malgré le retrait" });
+    tool("eligibility", suffix, "on");
+
+    // 8. Annulation avec motif, puis rétablissement.
+    await click(page, inAside("Annuler le rendez-vous"), "Annuler le rendez-vous");
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'annulation" });
+    await page.evaluate("document.querySelector('[role=alertdialog] textarea').focus()");
+    await page.type("Client indisponible (fictif)");
+    await click(page, inDialog("Annuler le rendez-vous"), "annulation confirmée");
+    await page.waitFor(hasText("Rendez-vous annulé"), { label: "annulation" });
+    await page.waitFor(hasText("Annulé le"), { label: "auteur et date de l'annulation" });
+    capture("rdv_cancelled_1920x1080", { width: 1920, height: 1080 });
+    await click(page, inAside("Rétablir le rendez-vous"), "Rétablir");
+    await page.waitFor(hasText("Rendez-vous rétabli"), { label: "rétablissement" });
+    items = await dayList(agent, "2026-10-19");
+    check(items.find((i) => i.clientFirstName === "Natif")?.status === "planned", "API : rendez-vous replanifié");
+
+    // 9. Création depuis la fiche client : client conservé, aucune seconde recherche, retour à la fiche.
+    await openClients(page);
+    const consult = `[...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes('Fiche'))?.querySelector('button[aria-label^="Consulter"]')`;
+    await page.waitFor(`!!${consult}`, { label: "ligne du client Fiche" });
+    await click(page, consult, "fiche du client Fiche");
+    await page.waitFor(`!!${buttonByText("Prendre un rendez-vous")}`, { label: "fiche client" });
+    await click(page, buttonByText("Prendre un rendez-vous"), "Prendre un rendez-vous");
+    await page.waitFor("document.querySelector('aside button[aria-haspopup=\"listbox\"]')?.textContent.includes('Fiche')", { label: "client présélectionné" });
+    check(!(await page.evaluate("!!document.querySelector('[aria-label=\"Rechercher un client actif\"]')")), "aucune seconde recherche");
+    capture("rdv_from_client_form_1920x1080", { width: 1920, height: 1080 });
+    await fillAppointment(page, { date: "19/10/2026", time: "16:00", duration: "30 minutes", reason: "Prise de mesures", responsible: "B3N Responsable Deux" });
+    await click(page, inAside("Créer"), "Créer depuis la fiche");
+    await page.waitFor(hasText("Rendez-vous créé"), { label: "création depuis la fiche" });
+    const back = `[...document.querySelectorAll('button')].find(b => b.textContent.trim().startsWith('Retour à la fiche de'))`;
+    check(await page.evaluate(`!!${back}`), "retour à la fiche proposé");
+    capture("rdv_from_client_created_1920x1080", { width: 1920, height: 1080 });
+    await click(page, back, "Retour à la fiche");
+    await page.waitFor(`!!${buttonByText("Prendre un rendez-vous")}`, { label: "retour sur la fiche" });
+
+    // 10. Semaine du 19 au 25/10/2026 (recul d'heure le 25) : décalages serveur = poste, rendez-vous affichés.
+    await openRdv(page);
+    await click(page, buttonByName("Semaine"), "vue Semaine");
+    await click(page, buttonByName("Semaine suivante"), "Semaine suivante");
+    await page.waitFor(hasText("Semaine du 19 au 25 octobre 2026"), { label: "semaine du changement d'heure" });
+    // Vue Semaine : nom abrégé (« N. Nom »).
+    await page.waitFor(`!!${eventFor(`N. ${last}`)}`, { label: "rendez-vous de la semaine affichés" });
+    check(!(await text(page)).includes("Heure incohérente"), "semaine du 25/10 : décalages Windows = WebView2");
+    capture("rdv_week_dst_1920x1080", { width: 1920, height: 1080 });
+    capture("rdv_week_dst_1440x900", { width: 1440, height: 900 });
+    check(await page.noHorizontalScroll(), "1440×900 : aucun défilement horizontal");
+
+    // Constat : données de fuseaux de CETTE WebView2 (Africa/Casablanca, Europe/Brussels), comparées à O-03-22.
+    const tz = await page.evaluate(`(() => {
+      const off = (z, t) => new Intl.DateTimeFormat('en-US', { timeZone: z, timeZoneName: 'longOffset' }).formatToParts(new Date(t)).find(p => p.type === 'timeZoneName').value;
+      const scan = (z, from, to) => { const out = []; let p = off(z, from); for (let t = Date.parse(from); t < Date.parse(to); t += 15 * 60000) { const o = off(z, t); if (o !== p) { out.push(new Date(t).toISOString() + ' ' + p + '→' + o); p = o; } } return out; };
+      return { userAgent: navigator.userAgent.match(/Edg\\/[0-9.]+/)?.[0], casablanca: scan('Africa/Casablanca', '2026-01-01T00:00:00Z', '2028-01-01T00:00:00Z'), brussels: scan('Europe/Brussels', '2026-01-01T00:00:00Z', '2028-01-01T00:00:00Z') };
+    })()`);
+    log("FUSEAUX WebView2", J(tz));
+    await click(page, buttonByName("Jour"), "vue Jour");
+
+    // 11. Autre poste : la vérité serveur est relue (nombre de rendez-vous planifiés du jour).
+    items = await dayList(other, "2026-10-19");
+    check(items.filter((i) => i.status === "planned").length === 3, "API (autre poste) : 3 rendez-vous planifiés le 19/10");
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+  },
+
   /** Écran de connexion : focus initial, tabulation, validation, zoom — indépendant de la base. */
   async "login-states"(page) {
     await setZoom(page, 1);

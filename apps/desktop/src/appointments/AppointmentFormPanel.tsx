@@ -127,7 +127,9 @@ export function AppointmentFormPanel({ mode, options, initialValues, appointment
     const slot = { startsAtUtc: input.startsAtUtc, endsAtUtc: addMinutesUtc(input.startsAtUtc, input.durationMinutes), timeZone: options.timeZone };
     const onError = (error: ApiRequestError) => {
       const fields = appointmentServerFieldErrors(error.error.fieldErrors);
-      const hidden = locked ? fields.find(([field]) => field !== "reasonCode" && field !== "notes") : undefined;
+      // Champs affichés : motif et notes (réservation figée), date et heure (déplacement), sinon tous.
+      const shown: readonly string[] | null = locked ? ["reasonCode", "notes"] : mode === "move" ? ["date", "time"] : null;
+      const hidden = shown ? fields.find(([field]) => !shown.includes(field)) : undefined;
       if (error.error.kind === "validation" && hidden) {
         // Champ non affiché (réservation figée) : message en bandeau plutôt que sous un champ invisible.
         setFailure({ tone: "error", title: "Données refusées", text: `${hidden[1]}.` });

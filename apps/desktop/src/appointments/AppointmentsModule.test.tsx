@@ -596,3 +596,29 @@ describe("cohérence des fuseaux et rendez-vous commencés (03-B3)", () => {
     assert.equal(saved?.startsAtUtc, "2026-07-16T08:30:00Z");
   });
 });
+
+describe("refus serveur sur un champ non affiché (03-B3)", () => {
+  test("déplacement refusé car le responsable n'est plus habilité : message en bandeau, rendez-vous inchangé", async () => {
+    const { user, api } = await openAgenda();
+    await user.click(await eventButton(/Yasmine El Amrani/));
+    const panel = await screen.findByRole("complementary", { name: /Détail du rendez-vous de / });
+    await within(panel).findByText("Responsable");
+    // Le collaborateur est retiré de l'éligibilité après l'ouverture du détail (autre poste, outil de maintenance).
+    api.options.appointmentOptions = { ...FAKE_APPOINTMENT_OPTIONS, responsibles: [FAKE_APPOINTMENT_OPTIONS.responsibles[1]] };
+    await user.click(within(panel).getByRole("button", { name: "Déplacer" }));
+    const form = await screen.findByRole("complementary", { name: "Déplacer le rendez-vous" });
+    const time = within(form).getByLabelText("Heure");
+    await user.clear(time);
+    await user.type(time, "15:30{Enter}");
+    const alert = await within(form).findByRole("alert");
+    assert.match(alert.textContent ?? "", /Données refusées.*Collaborateur inactif ou non habilité/);
+    assert.equal(api.appointments[0].startsAtUtc, "2026-07-16T08:30:00Z");
+    // La liste des éligibles est relue après le refus : le collaborateur n'est plus proposé comme éligible.
+    await waitFor(() => assert.ok(api.requests.filter((request) => request.path === "/api/appointments/options").length >= 2));
+    await user.click(within(form).getByRole("button", { name: "Annuler" }));
+    const detail = await screen.findByRole("complementary", { name: /Détail du rendez-vous de / });
+    await user.click(await within(detail).findByRole("button", { name: "Modifier" }));
+    const edit = await screen.findByRole("complementary", { name: "Modifier le rendez-vous" });
+    assert.equal((within(edit).getByLabelText("Responsable") as HTMLSelectElement).selectedOptions[0]?.textContent, "Responsable Un (n'est plus habilité)");
+  });
+});
