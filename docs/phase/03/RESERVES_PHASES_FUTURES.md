@@ -6,7 +6,7 @@
 
 | Réf. | Objet | État au 19/10/2026 |
 |---|---|---|
-| D4 | Validation finale de la Phase 03 | GO technique reçu ; **dernier essai manuel du propriétaire en attente** ; `PHASE03_COMPLETE` non déclaré ; push après confirmation, PR et merge par le propriétaire |
+| D4 | Validation finale de la Phase 03 | GO technique reçu ; **dernier essai manuel du propriétaire en attente** ; `PHASE03_COMPLETE` non déclaré ; push après confirmation, PR et merge par le propriétaire ; *amendement 19/10/2026 : essai manuel OK, branche poussée ; PR et merge par le propriétaire* |
 | D3 / O-03-16 | Correctif de `scripts/Invoke-MmvSqlScript.ps1` (affichage final après `COMMIT`) | `FIX_PREPARED` — à accepter comme nouvelle version de l'outil approuvé |
 | D-03-22 | Durées de conservation du journal d'audit (RGPD / APD, loi 09-08 / CNDP) | **OPEN** — conseil juridique ; aucune purge automatique |
 | O-03-36 | Ordre du nom « NOM Prénom » partout | RESOLVED par choix de l'agent, **à confirmer** |
