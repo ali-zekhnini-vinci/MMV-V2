@@ -200,3 +200,15 @@ Sources supplémentaires lues : `prompts/PHASE03_D_GO_CLAUDE_CODE.md` (message d
 | Qualité | `tests/MMV.Api.Tests/Audit/`, `Appointments/AppointmentsEndpointsTests.cs` (historique client), `apps/desktop/src/appointments/pickers.test.ts`, `AppointmentsModule.test.tsx`, `audit/ClientHistoryTab.test.tsx`, `api/auditContract.test.ts`, `api/appointmentsContract.test.ts`, `apps/desktop/src/test/fakeAuditApi.ts`, `fakeAppointmentsApi.ts` ; natif `apps/desktop/e2e/run-native.mjs` (`parcours-03d1`) |
 | O-03-33 à O-03-36 | `components/ui/alert-dialog.tsx` ; `shell/StatusBar.tsx`, `statusBarView.ts`, `Shell.css` ; `appointments/Appointments.css` ; `appointmentForm.ts` `appointmentClientName`, `appointmentsView.ts` `shortClientName` |
 | Livraison | branche locale `feat/phase-03-clients-rdv` (commits locaux, aucun push, PR ni merge) ; archive `git archive` hors dépôt |
+
+## Traçabilité 03-D3 (mandat `prompts/PHASE03_D3_GO_CLAUDE_CODE.md`)
+
+| Exigence du GO | Chemins |
+|---|---|
+| §1 Migration 0005 | `docs/phase/03/sql/0005_AuditJournal.idempotent.sql` (inchangé, appliqué) ; `scripts/Invoke-MmvSqlScript.ps1` (inchangé) ; preuves `docs/phase/03/evidence/P03D3_0005_*.log` ; sauvegarde hors dépôt `C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\` |
+| §2 Traçabilité (O-03-44) | `src/MMV.Application/Clients/ClientService.cs`, `src/MMV.Application/Appointments/AppointmentService.cs` ; contrats `docs/phase/03/API_CLIENTS.md`, `API_APPOINTMENTS.md` (amendements datés) ; tests `tests/MMV.Api.Tests/Audit/AuditJournalTests.cs`, `tests/MMV.PostgreSql.Tests/AuditPostgreSqlTests.cs`, `ClientsPostgreSqlTests.cs`, `AppointmentsCommittedPostgreSqlTests.cs` |
+| §3 Vérifications réelles (O-03-42) | `tests/MMV.PostgreSql.Tests/CommittedAuditCleanup.cs` ; preuves `P03D3_postgresql_20261019.log`, `P03D3_dotnet_20261019.log`, `P03D3_frontend_20261019.log` |
+| §4 Parcours natif (O-03-43, O-03-45) | `apps/desktop/e2e/run-native.mjs` (scénario `historique-03d3`, options `--api`, `--process`, `--page-url`) ; `apps/desktop/src/clients/ClientsModule.tsx`, `ClientsModule.test.tsx` ; `src/MMV.Api/Audit/AuditEndpoints.cs` ; preuves `P03D3_native_*` |
+| §5 Politique d'audit | `docs/phase/03/AUDIT_JOURNAL_03D.md` § 1, § 5, § 6, § 9 ; `docs/ADR_ET_DECISIONS.md` ; `docs/PERIMETRE_ET_SEQUENCE.md` |
+| §6 Incident `desktop.zip` | aucun fichier modifié ; registre O-03-41 (`GATES_AND_DECISIONS.md`) |
+| §7–8 Documentation et livraison | `README.md`, `docs/phase/03.md`, `docs/phase/03/QA_MATRIX.md`, `GATES_AND_DECISIONS.md`, `IMPLEMENTATION_SPEC.md`, `RAPPORT_CLOTURE_03D3.md`, `docs/ARCHITECTURE_ET_STACK.md`, `apps/desktop/README.md` ; mandat `prompts/PHASE03_D3_GO_CLAUDE_CODE.md` ; branche locale `feat/phase-03-clients-rdv`, archive `git archive` hors suivi |

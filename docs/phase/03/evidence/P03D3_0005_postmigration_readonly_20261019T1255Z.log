@@ -1,0 +1,236 @@
+﻿# 03-D3 inspection post-migration 0005, sessions default_transaction_read_only=on
+
+### mmv_v2_dev
+SECRET : host=localhost port=5433 database=mmv_v2_dev role=mmv_v2_dev
+Pager usage is off.
+== identite
+     db     |    role    | port | version | read_only 
+------------+------------+------+---------+-----------
+ mmv_v2_dev | mmv_v2_dev | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+ 20261018163108_AuditJournal       | 10.0.4
+(5 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_dev
+ audit        | mmv_v2_dev
+ auth         | mmv_v2_dev
+ clients      | mmv_v2_dev
+ public       | pg_database_owner
+(5 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets du schema audit
+          relname          | relkind |   owner    
+---------------------------+---------+------------
+ ix_events_actor_user_id   | i       | mmv_v2_dev
+ ix_events_client_occurred | i       | mmv_v2_dev
+ ix_events_entity          | i       | mmv_v2_dev
+ pk_events                 | i       | mmv_v2_dev
+ events                    | r       | mmv_v2_dev
+(5 rows)
+
+== colonnes audit.events
+ pos |   column_name   |        data_type         | len | is_nullable | column_default 
+-----+-----------------+--------------------------+-----+-------------+----------------
+   1 | id              | uuid                     |     | NO          | 
+   2 | occurred_at_utc | timestamp with time zone |     | NO          | 
+   3 | actor_user_id   | uuid                     |     | NO          | 
+   4 | client_id       | uuid                     |     | YES         | 
+   5 | module          | character varying        |  32 | NO          | 
+   6 | action          | character varying        |  64 | NO          | 
+   7 | entity_type     | character varying        |  32 | NO          | 
+   8 | entity_id       | uuid                     |     | NO          | 
+   9 | changes         | jsonb                    |     | YES         | 
+  10 | session_id      | uuid                     |     | YES         | 
+  11 | trace_id        | character varying        |  64 | YES         | 
+(11 rows)
+
+== contraintes audit.events et auth.user_permissions
+          rel          |            conname             | contype |                                                                                                                                                                               def                                                                                                                                                                                
+-----------------------+--------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions | ck_user_permissions_permission | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying])::text[])))
+ auth.user_permissions | fk_user_permissions_users      | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions | pk_user_permissions            | p       | PRIMARY KEY (user_id, permission)
+ audit.events          | ck_events_action_format        | c       | CHECK (((action)::text ~ '^[a-z][a-z_]{0,30}\.[a-z][a-z_]{0,31}$'::text))
+ audit.events          | ck_events_changes_array        | c       | CHECK (((changes IS NULL) OR (jsonb_typeof(changes) = 'array'::text)))
+ audit.events          | ck_events_entity_type_format   | c       | CHECK (((entity_type)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+ audit.events          | ck_events_module_format        | c       | CHECK (((module)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+ audit.events          | fk_events_actor_users          | f       | FOREIGN KEY (actor_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ audit.events          | fk_events_clients              | f       | FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT
+ audit.events          | pk_events                      | p       | PRIMARY KEY (id)
+(10 rows)
+
+== index audit
+         indexname         |                                                   indexdef                                                    
+---------------------------+---------------------------------------------------------------------------------------------------------------
+ ix_events_actor_user_id   | CREATE INDEX ix_events_actor_user_id ON audit.events USING btree (actor_user_id)
+ ix_events_client_occurred | CREATE INDEX ix_events_client_occurred ON audit.events USING btree (client_id, occurred_at_utc DESC, id DESC)
+ ix_events_entity          | CREATE INDEX ix_events_entity ON audit.events USING btree (entity_type, entity_id)
+ pk_events                 | CREATE UNIQUE INDEX pk_events ON audit.events USING btree (id)
+(4 rows)
+
+== fonctions et declencheurs
+          function           |  lang   |   owner    | security_definer 
+-----------------------------+---------+------------+------------------
+ audit.reject_event_mutation | plpgsql | mmv_v2_dev | f
+(1 row)
+
+     rel      |         tgname         | enabled |                                                                    def                                                                    
+--------------+------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------
+ audit.events | trg_events_append_only | O       | CREATE TRIGGER trg_events_append_only BEFORE DELETE OR UPDATE ON audit.events FOR EACH ROW EXECUTE FUNCTION audit.reject_event_mutation()
+ audit.events | trg_events_no_truncate | O       | CREATE TRIGGER trg_events_no_truncate BEFORE TRUNCATE ON audit.events FOR EACH STATEMENT EXECUTE FUNCTION audit.reject_event_mutation()
+(2 rows)
+
+== empreinte du schema complet
+           columns_md5            |         constraints_md5          |           indexes_md5            |           triggers_md5           |          functions_md5           
+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------
+ 0f88f510450a8ce55886ac53b400e3bd | df095d7a34af512d91aa22d43d8feaf3 | 8e8f1ffb22f8036764aca32646c185c2 | 94d7f30c2a48a60a428c14e58218172c | b3e45b0ce7219dc359e8c42381a813dd
+(1 row)
+
+== donnees (comptes seulement)
+ audit_events | appointments | responsibles | clients | users 
+--------------+--------------+--------------+---------+-------
+            0 |            1 |            0 |       1 |     1
+(1 row)
+
+     permission      | count 
+---------------------+-------
+ appointments.cancel |     1
+ appointments.read   |     1
+ appointments.write  |     1
+ clients.archive     |     1
+ clients.read        |     1
+ clients.write       |     1
+ system.admin        |     1
+(7 rows)
+
+
+### mmv_v2_test
+SECRET : host=localhost port=5433 database=mmv_v2_test role=mmv_v2_test
+Pager usage is off.
+== identite
+     db      |    role     | port | version | read_only 
+-------------+-------------+------+---------+-----------
+ mmv_v2_test | mmv_v2_test | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+ 20261018163108_AuditJournal       | 10.0.4
+(5 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_test
+ audit        | mmv_v2_test
+ auth         | mmv_v2_test
+ clients      | mmv_v2_test
+ public       | pg_database_owner
+(5 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets du schema audit
+          relname          | relkind |    owner    
+---------------------------+---------+-------------
+ ix_events_actor_user_id   | i       | mmv_v2_test
+ ix_events_client_occurred | i       | mmv_v2_test
+ ix_events_entity          | i       | mmv_v2_test
+ pk_events                 | i       | mmv_v2_test
+ events                    | r       | mmv_v2_test
+(5 rows)
+
+== colonnes audit.events
+ pos |   column_name   |        data_type         | len | is_nullable | column_default 
+-----+-----------------+--------------------------+-----+-------------+----------------
+   1 | id              | uuid                     |     | NO          | 
+   2 | occurred_at_utc | timestamp with time zone |     | NO          | 
+   3 | actor_user_id   | uuid                     |     | NO          | 
+   4 | client_id       | uuid                     |     | YES         | 
+   5 | module          | character varying        |  32 | NO          | 
+   6 | action          | character varying        |  64 | NO          | 
+   7 | entity_type     | character varying        |  32 | NO          | 
+   8 | entity_id       | uuid                     |     | NO          | 
+   9 | changes         | jsonb                    |     | YES         | 
+  10 | session_id      | uuid                     |     | YES         | 
+  11 | trace_id        | character varying        |  64 | YES         | 
+(11 rows)
+
+== contraintes audit.events et auth.user_permissions
+          rel          |            conname             | contype |                                                                                                                                                                               def                                                                                                                                                                                
+-----------------------+--------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions | ck_user_permissions_permission | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying])::text[])))
+ auth.user_permissions | fk_user_permissions_users      | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions | pk_user_permissions            | p       | PRIMARY KEY (user_id, permission)
+ audit.events          | ck_events_action_format        | c       | CHECK (((action)::text ~ '^[a-z][a-z_]{0,30}\.[a-z][a-z_]{0,31}$'::text))
+ audit.events          | ck_events_changes_array        | c       | CHECK (((changes IS NULL) OR (jsonb_typeof(changes) = 'array'::text)))
+ audit.events          | ck_events_entity_type_format   | c       | CHECK (((entity_type)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+ audit.events          | ck_events_module_format        | c       | CHECK (((module)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+ audit.events          | fk_events_actor_users          | f       | FOREIGN KEY (actor_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ audit.events          | fk_events_clients              | f       | FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT
+ audit.events          | pk_events                      | p       | PRIMARY KEY (id)
+(10 rows)
+
+== index audit
+         indexname         |                                                   indexdef                                                    
+---------------------------+---------------------------------------------------------------------------------------------------------------
+ ix_events_actor_user_id   | CREATE INDEX ix_events_actor_user_id ON audit.events USING btree (actor_user_id)
+ ix_events_client_occurred | CREATE INDEX ix_events_client_occurred ON audit.events USING btree (client_id, occurred_at_utc DESC, id DESC)
+ ix_events_entity          | CREATE INDEX ix_events_entity ON audit.events USING btree (entity_type, entity_id)
+ pk_events                 | CREATE UNIQUE INDEX pk_events ON audit.events USING btree (id)
+(4 rows)
+
+== fonctions et declencheurs
+          function           |  lang   |    owner    | security_definer 
+-----------------------------+---------+-------------+------------------
+ audit.reject_event_mutation | plpgsql | mmv_v2_test | f
+(1 row)
+
+     rel      |         tgname         | enabled |                                                                    def                                                                    
+--------------+------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------
+ audit.events | trg_events_append_only | O       | CREATE TRIGGER trg_events_append_only BEFORE DELETE OR UPDATE ON audit.events FOR EACH ROW EXECUTE FUNCTION audit.reject_event_mutation()
+ audit.events | trg_events_no_truncate | O       | CREATE TRIGGER trg_events_no_truncate BEFORE TRUNCATE ON audit.events FOR EACH STATEMENT EXECUTE FUNCTION audit.reject_event_mutation()
+(2 rows)
+
+== empreinte du schema complet
+           columns_md5            |         constraints_md5          |           indexes_md5            |           triggers_md5           |          functions_md5           
+----------------------------------+----------------------------------+----------------------------------+----------------------------------+----------------------------------
+ 0f88f510450a8ce55886ac53b400e3bd | df095d7a34af512d91aa22d43d8feaf3 | 8e8f1ffb22f8036764aca32646c185c2 | 94d7f30c2a48a60a428c14e58218172c | b3e45b0ce7219dc359e8c42381a813dd
+(1 row)
+
+== donnees (comptes seulement)
+ audit_events | appointments | responsibles | clients | users 
+--------------+--------------+--------------+---------+-------
+            0 |            0 |            0 |       0 |     0
+(1 row)
+
+ permission | count 
+------------+-------
+(0 rows)
+

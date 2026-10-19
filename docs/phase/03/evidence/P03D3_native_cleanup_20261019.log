@@ -1,0 +1,7 @@
+﻿# 03-D3 — nettoyage des donnees fictives du banc natif sur mmv_v2_test (outil jetable d3native.cs, transaction unique, cible relue, declencheur d'ajout seul desactive DANS la transaction puis reactive et controle)
+# Deux passes interrompues (historique, non masquees) : 1) attente du message « Modifications enregistrees » jamais affiche -> defaut O-03-43 trouve et corrige ;
+#   2) libelle « Non attribue -> D3N Responsable Un » sur une creation -> affichage corrige (aucun libelle « avant » pour une creation). Donnees de ces passes nettoyees :
+NETTOYAGE 25398801 : 2 événements d'audit, 0 rendez-vous, 2 éligibilités, 2 sessions, 1 clients, 4 comptes supprimés ; déclencheurs réactivés (O/O) ; lignes restantes dans mmv_v2_test (tables métier + audit) = 0
+NETTOYAGE c60ffb88 : 10 événements d'audit, 1 rendez-vous, 2 éligibilités, 3 sessions, 1 clients, 4 comptes supprimés ; déclencheurs réactivés (O/O) ; lignes restantes dans mmv_v2_test (tables métier + audit) = 0
+NETTOYAGE 6fa21e6c : 30 événements d'audit, 3 rendez-vous, 2 éligibilités, 12 sessions, 3 clients, 4 comptes supprimés ; déclencheurs réactivés (O/O) ; lignes restantes dans mmv_v2_test (tables métier + audit) = 0
+RÉSIDUS mmv_v2_test (tables métier + audit.events) = 0

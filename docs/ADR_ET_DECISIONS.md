@@ -102,3 +102,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **Permission dédiée `audit.read` (proposition D-03-21)** : séparation explicite du rôle visuel, des permissions effectives et du droit d'audit ; `system.admin` n'accorde toujours aucun droit métier ni d'audit.
 - **Minimisation (proposition D-03-20)** et **conservation (D-03-22, durée ouverte)** : liste blanche des valeurs conservées ; aucune donnée personnelle client, de santé, ni secret ; durée de conservation à fixer avec un conseil juridique (Belgique : RGPD / APD ; Maroc : loi 09-08 / CNDP).
 - **ADR-014 (licences), 03-D1** : `react-day-picker` 10.0.2 (+ `date-fns`, `@date-fns/tz`) et `@radix-ui/react-popover` 1.3.1, MIT.
+
+## Note datée — 19/10/2026 (phase 03-D3)
+
+- **Journal d'audit (D-03-19, D-03-20, D-03-21) : RETENUS** par le GO 03-D3 — schéma `audit` centralisé, écritures atomiques dans la transaction métier, permission `audit.read` séparée, minimisation. Migration `0005_AuditJournal` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`, D-03-23).
+- **Limite** : les déclencheurs d'ajout seul ne protègent pas contre un superutilisateur PostgreSQL ni contre le rôle propriétaire de la table (rôle de migration, aujourd'hui aussi rôle de connexion de MMV.Api). **À prévoir** : rôle SQL applicatif distinct du rôle de migration (O-B04) et politique de rétention contrôlée.
+- **D-03-22 OUVERTE** : durées de conservation ; obligations RGPD / APD (Belgique) et loi 09-08 / CNDP (Maroc), avec un conseil juridique.
+- **Modification sans changement** (O-03-44) : aucune écriture (ni auteur, ni date, ni version, ni événement) ; résultat HTTP 200 avec l'état courant.

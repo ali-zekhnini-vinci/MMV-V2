@@ -1,6 +1,16 @@
 # MMV V2 — logiciel neuf de gestion d'un magasin d'optique
 
-## Statut actuel — phase 03-D (18/10/2026)
+## Statut actuel — phase 03-D3 (19/10/2026)
+
+**Phase 03-D3 (19/10/2026) : `PHASE03_D3 — OWNER_FINAL_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge ; `PHASE03_COMPLETE` **non déclaré** ; Phase 04 non commencée). Mandat : [`prompts/PHASE03_D3_GO_CLAUDE_CODE.md`](prompts/PHASE03_D3_GO_CLAUDE_CODE.md). Rapport : [`docs/phase/03/RAPPORT_CLOTURE_03D3.md`](docs/phase/03/RAPPORT_CLOTURE_03D3.md).
+
+- **Migration `0005_AuditJournal` appliquée** (19/10/2026) à `mmv_v2_dev` puis `mmv_v2_test` après précontrôles conformes (empreinte imposée, régénération EF identique, PostgreSQL 18.6 / 5433, 0001–0004 seules, aucune dérive) et sauvegarde vérifiée de `mmv_v2_dev` hors dépôt ; le code 03-D2 écrit désormais ses événements d'audit (O-03-40 résolu).
+- **Traçabilité** : une modification sans changement réel (client ou rendez-vous) n'écrit plus rien — ni auteur, ni date, ni version, ni événement (O-03-44). Défauts trouvés par les preuves réelles et corrigés : O-03-42 (nettoyage des tests), O-03-43 (notice « Modifications enregistrées »), O-03-45 (libellé d'une création).
+- **Tests** : .NET 351/351 + 50/50 ; PostgreSQL 18 réel **47/47** ; frontend 226/226 ; build release Tauri PASS ; natif Tauri → HTTPS → API → PostgreSQL 18 → `audit.events` 3 × 81 contrôles (2 thèmes, 100 / 125 / 150 %). Détail : [`docs/phase/03/QA_MATRIX.md`](docs/phase/03/QA_MATRIX.md) Q-03-234 à Q-03-258.
+- **Politique d'audit** : D-03-19 à D-03-21 retenues, D-03-23 exécutée, **D-03-22 ouverte** (durées, RGPD / APD, loi 09-08 / CNDP) ; déclencheurs ≠ protection contre un superutilisateur ; rôle SQL applicatif distinct et rétention contrôlée à prévoir. `audit.read` attribuée à aucun compte réel.
+- **Incident O-03-41** : `apps/desktop/desktop.zip` et `desktop.recovered.zip` conservés, non modifiés (décision du propriétaire).
+
+## Historique — statut phase 03-D (18/10/2026)
 
 **Phase 03-D (18/10/2026) : `PHASE03_D — OWNER_REVIEW_REQUIRED`** sur la branche locale `feat/phase-03-clients-rdv` (aucun push, PR ni merge ; `PHASE03_COMPLETE` **non déclaré**). Mandat : [`prompts/PHASE03_D_GO_CLAUDE_CODE.md`](prompts/PHASE03_D_GO_CLAUDE_CODE.md).
 

@@ -34,7 +34,7 @@ Schémas exacts : document OpenAPI généré par le serveur (`/openapi/v1.json`,
 | `GET /api/clients` | `clients.read` | `q` (2–100 car. après rognage), `status=active|archived|all` (défaut `active`), `sort=name|createdAt|city` (défaut `name`), `dir=asc|desc`, `page` 1–100 000, `pageSize` 1–100 (défaut 20) | 200 `ClientPageResponse` | 400 `invalid_query` (valeur hors liste blanche, paramètre inconnu, répété ou de casse différente) |
 | `GET /api/clients/{id}` | `clients.read` | — | 200 `ClientDetailResponse` | 404 `client_not_found` (id non UUID : 404 de routage) |
 | `POST /api/clients` | `clients.write` | `ClientInputRequest` | **201** + `Location: /api/clients/{id}` | 400 `invalid_body` ; 415 ; 422 `validation_failed` |
-| `PUT /api/clients/{id}` | `clients.write` | `ClientUpdateRequest` | 200 | 400 `invalid_body` / `version_required` ; 404 ; 409 `client_archived` (contrôlé avant la version) / `version_conflict` ; 422 |
+| `PUT /api/clients/{id}` | `clients.write` | `ClientUpdateRequest` | 200 | 400 `invalid_body` / `version_required` ; 404 ; 409 `client_archived` (contrôlé avant la version) / `version_conflict` ; 422 ; *19/10/2026 (03-D3, O-03-44) : corps identique au client courant après normalisation → 200 avec le client courant, **même `version`**, rien n'est écrit (ni `updatedAtUtc`, ni auteur, ni événement d'audit) ; les refus (404, 409 archivé / version, 422) restent prioritaires* |
 | `POST /api/clients/{id}/archive` | `clients.archive` | `ClientVersionRequest` | 200 | 400 ; 404 ; 409 `version_conflict` / `already_archived` |
 | `POST /api/clients/{id}/reactivate` | `clients.archive` | `ClientVersionRequest` | 200 | 400 ; 404 ; 409 `version_conflict` / `already_active` |
 

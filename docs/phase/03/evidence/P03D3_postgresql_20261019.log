@@ -1,0 +1,579 @@
+# 03-D3 — MMV.PostgreSql.Tests sur PostgreSQL 18.6 reel (5433), APRES application de 0005 a mmv_v2_dev et mmv_v2_test (19/10/2026)
+# Build : dotnet build MMV.slnx --artifacts-path .agent-artifacts : 0 avertissement, 0 erreur
+#
+# PREMIERE EXECUTION par stade (historique, NON masquee) : PostMigration 2/2, AuditWrite 6/6, IdentityWrite 5/5 ; ClientsWrite 5/7 et AppointmentsWrite 11/13 :
+#   4 ECHECS, tous dans le NETTOYAGE (corps des tests passes) : requete de controle du nouvel utilitaire CommittedAuditCleanup
+#   'tgname || ''='' || tgenabled' -> 42725 operateur non unique text || "char" ; transaction de purge annulee -> donnees FICTIVES restees
+#   dans mmv_v2_test (16 comptes b3-*/e2e-*, 9 clients, 7 rendez-vous, 4 eligibilites, 11 sessions, 18 evenements d'audit).
+#   Correction : tgenabled::text. Residus purges en UNE transaction sur mmv_v2_test (motif ^(b3|e2e)-[a-z]+-[0-9a-f]{10}$, base vide avant les tests) :
+
+#   SECRET : host=localhost port=5433 database=mmv_v2_test role=mmv_v2_test
+#   Pager usage is off.
+#   BEGIN
+#   DO
+#   SELECT 16
+#   SELECT 9
+#    fict_users | fict_clients 
+#   ------------+--------------
+#            16 |            9
+#   (1 row)
+#   
+#   ALTER TABLE
+#   DELETE 18
+#   ALTER TABLE
+#   DELETE 7
+#   DELETE 4
+#   DELETE 11
+#   DELETE 9
+#   DELETE 16
+#            tgname         | tgenabled 
+#   ------------------------+-----------
+#    trg_events_append_only | O
+#    trg_events_no_truncate | O
+#   (2 rows)
+#   
+#   COMMIT
+#   Recomptage lecture seule apres purge : 0 compte, 0 session, 0 client, 0 rendez-vous, 0 eligibilite, 0 evenement ; declencheurs O/O.
+#
+# SECONDE EXECUTION par stade apres correction : ClientsWrite 7/7, AppointmentsWrite 13/13, AuditWrite 6/6.
+# PREMIERE EXECUTION COMPLETE apres correction (13:1x Z) : 47/47, residus 0 (journal detaille remplace par l'execution finale ci-dessous).
+# EXECUTION COMPLETE FINALE (apres les corrections issues du parcours natif : AuditEndpoints — aucun libelle « avant » sur une creation ;
+#   ClientsModule — O-03-43), build 0 avertissement / 0 erreur, verbosite detaillee :
+
+Série de tests pour C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\.agent-artifacts\bin\MMV.PostgreSql.Tests\debug\MMV.PostgreSql.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\.agent-artifacts\bin\MMV.PostgreSql.Tests\debug\MMV.PostgreSql.Tests.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.4+50e68bbb8b (64-bit .NET 10.0.13)
+[xUnit.net 00:00:00.45]   Discovering: MMV.PostgreSql.Tests
+[xUnit.net 00:00:00.66]   Discovered:  MMV.PostgreSql.Tests
+[xUnit.net 00:00:00.68]   Starting:    MMV.PostgreSql.Tests
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState [126 ms]
+  Messages de sortie standard :
+ mmv_v2_test : history_exists=True
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (4) : appointments | audit | auth | clients
+ relations (37) : appointments.appointments kind=r owner=mmv_v2_test acl=default | appointments.ix_appointments_cancelled_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_client_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_created_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_responsible_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_unassigned_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_updated_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.pk_appointments kind=i owner=mmv_v2_test acl=default | appointments.pk_responsibles kind=i owner=mmv_v2_test acl=default | appointments.responsibles kind=r owner=mmv_v2_test acl=default | audit.events kind=r owner=mmv_v2_test acl=default | audit.ix_events_actor_user_id kind=i owner=mmv_v2_test acl=default | audit.ix_events_client_occurred kind=i owner=mmv_v2_test acl=default | audit.ix_events_entity kind=i owner=mmv_v2_test acl=default | audit.pk_events kind=i owner=mmv_v2_test acl=default | auth.bootstrap_record kind=r owner=mmv_v2_test acl=default | auth.ix_sessions_user_id kind=i owner=mmv_v2_test acl=default | auth.pk_bootstrap_record kind=i owner=mmv_v2_test acl=default | auth.pk_sessions kind=i owner=mmv_v2_test acl=default | auth.pk_user_permissions kind=i owner=mmv_v2_test acl=default | auth.pk_users kind=i owner=mmv_v2_test acl=default | auth.sessions kind=r owner=mmv_v2_test acl=default | auth.user_permissions kind=r owner=mmv_v2_test acl=default | auth.users kind=r owner=mmv_v2_test acl=default | auth.ux_sessions_token_hash kind=i owner=mmv_v2_test acl=default | auth.ux_users_normalized_user_name kind=i owner=mmv_v2_test acl=default | clients.client_reference_seq kind=S owner=mmv_v2_test acl=default | clients.clients kind=r owner=mmv_v2_test acl=default | clients.ix_clients_active_name kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_at kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_by_user_id kind=i owner=mmv_v2_test acl=default | clients.ix_clients_updated_by_user_id kind=i owner=mmv_v2_test acl=default | clients.pk_clients kind=i owner=mmv_v2_test acl=default | clients.ux_clients_reference kind=i owner=mmv_v2_test acl=default | public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ routines (1) : audit.reject_event_mutation
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (2) : trigger trg_events_append_only on audit.events | trigger trg_events_no_truncate on audit.events
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (5) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4 | 20261016230630_ClientsModule 10.0.4 | 20261017150504_AppointmentsModule 10.0.4 | 20261018163108_AuditJournal 10.0.4
+ colonnes auth (22) : bootstrap_record.administrator_id uuid notnull=t | bootstrap_record.completed_at_utc timestamp with time zone notnull=t | bootstrap_record.id smallint notnull=t | sessions.created_at_utc timestamp with time zone notnull=t | sessions.expires_at_utc timestamp with time zone notnull=t | sessions.id uuid notnull=t | sessions.last_seen_at_utc timestamp with time zone notnull=t | sessions.revocation_reason character varying(32) notnull=f | sessions.revoked_at_utc timestamp with time zone notnull=f | sessions.token_hash bytea notnull=t | sessions.user_id uuid notnull=t | user_permissions.permission character varying(64) notnull=t | user_permissions.user_id uuid notnull=t | users.created_at_utc timestamp with time zone notnull=t | users.display_name character varying(128) notnull=t | users.failed_login_count integer notnull=t | users.id uuid notnull=t | users.is_active boolean notnull=t | users.lockout_end_utc timestamp with time zone notnull=f | users.normalized_user_name character varying(64) notnull=t | users.password_hash text notnull=t | users.user_name character varying(64) notnull=t
+ contraintes auth (30) : bootstrap_record.bootstrap_record_administrator_id_not_null n - | bootstrap_record.bootstrap_record_completed_at_utc_not_null n - | bootstrap_record.bootstrap_record_id_not_null n - | bootstrap_record.ck_bootstrap_record_singleton c - | bootstrap_record.pk_bootstrap_record p - | sessions.ck_sessions_expiry_after_creation c - | sessions.ck_sessions_token_hash_length c - | sessions.fk_sessions_users f c | sessions.pk_sessions p - | sessions.sessions_created_at_utc_not_null n - | sessions.sessions_expires_at_utc_not_null n - | sessions.sessions_id_not_null n - | sessions.sessions_last_seen_at_utc_not_null n - | sessions.sessions_token_hash_not_null n - | sessions.sessions_user_id_not_null n - | user_permissions.ck_user_permissions_permission c - | user_permissions.fk_user_permissions_users f c | user_permissions.pk_user_permissions p - | user_permissions.user_permissions_permission_not_null n - | user_permissions.user_permissions_user_id_not_null n - | users.ck_users_failed_login_count c - | users.pk_users p - | users.users_created_at_utc_not_null n - | users.users_display_name_not_null n - | users.users_failed_login_count_not_null n - | users.users_id_not_null n - | users.users_is_active_not_null n - | users.users_normalized_user_name_not_null n - | users.users_password_hash_not_null n - | users.users_user_name_not_null n -
+ index auth (7) : ix_sessions_user_id unique=f | pk_bootstrap_record unique=t | pk_sessions unique=t | pk_user_permissions unique=t | pk_users unique=t | ux_sessions_token_hash unique=t | ux_users_normalized_user_name unique=t
+ colonnes clients (17) : clients.address_line character varying(200) notnull=f | clients.archived_at_utc timestamp with time zone notnull=f | clients.birth_date date notnull=f | clients.city character varying(100) notnull=f | clients.created_at_utc timestamp with time zone notnull=t | clients.created_by_user_id uuid notnull=t | clients.email character varying(254) notnull=f | clients.first_name character varying(100) notnull=t | clients.id uuid notnull=t | clients.last_name character varying(100) notnull=t | clients.notes character varying(1000) notnull=f | clients.phone character varying(32) notnull=f | clients.postal_code character varying(10) notnull=f | clients.reference character varying(24) notnull=t | clients.search_text character varying(700) notnull=t | clients.updated_at_utc timestamp with time zone notnull=t | clients.updated_by_user_id uuid notnull=t
+ contraintes clients (18) : clients.ck_clients_archived_after_created c - | clients.ck_clients_birth_date_range c - | clients.ck_clients_first_name_not_blank c - | clients.ck_clients_last_name_not_blank c - | clients.ck_clients_reference_format c - | clients.ck_clients_updated_after_created c - | clients.clients_created_at_utc_not_null n - | clients.clients_created_by_user_id_not_null n - | clients.clients_first_name_not_null n - | clients.clients_id_not_null n - | clients.clients_last_name_not_null n - | clients.clients_reference_not_null n - | clients.clients_search_text_not_null n - | clients.clients_updated_at_utc_not_null n - | clients.clients_updated_by_user_id_not_null n - | clients.fk_clients_created_by_users f r | clients.fk_clients_updated_by_users f r | clients.pk_clients p -
+ index clients (6) : ix_clients_active_name unique=f | ix_clients_created_at unique=f | ix_clients_created_by_user_id unique=f | ix_clients_updated_by_user_id unique=f | pk_clients unique=t | ux_clients_reference unique=t
+ séquences clients (1) : client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-
+ colonnes appointments (19) : appointments.cancellation_reason character varying(200) notnull=f | appointments.cancelled_at_utc timestamp with time zone notnull=f | appointments.cancelled_by_user_id uuid notnull=f | appointments.client_id uuid notnull=t | appointments.created_at_utc timestamp with time zone notnull=t | appointments.created_by_user_id uuid notnull=t | appointments.ends_at_utc timestamp with time zone notnull=t | appointments.id uuid notnull=t | appointments.notes character varying(1000) notnull=f | appointments.reason_code character varying(32) notnull=t | appointments.responsible_user_id uuid notnull=f | appointments.starts_at_utc timestamp with time zone notnull=t | appointments.status character varying(16) notnull=t | appointments.updated_at_utc timestamp with time zone notnull=t | appointments.updated_by_user_id uuid notnull=t | responsibles.created_at_utc timestamp with time zone notnull=t | responsibles.is_eligible boolean notnull=t | responsibles.updated_at_utc timestamp with time zone notnull=t | responsibles.user_id uuid notnull=t
+ contraintes appointments (30) : appointments.appointments_client_id_not_null n - | appointments.appointments_created_at_utc_not_null n - | appointments.appointments_created_by_user_id_not_null n - | appointments.appointments_ends_at_utc_not_null n - | appointments.appointments_id_not_null n - | appointments.appointments_reason_code_not_null n - | appointments.appointments_starts_at_utc_not_null n - | appointments.appointments_status_not_null n - | appointments.appointments_updated_at_utc_not_null n - | appointments.appointments_updated_by_user_id_not_null n - | appointments.ck_appointments_cancellation_consistency c - | appointments.ck_appointments_cancellation_reason_planned c - | appointments.ck_appointments_duration_range c - | appointments.ck_appointments_ends_after_starts c - | appointments.ck_appointments_reason_code_format c - | appointments.ck_appointments_status c - | appointments.ck_appointments_updated_after_created c - | appointments.fk_appointments_cancelled_by_users f r | appointments.fk_appointments_clients f r | appointments.fk_appointments_created_by_users f r | appointments.fk_appointments_responsible_users f r | appointments.fk_appointments_updated_by_users f r | appointments.pk_appointments p - | responsibles.ck_responsibles_updated_after_created c - | responsibles.fk_responsibles_users f r | responsibles.pk_responsibles p - | responsibles.responsibles_created_at_utc_not_null n - | responsibles.responsibles_is_eligible_not_null n - | responsibles.responsibles_updated_at_utc_not_null n - | responsibles.responsibles_user_id_not_null n -
+ index appointments (9) : ix_appointments_cancelled_by_user_id unique=f | ix_appointments_client_starts_at unique=f | ix_appointments_created_by_user_id unique=f | ix_appointments_responsible_planned unique=f | ix_appointments_starts_at unique=f | ix_appointments_unassigned_planned unique=f | ix_appointments_updated_by_user_id unique=f | pk_appointments unique=t | pk_responsibles unique=t
+ colonnes audit (11) : events.action character varying(64) notnull=t | events.actor_user_id uuid notnull=t | events.changes jsonb notnull=f | events.client_id uuid notnull=f | events.entity_id uuid notnull=t | events.entity_type character varying(32) notnull=t | events.id uuid notnull=t | events.module character varying(32) notnull=t | events.occurred_at_utc timestamp with time zone notnull=t | events.session_id uuid notnull=f | events.trace_id character varying(64) notnull=f
+ contraintes audit (14) : events.ck_events_action_format c - | events.ck_events_changes_array c - | events.ck_events_entity_type_format c - | events.ck_events_module_format c - | events.events_action_not_null n - | events.events_actor_user_id_not_null n - | events.events_entity_id_not_null n - | events.events_entity_type_not_null n - | events.events_id_not_null n - | events.events_module_not_null n - | events.events_occurred_at_utc_not_null n - | events.fk_events_actor_users f r | events.fk_events_clients f r | events.pk_events p -
+ index audit (4) : ix_events_actor_user_id unique=f | ix_events_client_occurred unique=f | ix_events_entity unique=f | pk_events unique=t
+
+
+info: MMV.Api.Appointments[3100]
+      Rendez-vous : magasin configur� (fuseau Europe/Brussels, capacit� d'accueil 1 ; vide = aucune r�servation sans responsable).
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\src\MMV.Api
+info: MMV.Api.Auth.SessionAuthenticationHandler[12]
+      AuthenticationScheme: MmvSession was challenged.
+info: MMV.Api.Auth.SessionAuthenticationHandler[12]
+      AuthenticationScheme: MmvSession was challenged.
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [619 ms]
+  Messages de sortie standard :
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (4) : appointments | audit | auth | clients
+ relations (37) : appointments.appointments kind=r owner=mmv_v2_test acl=default | appointments.ix_appointments_cancelled_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_client_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_created_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_responsible_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_unassigned_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_updated_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.pk_appointments kind=i owner=mmv_v2_test acl=default | appointments.pk_responsibles kind=i owner=mmv_v2_test acl=default | appointments.responsibles kind=r owner=mmv_v2_test acl=default | audit.events kind=r owner=mmv_v2_test acl=default | audit.ix_events_actor_user_id kind=i owner=mmv_v2_test acl=default | audit.ix_events_client_occurred kind=i owner=mmv_v2_test acl=default | audit.ix_events_entity kind=i owner=mmv_v2_test acl=default | audit.pk_events kind=i owner=mmv_v2_test acl=default | auth.bootstrap_record kind=r owner=mmv_v2_test acl=default | auth.ix_sessions_user_id kind=i owner=mmv_v2_test acl=default | auth.pk_bootstrap_record kind=i owner=mmv_v2_test acl=default | auth.pk_sessions kind=i owner=mmv_v2_test acl=default | auth.pk_user_permissions kind=i owner=mmv_v2_test acl=default | auth.pk_users kind=i owner=mmv_v2_test acl=default | auth.sessions kind=r owner=mmv_v2_test acl=default | auth.user_permissions kind=r owner=mmv_v2_test acl=default | auth.users kind=r owner=mmv_v2_test acl=default | auth.ux_sessions_token_hash kind=i owner=mmv_v2_test acl=default | auth.ux_users_normalized_user_name kind=i owner=mmv_v2_test acl=default | clients.client_reference_seq kind=S owner=mmv_v2_test acl=default | clients.clients kind=r owner=mmv_v2_test acl=default | clients.ix_clients_active_name kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_at kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_by_user_id kind=i owner=mmv_v2_test acl=default | clients.ix_clients_updated_by_user_id kind=i owner=mmv_v2_test acl=default | clients.pk_clients kind=i owner=mmv_v2_test acl=default | clients.ux_clients_reference kind=i owner=mmv_v2_test acl=default | public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ routines (1) : audit.reject_event_mutation
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (2) : trigger trg_events_append_only on audit.events | trigger trg_events_no_truncate on audit.events
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (5) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4 | 20261016230630_ClientsModule 10.0.4 | 20261017150504_AppointmentsModule 10.0.4 | 20261018163108_AuditJournal 10.0.4
+ colonnes auth (22) : bootstrap_record.administrator_id uuid notnull=t | bootstrap_record.completed_at_utc timestamp with time zone notnull=t | bootstrap_record.id smallint notnull=t | sessions.created_at_utc timestamp with time zone notnull=t | sessions.expires_at_utc timestamp with time zone notnull=t | sessions.id uuid notnull=t | sessions.last_seen_at_utc timestamp with time zone notnull=t | sessions.revocation_reason character varying(32) notnull=f | sessions.revoked_at_utc timestamp with time zone notnull=f | sessions.token_hash bytea notnull=t | sessions.user_id uuid notnull=t | user_permissions.permission character varying(64) notnull=t | user_permissions.user_id uuid notnull=t | users.created_at_utc timestamp with time zone notnull=t | users.display_name character varying(128) notnull=t | users.failed_login_count integer notnull=t | users.id uuid notnull=t | users.is_active boolean notnull=t | users.lockout_end_utc timestamp with time zone notnull=f | users.normalized_user_name character varying(64) notnull=t | users.password_hash text notnull=t | users.user_name character varying(64) notnull=t
+ contraintes auth (30) : bootstrap_record.bootstrap_record_administrator_id_not_null n - | bootstrap_record.bootstrap_record_completed_at_utc_not_null n - | bootstrap_record.bootstrap_record_id_not_null n - | bootstrap_record.ck_bootstrap_record_singleton c - | bootstrap_record.pk_bootstrap_record p - | sessions.ck_sessions_expiry_after_creation c - | sessions.ck_sessions_token_hash_length c - | sessions.fk_sessions_users f c | sessions.pk_sessions p - | sessions.sessions_created_at_utc_not_null n - | sessions.sessions_expires_at_utc_not_null n - | sessions.sessions_id_not_null n - | sessions.sessions_last_seen_at_utc_not_null n - | sessions.sessions_token_hash_not_null n - | sessions.sessions_user_id_not_null n - | user_permissions.ck_user_permissions_permission c - | user_permissions.fk_user_permissions_users f c | user_permissions.pk_user_permissions p - | user_permissions.user_permissions_permission_not_null n - | user_permissions.user_permissions_user_id_not_null n - | users.ck_users_failed_login_count c - | users.pk_users p - | users.users_created_at_utc_not_null n - | users.users_display_name_not_null n - | users.users_failed_login_count_not_null n - | users.users_id_not_null n - | users.users_is_active_not_null n - | users.users_normalized_user_name_not_null n - | users.users_password_hash_not_null n - | users.users_user_name_not_null n -
+ index auth (7) : ix_sessions_user_id unique=f | pk_bootstrap_record unique=t | pk_sessions unique=t | pk_user_permissions unique=t | pk_users unique=t | ux_sessions_token_hash unique=t | ux_users_normalized_user_name unique=t
+ colonnes clients (17) : clients.address_line character varying(200) notnull=f | clients.archived_at_utc timestamp with time zone notnull=f | clients.birth_date date notnull=f | clients.city character varying(100) notnull=f | clients.created_at_utc timestamp with time zone notnull=t | clients.created_by_user_id uuid notnull=t | clients.email character varying(254) notnull=f | clients.first_name character varying(100) notnull=t | clients.id uuid notnull=t | clients.last_name character varying(100) notnull=t | clients.notes character varying(1000) notnull=f | clients.phone character varying(32) notnull=f | clients.postal_code character varying(10) notnull=f | clients.reference character varying(24) notnull=t | clients.search_text character varying(700) notnull=t | clients.updated_at_utc timestamp with time zone notnull=t | clients.updated_by_user_id uuid notnull=t
+ contraintes clients (18) : clients.ck_clients_archived_after_created c - | clients.ck_clients_birth_date_range c - | clients.ck_clients_first_name_not_blank c - | clients.ck_clients_last_name_not_blank c - | clients.ck_clients_reference_format c - | clients.ck_clients_updated_after_created c - | clients.clients_created_at_utc_not_null n - | clients.clients_created_by_user_id_not_null n - | clients.clients_first_name_not_null n - | clients.clients_id_not_null n - | clients.clients_last_name_not_null n - | clients.clients_reference_not_null n - | clients.clients_search_text_not_null n - | clients.clients_updated_at_utc_not_null n - | clients.clients_updated_by_user_id_not_null n - | clients.fk_clients_created_by_users f r | clients.fk_clients_updated_by_users f r | clients.pk_clients p -
+ index clients (6) : ix_clients_active_name unique=f | ix_clients_created_at unique=f | ix_clients_created_by_user_id unique=f | ix_clients_updated_by_user_id unique=f | pk_clients unique=t | ux_clients_reference unique=t
+ séquences clients (1) : client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-
+ colonnes appointments (19) : appointments.cancellation_reason character varying(200) notnull=f | appointments.cancelled_at_utc timestamp with time zone notnull=f | appointments.cancelled_by_user_id uuid notnull=f | appointments.client_id uuid notnull=t | appointments.created_at_utc timestamp with time zone notnull=t | appointments.created_by_user_id uuid notnull=t | appointments.ends_at_utc timestamp with time zone notnull=t | appointments.id uuid notnull=t | appointments.notes character varying(1000) notnull=f | appointments.reason_code character varying(32) notnull=t | appointments.responsible_user_id uuid notnull=f | appointments.starts_at_utc timestamp with time zone notnull=t | appointments.status character varying(16) notnull=t | appointments.updated_at_utc timestamp with time zone notnull=t | appointments.updated_by_user_id uuid notnull=t | responsibles.created_at_utc timestamp with time zone notnull=t | responsibles.is_eligible boolean notnull=t | responsibles.updated_at_utc timestamp with time zone notnull=t | responsibles.user_id uuid notnull=t
+ contraintes appointments (30) : appointments.appointments_client_id_not_null n - | appointments.appointments_created_at_utc_not_null n - | appointments.appointments_created_by_user_id_not_null n - | appointments.appointments_ends_at_utc_not_null n - | appointments.appointments_id_not_null n - | appointments.appointments_reason_code_not_null n - | appointments.appointments_starts_at_utc_not_null n - | appointments.appointments_status_not_null n - | appointments.appointments_updated_at_utc_not_null n - | appointments.appointments_updated_by_user_id_not_null n - | appointments.ck_appointments_cancellation_consistency c - | appointments.ck_appointments_cancellation_reason_planned c - | appointments.ck_appointments_duration_range c - | appointments.ck_appointments_ends_after_starts c - | appointments.ck_appointments_reason_code_format c - | appointments.ck_appointments_status c - | appointments.ck_appointments_updated_after_created c - | appointments.fk_appointments_cancelled_by_users f r | appointments.fk_appointments_clients f r | appointments.fk_appointments_created_by_users f r | appointments.fk_appointments_responsible_users f r | appointments.fk_appointments_updated_by_users f r | appointments.pk_appointments p - | responsibles.ck_responsibles_updated_after_created c - | responsibles.fk_responsibles_users f r | responsibles.pk_responsibles p - | responsibles.responsibles_created_at_utc_not_null n - | responsibles.responsibles_is_eligible_not_null n - | responsibles.responsibles_updated_at_utc_not_null n - | responsibles.responsibles_user_id_not_null n -
+ index appointments (9) : ix_appointments_cancelled_by_user_id unique=f | ix_appointments_client_starts_at unique=f | ix_appointments_created_by_user_id unique=f | ix_appointments_responsible_planned unique=f | ix_appointments_starts_at unique=f | ix_appointments_unassigned_planned unique=f | ix_appointments_updated_by_user_id unique=f | pk_appointments unique=t | pk_responsibles unique=t
+ colonnes audit (11) : events.action character varying(64) notnull=t | events.actor_user_id uuid notnull=t | events.changes jsonb notnull=f | events.client_id uuid notnull=f | events.entity_id uuid notnull=t | events.entity_type character varying(32) notnull=t | events.id uuid notnull=t | events.module character varying(32) notnull=t | events.occurred_at_utc timestamp with time zone notnull=t | events.session_id uuid notnull=f | events.trace_id character varying(64) notnull=f
+ contraintes audit (14) : events.ck_events_action_format c - | events.ck_events_changes_array c - | events.ck_events_entity_type_format c - | events.ck_events_module_format c - | events.events_action_not_null n - | events.events_actor_user_id_not_null n - | events.events_entity_id_not_null n - | events.events_entity_type_not_null n - | events.events_id_not_null n - | events.events_module_not_null n - | events.events_occurred_at_utc_not_null n - | events.fk_events_actor_users f r | events.fk_events_clients f r | events.pk_events p -
+ index audit (4) : ix_events_actor_user_id unique=f | ix_events_client_occurred unique=f | ix_events_entity unique=f | pk_events unique=t
+ EF applied=[20261015125000_InitialBaseline, 20261015223849_AuthIdentity, 20261016230630_ClientsModule, 20261017150504_AppointmentsModule, 20261018163108_AuditJournal] pending=[]
+
+
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [135 ms]
+  Messages de sortie standard :
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (4) : appointments | audit | auth | clients
+ relations (37) : appointments.appointments kind=r owner=mmv_v2_dev acl=default | appointments.ix_appointments_cancelled_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_client_starts_at kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_created_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_responsible_planned kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_starts_at kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_unassigned_planned kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_updated_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.pk_appointments kind=i owner=mmv_v2_dev acl=default | appointments.pk_responsibles kind=i owner=mmv_v2_dev acl=default | appointments.responsibles kind=r owner=mmv_v2_dev acl=default | audit.events kind=r owner=mmv_v2_dev acl=default | audit.ix_events_actor_user_id kind=i owner=mmv_v2_dev acl=default | audit.ix_events_client_occurred kind=i owner=mmv_v2_dev acl=default | audit.ix_events_entity kind=i owner=mmv_v2_dev acl=default | audit.pk_events kind=i owner=mmv_v2_dev acl=default | auth.bootstrap_record kind=r owner=mmv_v2_dev acl=default | auth.ix_sessions_user_id kind=i owner=mmv_v2_dev acl=default | auth.pk_bootstrap_record kind=i owner=mmv_v2_dev acl=default | auth.pk_sessions kind=i owner=mmv_v2_dev acl=default | auth.pk_user_permissions kind=i owner=mmv_v2_dev acl=default | auth.pk_users kind=i owner=mmv_v2_dev acl=default | auth.sessions kind=r owner=mmv_v2_dev acl=default | auth.user_permissions kind=r owner=mmv_v2_dev acl=default | auth.users kind=r owner=mmv_v2_dev acl=default | auth.ux_sessions_token_hash kind=i owner=mmv_v2_dev acl=default | auth.ux_users_normalized_user_name kind=i owner=mmv_v2_dev acl=default | clients.client_reference_seq kind=S owner=mmv_v2_dev acl=default | clients.clients kind=r owner=mmv_v2_dev acl=default | clients.ix_clients_active_name kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_created_at kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_created_by_user_id kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_updated_by_user_id kind=i owner=mmv_v2_dev acl=default | clients.pk_clients kind=i owner=mmv_v2_dev acl=default | clients.ux_clients_reference kind=i owner=mmv_v2_dev acl=default | public.PK___EFMigrationsHistory kind=i owner=mmv_v2_dev acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_dev acl=default
+ routines (1) : audit.reject_event_mutation
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (2) : trigger trg_events_append_only on audit.events | trigger trg_events_no_truncate on audit.events
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (5) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4 | 20261016230630_ClientsModule 10.0.4 | 20261017150504_AppointmentsModule 10.0.4 | 20261018163108_AuditJournal 10.0.4
+ colonnes auth (22) : bootstrap_record.administrator_id uuid notnull=t | bootstrap_record.completed_at_utc timestamp with time zone notnull=t | bootstrap_record.id smallint notnull=t | sessions.created_at_utc timestamp with time zone notnull=t | sessions.expires_at_utc timestamp with time zone notnull=t | sessions.id uuid notnull=t | sessions.last_seen_at_utc timestamp with time zone notnull=t | sessions.revocation_reason character varying(32) notnull=f | sessions.revoked_at_utc timestamp with time zone notnull=f | sessions.token_hash bytea notnull=t | sessions.user_id uuid notnull=t | user_permissions.permission character varying(64) notnull=t | user_permissions.user_id uuid notnull=t | users.created_at_utc timestamp with time zone notnull=t | users.display_name character varying(128) notnull=t | users.failed_login_count integer notnull=t | users.id uuid notnull=t | users.is_active boolean notnull=t | users.lockout_end_utc timestamp with time zone notnull=f | users.normalized_user_name character varying(64) notnull=t | users.password_hash text notnull=t | users.user_name character varying(64) notnull=t
+ contraintes auth (30) : bootstrap_record.bootstrap_record_administrator_id_not_null n - | bootstrap_record.bootstrap_record_completed_at_utc_not_null n - | bootstrap_record.bootstrap_record_id_not_null n - | bootstrap_record.ck_bootstrap_record_singleton c - | bootstrap_record.pk_bootstrap_record p - | sessions.ck_sessions_expiry_after_creation c - | sessions.ck_sessions_token_hash_length c - | sessions.fk_sessions_users f c | sessions.pk_sessions p - | sessions.sessions_created_at_utc_not_null n - | sessions.sessions_expires_at_utc_not_null n - | sessions.sessions_id_not_null n - | sessions.sessions_last_seen_at_utc_not_null n - | sessions.sessions_token_hash_not_null n - | sessions.sessions_user_id_not_null n - | user_permissions.ck_user_permissions_permission c - | user_permissions.fk_user_permissions_users f c | user_permissions.pk_user_permissions p - | user_permissions.user_permissions_permission_not_null n - | user_permissions.user_permissions_user_id_not_null n - | users.ck_users_failed_login_count c - | users.pk_users p - | users.users_created_at_utc_not_null n - | users.users_display_name_not_null n - | users.users_failed_login_count_not_null n - | users.users_id_not_null n - | users.users_is_active_not_null n - | users.users_normalized_user_name_not_null n - | users.users_password_hash_not_null n - | users.users_user_name_not_null n -
+ index auth (7) : ix_sessions_user_id unique=f | pk_bootstrap_record unique=t | pk_sessions unique=t | pk_user_permissions unique=t | pk_users unique=t | ux_sessions_token_hash unique=t | ux_users_normalized_user_name unique=t
+ colonnes clients (17) : clients.address_line character varying(200) notnull=f | clients.archived_at_utc timestamp with time zone notnull=f | clients.birth_date date notnull=f | clients.city character varying(100) notnull=f | clients.created_at_utc timestamp with time zone notnull=t | clients.created_by_user_id uuid notnull=t | clients.email character varying(254) notnull=f | clients.first_name character varying(100) notnull=t | clients.id uuid notnull=t | clients.last_name character varying(100) notnull=t | clients.notes character varying(1000) notnull=f | clients.phone character varying(32) notnull=f | clients.postal_code character varying(10) notnull=f | clients.reference character varying(24) notnull=t | clients.search_text character varying(700) notnull=t | clients.updated_at_utc timestamp with time zone notnull=t | clients.updated_by_user_id uuid notnull=t
+ contraintes clients (18) : clients.ck_clients_archived_after_created c - | clients.ck_clients_birth_date_range c - | clients.ck_clients_first_name_not_blank c - | clients.ck_clients_last_name_not_blank c - | clients.ck_clients_reference_format c - | clients.ck_clients_updated_after_created c - | clients.clients_created_at_utc_not_null n - | clients.clients_created_by_user_id_not_null n - | clients.clients_first_name_not_null n - | clients.clients_id_not_null n - | clients.clients_last_name_not_null n - | clients.clients_reference_not_null n - | clients.clients_search_text_not_null n - | clients.clients_updated_at_utc_not_null n - | clients.clients_updated_by_user_id_not_null n - | clients.fk_clients_created_by_users f r | clients.fk_clients_updated_by_users f r | clients.pk_clients p -
+ index clients (6) : ix_clients_active_name unique=f | ix_clients_created_at unique=f | ix_clients_created_by_user_id unique=f | ix_clients_updated_by_user_id unique=f | pk_clients unique=t | ux_clients_reference unique=t
+ séquences clients (1) : client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-
+ colonnes appointments (19) : appointments.cancellation_reason character varying(200) notnull=f | appointments.cancelled_at_utc timestamp with time zone notnull=f | appointments.cancelled_by_user_id uuid notnull=f | appointments.client_id uuid notnull=t | appointments.created_at_utc timestamp with time zone notnull=t | appointments.created_by_user_id uuid notnull=t | appointments.ends_at_utc timestamp with time zone notnull=t | appointments.id uuid notnull=t | appointments.notes character varying(1000) notnull=f | appointments.reason_code character varying(32) notnull=t | appointments.responsible_user_id uuid notnull=f | appointments.starts_at_utc timestamp with time zone notnull=t | appointments.status character varying(16) notnull=t | appointments.updated_at_utc timestamp with time zone notnull=t | appointments.updated_by_user_id uuid notnull=t | responsibles.created_at_utc timestamp with time zone notnull=t | responsibles.is_eligible boolean notnull=t | responsibles.updated_at_utc timestamp with time zone notnull=t | responsibles.user_id uuid notnull=t
+ contraintes appointments (30) : appointments.appointments_client_id_not_null n - | appointments.appointments_created_at_utc_not_null n - | appointments.appointments_created_by_user_id_not_null n - | appointments.appointments_ends_at_utc_not_null n - | appointments.appointments_id_not_null n - | appointments.appointments_reason_code_not_null n - | appointments.appointments_starts_at_utc_not_null n - | appointments.appointments_status_not_null n - | appointments.appointments_updated_at_utc_not_null n - | appointments.appointments_updated_by_user_id_not_null n - | appointments.ck_appointments_cancellation_consistency c - | appointments.ck_appointments_cancellation_reason_planned c - | appointments.ck_appointments_duration_range c - | appointments.ck_appointments_ends_after_starts c - | appointments.ck_appointments_reason_code_format c - | appointments.ck_appointments_status c - | appointments.ck_appointments_updated_after_created c - | appointments.fk_appointments_cancelled_by_users f r | appointments.fk_appointments_clients f r | appointments.fk_appointments_created_by_users f r | appointments.fk_appointments_responsible_users f r | appointments.fk_appointments_updated_by_users f r | appointments.pk_appointments p - | responsibles.ck_responsibles_updated_after_created c - | responsibles.fk_responsibles_users f r | responsibles.pk_responsibles p - | responsibles.responsibles_created_at_utc_not_null n - | responsibles.responsibles_is_eligible_not_null n - | responsibles.responsibles_updated_at_utc_not_null n - | responsibles.responsibles_user_id_not_null n -
+ index appointments (9) : ix_appointments_cancelled_by_user_id unique=f | ix_appointments_client_starts_at unique=f | ix_appointments_created_by_user_id unique=f | ix_appointments_responsible_planned unique=f | ix_appointments_starts_at unique=f | ix_appointments_unassigned_planned unique=f | ix_appointments_updated_by_user_id unique=f | pk_appointments unique=t | pk_responsibles unique=t
+ colonnes audit (11) : events.action character varying(64) notnull=t | events.actor_user_id uuid notnull=t | events.changes jsonb notnull=f | events.client_id uuid notnull=f | events.entity_id uuid notnull=t | events.entity_type character varying(32) notnull=t | events.id uuid notnull=t | events.module character varying(32) notnull=t | events.occurred_at_utc timestamp with time zone notnull=t | events.session_id uuid notnull=f | events.trace_id character varying(64) notnull=f
+ contraintes audit (14) : events.ck_events_action_format c - | events.ck_events_changes_array c - | events.ck_events_entity_type_format c - | events.ck_events_module_format c - | events.events_action_not_null n - | events.events_actor_user_id_not_null n - | events.events_entity_id_not_null n - | events.events_entity_type_not_null n - | events.events_id_not_null n - | events.events_module_not_null n - | events.events_occurred_at_utc_not_null n - | events.fk_events_actor_users f r | events.fk_events_clients f r | events.pk_events p -
+ index audit (4) : ix_events_actor_user_id unique=f | ix_events_client_occurred unique=f | ix_events_entity unique=f | pk_events unique=t
+ EF applied=[20261015125000_InitialBaseline, 20261015223849_AuthIdentity, 20261016230630_ClientsModule, 20261017150504_AppointmentsModule, 20261018163108_AuditJournal] pending=[]
+
+
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations [39 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [10 ms]
+  Messages de sortie standard :
+ mmv_v2_dev : history_exists=True
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (4) : appointments | audit | auth | clients
+ relations (37) : appointments.appointments kind=r owner=mmv_v2_dev acl=default | appointments.ix_appointments_cancelled_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_client_starts_at kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_created_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_responsible_planned kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_starts_at kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_unassigned_planned kind=i owner=mmv_v2_dev acl=default | appointments.ix_appointments_updated_by_user_id kind=i owner=mmv_v2_dev acl=default | appointments.pk_appointments kind=i owner=mmv_v2_dev acl=default | appointments.pk_responsibles kind=i owner=mmv_v2_dev acl=default | appointments.responsibles kind=r owner=mmv_v2_dev acl=default | audit.events kind=r owner=mmv_v2_dev acl=default | audit.ix_events_actor_user_id kind=i owner=mmv_v2_dev acl=default | audit.ix_events_client_occurred kind=i owner=mmv_v2_dev acl=default | audit.ix_events_entity kind=i owner=mmv_v2_dev acl=default | audit.pk_events kind=i owner=mmv_v2_dev acl=default | auth.bootstrap_record kind=r owner=mmv_v2_dev acl=default | auth.ix_sessions_user_id kind=i owner=mmv_v2_dev acl=default | auth.pk_bootstrap_record kind=i owner=mmv_v2_dev acl=default | auth.pk_sessions kind=i owner=mmv_v2_dev acl=default | auth.pk_user_permissions kind=i owner=mmv_v2_dev acl=default | auth.pk_users kind=i owner=mmv_v2_dev acl=default | auth.sessions kind=r owner=mmv_v2_dev acl=default | auth.user_permissions kind=r owner=mmv_v2_dev acl=default | auth.users kind=r owner=mmv_v2_dev acl=default | auth.ux_sessions_token_hash kind=i owner=mmv_v2_dev acl=default | auth.ux_users_normalized_user_name kind=i owner=mmv_v2_dev acl=default | clients.client_reference_seq kind=S owner=mmv_v2_dev acl=default | clients.clients kind=r owner=mmv_v2_dev acl=default | clients.ix_clients_active_name kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_created_at kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_created_by_user_id kind=i owner=mmv_v2_dev acl=default | clients.ix_clients_updated_by_user_id kind=i owner=mmv_v2_dev acl=default | clients.pk_clients kind=i owner=mmv_v2_dev acl=default | clients.ux_clients_reference kind=i owner=mmv_v2_dev acl=default | public.PK___EFMigrationsHistory kind=i owner=mmv_v2_dev acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_dev acl=default
+ routines (1) : audit.reject_event_mutation
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (2) : trigger trg_events_append_only on audit.events | trigger trg_events_no_truncate on audit.events
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (5) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4 | 20261016230630_ClientsModule 10.0.4 | 20261017150504_AppointmentsModule 10.0.4 | 20261018163108_AuditJournal 10.0.4
+ colonnes auth (22) : bootstrap_record.administrator_id uuid notnull=t | bootstrap_record.completed_at_utc timestamp with time zone notnull=t | bootstrap_record.id smallint notnull=t | sessions.created_at_utc timestamp with time zone notnull=t | sessions.expires_at_utc timestamp with time zone notnull=t | sessions.id uuid notnull=t | sessions.last_seen_at_utc timestamp with time zone notnull=t | sessions.revocation_reason character varying(32) notnull=f | sessions.revoked_at_utc timestamp with time zone notnull=f | sessions.token_hash bytea notnull=t | sessions.user_id uuid notnull=t | user_permissions.permission character varying(64) notnull=t | user_permissions.user_id uuid notnull=t | users.created_at_utc timestamp with time zone notnull=t | users.display_name character varying(128) notnull=t | users.failed_login_count integer notnull=t | users.id uuid notnull=t | users.is_active boolean notnull=t | users.lockout_end_utc timestamp with time zone notnull=f | users.normalized_user_name character varying(64) notnull=t | users.password_hash text notnull=t | users.user_name character varying(64) notnull=t
+ contraintes auth (30) : bootstrap_record.bootstrap_record_administrator_id_not_null n - | bootstrap_record.bootstrap_record_completed_at_utc_not_null n - | bootstrap_record.bootstrap_record_id_not_null n - | bootstrap_record.ck_bootstrap_record_singleton c - | bootstrap_record.pk_bootstrap_record p - | sessions.ck_sessions_expiry_after_creation c - | sessions.ck_sessions_token_hash_length c - | sessions.fk_sessions_users f c | sessions.pk_sessions p - | sessions.sessions_created_at_utc_not_null n - | sessions.sessions_expires_at_utc_not_null n - | sessions.sessions_id_not_null n - | sessions.sessions_last_seen_at_utc_not_null n - | sessions.sessions_token_hash_not_null n - | sessions.sessions_user_id_not_null n - | user_permissions.ck_user_permissions_permission c - | user_permissions.fk_user_permissions_users f c | user_permissions.pk_user_permissions p - | user_permissions.user_permissions_permission_not_null n - | user_permissions.user_permissions_user_id_not_null n - | users.ck_users_failed_login_count c - | users.pk_users p - | users.users_created_at_utc_not_null n - | users.users_display_name_not_null n - | users.users_failed_login_count_not_null n - | users.users_id_not_null n - | users.users_is_active_not_null n - | users.users_normalized_user_name_not_null n - | users.users_password_hash_not_null n - | users.users_user_name_not_null n -
+ index auth (7) : ix_sessions_user_id unique=f | pk_bootstrap_record unique=t | pk_sessions unique=t | pk_user_permissions unique=t | pk_users unique=t | ux_sessions_token_hash unique=t | ux_users_normalized_user_name unique=t
+ colonnes clients (17) : clients.address_line character varying(200) notnull=f | clients.archived_at_utc timestamp with time zone notnull=f | clients.birth_date date notnull=f | clients.city character varying(100) notnull=f | clients.created_at_utc timestamp with time zone notnull=t | clients.created_by_user_id uuid notnull=t | clients.email character varying(254) notnull=f | clients.first_name character varying(100) notnull=t | clients.id uuid notnull=t | clients.last_name character varying(100) notnull=t | clients.notes character varying(1000) notnull=f | clients.phone character varying(32) notnull=f | clients.postal_code character varying(10) notnull=f | clients.reference character varying(24) notnull=t | clients.search_text character varying(700) notnull=t | clients.updated_at_utc timestamp with time zone notnull=t | clients.updated_by_user_id uuid notnull=t
+ contraintes clients (18) : clients.ck_clients_archived_after_created c - | clients.ck_clients_birth_date_range c - | clients.ck_clients_first_name_not_blank c - | clients.ck_clients_last_name_not_blank c - | clients.ck_clients_reference_format c - | clients.ck_clients_updated_after_created c - | clients.clients_created_at_utc_not_null n - | clients.clients_created_by_user_id_not_null n - | clients.clients_first_name_not_null n - | clients.clients_id_not_null n - | clients.clients_last_name_not_null n - | clients.clients_reference_not_null n - | clients.clients_search_text_not_null n - | clients.clients_updated_at_utc_not_null n - | clients.clients_updated_by_user_id_not_null n - | clients.fk_clients_created_by_users f r | clients.fk_clients_updated_by_users f r | clients.pk_clients p -
+ index clients (6) : ix_clients_active_name unique=f | ix_clients_created_at unique=f | ix_clients_created_by_user_id unique=f | ix_clients_updated_by_user_id unique=f | pk_clients unique=t | ux_clients_reference unique=t
+ séquences clients (1) : client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-
+ colonnes appointments (19) : appointments.cancellation_reason character varying(200) notnull=f | appointments.cancelled_at_utc timestamp with time zone notnull=f | appointments.cancelled_by_user_id uuid notnull=f | appointments.client_id uuid notnull=t | appointments.created_at_utc timestamp with time zone notnull=t | appointments.created_by_user_id uuid notnull=t | appointments.ends_at_utc timestamp with time zone notnull=t | appointments.id uuid notnull=t | appointments.notes character varying(1000) notnull=f | appointments.reason_code character varying(32) notnull=t | appointments.responsible_user_id uuid notnull=f | appointments.starts_at_utc timestamp with time zone notnull=t | appointments.status character varying(16) notnull=t | appointments.updated_at_utc timestamp with time zone notnull=t | appointments.updated_by_user_id uuid notnull=t | responsibles.created_at_utc timestamp with time zone notnull=t | responsibles.is_eligible boolean notnull=t | responsibles.updated_at_utc timestamp with time zone notnull=t | responsibles.user_id uuid notnull=t
+ contraintes appointments (30) : appointments.appointments_client_id_not_null n - | appointments.appointments_created_at_utc_not_null n - | appointments.appointments_created_by_user_id_not_null n - | appointments.appointments_ends_at_utc_not_null n - | appointments.appointments_id_not_null n - | appointments.appointments_reason_code_not_null n - | appointments.appointments_starts_at_utc_not_null n - | appointments.appointments_status_not_null n - | appointments.appointments_updated_at_utc_not_null n - | appointments.appointments_updated_by_user_id_not_null n - | appointments.ck_appointments_cancellation_consistency c - | appointments.ck_appointments_cancellation_reason_planned c - | appointments.ck_appointments_duration_range c - | appointments.ck_appointments_ends_after_starts c - | appointments.ck_appointments_reason_code_format c - | appointments.ck_appointments_status c - | appointments.ck_appointments_updated_after_created c - | appointments.fk_appointments_cancelled_by_users f r | appointments.fk_appointments_clients f r | appointments.fk_appointments_created_by_users f r | appointments.fk_appointments_responsible_users f r | appointments.fk_appointments_updated_by_users f r | appointments.pk_appointments p - | responsibles.ck_responsibles_updated_after_created c - | responsibles.fk_responsibles_users f r | responsibles.pk_responsibles p - | responsibles.responsibles_created_at_utc_not_null n - | responsibles.responsibles_is_eligible_not_null n - | responsibles.responsibles_updated_at_utc_not_null n - | responsibles.responsibles_user_id_not_null n -
+ index appointments (9) : ix_appointments_cancelled_by_user_id unique=f | ix_appointments_client_starts_at unique=f | ix_appointments_created_by_user_id unique=f | ix_appointments_responsible_planned unique=f | ix_appointments_starts_at unique=f | ix_appointments_unassigned_planned unique=f | ix_appointments_updated_by_user_id unique=f | pk_appointments unique=t | pk_responsibles unique=t
+ colonnes audit (11) : events.action character varying(64) notnull=t | events.actor_user_id uuid notnull=t | events.changes jsonb notnull=f | events.client_id uuid notnull=f | events.entity_id uuid notnull=t | events.entity_type character varying(32) notnull=t | events.id uuid notnull=t | events.module character varying(32) notnull=t | events.occurred_at_utc timestamp with time zone notnull=t | events.session_id uuid notnull=f | events.trace_id character varying(64) notnull=f
+ contraintes audit (14) : events.ck_events_action_format c - | events.ck_events_changes_array c - | events.ck_events_entity_type_format c - | events.ck_events_module_format c - | events.events_action_not_null n - | events.events_actor_user_id_not_null n - | events.events_entity_id_not_null n - | events.events_entity_type_not_null n - | events.events_id_not_null n - | events.events_module_not_null n - | events.events_occurred_at_utc_not_null n - | events.fk_events_actor_users f r | events.fk_events_clients f r | events.pk_events p -
+ index audit (4) : ix_events_actor_user_id unique=f | ix_events_client_occurred unique=f | ix_events_entity unique=f | pk_events unique=t
+
+
+  Réussi MMV.PostgreSql.Tests.TransactionalRollbackTests.TestDatabase_TemporaryWriteIsRolledBackWithoutResidue [128 ms]
+  Messages de sortie standard :
+ db=mmv_v2_test role=mmv_v2_test port=5433 version_num=180006 owner=True super=False createdb=False createrole=False replication=False bypassrls=False public_connect=False
+ table temporaire : mmv_ob02_probe_170b36a0e1aa458c8c5fbedec7d80ea6
+ transaction_read_only=on public_owner=pg_database_owner
+ schémas hors public (4) : appointments | audit | auth | clients
+ relations (37) : appointments.appointments kind=r owner=mmv_v2_test acl=default | appointments.ix_appointments_cancelled_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_client_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_created_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_responsible_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_starts_at kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_unassigned_planned kind=i owner=mmv_v2_test acl=default | appointments.ix_appointments_updated_by_user_id kind=i owner=mmv_v2_test acl=default | appointments.pk_appointments kind=i owner=mmv_v2_test acl=default | appointments.pk_responsibles kind=i owner=mmv_v2_test acl=default | appointments.responsibles kind=r owner=mmv_v2_test acl=default | audit.events kind=r owner=mmv_v2_test acl=default | audit.ix_events_actor_user_id kind=i owner=mmv_v2_test acl=default | audit.ix_events_client_occurred kind=i owner=mmv_v2_test acl=default | audit.ix_events_entity kind=i owner=mmv_v2_test acl=default | audit.pk_events kind=i owner=mmv_v2_test acl=default | auth.bootstrap_record kind=r owner=mmv_v2_test acl=default | auth.ix_sessions_user_id kind=i owner=mmv_v2_test acl=default | auth.pk_bootstrap_record kind=i owner=mmv_v2_test acl=default | auth.pk_sessions kind=i owner=mmv_v2_test acl=default | auth.pk_user_permissions kind=i owner=mmv_v2_test acl=default | auth.pk_users kind=i owner=mmv_v2_test acl=default | auth.sessions kind=r owner=mmv_v2_test acl=default | auth.user_permissions kind=r owner=mmv_v2_test acl=default | auth.users kind=r owner=mmv_v2_test acl=default | auth.ux_sessions_token_hash kind=i owner=mmv_v2_test acl=default | auth.ux_users_normalized_user_name kind=i owner=mmv_v2_test acl=default | clients.client_reference_seq kind=S owner=mmv_v2_test acl=default | clients.clients kind=r owner=mmv_v2_test acl=default | clients.ix_clients_active_name kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_at kind=i owner=mmv_v2_test acl=default | clients.ix_clients_created_by_user_id kind=i owner=mmv_v2_test acl=default | clients.ix_clients_updated_by_user_id kind=i owner=mmv_v2_test acl=default | clients.pk_clients kind=i owner=mmv_v2_test acl=default | clients.ux_clients_reference kind=i owner=mmv_v2_test acl=default | public.PK___EFMigrationsHistory kind=i owner=mmv_v2_test acl=default | public.__EFMigrationsHistory kind=r owner=mmv_v2_test acl=default
+ routines (1) : audit.reject_event_mutation
+ types (0) : —
+ extensions (0) : —
+ triggers/règles/politiques/ACL par défaut (2) : trigger trg_events_append_only on audit.events | trigger trg_events_no_truncate on audit.events
+ colonnes __EFMigrationsHistory (2) : MigrationId character varying(150) notnull=t | ProductVersion character varying(32) notnull=t
+ contraintes __EFMigrationsHistory (3) : PK___EFMigrationsHistory PRIMARY KEY ("MigrationId") | __EFMigrationsHistory_MigrationId_not_null NOT NULL "MigrationId" | __EFMigrationsHistory_ProductVersion_not_null NOT NULL "ProductVersion"
+ lignes __EFMigrationsHistory (5) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4 | 20261016230630_ClientsModule 10.0.4 | 20261017150504_AppointmentsModule 10.0.4 | 20261018163108_AuditJournal 10.0.4
+ colonnes auth (22) : bootstrap_record.administrator_id uuid notnull=t | bootstrap_record.completed_at_utc timestamp with time zone notnull=t | bootstrap_record.id smallint notnull=t | sessions.created_at_utc timestamp with time zone notnull=t | sessions.expires_at_utc timestamp with time zone notnull=t | sessions.id uuid notnull=t | sessions.last_seen_at_utc timestamp with time zone notnull=t | sessions.revocation_reason character varying(32) notnull=f | sessions.revoked_at_utc timestamp with time zone notnull=f | sessions.token_hash bytea notnull=t | sessions.user_id uuid notnull=t | user_permissions.permission character varying(64) notnull=t | user_permissions.user_id uuid notnull=t | users.created_at_utc timestamp with time zone notnull=t | users.display_name character varying(128) notnull=t | users.failed_login_count integer notnull=t | users.id uuid notnull=t | users.is_active boolean notnull=t | users.lockout_end_utc timestamp with time zone notnull=f | users.normalized_user_name character varying(64) notnull=t | users.password_hash text notnull=t | users.user_name character varying(64) notnull=t
+ contraintes auth (30) : bootstrap_record.bootstrap_record_administrator_id_not_null n - | bootstrap_record.bootstrap_record_completed_at_utc_not_null n - | bootstrap_record.bootstrap_record_id_not_null n - | bootstrap_record.ck_bootstrap_record_singleton c - | bootstrap_record.pk_bootstrap_record p - | sessions.ck_sessions_expiry_after_creation c - | sessions.ck_sessions_token_hash_length c - | sessions.fk_sessions_users f c | sessions.pk_sessions p - | sessions.sessions_created_at_utc_not_null n - | sessions.sessions_expires_at_utc_not_null n - | sessions.sessions_id_not_null n - | sessions.sessions_last_seen_at_utc_not_null n - | sessions.sessions_token_hash_not_null n - | sessions.sessions_user_id_not_null n - | user_permissions.ck_user_permissions_permission c - | user_permissions.fk_user_permissions_users f c | user_permissions.pk_user_permissions p - | user_permissions.user_permissions_permission_not_null n - | user_permissions.user_permissions_user_id_not_null n - | users.ck_users_failed_login_count c - | users.pk_users p - | users.users_created_at_utc_not_null n - | users.users_display_name_not_null n - | users.users_failed_login_count_not_null n - | users.users_id_not_null n - | users.users_is_active_not_null n - | users.users_normalized_user_name_not_null n - | users.users_password_hash_not_null n - | users.users_user_name_not_null n -
+ index auth (7) : ix_sessions_user_id unique=f | pk_bootstrap_record unique=t | pk_sessions unique=t | pk_user_permissions unique=t | pk_users unique=t | ux_sessions_token_hash unique=t | ux_users_normalized_user_name unique=t
+ colonnes clients (17) : clients.address_line character varying(200) notnull=f | clients.archived_at_utc timestamp with time zone notnull=f | clients.birth_date date notnull=f | clients.city character varying(100) notnull=f | clients.created_at_utc timestamp with time zone notnull=t | clients.created_by_user_id uuid notnull=t | clients.email character varying(254) notnull=f | clients.first_name character varying(100) notnull=t | clients.id uuid notnull=t | clients.last_name character varying(100) notnull=t | clients.notes character varying(1000) notnull=f | clients.phone character varying(32) notnull=f | clients.postal_code character varying(10) notnull=f | clients.reference character varying(24) notnull=t | clients.search_text character varying(700) notnull=t | clients.updated_at_utc timestamp with time zone notnull=t | clients.updated_by_user_id uuid notnull=t
+ contraintes clients (18) : clients.ck_clients_archived_after_created c - | clients.ck_clients_birth_date_range c - | clients.ck_clients_first_name_not_blank c - | clients.ck_clients_last_name_not_blank c - | clients.ck_clients_reference_format c - | clients.ck_clients_updated_after_created c - | clients.clients_created_at_utc_not_null n - | clients.clients_created_by_user_id_not_null n - | clients.clients_first_name_not_null n - | clients.clients_id_not_null n - | clients.clients_last_name_not_null n - | clients.clients_reference_not_null n - | clients.clients_search_text_not_null n - | clients.clients_updated_at_utc_not_null n - | clients.clients_updated_by_user_id_not_null n - | clients.fk_clients_created_by_users f r | clients.fk_clients_updated_by_users f r | clients.pk_clients p -
+ index clients (6) : ix_clients_active_name unique=f | ix_clients_created_at unique=f | ix_clients_created_by_user_id unique=f | ix_clients_updated_by_user_id unique=f | pk_clients unique=t | ux_clients_reference unique=t
+ séquences clients (1) : client_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-
+ colonnes appointments (19) : appointments.cancellation_reason character varying(200) notnull=f | appointments.cancelled_at_utc timestamp with time zone notnull=f | appointments.cancelled_by_user_id uuid notnull=f | appointments.client_id uuid notnull=t | appointments.created_at_utc timestamp with time zone notnull=t | appointments.created_by_user_id uuid notnull=t | appointments.ends_at_utc timestamp with time zone notnull=t | appointments.id uuid notnull=t | appointments.notes character varying(1000) notnull=f | appointments.reason_code character varying(32) notnull=t | appointments.responsible_user_id uuid notnull=f | appointments.starts_at_utc timestamp with time zone notnull=t | appointments.status character varying(16) notnull=t | appointments.updated_at_utc timestamp with time zone notnull=t | appointments.updated_by_user_id uuid notnull=t | responsibles.created_at_utc timestamp with time zone notnull=t | responsibles.is_eligible boolean notnull=t | responsibles.updated_at_utc timestamp with time zone notnull=t | responsibles.user_id uuid notnull=t
+ contraintes appointments (30) : appointments.appointments_client_id_not_null n - | appointments.appointments_created_at_utc_not_null n - | appointments.appointments_created_by_user_id_not_null n - | appointments.appointments_ends_at_utc_not_null n - | appointments.appointments_id_not_null n - | appointments.appointments_reason_code_not_null n - | appointments.appointments_starts_at_utc_not_null n - | appointments.appointments_status_not_null n - | appointments.appointments_updated_at_utc_not_null n - | appointments.appointments_updated_by_user_id_not_null n - | appointments.ck_appointments_cancellation_consistency c - | appointments.ck_appointments_cancellation_reason_planned c - | appointments.ck_appointments_duration_range c - | appointments.ck_appointments_ends_after_starts c - | appointments.ck_appointments_reason_code_format c - | appointments.ck_appointments_status c - | appointments.ck_appointments_updated_after_created c - | appointments.fk_appointments_cancelled_by_users f r | appointments.fk_appointments_clients f r | appointments.fk_appointments_created_by_users f r | appointments.fk_appointments_responsible_users f r | appointments.fk_appointments_updated_by_users f r | appointments.pk_appointments p - | responsibles.ck_responsibles_updated_after_created c - | responsibles.fk_responsibles_users f r | responsibles.pk_responsibles p - | responsibles.responsibles_created_at_utc_not_null n - | responsibles.responsibles_is_eligible_not_null n - | responsibles.responsibles_updated_at_utc_not_null n - | responsibles.responsibles_user_id_not_null n -
+ index appointments (9) : ix_appointments_cancelled_by_user_id unique=f | ix_appointments_client_starts_at unique=f | ix_appointments_created_by_user_id unique=f | ix_appointments_responsible_planned unique=f | ix_appointments_starts_at unique=f | ix_appointments_unassigned_planned unique=f | ix_appointments_updated_by_user_id unique=f | pk_appointments unique=t | pk_responsibles unique=t
+ colonnes audit (11) : events.action character varying(64) notnull=t | events.actor_user_id uuid notnull=t | events.changes jsonb notnull=f | events.client_id uuid notnull=f | events.entity_id uuid notnull=t | events.entity_type character varying(32) notnull=t | events.id uuid notnull=t | events.module character varying(32) notnull=t | events.occurred_at_utc timestamp with time zone notnull=t | events.session_id uuid notnull=f | events.trace_id character varying(64) notnull=f
+ contraintes audit (14) : events.ck_events_action_format c - | events.ck_events_changes_array c - | events.ck_events_entity_type_format c - | events.ck_events_module_format c - | events.events_action_not_null n - | events.events_actor_user_id_not_null n - | events.events_entity_id_not_null n - | events.events_entity_type_not_null n - | events.events_id_not_null n - | events.events_module_not_null n - | events.events_occurred_at_utc_not_null n - | events.fk_events_actor_users f r | events.fk_events_clients f r | events.pk_events p -
+ index audit (4) : ix_events_actor_user_id unique=f | ix_events_client_occurred unique=f | ix_events_entity unique=f | pk_events unique=t
+
+
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[7]
+      MmvSession was not authenticated. Failure message: Session invalide.
+info: MMV.Api.Auth.SessionAuthenticationHandler[12]
+      AuthenticationScheme: MmvSession was challenged.
+info: MMV.Api.Auth.SessionAuthenticationHandler[7]
+      MmvSession was not authenticated. Failure message: Session invalide.
+info: MMV.Api.Auth.SessionAuthenticationHandler[12]
+      AuthenticationScheme: MmvSession was challenged.
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+  Réussi MMV.PostgreSql.Tests.AuthHttpPostgreSqlTests.AuthMatrix_OnRealPostgreSql [1 s]
+  Messages de sortie standard :
+ comptes éphémères créés sur mmv_v2_test (suffixe cfb90a94b7)
+ nettoyage : 2 compte(s) supprimé(s), sessions restantes = 0
+
+
+  Réussi MMV.PostgreSql.Tests.ClientReferenceFormatPostgreSqlTests.ReferenceExpression_PadsToSixDigitsAndNeverTruncates [5 ms]
+  Messages de sortie standard :
+ CLI-000001 | CLI-000042 | CLI-999999 | CLI-1000000 | CLI-123456789 | CLI-999999999999999999
+
+
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.Bootstrap_SucceedsOnce_ThenIsRefused [112 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.LoginSessionLogoutAndDeactivation_RoundTripOnPostgreSql [225 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.BootstrapRecord_IsASingletonEnforcedByPostgreSql [11 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.IdentityPostgreSqlTests.UnknownPermissionAndDuplicateUserName_AreRejectedByPostgreSql [3 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.TestDatabase_IsRefusedAsBootstrapTarget [6 ms]
+  Messages de sortie standard :
+ db=mmv_v2_test role=mmv_v2_test/mmv_v2_test port=5433 version=18.6 ::1 -> ::1
+
+
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.DevDatabase_IsTheAllowedBootstrapTarget [1 ms]
+  Messages de sortie standard :
+ db=mmv_v2_dev role=mmv_v2_dev/mmv_v2_dev port=5433 version=18.6 ::1 -> ::1
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.Journal_IsAppendOnly_AndAcceptsTheAuditReadPermission [118 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.UpdatesWithoutRealChange_RewriteNoRow_AndRecordNoEvent [140 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ client (0,24)|2026-10-19 15:26:06.580466+02|01a15457-3fe9-7b49-b518-ca02e9f4ea1c ; rendez-vous (0,21)|2026-10-19 15:26:06.583989+02|01a15457-3fe9-7b49-b518-ca02e9f4ea1c ; événements 2 → 3 après le témoin
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.ClientWrites_InsertTheirEventInTheSameSave_WithActorSessionAndNoPersonalValue [22 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ 0005 simulée dans la transaction : False
+ 3 événements ; champs : [{"new": null, "old": null, "field": "firstName", "masked": true}, {"new": null, "old": null, "field": "lastName", "masked": true}, {"new": null, "old": null, "field": "birthDate", "masked": true}, {"new": null, "old": null, "field": "phone", "masked": true}, {"new": null, "old": null, "field": "email", "masked": true}, {"new": null, "old": null, "field": "city", "masked": true}, {"new": null, "old": null, "field": "postalCode", "masked": true}, {"new": null, "old": null, "field": "notes", "masked": true}] [{"new": null, "old": null, "field": "phone", "masked": true}, {"new": null, "old": null, "field": "city", "masked": true}] 
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.FailedSave_WritesNeitherTheBusinessChangeNorItsEvent [12 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.AuditJournalScript_ProducesExactlyTheExpectedSchema [44 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ 0005 simulée : False
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AuditPostgreSqlTests.AppointmentWrites_AreAuditedInTheirTransaction_RefusalsAreNot [76 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches [4 ms]
+  Messages de sortie standard :
+ db=mmv_v2_dev role=mmv_v2_dev port=5433 version_num=180006 owner=True super=False createdb=False createrole=False replication=False bypassrls=False public_connect=False
+
+
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5432;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=postgres;Usernam"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches [1 ms]
+  Messages de sortie standard :
+ db=mmv_v2_test role=mmv_v2_test port=5433 version_num=180006 owner=True super=False createdb=False createrole=False replication=False bypassrls=False public_connect=False
+
+
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.Constraints_AreEnforcedByPostgreSql [12 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ClientHistory_FiltersOrdersPaginatesAndCounts_OnPostgreSql [86 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ historique : 4 rendez-vous, effectifs ClientAppointmentCounts { Upcoming = 2, Past = 1, Cancelled = 1 }
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ArchivedClientAndIneligibleCollaborator_AreRefused_OnPostgreSql [6 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.List_IsOrderedByStartThenId_AndCarriesTheLastEditor_OnPostgreSql [22 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.StartedAppointment_KeepsItsBooking_OnPostgreSql [14 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.Move_KeepingAResponsibleNoLongerEligible_IsRefused_OnPostgreSql [11 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+info: MMV.Api.Appointments[3100]
+      Rendez-vous : magasin configur� (fuseau Europe/Brussels, capacit� d'accueil 1 ; vide = aucune r�servation sans responsable).
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\src\MMV.Api
+info: MMV.Api.Auth.SessionAuthenticationHandler[12]
+      AuthenticationScheme: MmvSession was challenged.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Appointments[3101]
+      Rendez-vous created : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_conflict) : 00000000-0000-0000-0000-000000000000 par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3101]
+      Rendez-vous created : 01a15457-4528-7814-81ee-0457b31a5b00 par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3101]
+      Rendez-vous created : 01a15457-452e-7850-ac7b-783ec880e12d par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (reception_capacity_full) : 00000000-0000-0000-0000-000000000000 par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (client_archived) : 00000000-0000-0000-0000-000000000000 par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3101]
+      Rendez-vous updated : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (version_conflict) : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3101]
+      Rendez-vous updated : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Appointments[3101]
+      Rendez-vous cancelled : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42f1-7dbb-81ff-36d49d06f4b7
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_cancelled) : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42f1-7dbb-81ff-36d49d06f4b7
+info: MMV.Api.Appointments[3101]
+      Rendez-vous created : 01a15457-45a0-76f5-a887-2f4e94fb0d00 par 01a15457-42c2-7e53-9db8-3f898b1a1ce4
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_conflict) : 01a15457-4502-7937-9bff-72c80600b56a par 01a15457-42f1-7dbb-81ff-36d49d06f4b7
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_past) : 01a15457-45aa-7d5d-8bce-f727e7eb8537 par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_past) : 01a15457-45aa-7d5d-8bce-f727e7eb8537 par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: MMV.Api.Appointments[3101]
+      Rendez-vous updated : 01a15457-45aa-7d5d-8bce-f727e7eb8537 par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: MMV.Api.Appointments[3101]
+      Rendez-vous cancelled : 01a15457-45aa-7d5d-8bce-f727e7eb8537 par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: MMV.Api.Appointments[3102]
+      Rendez-vous refus� (appointment_past) : 01a15457-45aa-7d5d-8bce-f727e7eb8537 par 01a15457-431c-743a-a1c3-eefd359c4f78
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+info: MMV.Api.Appointments[3100]
+      Rendez-vous : magasin configur� (fuseau Europe/Brussels, capacit� d'accueil 1 ; vide = aucune r�servation sans responsable).
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\src\MMV.Api
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ReceptionCapacity_IsComputedAtEachInstant_OnPostgreSql [26 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.SimultaneousReceptionBookings_TwoConnections_SecondWaitsForTheFirst [69 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ poste B (pid 22276) en attente du poste A (pid 38468) : wait_event_type=Lock wait_event=advisory blocking=[38468] locks=advisory/1296914002/0/2/f
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.SimultaneousReceptionBookings_SameTransactionView_SecondIsRefused [9 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.PersonalAppointment_OverlapConsecutiveCancelRestore_OnPostgreSql [34 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ rendez-vous 01a15457-4223-7b28-935c-e532bd4847a9, xmin=4427
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsHttpPostgreSqlTests.AppointmentsHttpMatrix_RightsConflictsAndInputValidation_OnRealPostgreSql [918 ms]
+  Messages de sortie standard :
+ comptes et clients éphémères validés sur mmv_v2_test (suffixe c4afdd3ad4)
+ matrice HTTP : 40 contrôles PASS
+ nettoyage (suffixe c4afdd3ad4) : 8 événement(s) d'audit, 5 rendez-vous, 2 éligibilité(s), 5 session(s), 2 client(s), 6 compte(s) supprimés ; résidus = 0
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ConcurrentWriter_IsDetectedByXmin_WithoutOverwrite [55 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Constraints_AreEnforcedByPostgreSql [11 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Clients[3001]
+      Client created : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46b1-767e-bf19-8e4082a77482
+info: MMV.Api.Clients[3001]
+      Client created : 01a15457-480f-7d29-bc26-0cb86a846a8c par 01a15457-46b1-767e-bf19-8e4082a77482
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Clients[3001]
+      Client updated : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46b1-767e-bf19-8e4082a77482
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Clients[3002]
+      Client en conflit (version_conflict) : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: MMV.Api.Clients[3001]
+      Client archived : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: MMV.Api.Clients[3002]
+      Client en conflit (already_archived) : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: MMV.Api.Clients[3002]
+      Client en conflit (client_archived) : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46b1-767e-bf19-8e4082a77482
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Clients[3002]
+      Client en conflit (version_conflict) : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: MMV.Api.Clients[3001]
+      Client reactivated : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: MMV.Api.Clients[3002]
+      Client en conflit (already_active) : 01a15457-4800-72a9-8dde-4696210beb62 par 01a15457-46dc-736f-bcf8-69a6e482fe0d
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+info: MMV.Api.Appointments[3100]
+      Rendez-vous : magasin configur� (fuseau Europe/Brussels, capacit� d'accueil 1 ; vide = aucune r�servation sans responsable).
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\src\MMV.Api
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Clients[3001]
+      Client created : 01a15457-49b6-7d43-a872-3b8dc3bba748 par 01a15457-48dd-7332-9287-db1f08be996b
+info: MMV.Api.Clients[3001]
+      Client updated : 01a15457-49b6-7d43-a872-3b8dc3bba748 par 01a15457-48dd-7332-9287-db1f08be996b
+info: MMV.Api.Clients[3002]
+      Client en conflit (version_conflict) : 01a15457-49b6-7d43-a872-3b8dc3bba748 par 01a15457-48dd-7332-9287-db1f08be996b
+info: MMV.Api.Clients[3001]
+      Client updated : 01a15457-49b6-7d43-a872-3b8dc3bba748 par 01a15457-48dd-7332-9287-db1f08be996b
+info: MMV.Api.Clients[3001]
+      Client archived : 01a15457-49b6-7d43-a872-3b8dc3bba748 par 01a15457-48dd-7332-9287-db1f08be996b
+info: Microsoft.Hosting.Lifetime[0]
+      Application is shutting down...
+[xUnit.net 00:00:06.27]   Finished:    MMV.PostgreSql.Tests
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ClientsHttpPermissionsAndLifecycle_OnRealPostgreSql [583 ms]
+  Messages de sortie standard :
+ 4 comptes éphémères créés sur mmv_v2_test (suffixe f6af562328)
+ nettoyage : 5 événement(s) d'audit, 2 client(s) fictif(s) et 4 compte(s) supprimés
+ résidus : 0
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ClientsHttpMatrix_OnRealPostgreSql [374 ms]
+  Messages de sortie standard :
+ comptes éphémères créés sur mmv_v2_test (suffixe 1c3df4e52e)
+ modification sans changement : 200, version 4511 conservée (xmin 4511), 2 événement(s) inchangés
+ nettoyage : 3 événement(s) d'audit, 1 client(s) fictif(s) et 2 compte(s) supprimés
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Duplicates_AreAllowed_WithDistinctReferences [15 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Search_IsAccentAndCaseInsensitive_AndArchivedAreFiltered [18 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.ClientsPostgreSqlTests.CreateUpdateArchiveReactivate_RoundTripOnPostgreSql [17 ms]
+  Messages de sortie standard :
+ transaction ouverte sur mmv_v2_test (ROLLBACK à la fin du test)
+ référence attribuée par la séquence : CLI-000562, xmin=4527
+ ROLLBACK effectué
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsConcurrencyPostgreSqlTests.TwoStations_SameSlot_ACommits_BWaitsThenIsRefused(reception: False) [30 ms]
+  Messages de sortie standard :
+ scénario : même responsable ; données validées, suffixe b3d40de737
+ poste B (pid 38468) en attente du poste A (pid 22276) : wait_event_type=Lock wait_event=advisory blocking=[22276] locks=advisory/1296914002/3113325122/2/f
+ poste A : Success (rendez-vous 01a15457-4a1c-7922-8ba7-5badd93ead96, validé) ; poste B : SlotConflict
+ nettoyage (suffixe b3d40de737) : 1 événement(s) d'audit, 1 rendez-vous, 1 éligibilité(s), 0 session(s), 2 client(s), 2 compte(s) supprimés ; résidus = 0
+
+
+  Réussi MMV.PostgreSql.Tests.AppointmentsConcurrencyPostgreSqlTests.TwoStations_SameSlot_ACommits_BWaitsThenIsRefused(reception: True) [25 ms]
+  Messages de sortie standard :
+ scénario : pool d'accueil (capacité 1) ; données validées, suffixe d9947b076b
+ poste B (pid 22276) en attente du poste A (pid 38468) : wait_event_type=Lock wait_event=advisory blocking=[38468] locks=advisory/1296914002/0/2/f
+ poste A : Success (rendez-vous 01a15457-4a38-7fb6-ae95-fa1d67457d6e, validé) ; poste B : ReceptionCapacityFull
+ nettoyage (suffixe d9947b076b) : 1 événement(s) d'audit, 1 rendez-vous, 1 éligibilité(s), 0 session(s), 2 client(s), 2 compte(s) supprimés ; résidus = 0
+
+
+
+Série de tests réussie.
+Nombre total de tests : 47
+     Réussi(s) : 47
+ Durée totale : 6,8557 Secondes
+
+# Residus apres suite complete (lecture seule) : users 0 / sessions 0 / perms 0 / clients 0 / appointments 0 / responsibles 0 / audit_events 0

@@ -1,6 +1,8 @@
 # 03 — IMPLEMENTATION_SPEC
 
-**Statut (18/10/2026, 03-B3) :** migration `0004_AppointmentsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; corrections d'audit B2-REV-01 à B2-REV-04, cohérence des fuseaux serveur ↔ poste, tests PostgreSQL réels et parcours natif Rendez-vous — voir « Réalisation 03-B3 » en fin de document. *Mise à jour 18/10/2026 : ce statut d'en-tête n'avait pas été actualisé en 03-B et 03-B2 (sections « Réalisation 03-B » et « Réalisation 03-B2 » à jour) ; corrigé sans modifier les statuts historiques ci-dessous.*
+**Statut (19/10/2026, 03-D3) :** migration `0005_AuditJournal` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; modifications sans changement sans écriture ; corrections O-03-42, O-03-43, O-03-45 ; banc natif isolé de l'historique — voir « Réalisation 03-D3 » en fin de document.
+
+*Historique — statut 03-B3 (18/10/2026) :* migration `0004_AppointmentsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; corrections d'audit B2-REV-01 à B2-REV-04, cohérence des fuseaux serveur ↔ poste, tests PostgreSQL réels et parcours natif Rendez-vous — voir « Réalisation 03-B3 » en fin de document. *Mise à jour 18/10/2026 : ce statut d'en-tête n'avait pas été actualisé en 03-B et 03-B2 (sections « Réalisation 03-B » et « Réalisation 03-B2 » à jour) ; corrigé sans modifier les statuts historiques ci-dessous.*
 
 *Historique — statut 03-A3 (17/10/2026) :* migration `0003_ClientsModule` **appliquée** (`mmv_v2_dev`, `mmv_v2_test`) ; intégration réelle vérifiée de bout en bout ; voir « Réalisation 03-A3 » en fin de document.
 
@@ -410,3 +412,32 @@ dotnet run <bloc-notes>/native/d1native.cs -- cleanup <suffixe>
 ```
 
 **Tests.** .NET 349 (+35) et 50 ; PostgreSQL 45 (38 PASS, 5 `NOT_TESTED`, 2 `PostMigration` en échec attendu) ; frontend 225 (+29). QA : Q-03-200 à Q-03-232.
+
+## Réalisation 03-D3 (19/10/2026) — migration 0005 et clôture
+
+**Migration.** `0005_AuditJournal.idempotent.sql` appliqué par `scripts/Invoke-MmvSqlScript.ps1` (dev puis test) après précontrôles en lecture seule (psql, `default_transaction_read_only=on`) et sauvegarde `pg_dump` 18.6 vérifiée sans écriture serveur (`pg_restore --list`, `pg_restore -f -`, lignes comparées table par table). `PGOPTIONS=-c lock_timeout=10s` pendant l'application : MMV.Api du propriétaire restait connecté à `mmv_v2_dev`.
+
+**Modifications sans changement (O-03-44).** `ClientService.UpdateAsync` compare la saisie normalisée au client courant (`ClientAuditChanges.Between`) AVANT `Client.Update` : aucun champ changé → succès avec le client courant, sans `SaveChanges`. `AppointmentService.UpdateAsync` calcule les catégories d'audit (`AppointmentAuditChanges.Updated`) AVANT `Appointment.Update` : aucune catégorie → état courant relu (`SuccessAsync`), transaction abandonnée sans `COMMIT`. Contrôles et refus inchangés (version, archivage, validation, rendez-vous commencé, verrous).
+
+**Affichage (O-03-45).** `AuditEndpoints.ToResponse` : `oldDisplay = null` pour `client.created` et `appointment.created`.
+
+**Notice Clients (O-03-43).** `ClientsModule.tsx` mémorise le dernier chemin rendu ; la notice n'est effacée qu'au changement de chemin effectif, si elle ne vise pas le nouvel écran.
+
+**Tests à données validées (O-03-42).** `tests/MMV.PostgreSql.Tests/CommittedAuditCleanup.cs` : `PurgeAsync(users, clients)` (une transaction sur `mmv_v2_test`, identité relue, `DISABLE TRIGGER trg_events_append_only`, `DELETE` ciblé, `ENABLE TRIGGER`, état des déclencheurs contrôlé avant `COMMIT`), `CountAsync` ; appelé avant la suppression des comptes et clients fictifs (`CommittedTestData`, matrices HTTP Clients) ; résidus incluant `audit.events`.
+
+**Banc natif isolé.** Les processus du propriétaire occupaient 7267 / 5022 (MMV.Api), 1420 (Vite) et le nom `mmv-desktop` : banc parallèle sans les toucher.
+
+```powershell
+# Bloc-notes (hors dépôt) : outil jetable d3native.cs — seed (refusé si mmv_v2_test non vide, journal compris) / cleanup / residue / api
+$env:UseArtifactsOutput = 'true'; $env:ArtifactsPath = '<dépôt>/.agent-artifacts-tool'   # build de MMV.Infrastructure hors src/
+dotnet run <bloc-notes>/native/d3native.cs -- api <dépôt>/.agent-artifacts/bin/MMV.Api/debug/MMV.Api.dll <journal> 7367 5122
+# apps/desktop : exécutable de test distinct (identifiant, profil WebView2, origine API et CSP 7367), cible cargo hors dépôt
+$env:VITE_MMV_API_BASE_URL = 'https://localhost:7367'; $env:CARGO_TARGET_DIR = '<temp>/mmvd3t'
+npx tauri build --debug --no-bundle --config <bloc-notes>/native/tauri.d3test.json   # identifier com.mmv.v2.d3test, csp/devCsp connect-src https://localhost:7367
+# copie renommée mmv-d3test.exe, lancée avec WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223
+node --use-system-ca e2e/run-native.mjs historique-03d3 --port 9223 --page-url http://tauri.localhost --api https://localhost:7367 --process mmv-d3test --prefix P03D3_native --out <dossier> --theme light --size 1920x1080 --zoom 1
+```
+
+`e2e/run-native.mjs` : options `--api` (origine de l'API, défaut `https://localhost:7267`), `--process` (processus de la fenêtre, défaut `mmv-desktop`), `--page-url` (défaut `http://localhost:1420`) ; aides `apiSend`, `readHistory`, `openTab`, `openFiche` ; scénario `historique-03d3`. Défauts inchangés pour les scénarios existants.
+
+**Tests.** .NET 351 (+2) et 50 ; PostgreSQL 47/47 (aucune simulation de 0005) ; frontend 226 (+1) ; natif 3 × 81. QA : Q-03-234 à Q-03-258.

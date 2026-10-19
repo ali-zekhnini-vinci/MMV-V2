@@ -95,3 +95,8 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 - Fiche client : onglet « Rendez-vous » (`src/appointments/ClientAppointmentsTab.tsx`, droit `appointments.read`) et onglet « Historique » (`src/audit/ClientHistoryTab.tsx`, droit dédié `audit.read`, exige la migration 0005 côté serveur).
 - Corrections : focus rendu après Échap dans les confirmations (`components/ui/alert-dialog.tsx`), barre d'état compacte sous 1100 px, panneau Rendez-vous superposé en fenêtre étroite, ordre « NOM Prénom » partout, glisser sur un créneau libre (aperçu de sélection sans rendez-vous).
 - Banc natif : scénario `parcours-03d1` (`e2e/run-native.mjs`, aides `pickDateNative`, `pickTimeNative` ; `fillAppointment` passe par les sélecteurs).
+
+## Ajouts phase 03-D3 (19/10/2026)
+
+- Notice Clients : « Modifications enregistrées » de nouveau affichée sur la fiche après une modification (O-03-43, `src/clients/ClientsModule.tsx`).
+- Banc natif : scénario `historique-03d3` (onglet « Historique » de bout en bout) ; options `--api`, `--process`, `--page-url` pour un banc isolé (API de test et exécutable de test distincts, à côté des processus du propriétaire) ; valeurs par défaut inchangées.
