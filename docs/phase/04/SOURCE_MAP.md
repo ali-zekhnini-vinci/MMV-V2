@@ -47,3 +47,17 @@ Aucune dépendance ajoutée ni proposée en 04-00. 04-A est prévu sans nouvelle
 ## Pistes réglementaires (cadrage § 11, non consultées, non avis juridique)
 
 INAMI article 30 et formulaires opticiens (Belgique) ; CNDP et loi 09-08 (Maroc) — URL dans le cadrage. À instruire par le conseil du propriétaire (D-04-09, G04-LEGAL).
+
+## Complément daté — 19/10/2026 (suite de la revue, préparation 04-A)
+
+| Source | Usage |
+|---|---|
+| `prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md` | mandat de suite (message de session du propriétaire, reproduit à l'identique) |
+| documents 04-00 de ce dossier | base des études E-01 à E-05 et des amendements datés |
+| `docs/INSTALLATION_RESEAU_SECURITE.md` § 5, `docs/ADR_ET_DECISIONS.md` (ADR-008) | sauvegardes (`pg_dump`, copie hors serveur, restauration à prouver) — impact des pièces |
+| `docs/phase/03/AUDIT_JOURNAL_03D.md`, `docs/phase/03/sql/0005_AuditJournal.sql`, `src/MMV.Domain/Audit/AuditEvent.cs` | format des codes d'action (`module.action`), contrainte des 8 permissions, journal des seules actions réussies |
+| `apps/desktop/src-tauri/tauri.conf.json` | CSP (`img-src 'self' data:`, aucun `blob:` ni cadre) |
+| `apps/desktop/src/shell/navigation.ts`, `clients/ClientDetailView.tsx`, `appointments/appointmentLaunch.ts`, `views/ForbiddenView.tsx`, `clients/*`, `components/ui/*`, `test/fakeMmvApi.ts` | composants et mécanismes réutilisés par la préparation 04-A (entrées filtrées par droit, `returnTo`, double de test `node:http`) |
+| `references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` (empreinte inchangée) | libellés des colonnes de la grille (Sphère, Cylindre, Axe, Addition, Prisme, Base) ; aucune règle reprise |
+
+Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée. Les volumes de stockage de l'étude E-05 sont des **hypothèses** de l'agent, à remplacer par les chiffres du propriétaire (D-04-14.g).

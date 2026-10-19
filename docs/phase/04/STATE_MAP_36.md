@@ -82,3 +82,15 @@ La maquette ne connaît qu'un type et aucune des fonctions suivantes. Ces états
 | MMV-L02-createSuccess | 2 | sans « Ajouter une ordonnance » (D-03-03) | **inchangé en 04** (pas d'ajout proposé) |
 | MMV-L04-stepRxCorrective, stepRxNonCorrective, rxBlock, stepProductsLens | 4 | — | **hors 04** (module Ventes) ; contraintes anticipées : [`IMPLEMENTATION_SPEC.md`](IMPLEMENTATION_SPEC.md) § 7 |
 | MMV-L05-orderRxRequired, wsRx | 5 | — | **hors 04** (commandes / atelier) ; lecture seule d'une révision figée |
+
+## Amendement daté — 19/10/2026 (suite de la revue, préparation 04-A)
+
+- **G04-DESIGN — voie retenue par le propriétaire** : les 12 états complémentaires peuvent être **composés à partir des composants V2 existants**, sous réserve de **validation visuelle du propriétaire** (mandat [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md)). Composition proposée : [`PREPARATION_04A.md`](PREPARATION_04A.md) § 4. Aucun état n'est encore construit ; statut visé après captures : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED`. Les tableaux ci-dessus restent `PROPOSED`.
+- **Deux états complémentaires nouveaux**, issus des études ([`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md)), suivent la même voie :
+
+| Réf. | État manquant | Motif | Décision |
+|---|---|---|---|
+| GAP-04-13 | « rectification en cours » : bandeau sur le détail (auteur, début, motif), comparaison brouillon ↔ révision de base, abandon | coexistence révision confirmée / brouillon | D-04-11 |
+| GAP-04-14 | pièce invalidée citée par une révision confirmée (ligne libellée, avertissement avant transmission) | rattachement historisé | D-04-10 |
+
+- **Traitement en 04-A des états dépendant de D-04-06** : état 25 (`axisNormalized`) — aucune normalisation, axe affiché tel que saisi ; état 36 (`disabledFields`) — **non implémenté** (aucune dépendance entre champs tant que D-04-06 n'est pas ratifiée) ; états 16, 17, 21, 23, 33 — mécanique construite, règles absentes ([`PREPARATION_04A.md`](PREPARATION_04A.md) § 3).

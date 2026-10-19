@@ -57,3 +57,21 @@ Aucune route. Le futur module Ventes consommera `GET …/{id}/revisions/{n}` et 
 ## 7. Tests de contrat prévus
 
 Extrait `apps/desktop/src/api/contract/optical.openapi.json`, comparaison au document réel (`OpticalOpenApiContractTests`), types TypeScript (`opticalContract.test.ts`) ; matrice HTTP 401 / 403 / 404 / 409 / 422 par route ([`QA_MATRIX.md`](QA_MATRIX.md)).
+
+## Amendement daté — 19/10/2026 (études préalables)
+
+Les §§ 1 à 7 sont conservés tels qu'écrits en 04-00. Si D-04-10 à D-04-12 sont ratifiées ([`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md)) :
+
+| Route / réponse | Changement proposé |
+|---|---|
+| `GET …/prescriptions/{id}` | renvoie `lifecycle`, `lastConfirmedRevision` (révision complète, ou vide) et `openDraft` (résumé : auteur, début, motif, ou vide) ; le statut affiché est dérivé |
+| `POST …/prescriptions/{id}/revisions` (04-00) | remplacé par `POST …/prescriptions/{id}/rectifications` `{ expectedRevisionNo, reasonCode, comment?, version }` → 201 brouillon de rectification ; `409 draft_exists` / `revision_conflict` / `client_archived` / `invalidated` |
+| `PUT …/prescriptions/{id}/draft` | s'applique au brouillon ouvert (première saisie **ou** rectification) ; corps complété par `linkedDocumentIds` (pièces du même enregistrement, non invalidées) ; `409 not_draft` / `version_conflict` ; `409 client_archived` si le client a été archivé (brouillon gelé) |
+| `POST …/prescriptions/{id}/confirm` | confirme le brouillon ouvert ; attribue le numéro de révision ; `409 revision_conflict` si la révision de base n'est plus la dernière confirmée ; `422 incomplete` |
+| `POST …/prescriptions/{id}/draft/discard` (nouvelle) | abandonne une **rectification** (`discarded`, conservée) ; une première saisie s'abandonne par invalidation (D-04-04.d) |
+| `POST …/prescriptions/{id}/invalidate` | abandonne le brouillon ouvert dans la même transaction (D-04-11.e) |
+| `GET …/revisions/{revisionNo}` | inclut les pièces liées à la révision (métadonnées ; nom d'origine seulement avec `optical.documents.read`) et leur éventuelle invalidation |
+| `POST …/prescriptions/{id}/documents` | `413 too_large`, `415 unsupported_media_type`, `409 duplicate_document`, `409 too_many_documents` ; type détecté par signature (D-04-14) |
+| `GET /api/optical/documents/{documentId}/content` | événement **`document.content_served`** (au lieu de `document.viewed`) validé avant le premier octet ; `Content-Type` = type détecté ; avertissement d'invalidation porté par les métadonnées, pas par le contenu |
+
+Mêmes changements pour `/api/optical/measurements` (sans pièces en 04). Toujours **aucune** route `DELETE`.

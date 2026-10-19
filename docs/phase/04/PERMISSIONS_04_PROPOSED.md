@@ -58,3 +58,36 @@ Le `403` ne révèle jamais l'existence d'un enregistrement : un identifiant inc
 - Ajout des constantes dans `Permissions.All` et `Permissions.Grantable`, policies dédiées dans `AuthSetup`.
 - Remplacement de la contrainte `ck_user_permissions_permission` par `DROP CONSTRAINT` + `ADD CONSTRAINT` dans la même transaction (procédé accepté pour 0004 / 0005, O-03-24) — migration proposée `0006` ([`DATA_MODEL_PROPOSED.md`](DATA_MODEL_PROPOSED.md) § 6).
 - Tests : 401 anonyme, 403 pour chaque droit manquant (dont `system.admin` seul, `clients.*` seul, `audit.read` seul), 200 avec la combinaison exacte ; refus direct d'API, recherche, liste globale, pièce ; filtrage des événements optiques de l'historique ([`QA_MATRIX.md`](QA_MATRIX.md)).
+
+## Amendement daté — 19/10/2026 : granularité d'`optical.read` et matrice par profil (D-04-13, `PROPOSED`)
+
+Analyse : [`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md) E-04. Recommandation : **`optical.read` unique** (deux types, liste globale, révisions et brouillons, métadonnées des pièces) ; aucun découpage par type (un dossier partiel serait trompeur), aucun droit `optical.browse` en 04 ; contenu des pièces sous `optical.documents.read` (inchangé). Les sections précédentes sont conservées.
+
+### Matrice indicative par profil fonctionnel
+
+Un profil décrit une **fonction exercée au magasin**, pas un rôle MMV : il n'existe **aucun rôle**, aucune attribution automatique ni par défaut (D-04-05.e) ; chaque droit est accordé compte par compte par `MMV.Maintenance permissions grant`. Les libellés visuels du menu profil n'ont aucun effet. `●` suggéré si la fonction l'exige ; `○` selon la fonction exacte du collaborateur ; `—` non suggéré.
+
+| Profil fonctionnel (indicatif) | `clients.read` | `optical.read` | `optical.prescriptions.write` | `optical.measurements.write` | `optical.invalidate` | `optical.documents.read` | `optical.documents.write` | `audit.read` |
+|---|---|---|---|---|---|---|---|---|
+| Administrateur système (technique seulement) | — | — | — | — | — | — | — | — |
+| Responsable du magasin | ● | ● | ○ | ○ | ● | ● | ○ | ● |
+| Opticien habilité à mesurer | ● | ● | ● | ● | ○ | ● | ● | ○ |
+| Collaborateur chargé de la transcription | ● | ● | ● | — | — | ● | ● | — |
+| Accueil / prise de rendez-vous | ● | — | — | — | — | — | — | — |
+| Technicien atelier | ○ | ○ | — | — | — | — | — | — |
+
+Notes : (1) `system.admin` n'implique rien ; un administrateur qui exerce aussi une fonction optique reçoit les droits de cette fonction explicitement. (2) `optical.measurements.write` suppose l'habilitation à mesurer (D-04-03.b) ; sa vérification est de la responsabilité du propriétaire. (3) Le technicien atelier ne reçoit `optical.read` que si son travail exige la lecture des valeurs avant le module Commandes ; il ne reçoit jamais les pièces. (4) Voir les événements optiques de l'historique exige `audit.read` **et** `optical.read`.
+
+### Capacités résultantes (contrôlées par le serveur)
+
+| Capacité | Combinaison exigée |
+|---|---|
+| voir l'onglet, la liste globale, le détail, les révisions et les brouillons | `clients.read` + `optical.read` |
+| créer, poursuivre, confirmer, rectifier, abandonner une rectification — ordonnance | + `optical.prescriptions.write` |
+| idem — mesure magasin | + `optical.measurements.write` |
+| invalider un enregistrement | + `optical.invalidate` |
+| recevoir le contenu d'une pièce, voir son nom d'origine | + `optical.documents.read` |
+| joindre une pièce, la lier à un brouillon, l'invalider | + `optical.documents.write` (et le droit d'écriture du type pour la lier à un brouillon) |
+| voir les événements optiques de l'historique | `audit.read` + `optical.read` |
+
+*Précision (19/10/2026) :* la « matrice d'affichage » ci-dessus vaut à partir de l'activation réelle (04-C). Pendant 04-A / 04-B, les sessions sans `optical.read` (tous les comptes réels) conservent l'onglet reporté et l'entrée `later` actuels (O-04-16, [`PREPARATION_04A.md`](PREPARATION_04A.md) § 2).

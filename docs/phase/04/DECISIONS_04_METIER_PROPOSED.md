@@ -177,3 +177,19 @@ Indiquer pour chaque ligne : `OK` (recommandation retenue), la lettre d'une autr
 | D-04-09.a–g | pays, confidentialité | voir tableau | **juridique** | |
 
 *Aucune ligne de ce formulaire n'est pré-remplie : l'absence de réponse vaut `PROPOSED`, jamais `APPROVED`.*
+
+---
+
+## Complément daté — 19/10/2026 (suite de la revue indépendante de 04-00)
+
+Mandat : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md). La revue indépendante qualifie le cadrage 04-00 de **« techniquement acceptable »** (G04-00) ; D-04-01 reste **APPROVED**, définitive ; **D-04-02 à D-04-09 restent `PROPOSED`**, inchangées (le texte ci-dessus n'est pas modifié). Cinq questions nouvelles, issues des études préalables au modèle ([`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md)), s'ajoutent à la même réponse consolidée. Elles sont **`PROPOSED`** et ne touchent à aucune règle clinique.
+
+| Réf. | Sujet | Recommandation | Avis externe | Réponse du propriétaire |
+|---|---|---|---|---|
+| D-04-10.a–d | rattachement historisé des pièces aux révisions (E-01) | B (pièce de l'en-tête + lien par révision figé à la confirmation) ; brouillon initialisé avec les liens ; pièce invalidée servie avec avertissement ; doublon refusé | — | |
+| D-04-11.a–f | révision confirmée et rectification en brouillon (E-02) | cycle de l'enregistrement séparé des révisions ; numéro à la confirmation ; brouillon partagé ; abandon `discarded` conservé ; abandon du brouillon dans la transaction d'invalidation ; brouillon visible avec `optical.read` | — | |
+| D-04-12.a–d | événements d'accès aux pièces (E-03) | `document.content_served`, libellés « transmis » ; aucun préchargement ni vignette ; lectures de dossiers : pièces seulement en 04, décision avant pilote ; refus non journalisés | juridique (avant pilote, c) | |
+| D-04-13.a–c | granularité d'`optical.read`, profils (E-04) | `optical.read` unique ; listes sans résumé OD/OG (minimisation) ; matrice indicative des profils à valider compte par compte | — | |
+| D-04-14.a–g | contrôles des fichiers, limites, sauvegardes (E-05) | liste blanche par signature ; 10 Mo et 10 pièces actives ; marqueurs PDF actifs refusés ; pièce conservée telle que reçue ; antivirus A puis B étudiée ; seuil d'alerte 20 Go ; volumes réels à fournir | — | |
+
+*Comme pour le formulaire principal, aucune ligne n'est pré-remplie : l'absence de réponse vaut `PROPOSED`.*

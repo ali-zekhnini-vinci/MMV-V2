@@ -44,3 +44,11 @@ Postes A et B ouvrent la même ordonnance (même `version`). A rectifie et enreg
 | J-04-07 | Invalidation | menu secondaire « Invalider » (état 28) → motif (état 29) → bandeau « Invalidé » (état 30, GAP-04-08) ; exclu des listes par défaut ; consultable ; erreur → état 31 |
 | J-04-08 | Pièce source | « Joindre une pièce » (PDF / JPEG / PNG, taille bornée) → liste des pièces → aperçu dans le poste (événement `document.viewed`) ; refus de format / taille, accès refusé (GAP-04-06) |
 | J-04-09 | Fenêtre réduite et clavier | états 32 à 36 ; formulaire utilisable sans souris ; zoom 100 / 125 / 150 %, thèmes clair / sombre |
+
+## Amendement daté — 19/10/2026 (études préalables)
+
+Parcours ci-dessus conservés. Précisions proposées (D-04-10 à D-04-12, `PROPOSED`) :
+
+- **J-04-04** : « Rectifier » ouvre un **brouillon de rectification** ; pendant ce temps la fiche et le détail continuent d'afficher la **dernière révision confirmée**, avec le bandeau « rectification en cours » (GAP-04-13). La révision n+1 n'existe qu'à la confirmation ; un abandon laisse la révision n courante. Un second poste qui tente d'ouvrir une autre rectification reçoit `409 draft_exists`.
+- **J-04-06** : les pièces restent rattachées à l'enregistrement ; chaque révision confirmée conserve **ses** liens (E-01).
+- **J-04-08** : « Afficher la pièce » produit l'événement `document.content_served` — l'historique indique « contenu transmis au poste de … », jamais « consulté » ; aucun aperçu n'est chargé sans action explicite (E-03).

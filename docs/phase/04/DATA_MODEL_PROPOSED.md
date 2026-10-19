@@ -103,3 +103,16 @@ Le journal 03-D accepte de nouveaux codes **sans migration** ([`../03/AUDIT_JOUR
 - Contenu attendu : `CREATE SCHEMA optical`, tables ci-dessus, clés étrangères `RESTRICT`, contraintes de format, remplacement de `ck_user_permissions_permission` (nouvelles permissions), aucune donnée lue ni reprise.
 - Procédure inchangée : SQL exact + script idempotent + retour arrière revus par le propriétaire, empreinte imposée, `scripts/Invoke-MmvSqlScript.ps1`, jamais au démarrage, `mmv_v2_dev` puis `mmv_v2_test`.
 - Déclencheurs empêchant la modification d'une révision confirmée : à discuter (même limite que l'audit : inefficaces contre le rôle propriétaire tant que O-B04 n'est pas traité).
+
+## Amendement daté — 19/10/2026 (études préalables, modèle non figé)
+
+Les §§ 1 à 6 ci-dessus sont conservés tels qu'écrits en 04-00. Les études [`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md) proposent, **sous réserve de D-04-10 à D-04-14** (`PROPOSED`), les changements suivants. Toujours aucun SQL.
+
+| Élément 04-00 | Changement proposé | Étude |
+|---|---|---|
+| § 2.1 `status` (`draft` / `confirmed` / `invalidated`) et `current_revision_no` sur l'en-tête | en-tête : `lifecycle` `active` / `invalidated` ; pointeurs `last_confirmed_revision` (vide avant toute confirmation) et `open_draft` (au plus un) ; statut affiché **dérivé** | E-02 |
+| § 2.2 révision « immuable après confirmation », clé `(prescription_id, revision_no)` | révision identifiée par un uuid ; `status` `draft` / `confirmed` / `discarded` ; `base_revision_no` (vide pour la première saisie) ; `revision_no` attribué **à la confirmation** (séquence sans trou) ; unicité « un seul `draft` par enregistrement » | E-02 |
+| § 2.4 pièce rattachée à l'en-tête seulement | pièce toujours **possédée par l'en-tête** (contenu stocké une fois, immuable, SHA-256) **+** table de liens `revision ↔ pièce` (révision, pièce, auteur et date du lien), modifiable sur un brouillon, figée à la confirmation ; doublon d'empreinte refusé sur un même enregistrement ; plafond de pièces actives | E-01, E-05 |
+| § 2.4 `content` en `bytea` séparé | inchangé ; précisé : contenu déjà compressé (stockage sans recompression à spécifier dans le SQL de 04-B), lecture en flux, aucun fichier temporaire serveur, seuil d'alerte de volume | E-05 |
+| § 4 `document.viewed` | remplacé par `document.content_served` (« contenu transmis », jamais « vu ») ; nouveaux codes `prescription.rectification_started`, `prescription.rectification_discarded` (et `measurement.*`) ; aucune valeur optique | E-02, E-03 |
+| § 2.3 mesures magasin | mêmes règles de cycle et de révision que l'ordonnance ; aucune pièce en 04 | E-02 |

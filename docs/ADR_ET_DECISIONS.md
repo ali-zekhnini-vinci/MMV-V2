@@ -116,3 +116,8 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **D-04-01 APPROVED** (propriétaire, 19/10/2026) : ordonnances médicales reçues et mesures réalisées en magasin = deux types métier distincts, sans conversion ni assimilation ; provenance, auteur et statut explicites ; aucun SQL autorisé par cette décision.
 - **D-04-02 à D-04-09 PROPOSED** (complétude, provenance et pièces, révisions et invalidation, permissions optiques, validations optiques, client archivé, navigation, pays et confidentialité) — demande consolidée : `docs/phase/04/DECISIONS_04_METIER_PROPOSED.md`. D-04-06 exige l'avis d'un opticien ; D-04-09 un conseil juridique (Belgique : RGPD / APD ; Maroc : loi 09-08 / CNDP), et prolonge D-03-22 (conservation, OUVERTE).
 - Aucun ADR modifié : ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`, ADR-003 respecté (dossier optique proposé en PostgreSQL seul). **ADR-014** : aucune dépendance ajoutée.
+
+## Note datée — 19/10/2026 (Phase 04, suite de 04-00)
+
+- Revue indépendante : G04-00 « cadrage techniquement acceptable ». **D-04-01 APPROVED** (définitive) ; D-04-02 à D-04-09 `PROPOSED` (inchangées) ; **D-04-10 à D-04-14 `PROPOSED`** ajoutées (`docs/phase/04/ETUDES_PRE_MODELE_04.md`).
+- Aucun ADR modifié. **ADR-008** (`PROPOSED`) : les pièces source domineraient le volume de la base et des sauvegardes (taille ≈ volume des pièces) ; chiffrement, copie hors serveur et restauration avec vérification des empreintes deviennent des préalables explicites à un pilote (O-04-19) ; le choix sauvegarde logique / physique reste à prendre au seuil mesuré. **ADR-014** : aucune dépendance ajoutée ni proposée (contrôles de fichiers sans bibliothèque ; AMSI = appel système Windows, à évaluer, O-04-17).

@@ -1,6 +1,6 @@
 # 04 — IMPLEMENTATION_SPEC (cadrage 04-00, aucune implémentation)
 
-**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
+**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
 
 ## 1. Base de départ vérifiée
 
@@ -76,3 +76,11 @@ Unitaires domaine (après D-04-06), HTTP (matrice des droits, 409, 422), contrat
 4. La prise en charge (INAMI, mutuelles, AMO, CNSS / CNOPS, tiers payant) sera un domaine distinct, paramétré par pays ; aucune donnée d'éligibilité n'est déduite de l'ordonnance.
 5. La fiche de travail atelier (`MMV-L05-wsRx`) lira la révision figée en lecture seule ; la transposition éventuelle ne modifiera jamais la révision.
 6. Les écarts pupillaires / hauteurs appartiendront à l'équipement ou à la commande, pas à l'ordonnance.
+
+## 8. Amendement daté — 19/10/2026 (suite de la revue indépendante)
+
+Les §§ 1 à 7 sont conservés. Revue indépendante : G04-00 « cadrage techniquement acceptable ». Compléments :
+
+- **04-A préparé** : périmètre classé IND / PROTO / BLOQUÉ, composition des 14 états complémentaires, grille OD / OG neutre, fichiers, séquence A1–A5, garantie « service non activé » et points bloquants — [`PREPARATION_04A.md`](PREPARATION_04A.md). Le préalable « décisions des états concernés » du § 4 se lit désormais ainsi : les éléments **IND** et **PROTO** peuvent être construits sur double de test dès le GO 04-A (G04-A) ; seuls les éléments **BLOQUÉ** (règles cliniques, D-04-06) attendent l'avis d'un opticien. 04-B reste soumis à G04-METIER.
+- **Modèle non figé** : études E-01 à E-05 ([`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md)) — cycle de l'enregistrement séparé des révisions, un seul brouillon ouvert, pièces liées par révision, `document.content_served`, `optical.read` unique, contrôles des fichiers et limites.
+- **§ 5 Sécurité, précisions** : l'audit des pièces enregistre une **transmission** (`document.content_served`), jamais une visualisation ; contrôle du type par signature et `Content-Type` détecté ; aucun fichier temporaire serveur ; ouverture de CSP reportée en 04-C (O-04-01) ; commandes de la visionneuse PDF à examiner en natif (O-04-18) ; sauvegardes : taille ≈ volume des pièces, chiffrement, restauration avec empreintes avant pilote (O-04-19).

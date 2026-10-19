@@ -76,3 +76,33 @@ Suites existantes (.NET, PostgreSQL réel, frontend, natif) : **`NOT_RERUN`** en
 | Q-04-155 | natif 2 thèmes × 1440×900 / 1920×1080 × 100 / 125 / 150 % | captures après le dernier changement, sinon `NOT_TESTED` |
 | Q-04-156 | « Préparer une vente » | désactivée, aucun effet |
 | Q-04-160 | non-régression Clients, Rendez-vous, Historique | suites existantes PASS |
+
+## Complément 04-00 — contrôles exécutés le 19/10/2026 (suite de la revue)
+
+| ID | Contrôle | Méthode | Résultat |
+|---|---|---|---|
+| Q-04-014 | aucun code, SQL ni base touchés | `git status --short` / `git diff --stat` : seuls `docs/`, `README.md` et `prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md` modifiés ; aucune commande `psql`, `dotnet`, `npm` | PASS |
+| Q-04-015 | fichiers non suivis du propriétaire intacts | `git status --short` : mêmes non suivis qu'au départ (zips, `.claude*`, `.serena/`, `apps/desktop/desktop*.zip`, pack `docs/phase/04/`, `references/`) ; aucun écrit | PASS |
+| Q-04-016 | liens internes des documents 04 et des documents modifiés | résolution de chaque chemin relatif Markdown | PASS (voir [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Journal) |
+| Q-04-017 | statuts cohérents | D-04-01 APPROVED ; D-04-02 à D-04-14 PROPOSED ; aucun état GAP déclaré conçu ; 04-A non commencé dans tous les documents | PASS |
+| Q-04-018 | composants cités par la préparation 04-A existants | lecture de `apps/desktop/src/` (`components/ui/*`, `clients/ClientStates.tsx`, `ClientNoticeBanner.tsx`, `ClientsTable.tsx`, `views/ForbiddenView.tsx`, `appointments/ClientPicker.tsx`, `appointmentLaunch.ts`, `shell/navigationGuard.ts`) | PASS |
+
+Suites existantes : **`NOT_RERUN`** (aucun code modifié depuis `6924860`).
+
+### Tests prévus ajoutés (tous `NOT_TESTED`, sous réserve de D-04-10 à D-04-14)
+
+| ID | Cas | Attendu |
+|---|---|---|
+| Q-04-121 | pièce liée à la révision 1, verso ajouté au brouillon puis confirmé | révision 1 cite le recto seul, révision 2 recto + verso ; contenu stocké une fois |
+| Q-04-122 | rectification ouverte | détail et listes servent la dernière révision confirmée ; bandeau « rectification en cours » |
+| Q-04-123 | deuxième rectification simultanée | `409 draft_exists`, aucune écriture, aucun événement |
+| Q-04-124 | confirmation d'un brouillon dont la base n'est plus la dernière confirmée | `409 revision_conflict` |
+| Q-04-125 | abandon d'une rectification | `discarded` conservé, numéro non consommé, révision n inchangée |
+| Q-04-126 | invalidation avec brouillon ouvert | brouillon abandonné dans la même transaction ; deux événements ou aucun |
+| Q-04-127 | client archivé avec brouillon ouvert | modification et confirmation refusées, abandon permis |
+| Q-04-133 | `document.content_served` | validé avant le premier octet ; aucun événement pour la liste des pièces, un refus 403 ou un préchargement ; libellé « transmis » |
+| Q-04-143 | fichiers : signature ≠ extension, SVG / HTML renommés, PDF à marqueurs actifs, image hors dimensions, 11ᵉ pièce, doublon d'empreinte | 415 / 415 / selon D-04-14.c / 415 / `409 too_many_documents` / `409 duplicate_document` ; aucun stockage partiel, aucun fichier temporaire |
+| Q-04-144 | `Content-Type` servi | type détecté par le serveur, `nosniff`, `no-store` |
+| Q-04-145 | sauvegarde / restauration avec pièces synthétiques | restauration complète, empreintes identiques, durées et tailles consignées (04-C, O-04-19) |
+| Q-04-157 | 04-A : aucun changement visible sans `optical.read` | onglet reporté et entrée `later` inchangés (O-04-16) |
+| Q-04-158 | 04-A : grille neutre | valeur saisie restituée à l'identique ; aucune borne, aucun pas, aucun champ désactivé, aucune normalisation |
