@@ -1,0 +1,11 @@
+# Phase 03-A — non-régression .NET, 2026-10-16T22:45:13Z (code backend inchangé sur la branche)
+## dotnet build MMV.slnx (incrémental)
+    0 Avertissement(s)
+    0 Erreur(s)
+## dotnet build --no-incremental : BLOCKED (MSB3027) — binaires de src/MMV.Api verrouillés par un processus MMV.Api externe à la session (PID 26332, démarré 17/10/2026 00:22)
+## dotnet test MMV.slnx --filter "Stage!=IdentityWrite" (étape d'écriture IdentityWrite exclue : aucune écriture en base avant GO ; NOT_RERUN)
+Réussi!  - échec :     0, réussite :    15, ignorée(s) :     0, total :    15, durée : 1 s - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    38, ignorée(s) :     0, total :    38, durée : 3 s - MMV.Maintenance.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    70, ignorée(s) :     0, total :    70, durée : 7 s - MMV.Api.Tests.dll (net10.0)
+## worktree jetable (proposition Clients, hors dépôt) : dotnet build --no-incremental + MMV.Api.Tests
+0 Avertissement(s), 0 Erreur(s) ; MMV.Api.Tests 70/70 (relevé du 17/10/2026, voir QA Q-03-33)

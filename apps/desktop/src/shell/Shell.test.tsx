@@ -6,7 +6,9 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, test } from "vitest";
 import { Gate } from "../App.tsx";
+import { AppointmentsServiceContext } from "../appointments/appointmentsService.ts";
 import { AuthProvider } from "../auth/AuthProvider.tsx";
+import { ClientsServiceContext } from "../clients/clientsService.ts";
 import { type FakeApi, startFakeApi } from "../test/fakeMmvApi.ts";
 
 const ADMIN = { userName: "admin", password: "Mot-de-passe-admin-1", displayName: "Admin Test", permissions: ["system.admin"] };
@@ -62,10 +64,72 @@ describe("Shell", () => {
 
   test("module d'une phase suivante : écran explicite, aucun CRUD", async () => {
     const user = await signIn(ADMIN);
-    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
-    await screen.findByRole("heading", { name: "Clients" });
+    await user.click(within(nav()).getByRole("button", { name: /^Produits/ }));
+    await screen.findByRole("heading", { name: "Produits" });
     screen.getByText(/Disponible dans une phase suivante/);
     assert.equal(screen.queryByRole("table"), null);
+  });
+
+  // 03-B2 : service activé par défaut (APPOINTMENTS_API_ENABLED = true). *Historique 03-B : service désactivé,
+  // aucune requête /api/appointments (test conservé ci-dessous sous forme d'interrupteur de repli).*
+  test("Rendez-vous : system.admin seul n'a aucun droit Rendez-vous -> 403 -> « Accès non autorisé », aucun calendrier", async () => {
+    const user = await signIn(ADMIN);
+    await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
+    // Module différé (FullCalendar, calendrier 03-D1) : première transformation plus longue que le délai par défaut.
+    await screen.findByRole("heading", { name: "Rendez-vous", level: 1 }, { timeout: 10_000 });
+    await screen.findByRole("heading", { name: "Accès non autorisé" });
+    assert.equal(screen.queryByRole("grid"), null);
+    const optionsCall = api.requests.find((request) => request.path === "/api/appointments/options");
+    assert.ok(optionsCall?.bearer, "requête /api/appointments/options authentifiée attendue");
+  });
+
+  test("Rendez-vous (interrupteur de repli désactivé) : service non activé, aucune requête /api/appointments", async () => {
+    const user = userEvent.setup();
+    render(
+      <AppointmentsServiceContext.Provider value={{ enabled: false }}>
+        <AuthProvider baseUrl={{ ok: true, url: api.url }}>
+          <Gate />
+        </AuthProvider>
+      </AppointmentsServiceContext.Provider>,
+    );
+    await user.type(screen.getByLabelText("Identifiant"), ADMIN.userName);
+    await user.type(screen.getByLabelText("Mot de passe"), `${ADMIN.password}{Enter}`);
+    await screen.findByRole("heading", { name: `Bonjour, ${ADMIN.displayName}` });
+    await user.click(within(nav()).getByRole("button", { name: /^Rendez-vous/ }));
+    await screen.findByRole("heading", { name: "Service Rendez-vous non activé" });
+    assert.equal(screen.queryByRole("grid"), null);
+    assert.equal(api.requests.some((request) => request.path.startsWith("/api/appointments")), false);
+  });
+
+  // 03-A2 : le service Clients est activé par défaut (CLIENTS_API_ENABLED = true).
+  test("Clients : system.admin seul n'a aucun droit Clients -> le serveur répond 403 -> « Accès non autorisé »", async () => {
+    const user = await signIn(ADMIN);
+    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
+    await screen.findByRole("heading", { name: "Clients", level: 1 });
+    await screen.findByRole("heading", { name: "Accès non autorisé" });
+    assert.equal(screen.queryByRole("table"), null);
+    const listCall = api.requests.find((request) => request.path.startsWith("/api/clients?"));
+    assert.ok(listCall?.bearer, "requête /api/clients authentifiée attendue");
+  });
+
+  test("Clients (interrupteur de repli désactivé) : état honnête, aucune donnée ni requête /api/clients", async () => {
+    const user = userEvent.setup();
+    render(
+      <ClientsServiceContext.Provider value={{ enabled: false }}>
+        <AuthProvider baseUrl={{ ok: true, url: api.url }}>
+          <Gate />
+        </AuthProvider>
+      </ClientsServiceContext.Provider>,
+    );
+    await user.type(screen.getByLabelText("Identifiant"), ADMIN.userName);
+    await user.type(screen.getByLabelText("Mot de passe"), `${ADMIN.password}{Enter}`);
+    await screen.findByRole("heading", { name: `Bonjour, ${ADMIN.displayName}` });
+    await user.click(within(nav()).getByRole("button", { name: /^Clients/ }));
+    await screen.findByRole("heading", { name: "Clients" });
+    screen.getByRole("heading", { name: "Service Clients non activé" });
+    assert.equal(screen.queryByRole("table"), null);
+    assert.equal((screen.getByRole("searchbox", { name: "Rechercher un client" }) as HTMLInputElement).disabled, true);
+    assert.equal(api.requests.some((request) => request.path.startsWith("/api/clients")), false);
   });
 
   test("admin : Comptes liste les comptes renvoyés par le serveur", async () => {

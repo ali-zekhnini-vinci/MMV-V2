@@ -1,0 +1,15 @@
+# 03-A3 2026-10-17T11:16:58Z dotnet build MMV.slnx --no-incremental ; dotnet test MMV.slnx (toutes etapes, dont PostMigration, IdentityWrite, ClientsWrite sur mmv_v2_test)
+    0 Avertissement(s)
+    0 Erreur(s)
+  Échoué MMV.Api.Tests.Clients.ClientServiceTests.Update_WithCurrentVersion_ChangesDataAndVersion [7 ms]
+Réussi!  - échec :     0, réussite :    28, ignorée(s) :     0, total :    28, durée : 2 s - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+Échoué!  - échec :     1, réussite :   181, ignorée(s) :     0, total :   182, durée : 20 s - MMV.Api.Tests.dll (net10.0)
+
+# relance 2026-10-17T11:19:21Z apres correction du double InMemoryClientStore (horloge du test)
+    0 Avertissement(s)
+    0 Erreur(s)
+Réussi!  - échec :     0, réussite :    28, ignorée(s) :     0, total :    28, durée : 2 s - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :   182, ignorée(s) :     0, total :   182, durée : 19 s - MMV.Api.Tests.dll (net10.0)
+# 2026-10-17T11:20:50Z apres dotnet test MMV.slnx : résidus mmv_v2_test : comptes=0 sessions=0 clients=0 bootstrap=0 permissions=0

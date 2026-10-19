@@ -1,0 +1,101 @@
+# 03-A3 preuve native Clients : Tauri dev (WebView2, CDP 127.0.0.1:9222) -> https://localhost:7267 (MMV.Api --launch-profile https, ConnectionStrings__Mmv = mmv_v2_test passe au seul processus) -> PostgreSQL 18.6 / 5433
+# node --use-system-ca e2e/run-native.mjs <scenario> --prefix P03_native ; comptes ephemeres e2e-c{admin,read,write,full}-<suffixe> crees/supprimes par un outil local non versionne ; mots de passe 192 bits jamais affiches
+## Matrice HTTP sur le processus reel (script local, TLS systeme, aucun contournement de certificat)
+PASS anonyme GET /api/clients -> 401 unauthenticated (401)
+PASS jeton forgé -> 401 (401)
+PASS system.admin seul GET -> 403 forbidden (403)
+PASS system.admin seul POST -> 403 (403)
+PASS HTTP 5022 -> 403 https_required (403)
+PASS lecture GET -> 200, base de test vide (200, total 0)
+PASS lecture POST -> 403 (403)
+PASS champ inconnu socialSecurityNumber -> 400 invalid_body (400)
+PASS nom absent -> 422 lastName required (422)
+PASS doublon autorisé : 2 × 201, références distinctes (CLI-000044, CLI-000045)
+PASS 201 + Location /api/clients/{id}
+PASS recherche sans accents ni casse -> 2 (2)
+PASS recherche par téléphone partiel -> 2 (2)
+PASS tri hors liste blanche -> 400 invalid_query (400)
+PASS modification -> 200, nouvelle version (200)
+PASS version périmée (autre poste) -> 409 version_conflict (409)
+PASS aucune écriture sur conflit : ville = Liège (Liège)
+PASS version absente -> 400 version_required (400)
+PASS archivage sans clients.archive -> 403 (403)
+PASS archivage version périmée -> 409 (409)
+PASS archivage -> 200 archived (200)
+PASS modification d'un archivé -> 409 client_archived (409)
+PASS double archivage -> 409 already_archived (409)
+PASS actifs uniquement -> 1 (1)
+PASS archivés uniquement -> le client archivé (1)
+PASS réactivation en lecture seule -> 403 (403)
+PASS réactivation -> 200 active (200)
+PASS DELETE -> 405, aucune suppression physique (405)
+PASS id inconnu -> 404 client_not_found (404)
+PASS CORS : DELETE non admis
+PASS après déconnexion -> 401 (401)
+TOTAL 31/31 PASS
+
+## Scenarios natifs
+2026-10-17T11:15:02.573Z SCÉNARIO — clients-admin-only
+2026-10-17T11:15:02.574Z PASS — zoom WebView2 effectif 100 %
+2026-10-17T11:15:04.408Z PASS — thème light
+2026-10-17T11:15:04.757Z PASS — aucune table affichée
+2026-10-17T11:15:06.269Z CAPTURE — <EVIDENCE>\P03_native_clients_forbidden_admin-only_1920x1080_20261017T111502Z.png 1920x1080
+2026-10-17T11:15:06.269Z TERMINÉ — clients-admin-only
+2026-10-17T11:15:06.380Z SCÉNARIO — clients-full
+2026-10-17T11:15:06.382Z PASS — zoom WebView2 effectif 100 %
+2026-10-17T11:15:08.230Z PASS — thème light
+2026-10-17T11:15:10.052Z CAPTURE — <EVIDENCE>\P03_native_clients_list_light_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:10.770Z CAPTURE — <EVIDENCE>\P03_native_clients_form_empty_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:10.780Z PASS — focus sur le premier champ en erreur
+2026-10-17T11:15:11.336Z CAPTURE — <EVIDENCE>\P03_native_clients_form_errors_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:12.270Z CAPTURE — <EVIDENCE>\P03_native_clients_form_filled_unsaved_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:12.443Z PASS — référence attribuée par le serveur affichée
+2026-10-17T11:15:13.003Z CAPTURE — <EVIDENCE>\P03_native_clients_create_success_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:13.739Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_light_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:14.872Z CAPTURE — <EVIDENCE>\P03_native_clients_search_hit_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:15.820Z CAPTURE — <EVIDENCE>\P03_native_clients_search_empty_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:16.424Z CAPTURE — <EVIDENCE>\P03_native_clients_archive_confirm_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:17.153Z CAPTURE — <EVIDENCE>\P03_native_clients_archived_notice_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:17.887Z CAPTURE — <EVIDENCE>\P03_native_clients_list_with-archived_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:18.053Z PASS — fiche archivée : Modifier désactivé
+2026-10-17T11:15:18.618Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_archived_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:19.519Z CAPTURE — <EVIDENCE>\P03_native_clients_form_edit_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:19.617Z PASS — autre poste : modification enregistrée (200)
+2026-10-17T11:15:19.848Z CONFLIT — Action impossible Ce client a été modifié depuis un autre poste et n'est plus disponible pour cette opération. Les données ont été actualisées. Veuillez réessayer. Rester sur le formulaire Recharger l
+2026-10-17T11:15:20.404Z CAPTURE — <EVIDENCE>\P03_native_clients_conflict_409_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:20.584Z PASS — aucune écriture de la version périmée
+2026-10-17T11:15:21.169Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_after-conflict_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:21.503Z PASS — thème dark
+2026-10-17T11:15:22.386Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_dark_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:23.120Z CAPTURE — <EVIDENCE>\P03_native_clients_list_dark_1920x1080_20261017T111506Z.png 1920x1080
+2026-10-17T11:15:23.454Z PASS — thème light
+2026-10-17T11:15:25.236Z CAPTURE — <EVIDENCE>\P03_native_clients_list_light_1440x900_20261017T111506Z.png 1440x900
+2026-10-17T11:15:25.237Z PASS — liste 1440×900 : aucun défilement horizontal
+2026-10-17T11:15:25.404Z TERMINÉ — clients-full
+2026-10-17T11:15:25.518Z SCÉNARIO — clients-read
+2026-10-17T11:15:25.519Z PASS — zoom WebView2 effectif 100 %
+2026-10-17T11:15:27.366Z PASS — thème light
+2026-10-17T11:15:27.727Z PASS — motif « Consultation seule » affiché
+2026-10-17T11:15:27.728Z PASS — « Nouveau client » absent
+2026-10-17T11:15:27.728Z PASS — aucune action Modifier/Archiver/Réactiver dans les lignes
+2026-10-17T11:15:29.222Z CAPTURE — <EVIDENCE>\P03_native_clients_list_read-only_1920x1080_20261017T111525Z.png 1920x1080
+2026-10-17T11:15:29.383Z PASS — fiche : Modifier et Archiver désactivés
+2026-10-17T11:15:29.953Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_read-only_1920x1080_20261017T111525Z.png 1920x1080
+2026-10-17T11:15:30.123Z TERMINÉ — clients-read
+2026-10-17T11:15:30.236Z SCÉNARIO — clients-write
+2026-10-17T11:15:30.237Z PASS — zoom WebView2 effectif 100 %
+2026-10-17T11:15:32.059Z PASS — thème light
+2026-10-17T11:15:32.414Z PASS — « Nouveau client » présent
+2026-10-17T11:15:32.414Z PASS — aucune action Archiver dans les lignes
+2026-10-17T11:15:32.577Z PASS — fiche : Modifier actif, Archiver désactivé
+2026-10-17T11:15:34.053Z CAPTURE — <EVIDENCE>\P03_native_clients_detail_write-no-archive_1920x1080_20261017T111530Z.png 1920x1080
+2026-10-17T11:15:34.212Z TERMINÉ — clients-write
+
+## Confidentialite
+valeurs exactes des 4 mots de passe ephemeres + mot de passe PostgreSQL de test : 0 occurrence dans 8 fichiers (api.log, tauri.log, run.log, http-matrix.out, 4 journaux P03A3) ; api.log (207 lignes) : 0 occurrence de nom, prenom, telephone, email, ville, NSS ou identifiant de compte ; evenements 3001/3002 avec identifiants techniques seulement
+
+## Nettoyage 2026-10-17T11:16:05Z
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+nettoyage : 3 client(s) fictif(s), 4 compte(s) supprimés
+cible : mmv_v2_test|mmv_v2_test|5433|180006
+résidus mmv_v2_test : comptes=0 sessions=0 clients=0 bootstrap=0 permissions=0

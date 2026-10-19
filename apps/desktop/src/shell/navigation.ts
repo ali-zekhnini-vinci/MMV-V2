@@ -7,6 +7,7 @@ import {
   BarChart3,
   Bell,
   Boxes,
+  CalendarDays,
   ClipboardList,
   LayoutDashboard,
   Package,
@@ -23,6 +24,7 @@ export type ViewId =
   | "diagnostic"
   | "accounts"
   | "clients"
+  | "appointments"
   | "products"
   | "prescriptions"
   | "orders"
@@ -42,6 +44,10 @@ export interface NavItem {
   availability: "available" | "later";
   /** Permission technique requise pour AFFICHER l'entrée (le serveur reste seul juge). */
   requires?: string;
+  /** Le module a des sous-routes (`/clients/...`) : l'entrée reste active sur toutes. */
+  nested?: boolean;
+  /** Précision affichée sur l'écran « indisponible » (ex. sous-lot prévu). */
+  note?: string;
 }
 
 export interface NavSection {
@@ -58,7 +64,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     label: "Principal",
     items: [
       { id: "home", path: "/", label: "Accueil", icon: LayoutDashboard, availability: "available" },
-      { id: "clients", path: "/clients", label: "Clients", icon: Users, availability: "later" },
+      // Phase 03-A : écrans Clients disponibles ; les données dépendent de l'activation du service (G03-METIER).
+      { id: "clients", path: "/clients", label: "Clients", icon: Users, availability: "available", nested: true },
+      // Phase 03-B : écran Rendez-vous disponible ; 03-B2 : décisions approuvées, service raccordé à MMV.Api.
+      { id: "appointments", path: "/rendez-vous", label: "Rendez-vous", icon: CalendarDays, availability: "available" },
       { id: "products", path: "/produits", label: "Produits", icon: Package, availability: "later" },
       { id: "prescriptions", path: "/ordonnances", label: "Ordonnances", icon: ClipboardList, availability: "later" },
       { id: "orders", path: "/commandes", label: "Commandes", icon: ShoppingBag, availability: "later" },
@@ -89,7 +98,14 @@ export function findNavItem(id: ViewId): NavItem {
 
 /** Entrée correspondant à une route du shell ; `undefined` pour une route inconnue (redirigée vers l'Accueil). */
 export function findNavItemByPath(pathname: string): NavItem | undefined {
-  return NAV_ITEMS.find((candidate) => candidate.path === pathname);
+  return NAV_ITEMS.find(
+    (candidate) => candidate.path === pathname || (candidate.nested === true && pathname.startsWith(`${candidate.path}/`)),
+  );
+}
+
+/** Motif de route React Router de l'entrée (`/clients/*` pour un module à sous-routes). */
+export function routePattern(item: NavItem): string {
+  return item.nested ? `${item.path}/*` : item.path;
 }
 
 export function hasPermission(permissions: readonly string[], permission: string | undefined): boolean {

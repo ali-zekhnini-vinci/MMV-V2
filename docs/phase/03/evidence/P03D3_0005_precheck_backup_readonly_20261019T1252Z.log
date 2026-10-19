@@ -1,0 +1,204 @@
+﻿# 03-D3 precontroles avant 0005 (lecture seule) et sauvegarde verifiee de mmv_v2_dev
+# Regeneration hors connexion (dotnet ef migrations script, fins de ligne LF, sans BOM) : sql 12f98d1f…, idempotent 1b42d82c… (= empreinte imposee), rollback 19f3f10b… : octet pour octet identiques aux fichiers du depot
+# Processus du proprietaire constates et laisses en marche : MMV.Api (dotnet run --launch-profile https), tauri dev / vite, mmv-desktop (debug). Service postgresql-x64-17 non touche.
+
+# precontrole 0005 lecture seule 2026-10-19T12:52:27.3853188Z
+
+### mmv_v2_dev
+SECRET : host=localhost port=5433 database=mmv_v2_dev role=mmv_v2_dev
+Pager usage is off.
+== identite
+     db     |    role    | port | version |  num   | read_only 
+------------+------------+------+---------+--------+-----------
+ mmv_v2_dev | mmv_v2_dev | 5433 | 18.6    | 180006 | on
+(1 row)
+
+  rolname   | rolsuper | rolcreatedb | rolcreaterole | rolbypassrls 
+------------+----------+-------------+---------------+--------------
+ mmv_v2_dev | f        | f           | f             | f
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+(4 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_dev
+ auth         | mmv_v2_dev
+ clients      | mmv_v2_dev
+ public       | pg_database_owner
+(4 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets audit (attendu : aucun)
+ audit_objects 
+---------------
+             0
+(1 row)
+
+ audit_schema | audit_events 
+--------------+--------------
+              | 
+(1 row)
+
+== contrainte de permissions actuelle
+            conname             |                                                                                                                                                               def                                                                                                                                                               
+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ck_user_permissions_permission | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying])::text[])))
+(1 row)
+
+== fonctions, declencheurs (hors systeme)
+ functions 
+-----------
+         0
+(1 row)
+
+ triggers 
+----------
+        0
+(1 row)
+
+== empreinte du schema complet (reference 03-B3 apres 0004 : de5378e8 / 2a9dbfd8 / f9c2aaa0)
+           columns_md5            |         constraints_md5          |           indexes_md5            
+----------------------------------+----------------------------------+----------------------------------
+ de5378e8a5441c82fc5c120a984c1895 | 2a9dbfd8d680225cd6f1d19dd0dca6e5 | f9c2aaa0adda8a143d570e390f1eff8e
+(1 row)
+
+== donnees (comptes seulement)
+ appointments | responsibles | clients | users | user_permissions 
+--------------+--------------+---------+-------+------------------
+            1 |            0 |       1 |     1 |                7
+(1 row)
+
+     permission      | count 
+---------------------+-------
+ appointments.cancel |     1
+ appointments.read   |     1
+ appointments.write  |     1
+ clients.archive     |     1
+ clients.read        |     1
+ clients.write       |     1
+ system.admin        |     1
+(7 rows)
+
+== sessions sur cette base (hors session courante)
+ application_name | state | in_xact | wait_event_type 
+------------------+-------+---------+-----------------
+                  | idle  | f       | Client
+(1 row)
+
+
+### mmv_v2_test
+SECRET : host=localhost port=5433 database=mmv_v2_test role=mmv_v2_test
+Pager usage is off.
+== identite
+     db      |    role     | port | version |  num   | read_only 
+-------------+-------------+------+---------+--------+-----------
+ mmv_v2_test | mmv_v2_test | 5433 | 18.6    | 180006 | on
+(1 row)
+
+   rolname   | rolsuper | rolcreatedb | rolcreaterole | rolbypassrls 
+-------------+----------+-------------+---------------+--------------
+ mmv_v2_test | f        | f           | f             | f
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+(4 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_test
+ auth         | mmv_v2_test
+ clients      | mmv_v2_test
+ public       | pg_database_owner
+(4 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets audit (attendu : aucun)
+ audit_objects 
+---------------
+             0
+(1 row)
+
+ audit_schema | audit_events 
+--------------+--------------
+              | 
+(1 row)
+
+== contrainte de permissions actuelle
+            conname             |                                                                                                                                                               def                                                                                                                                                               
+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ck_user_permissions_permission | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying])::text[])))
+(1 row)
+
+== fonctions, declencheurs (hors systeme)
+ functions 
+-----------
+         0
+(1 row)
+
+ triggers 
+----------
+        0
+(1 row)
+
+== empreinte du schema complet (reference 03-B3 apres 0004 : de5378e8 / 2a9dbfd8 / f9c2aaa0)
+           columns_md5            |         constraints_md5          |           indexes_md5            
+----------------------------------+----------------------------------+----------------------------------
+ de5378e8a5441c82fc5c120a984c1895 | 2a9dbfd8d680225cd6f1d19dd0dca6e5 | f9c2aaa0adda8a143d570e390f1eff8e
+(1 row)
+
+== donnees (comptes seulement)
+ appointments | responsibles | clients | users | user_permissions 
+--------------+--------------+---------+-------+------------------
+            0 |            0 |       0 |     0 |                0
+(1 row)
+
+ permission | count 
+------------+-------
+(0 rows)
+
+== sessions sur cette base (hors session courante)
+ application_name | state | in_xact | wait_event_type 
+------------------+-------+---------+-----------------
+(0 rows)
+
+
+# === sauvegarde verifiee (fichier hors depot, contient des donnees reelles : non versionne) ===
+PG_DUMP : pg_dump (PostgreSQL) 18.6
+FICHIER : C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0005_20261019T125255Z.dump
+TAILLE : 26249 octets ; SHA-256 95C602A80FCC9FAD98F87AF0843B8C6AAD188B3BEE5818363396509CEC183EBF
+TOC : 54 entrees ; TABLE DATA : 8 ; SCHEMA : 3
+  appointments.appointments : base 1 / sauvegarde 1 -> OK
+  appointments.responsibles : base 0 / sauvegarde 0 -> OK
+  auth.bootstrap_record : base 1 / sauvegarde 1 -> OK
+  auth.sessions : base 21 / sauvegarde 21 -> OK
+  auth.user_permissions : base 7 / sauvegarde 7 -> OK
+  auth.users : base 1 / sauvegarde 1 -> OK
+  clients.clients : base 1 / sauvegarde 1 -> OK
+  public.__EFMigrationsHistory : base 4 / sauvegarde 4 -> OK
+VERIFICATION : OK (TOC lisible, archive integralement decodee, lignes identiques table par table)

@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using MMV.Api.Appointments;
+using MMV.Api.Audit;
+using MMV.Api.Clients;
 using MMV.Api.Cors;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
@@ -37,6 +40,15 @@ internal static class AuthEndpoints
         api.MapGroup("/admin")
             .RequireAuthorization(AuthSetup.SystemAdminPolicy)
             .MapGet("/accounts", ListAccountsAsync);
+
+        // Phase 03-A2 : même groupe /api (HTTPS obligatoire, CORS desktop-api).
+        api.MapClientsEndpoints();
+
+        // Phase 03-B2 : même groupe /api.
+        api.MapAppointmentsEndpoints();
+
+        // Phase 03-D2 : historique des actions (lecture seule, audit.read).
+        api.MapAuditEndpoints();
 
         return app;
     }

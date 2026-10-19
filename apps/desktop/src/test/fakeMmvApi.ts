@@ -3,6 +3,9 @@
 // src/MMV.Api/Auth/ (statuts, corps), pas leur sécurité : la preuve serveur est dans tests/MMV.*.Tests.
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
+import { type FakeAppointmentRecord, type FakeAppointmentsOptions, FAKE_APPOINTMENT_OPTIONS, handleAppointments, seedAppointments } from "./fakeAppointmentsApi.ts";
+import { type FakeAuditOptions, handleAudit } from "./fakeAuditApi.ts";
+import { type FakeClientRecord, type FakeClientsOptions, handleClients, seedClients } from "./fakeClientsApi.ts";
 
 export interface FakeAccount {
   userName: string;
@@ -12,7 +15,7 @@ export interface FakeAccount {
   active?: boolean;
 }
 
-export interface FakeApiOptions {
+export interface FakeApiOptions extends FakeClientsOptions, FakeAppointmentsOptions, FakeAuditOptions {
   accounts?: FakeAccount[];
   /** Simule une base indisponible (/health/ready 503). */
   databaseDown?: boolean;
@@ -32,6 +35,10 @@ export interface FakeApi {
   /** Retire une permission à un compte (sessions comprises). */
   removePermission: (userName: string, permission: string) => void;
   activeSessions: () => number;
+  /** Clients fictifs du double (phase 03-A), modifiables pour simuler un autre poste. */
+  clients: FakeClientRecord[];
+  /** Rendez-vous fictifs du double (phase 03-B, contrat PROPOSÉ), modifiables pour simuler un autre poste. */
+  appointments: FakeAppointmentRecord[];
   stop: () => Promise<void>;
 }
 
@@ -49,6 +56,8 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
   const sessions = new Map<string, string>(); // jeton -> userName
   const requests: FakeApi["requests"] = [];
   let counter = 0;
+  const clients = seedClients(options.clients ?? []);
+  const appointments = seedAppointments(options.appointments ?? [], clients, options.appointmentOptions ?? FAKE_APPOINTMENT_OPTIONS);
 
   const send = (response: ServerResponse, status: number, body?: unknown) => {
     response.writeHead(status, body === undefined ? {} : { "content-type": "application/json" });
@@ -140,6 +149,29 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
           })),
         );
       }
+      if (auth && (path === "/api/clients" || path.startsWith("/api/clients/") || path.startsWith("/api/clients?"))) {
+        return handleClients(request, response, {
+          permissions: auth.account.permissions,
+          clients,
+          options,
+          send,
+          readBody: () => readBody(request),
+        });
+      }
+      if (auth && (path === "/api/appointments" || path.startsWith("/api/appointments/") || path.startsWith("/api/appointments?"))) {
+        return handleAppointments(request, response, {
+          permissions: auth.account.permissions,
+          appointments,
+          clients,
+          options,
+          send,
+          readBody: () => readBody(request),
+          userDisplayName: auth.account.displayName,
+        });
+      }
+      if (auth && path.startsWith("/api/audit/")) {
+        return handleAudit(request, response, { permissions: auth.account.permissions, clients, options, send });
+      }
       return send(response, 404, { code: "not_found" });
     })();
   });
@@ -157,6 +189,8 @@ export async function startFakeApi(options: FakeApiOptions = {}): Promise<FakeAp
       if (account) account.permissions = account.permissions.filter((item) => item !== permission);
     },
     activeSessions: () => sessions.size,
+    clients,
+    appointments,
     stop: () =>
       new Promise<void>((resolve) => {
         server.closeAllConnections();

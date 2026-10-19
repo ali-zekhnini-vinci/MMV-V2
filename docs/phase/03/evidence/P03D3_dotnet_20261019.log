@@ -1,0 +1,9 @@
+# 03-D3 — suites .NET finales (build out-of-tree --artifacts-path .agent-artifacts : 0 avertissement / 0 erreur), apres toutes les corrections 03-D3
+Série de tests pour C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\.agent-artifacts\bin\MMV.Api.Tests\debug\MMV.Api.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :   351, ignorée(s) :     0, total :   351, durée : 33 s - MMV.Api.Tests.dll (net10.0)
+Série de tests pour C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\.agent-artifacts\bin\MMV.Maintenance.Tests\debug\MMV.Maintenance.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 6 s - MMV.Maintenance.Tests.dll (net10.0)

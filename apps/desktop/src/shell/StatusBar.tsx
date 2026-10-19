@@ -3,7 +3,7 @@
 import { Database, LoaderCircle, MonitorCheck, Server } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TechnicalStatus } from "../api/health.ts";
-import { databaseIndicator, type Indicator, serverIndicator, sessionIndicator } from "./statusBarView.ts";
+import { compactIndicatorText, databaseIndicator, type Indicator, serverIndicator, sessionIndicator } from "./statusBarView.ts";
 
 interface StatusBarProps {
   expiresAtUtc: string;
@@ -13,9 +13,12 @@ interface StatusBarProps {
 
 function Item({ icon, indicator }: { icon: ReactNode; indicator: Indicator }) {
   return (
-    <span className={`statusbar__item statusbar__item--${indicator.tone}`}>
+    <span className={`statusbar__item statusbar__item--${indicator.tone}`} title={indicator.text}>
       {icon}
-      {indicator.text}
+      <span className="statusbar__long">{indicator.text}</span>
+      <span className="statusbar__short" aria-hidden="true">
+        {compactIndicatorText(indicator.text)}
+      </span>
     </span>
   );
 }

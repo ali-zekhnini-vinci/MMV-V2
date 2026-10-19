@@ -21,7 +21,7 @@ public sealed class BootstrapCommandProcessTests
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var run = await RunAsync("bootstrap-admin", connectionString);
+        var run = await RunAsync(connectionString, "bootstrap-admin");
 
         Assert.Equal(5, run.ExitCode);
         Assert.Contains("aucune connexion n'a été ouverte", run.StandardError, StringComparison.Ordinal);
@@ -35,7 +35,7 @@ public sealed class BootstrapCommandProcessTests
     public async Task Status_ForeignTarget_StaysReadOnlyAndIsNotRefusedByPolicy()
     {
         // Port 1 sur la boucle locale : connexion refusée immédiatement (aucun serveur PostgreSQL contacté).
-        var run = await RunAsync("status", "Host=127.0.0.1;Port=1;Database=mmv_v2_test;Username=mmv_v2_test;Password=x;Timeout=3");
+        var run = await RunAsync("Host=127.0.0.1;Port=1;Database=mmv_v2_test;Username=mmv_v2_test;Password=x;Timeout=3", "status");
 
         Assert.Equal(2, run.ExitCode);
         Assert.Contains("base injoignable", run.StandardError, StringComparison.Ordinal);
@@ -45,14 +45,71 @@ public sealed class BootstrapCommandProcessTests
     [Fact]
     public async Task UnknownCommand_IsUsageError()
     {
-        var run = await RunAsync("migrate", "Host=localhost;Port=5433;Database=mmv_v2_dev;Username=mmv_v2_dev");
+        var run = await RunAsync("Host=localhost;Port=5433;Database=mmv_v2_dev;Username=mmv_v2_dev", "migrate");
 
         Assert.Equal(1, run.ExitCode);
     }
 
+    [Theory]
+    [InlineData("system.admin")]
+    [InlineData("clients.delete")]
+    [InlineData("CLIENTS.READ")]
+    public async Task PermissionsGrant_NonGrantablePermission_IsRefusedBeforeAnyConnection(string permission)
+    {
+        // Cible pourtant autorisée : le refus porte sur la permission, avant toute lecture de configuration.
+        var run = await RunAsync("Host=192.0.2.10;Port=5433;Database=mmv_v2_dev;Username=mmv_v2_dev;Password=x;Timeout=15",
+            "permissions", "grant", "admin", permission);
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Contains("permission non attribuable", run.StandardError, StringComparison.Ordinal);
+        Assert.Contains("clients.read, clients.write, clients.archive", run.StandardError, StringComparison.Ordinal);
+        Assert.DoesNotContain("Base cible", run.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("grant", "Host=192.0.2.10;Port=5433;Database=mmv_v2_dev;Username=mmv_v2_dev;Password=x;Timeout=15")]
+    [InlineData("grant", "Host=localhost;Port=5433;Database=mmv_v2_test;Username=mmv_v2_test;Password=x")]
+    [InlineData("revoke", "Host=localhost;Port=5432;Database=mmv_v2_dev;Username=mmv_v2_dev;Password=x")]
+    public async Task PermissionsGrantOrRevoke_ForeignTarget_IsRefusedWithoutConnecting(string action, string connectionString)
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        var run = await RunAsync(connectionString, "permissions", action, "caisse", "clients.read");
+
+        Assert.Equal(5, run.ExitCode);
+        Assert.Contains($"cible non autorisée pour permissions {action}", run.StandardError, StringComparison.Ordinal);
+        Assert.Contains("aucune connexion n'a été ouverte", run.StandardError, StringComparison.Ordinal);
+        Assert.DoesNotContain("Password=x", run.StandardError + run.StandardOutput, StringComparison.Ordinal);
+        Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(10), $"Refus trop lent ({stopwatch.Elapsed}).");
+    }
+
+    [Theory]
+    [InlineData("permissions")]
+    [InlineData("permissions", "grant", "caisse")]
+    [InlineData("permissions", "grant", "caisse", "clients.read", "en-trop")]
+    [InlineData("permissions", "delete", "caisse", "clients.read")]
+    [InlineData("status", "en-trop")]
+    public async Task PermissionsCommand_MalformedArguments_IsUsageError(params string[] arguments)
+    {
+        var run = await RunAsync("Host=localhost;Port=5433;Database=mmv_v2_dev;Username=mmv_v2_dev", arguments);
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.Contains("Usage", run.StandardError, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PermissionsList_IsReadOnlyAndNotRefusedByPolicy()
+    {
+        var run = await RunAsync("Host=127.0.0.1;Port=1;Database=mmv_v2_test;Username=mmv_v2_test;Password=x;Timeout=3", "permissions", "list");
+
+        Assert.Equal(2, run.ExitCode);
+        Assert.Contains("base injoignable", run.StandardError, StringComparison.Ordinal);
+        Assert.DoesNotContain("Refusé", run.StandardError, StringComparison.Ordinal);
+    }
+
     private sealed record ProcessRun(int ExitCode, string StandardOutput, string StandardError);
 
-    private static async Task<ProcessRun> RunAsync(string command, string connectionString)
+    private static async Task<ProcessRun> RunAsync(string connectionString, params string[] arguments)
     {
         var assembly = Path.Combine(AppContext.BaseDirectory, "MMV.Maintenance.dll");
         Assert.True(File.Exists(assembly), $"Binaire introuvable : {assembly}");
@@ -68,7 +125,11 @@ public sealed class BootstrapCommandProcessTests
         };
         startInfo.ArgumentList.Add("exec");
         startInfo.ArgumentList.Add(assembly);
-        startInfo.ArgumentList.Add(command);
+        foreach (var argument in arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
         startInfo.Environment["ConnectionStrings__Mmv"] = connectionString;
 
         using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Processus non démarré.");

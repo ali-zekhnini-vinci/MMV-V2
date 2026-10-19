@@ -2,6 +2,7 @@
 // clic extérieur, retour du focus au déclencheur). Styles : cotes du menu profil MMV (MMV-Shell-handoff
 // §12), jetons MMV uniquement.
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { Check } from "lucide-react";
 import type { ComponentProps } from "react";
 import { cn } from "../../lib/utils.ts";
 
@@ -65,5 +66,29 @@ export function DropdownMenuItem({
       )}
       {...props}
     />
+  );
+}
+
+export const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup;
+
+/** Choix exclusif (filtres et tri de liste, phase 03) : coche visible et `aria-checked` fournis par Radix. */
+export function DropdownMenuRadioItem({ className, children, ...props }: ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      data-slot="dropdown-menu-radio-item"
+      className={cn(
+        "flex h-10 w-full cursor-pointer items-center gap-2 rounded-sm px-3 text-body text-text-primary outline-none select-none",
+        "data-highlighted:bg-surface-hover data-[state=checked]:font-semibold data-[state=checked]:text-accent",
+        className,
+      )}
+      {...props}
+    >
+      <span className="inline-flex size-4 items-center justify-center" aria-hidden="true">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check size={16} />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {children}
+    </DropdownMenuPrimitive.RadioItem>
   );
 }

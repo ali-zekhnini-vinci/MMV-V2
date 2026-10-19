@@ -1,0 +1,316 @@
+﻿# 03-B3 inspection post-migration 0004, sessions default_transaction_read_only=on, 2026-10-17T18:58:19.6094201Z
+# Precontrole (lecture seule, 18:56Z) : 2 bases PG 18.6 / 5433 / base = role ; migrations 0001-0003 seules ; aucun objet appointments ; schemas dev = test (md5 colonnes 6c050b7a, contraintes ff7785ce, index e3eeae4e) ; regeneration hors connexion : sql 0f475d2c, idempotent 9bd07d90, rollback 6fe5b993 octet pour octet identiques
+
+### mmv_v2_dev
+SECRET : host=localhost port=5433 database=mmv_v2_dev role=mmv_v2_dev
+Pager usage is off.
+== identite
+     db     |    role    | port | version | read_only 
+------------+------------+------+---------+-----------
+ mmv_v2_dev | mmv_v2_dev | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+(4 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_dev
+ auth         | mmv_v2_dev
+ clients      | mmv_v2_dev
+ public       | pg_database_owner
+(4 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets du schema appointments
+               relname                | relkind |   owner    
+--------------------------------------+---------+------------
+ ix_appointments_cancelled_by_user_id | i       | mmv_v2_dev
+ ix_appointments_client_starts_at     | i       | mmv_v2_dev
+ ix_appointments_created_by_user_id   | i       | mmv_v2_dev
+ ix_appointments_responsible_planned  | i       | mmv_v2_dev
+ ix_appointments_starts_at            | i       | mmv_v2_dev
+ ix_appointments_unassigned_planned   | i       | mmv_v2_dev
+ ix_appointments_updated_by_user_id   | i       | mmv_v2_dev
+ pk_appointments                      | i       | mmv_v2_dev
+ pk_responsibles                      | i       | mmv_v2_dev
+ appointments                         | r       | mmv_v2_dev
+ responsibles                         | r       | mmv_v2_dev
+(11 rows)
+
+== colonnes appointments
+  table_name  | pos |     column_name      |        data_type         | len  | is_nullable | column_default 
+--------------+-----+----------------------+--------------------------+------+-------------+----------------
+ appointments |   1 | id                   | uuid                     |      | NO          | 
+ appointments |   2 | client_id            | uuid                     |      | NO          | 
+ appointments |   3 | responsible_user_id  | uuid                     |      | YES         | 
+ appointments |   4 | starts_at_utc        | timestamp with time zone |      | NO          | 
+ appointments |   5 | ends_at_utc          | timestamp with time zone |      | NO          | 
+ appointments |   6 | reason_code          | character varying        |   32 | NO          | 
+ appointments |   7 | notes                | character varying        | 1000 | YES         | 
+ appointments |   8 | status               | character varying        |   16 | NO          | 
+ appointments |   9 | cancelled_at_utc     | timestamp with time zone |      | YES         | 
+ appointments |  10 | cancelled_by_user_id | uuid                     |      | YES         | 
+ appointments |  11 | cancellation_reason  | character varying        |  200 | YES         | 
+ appointments |  12 | created_at_utc       | timestamp with time zone |      | NO          | 
+ appointments |  13 | created_by_user_id   | uuid                     |      | NO          | 
+ appointments |  14 | updated_at_utc       | timestamp with time zone |      | NO          | 
+ appointments |  15 | updated_by_user_id   | uuid                     |      | NO          | 
+ responsibles |   1 | user_id              | uuid                     |      | NO          | 
+ responsibles |   2 | is_eligible          | boolean                  |      | NO          | 
+ responsibles |   3 | created_at_utc       | timestamp with time zone |      | NO          | 
+ responsibles |   4 | updated_at_utc       | timestamp with time zone |      | NO          | 
+(19 rows)
+
+== contraintes appointments et auth.user_permissions
+            rel            |                   conname                   | contype |                                                                                                                                                               def                                                                                                                                                               
+---------------------------+---------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions     | ck_user_permissions_permission              | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying])::text[])))
+ auth.user_permissions     | fk_user_permissions_users                   | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions     | pk_user_permissions                         | p       | PRIMARY KEY (user_id, permission)
+ auth.user_permissions     | user_permissions_permission_not_null        | n       | NOT NULL permission
+ auth.user_permissions     | user_permissions_user_id_not_null           | n       | NOT NULL user_id
+ appointments.appointments | appointments_client_id_not_null             | n       | NOT NULL client_id
+ appointments.appointments | appointments_created_at_utc_not_null        | n       | NOT NULL created_at_utc
+ appointments.appointments | appointments_created_by_user_id_not_null    | n       | NOT NULL created_by_user_id
+ appointments.appointments | appointments_ends_at_utc_not_null           | n       | NOT NULL ends_at_utc
+ appointments.appointments | appointments_id_not_null                    | n       | NOT NULL id
+ appointments.appointments | appointments_reason_code_not_null           | n       | NOT NULL reason_code
+ appointments.appointments | appointments_starts_at_utc_not_null         | n       | NOT NULL starts_at_utc
+ appointments.appointments | appointments_status_not_null                | n       | NOT NULL status
+ appointments.appointments | appointments_updated_at_utc_not_null        | n       | NOT NULL updated_at_utc
+ appointments.appointments | appointments_updated_by_user_id_not_null    | n       | NOT NULL updated_by_user_id
+ appointments.appointments | ck_appointments_cancellation_consistency    | c       | CHECK ((((status)::text = 'cancelled'::text) = ((cancelled_at_utc IS NOT NULL) AND (cancelled_by_user_id IS NOT NULL))))
+ appointments.appointments | ck_appointments_cancellation_reason_planned | c       | CHECK ((((status)::text = 'cancelled'::text) OR (cancellation_reason IS NULL)))
+ appointments.appointments | ck_appointments_duration_range              | c       | CHECK (((ends_at_utc - starts_at_utc) <= '12:00:00'::interval))
+ appointments.appointments | ck_appointments_ends_after_starts           | c       | CHECK ((ends_at_utc > starts_at_utc))
+ appointments.appointments | ck_appointments_reason_code_format          | c       | CHECK (((reason_code)::text ~ '^[a-z0-9_-]{1,32}$'::text))
+ appointments.appointments | ck_appointments_status                      | c       | CHECK (((status)::text = ANY ((ARRAY['planned'::character varying, 'cancelled'::character varying])::text[])))
+ appointments.appointments | ck_appointments_updated_after_created       | c       | CHECK ((updated_at_utc >= created_at_utc))
+ appointments.appointments | fk_appointments_cancelled_by_users          | f       | FOREIGN KEY (cancelled_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_clients                     | f       | FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_created_by_users            | f       | FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_responsible_users           | f       | FOREIGN KEY (responsible_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_updated_by_users            | f       | FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | pk_appointments                             | p       | PRIMARY KEY (id)
+ appointments.responsibles | ck_responsibles_updated_after_created       | c       | CHECK ((updated_at_utc >= created_at_utc))
+ appointments.responsibles | fk_responsibles_users                       | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.responsibles | pk_responsibles                             | p       | PRIMARY KEY (user_id)
+ appointments.responsibles | responsibles_created_at_utc_not_null        | n       | NOT NULL created_at_utc
+ appointments.responsibles | responsibles_is_eligible_not_null           | n       | NOT NULL is_eligible
+ appointments.responsibles | responsibles_updated_at_utc_not_null        | n       | NOT NULL updated_at_utc
+ appointments.responsibles | responsibles_user_id_not_null               | n       | NOT NULL user_id
+(35 rows)
+
+== index appointments
+              indexname               |                                                                                       indexdef                                                                                        
+--------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ix_appointments_cancelled_by_user_id | CREATE INDEX ix_appointments_cancelled_by_user_id ON appointments.appointments USING btree (cancelled_by_user_id)
+ ix_appointments_client_starts_at     | CREATE INDEX ix_appointments_client_starts_at ON appointments.appointments USING btree (client_id, starts_at_utc)
+ ix_appointments_created_by_user_id   | CREATE INDEX ix_appointments_created_by_user_id ON appointments.appointments USING btree (created_by_user_id)
+ ix_appointments_responsible_planned  | CREATE INDEX ix_appointments_responsible_planned ON appointments.appointments USING btree (responsible_user_id, starts_at_utc) WHERE ((status)::text = 'planned'::text)
+ ix_appointments_starts_at            | CREATE INDEX ix_appointments_starts_at ON appointments.appointments USING btree (starts_at_utc, id)
+ ix_appointments_unassigned_planned   | CREATE INDEX ix_appointments_unassigned_planned ON appointments.appointments USING btree (starts_at_utc) WHERE (((status)::text = 'planned'::text) AND (responsible_user_id IS NULL))
+ ix_appointments_updated_by_user_id   | CREATE INDEX ix_appointments_updated_by_user_id ON appointments.appointments USING btree (updated_by_user_id)
+ pk_appointments                      | CREATE UNIQUE INDEX pk_appointments ON appointments.appointments USING btree (id)
+ pk_responsibles                      | CREATE UNIQUE INDEX pk_responsibles ON appointments.responsibles USING btree (user_id)
+(9 rows)
+
+== fonctions, declencheurs (hors systeme)
+ functions 
+-----------
+         0
+(1 row)
+
+ triggers 
+----------
+        0
+(1 row)
+
+== empreinte du schema complet
+           columns_md5            |         constraints_md5          |           indexes_md5            
+----------------------------------+----------------------------------+----------------------------------
+ de5378e8a5441c82fc5c120a984c1895 | 2a9dbfd8d680225cd6f1d19dd0dca6e5 | f9c2aaa0adda8a143d570e390f1eff8e
+(1 row)
+
+== donnees
+ appointments | responsibles | clients | users 
+--------------+--------------+---------+-------
+            0 |            0 |       1 |     1
+(1 row)
+
+   permission    | count 
+-----------------+-------
+ clients.archive |     1
+ clients.read    |     1
+ clients.write   |     1
+ system.admin    |     1
+(4 rows)
+
+
+### mmv_v2_test
+SECRET : host=localhost port=5433 database=mmv_v2_test role=mmv_v2_test
+Pager usage is off.
+== identite
+     db      |    role     | port | version | read_only 
+-------------+-------------+------+---------+-----------
+ mmv_v2_test | mmv_v2_test | 5433 | 18.6    | on
+(1 row)
+
+== migrations appliquees
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+(4 rows)
+
+== schemas
+   nspname    |       owner       
+--------------+-------------------
+ appointments | mmv_v2_test
+ auth         | mmv_v2_test
+ clients      | mmv_v2_test
+ public       | pg_database_owner
+(4 rows)
+
+== extensions
+ extname 
+---------
+ plpgsql
+(1 row)
+
+== objets du schema appointments
+               relname                | relkind |    owner    
+--------------------------------------+---------+-------------
+ ix_appointments_cancelled_by_user_id | i       | mmv_v2_test
+ ix_appointments_client_starts_at     | i       | mmv_v2_test
+ ix_appointments_created_by_user_id   | i       | mmv_v2_test
+ ix_appointments_responsible_planned  | i       | mmv_v2_test
+ ix_appointments_starts_at            | i       | mmv_v2_test
+ ix_appointments_unassigned_planned   | i       | mmv_v2_test
+ ix_appointments_updated_by_user_id   | i       | mmv_v2_test
+ pk_appointments                      | i       | mmv_v2_test
+ pk_responsibles                      | i       | mmv_v2_test
+ appointments                         | r       | mmv_v2_test
+ responsibles                         | r       | mmv_v2_test
+(11 rows)
+
+== colonnes appointments
+  table_name  | pos |     column_name      |        data_type         | len  | is_nullable | column_default 
+--------------+-----+----------------------+--------------------------+------+-------------+----------------
+ appointments |   1 | id                   | uuid                     |      | NO          | 
+ appointments |   2 | client_id            | uuid                     |      | NO          | 
+ appointments |   3 | responsible_user_id  | uuid                     |      | YES         | 
+ appointments |   4 | starts_at_utc        | timestamp with time zone |      | NO          | 
+ appointments |   5 | ends_at_utc          | timestamp with time zone |      | NO          | 
+ appointments |   6 | reason_code          | character varying        |   32 | NO          | 
+ appointments |   7 | notes                | character varying        | 1000 | YES         | 
+ appointments |   8 | status               | character varying        |   16 | NO          | 
+ appointments |   9 | cancelled_at_utc     | timestamp with time zone |      | YES         | 
+ appointments |  10 | cancelled_by_user_id | uuid                     |      | YES         | 
+ appointments |  11 | cancellation_reason  | character varying        |  200 | YES         | 
+ appointments |  12 | created_at_utc       | timestamp with time zone |      | NO          | 
+ appointments |  13 | created_by_user_id   | uuid                     |      | NO          | 
+ appointments |  14 | updated_at_utc       | timestamp with time zone |      | NO          | 
+ appointments |  15 | updated_by_user_id   | uuid                     |      | NO          | 
+ responsibles |   1 | user_id              | uuid                     |      | NO          | 
+ responsibles |   2 | is_eligible          | boolean                  |      | NO          | 
+ responsibles |   3 | created_at_utc       | timestamp with time zone |      | NO          | 
+ responsibles |   4 | updated_at_utc       | timestamp with time zone |      | NO          | 
+(19 rows)
+
+== contraintes appointments et auth.user_permissions
+            rel            |                   conname                   | contype |                                                                                                                                                               def                                                                                                                                                               
+---------------------------+---------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ auth.user_permissions     | ck_user_permissions_permission              | c       | CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying])::text[])))
+ auth.user_permissions     | fk_user_permissions_users                   | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+ auth.user_permissions     | pk_user_permissions                         | p       | PRIMARY KEY (user_id, permission)
+ auth.user_permissions     | user_permissions_permission_not_null        | n       | NOT NULL permission
+ auth.user_permissions     | user_permissions_user_id_not_null           | n       | NOT NULL user_id
+ appointments.appointments | appointments_client_id_not_null             | n       | NOT NULL client_id
+ appointments.appointments | appointments_created_at_utc_not_null        | n       | NOT NULL created_at_utc
+ appointments.appointments | appointments_created_by_user_id_not_null    | n       | NOT NULL created_by_user_id
+ appointments.appointments | appointments_ends_at_utc_not_null           | n       | NOT NULL ends_at_utc
+ appointments.appointments | appointments_id_not_null                    | n       | NOT NULL id
+ appointments.appointments | appointments_reason_code_not_null           | n       | NOT NULL reason_code
+ appointments.appointments | appointments_starts_at_utc_not_null         | n       | NOT NULL starts_at_utc
+ appointments.appointments | appointments_status_not_null                | n       | NOT NULL status
+ appointments.appointments | appointments_updated_at_utc_not_null        | n       | NOT NULL updated_at_utc
+ appointments.appointments | appointments_updated_by_user_id_not_null    | n       | NOT NULL updated_by_user_id
+ appointments.appointments | ck_appointments_cancellation_consistency    | c       | CHECK ((((status)::text = 'cancelled'::text) = ((cancelled_at_utc IS NOT NULL) AND (cancelled_by_user_id IS NOT NULL))))
+ appointments.appointments | ck_appointments_cancellation_reason_planned | c       | CHECK ((((status)::text = 'cancelled'::text) OR (cancellation_reason IS NULL)))
+ appointments.appointments | ck_appointments_duration_range              | c       | CHECK (((ends_at_utc - starts_at_utc) <= '12:00:00'::interval))
+ appointments.appointments | ck_appointments_ends_after_starts           | c       | CHECK ((ends_at_utc > starts_at_utc))
+ appointments.appointments | ck_appointments_reason_code_format          | c       | CHECK (((reason_code)::text ~ '^[a-z0-9_-]{1,32}$'::text))
+ appointments.appointments | ck_appointments_status                      | c       | CHECK (((status)::text = ANY ((ARRAY['planned'::character varying, 'cancelled'::character varying])::text[])))
+ appointments.appointments | ck_appointments_updated_after_created       | c       | CHECK ((updated_at_utc >= created_at_utc))
+ appointments.appointments | fk_appointments_cancelled_by_users          | f       | FOREIGN KEY (cancelled_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_clients                     | f       | FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_created_by_users            | f       | FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_responsible_users           | f       | FOREIGN KEY (responsible_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | fk_appointments_updated_by_users            | f       | FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.appointments | pk_appointments                             | p       | PRIMARY KEY (id)
+ appointments.responsibles | ck_responsibles_updated_after_created       | c       | CHECK ((updated_at_utc >= created_at_utc))
+ appointments.responsibles | fk_responsibles_users                       | f       | FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+ appointments.responsibles | pk_responsibles                             | p       | PRIMARY KEY (user_id)
+ appointments.responsibles | responsibles_created_at_utc_not_null        | n       | NOT NULL created_at_utc
+ appointments.responsibles | responsibles_is_eligible_not_null           | n       | NOT NULL is_eligible
+ appointments.responsibles | responsibles_updated_at_utc_not_null        | n       | NOT NULL updated_at_utc
+ appointments.responsibles | responsibles_user_id_not_null               | n       | NOT NULL user_id
+(35 rows)
+
+== index appointments
+              indexname               |                                                                                       indexdef                                                                                        
+--------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ ix_appointments_cancelled_by_user_id | CREATE INDEX ix_appointments_cancelled_by_user_id ON appointments.appointments USING btree (cancelled_by_user_id)
+ ix_appointments_client_starts_at     | CREATE INDEX ix_appointments_client_starts_at ON appointments.appointments USING btree (client_id, starts_at_utc)
+ ix_appointments_created_by_user_id   | CREATE INDEX ix_appointments_created_by_user_id ON appointments.appointments USING btree (created_by_user_id)
+ ix_appointments_responsible_planned  | CREATE INDEX ix_appointments_responsible_planned ON appointments.appointments USING btree (responsible_user_id, starts_at_utc) WHERE ((status)::text = 'planned'::text)
+ ix_appointments_starts_at            | CREATE INDEX ix_appointments_starts_at ON appointments.appointments USING btree (starts_at_utc, id)
+ ix_appointments_unassigned_planned   | CREATE INDEX ix_appointments_unassigned_planned ON appointments.appointments USING btree (starts_at_utc) WHERE (((status)::text = 'planned'::text) AND (responsible_user_id IS NULL))
+ ix_appointments_updated_by_user_id   | CREATE INDEX ix_appointments_updated_by_user_id ON appointments.appointments USING btree (updated_by_user_id)
+ pk_appointments                      | CREATE UNIQUE INDEX pk_appointments ON appointments.appointments USING btree (id)
+ pk_responsibles                      | CREATE UNIQUE INDEX pk_responsibles ON appointments.responsibles USING btree (user_id)
+(9 rows)
+
+== fonctions, declencheurs (hors systeme)
+ functions 
+-----------
+         0
+(1 row)
+
+ triggers 
+----------
+        0
+(1 row)
+
+== empreinte du schema complet
+           columns_md5            |         constraints_md5          |           indexes_md5            
+----------------------------------+----------------------------------+----------------------------------
+ de5378e8a5441c82fc5c120a984c1895 | 2a9dbfd8d680225cd6f1d19dd0dca6e5 | f9c2aaa0adda8a143d570e390f1eff8e
+(1 row)
+
+== donnees
+ appointments | responsibles | clients | users 
+--------------+--------------+---------+-------
+            0 |            0 |       0 |     0
+(1 row)
+
+ permission | count 
+------------+-------
+(0 rows)
+

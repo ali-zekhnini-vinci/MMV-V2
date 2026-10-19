@@ -1,0 +1,470 @@
+# P03C — validation fonctionnelle native : Tauri dev (WebView2, CDP 127.0.0.1:9222, worktree 9caf7ed + banc e2e 03-C) -> https://localhost:7267 (MMV.Api worktree, --launch-profile https) -> PostgreSQL 18 mmv_v2_test (5433), 2026-10-18
+# Magasin (valeurs du proprietaire, passees au seul processus de test) : Europe/Brussels, 09:00-19:00, aucun jour masque, capacite 1 ; garde-fou : meme API relancee en Africa/Casablanca (essai, pas la configuration du magasin)
+# Donnees FICTIVES c3n-*-8bd08b8c / Fictif-C3N-8bd08b8c (outil jetable hors depot, base vide exigee avant semis), nettoyees apres la passe ; identifiants hors depot, supprimes
+# Passes ecartees (defauts du BANC, corriges) : (1) Ctrl+S envoye hors fenetre (verrou de premier plan Windows -> send-keys.ps1) ; (2) parcours clair 1920x1080 PASS mais remplace par la passe uniforme ci-dessous ;
+#   (3) connexion refusee « Trop de tentatives » (limite serveur 10/min/adresse atteinte par les lectures API du banc -> une session API par compte) ; (4) parcours sombre annonce a 150 % mais execute a 100 % (zoom regle avant la connexion, qui recharge la page -> zoom regle apres, controle final ajoute). Captures ecartees non versionnees.
+
+## Parcours 1 — clair, 1920x1080, zoom 100 % (jour 2026-10-23)
+2026-10-18T11:34:29.282Z SCÉNARIO — parcours-03c
+2026-10-18T11:34:29.296Z PARCOURS — light_1920x1080_z100, jour 2026-10-23
+2026-10-18T11:34:30.660Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-18T11:34:32.491Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:34:32.805Z PASS — thème light
+2026-10-18T11:34:32.826Z PASS — accueil : aucun défilement horizontal
+2026-10-18T11:34:33.382Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_01_accueil_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:34.644Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_02_recherche_absent_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:34.645Z PASS — Nouveau client
+2026-10-18T11:34:35.528Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_03_client_formulaire_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:36.586Z PASS — référence attribuée par le serveur
+2026-10-18T11:34:36.587Z PASS — Voir la fiche
+2026-10-18T11:34:37.261Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_04_fiche_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:37.347Z PASS — API : client enregistré
+2026-10-18T11:34:38.127Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_05_recherche_trouve_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:38.128Z PASS — Consulter
+2026-10-18T11:34:38.287Z PASS — Prendre un rendez-vous
+2026-10-18T11:34:38.446Z PASS — aucune seconde recherche
+2026-10-18T11:34:38.448Z PASS — décalages serveur = poste
+2026-10-18T11:34:38.583Z PASS — Durée = 30 minutes
+2026-10-18T11:34:38.590Z PASS — Motif = Conseil / Devis
+2026-10-18T11:34:38.591Z PASS — Responsable = C3N Responsable Un
+2026-10-18T11:34:38.646Z PASS — « Créer » accessible à l'écran
+2026-10-18T11:34:39.162Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_06_rdv_formulaire_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:39.164Z PASS — Créer
+2026-10-18T11:34:39.331Z PASS — API : 10:00 Europe/Brussels (2026-10-23T08:00:00+00:00), responsable Un
+2026-10-18T11:34:39.841Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_07_rdv_cree_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:39.868Z PASS — ouverture de « Clair Fictif-C3N-8bd08b8c »
+2026-10-18T11:34:39.907Z PASS — Modifier
+2026-10-18T11:34:39.923Z PASS — Motif = SAV / Réparation
+2026-10-18T11:34:39.984Z PASS — Enregistrer
+2026-10-18T11:34:40.157Z PASS — API : motif modifié, créneau inchangé
+2026-10-18T11:34:40.679Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_08_rdv_modifie_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:40.704Z PASS — Déplacer
+2026-10-18T11:34:40.880Z PASS — API : déplacé à 12:00 (2026-10-23T10:00:00+00:00)
+2026-10-18T11:34:40.897Z PASS — fermeture du détail
+2026-10-18T11:34:41.209Z GLISSER — départ CSS (1101, 581), hauteur 28 px, échelle CDP 1.00
+2026-10-18T11:34:43.348Z PASS — API : déposé à 13:00 (2026-10-23T11:00:00+00:00)
+2026-10-18T11:34:43.876Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_09_glisser_depose_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:43.898Z PASS — ouverture de « Clair Fictif-C3N-8bd08b8c »
+2026-10-18T11:34:44.097Z PASS — clavier : focus sur « Annuler le rendez-vous » (2 tabulations)
+2026-10-18T11:34:44.224Z PASS — clavier : focus piégé dans la confirmation
+2026-10-18T11:34:44.333Z FOCUS après Échap — BODY CPrincipalAccueilClientsRendez-vousProduitsOrdonnancesCommandesVentesInvent
+2026-10-18T11:34:44.337Z PASS — API : Échap sans effet
+2026-10-18T11:34:45.384Z PASS — clavier : focus sur « Annuler le rendez-vous » (2 tabulations)
+2026-10-18T11:34:45.385Z PASS — clavier : bouton de confirmation du dialogue
+2026-10-18T11:34:45.498Z PASS — API : annulé
+2026-10-18T11:34:46.013Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_10_rdv_annule_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:46.014Z PASS — clavier : focus sur « Rétablir le rendez-vous »
+2026-10-18T11:34:46.135Z PASS — API : replanifié à 13:00
+2026-10-18T11:34:46.136Z PASS — Voir la fiche client
+2026-10-18T11:34:46.303Z PASS — fiche : aucun défilement horizontal
+2026-10-18T11:34:46.828Z CAPTURE — <EVIDENCE>\P03C_native_c3_light_1920x1080_z100_11_retour_fiche_20261018T113429Z.png 1920x1080
+2026-10-18T11:34:46.886Z PASS — API (autre poste) : rendez-vous planifié à 13:00
+2026-10-18T11:34:46.887Z PASS — zoom 100 % conservé pendant tout le parcours
+2026-10-18T11:34:47.054Z TERMINÉ — parcours-03c
+
+## Parcours 2 — sombre, 1440x900, zoom 150 % (vue CSS 960x600) (jour 2026-10-22)
+2026-10-18T11:33:40.275Z SCÉNARIO — parcours-03c
+2026-10-18T11:33:40.291Z PARCOURS — dark_1440x900_z150, jour 2026-10-22
+2026-10-18T11:33:41.663Z PASS — fenêtre 1440×900 (client 1440x900)
+2026-10-18T11:33:47.573Z PASS — zoom WebView2 effectif 150 %
+2026-10-18T11:33:47.888Z PASS — thème dark
+2026-10-18T11:33:47.908Z PASS — accueil : aucun défilement horizontal
+2026-10-18T11:33:48.805Z PASS — Nouveau client
+2026-10-18T11:33:50.218Z PASS — référence attribuée par le serveur
+2026-10-18T11:33:50.218Z PASS — Voir la fiche
+2026-10-18T11:33:50.880Z CAPTURE — <EVIDENCE>\P03C_native_c3_dark_1440x900_z150_04_fiche_20261018T113340Z.png 1440x900
+2026-10-18T11:33:50.964Z PASS — API : client enregistré
+2026-10-18T11:33:51.211Z PASS — Consulter
+2026-10-18T11:33:51.381Z PASS — Prendre un rendez-vous
+2026-10-18T11:33:51.538Z PASS — aucune seconde recherche
+2026-10-18T11:33:51.539Z PASS — décalages serveur = poste
+2026-10-18T11:33:51.664Z PASS — Durée = 30 minutes
+2026-10-18T11:33:51.667Z PASS — Motif = Conseil / Devis
+2026-10-18T11:33:51.668Z PASS — Responsable = C3N Responsable Un
+2026-10-18T11:33:51.726Z PASS — « Créer » accessible à l'écran
+2026-10-18T11:33:52.228Z CAPTURE — <EVIDENCE>\P03C_native_c3_dark_1440x900_z150_06_rdv_formulaire_20261018T113340Z.png 1440x900
+2026-10-18T11:33:52.230Z PASS — Créer
+2026-10-18T11:33:52.405Z PASS — API : 10:00 Europe/Brussels (2026-10-22T08:00:00+00:00), responsable Un
+2026-10-18T11:33:52.431Z PASS — ouverture de « Zoom Fictif-C3N-8bd08b8c »
+2026-10-18T11:33:52.466Z PASS — Modifier
+2026-10-18T11:33:52.477Z PASS — Motif = SAV / Réparation
+2026-10-18T11:33:52.544Z PASS — Enregistrer
+2026-10-18T11:33:52.705Z PASS — API : motif modifié, créneau inchangé
+2026-10-18T11:33:52.722Z PASS — Déplacer
+2026-10-18T11:33:52.880Z PASS — API : déplacé à 12:00 (2026-10-22T10:00:00+00:00)
+2026-10-18T11:33:52.888Z PASS — fermeture du détail
+2026-10-18T11:33:53.208Z GLISSER — départ CSS (618, 388), hauteur 28 px, échelle CDP 1.00
+2026-10-18T11:33:55.328Z PASS — API : déposé à 13:00 (2026-10-22T11:00:00+00:00)
+2026-10-18T11:33:55.829Z CAPTURE — <EVIDENCE>\P03C_native_c3_dark_1440x900_z150_09_glisser_depose_20261018T113340Z.png 1440x900
+2026-10-18T11:33:55.850Z PASS — ouverture de « Zoom Fictif-C3N-8bd08b8c »
+2026-10-18T11:33:56.033Z PASS — clavier : focus sur « Annuler le rendez-vous » (2 tabulations)
+2026-10-18T11:33:56.158Z PASS — clavier : focus piégé dans la confirmation
+2026-10-18T11:33:56.268Z FOCUS après Échap — BODY CPrincipalAccueilClientsRendez-vousProduitsOrdonnancesCommandesVentesInvent
+2026-10-18T11:33:56.272Z PASS — API : Échap sans effet
+2026-10-18T11:33:57.318Z PASS — clavier : focus sur « Annuler le rendez-vous » (2 tabulations)
+2026-10-18T11:33:57.319Z PASS — clavier : bouton de confirmation du dialogue
+2026-10-18T11:33:57.433Z PASS — API : annulé
+2026-10-18T11:33:57.930Z CAPTURE — <EVIDENCE>\P03C_native_c3_dark_1440x900_z150_10_rdv_annule_20261018T113340Z.png 1440x900
+2026-10-18T11:33:57.932Z PASS — clavier : focus sur « Rétablir le rendez-vous »
+2026-10-18T11:33:58.046Z PASS — API : replanifié à 13:00
+2026-10-18T11:33:58.047Z PASS — Voir la fiche client
+2026-10-18T11:33:58.215Z PASS — fiche : aucun défilement horizontal
+2026-10-18T11:33:58.711Z CAPTURE — <EVIDENCE>\P03C_native_c3_dark_1440x900_z150_11_retour_fiche_20261018T113340Z.png 1440x900
+2026-10-18T11:33:58.763Z PASS — API (autre poste) : rendez-vous planifié à 13:00
+2026-10-18T11:33:58.764Z PASS — zoom 150 % conservé pendant tout le parcours
+2026-10-18T11:33:58.926Z TERMINÉ — parcours-03c
+
+## Matrice — 2 themes x 1440x900 / 1920x1080 x 100 / 125 / 150 % (client « Parcours », jour 2026-10-20, cree par la passe ecartee (2), identique au parcours 1)
+2026-10-18T11:31:38.503Z SCÉNARIO — matrice-03c
+2026-10-18T11:31:38.518Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:31:40.650Z PASS — thème light
+2026-10-18T11:31:42.005Z PASS — fenêtre 1440×900 (client 1440x900)
+2026-10-18T11:31:42.007Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:31:42.007Z COMBINAISON — light_1440x900_z100 — vue CSS 1440×900
+2026-10-18T11:31:42.008Z PASS — light_1440x900_z100 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:31:42.027Z PASS — light_1440x900_z100 accueil : aucun défilement horizontal
+2026-10-18T11:31:42.378Z PASS — light_1440x900_z100 clients : aucun défilement horizontal
+2026-10-18T11:31:42.379Z PASS — light_1440x900_z100 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:31:42.446Z PASS — light_1440x900_z100 fiche
+2026-10-18T11:31:42.603Z PASS — light_1440x900_z100 fiche : aucun défilement horizontal
+2026-10-18T11:31:42.603Z PASS — light_1440x900_z100 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:31:42.792Z PASS — Jour suivant
+2026-10-18T11:31:43.123Z PASS — Jour suivant
+2026-10-18T11:31:43.434Z PASS — light_1440x900_z100 agenda : décalages serveur = poste
+2026-10-18T11:31:43.434Z PASS — light_1440x900_z100 agenda Jour : aucun défilement horizontal
+2026-10-18T11:31:43.435Z PASS — light_1440x900_z100 agenda Jour : rendez-vous accessible
+2026-10-18T11:31:43.460Z PASS — light_1440x900_z100 vue Semaine
+2026-10-18T11:31:43.486Z PASS — light_1440x900_z100 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:31:43.531Z PASS — light_1440x900_z100 vue Jour
+2026-10-18T11:31:43.577Z PASS — light_1440x900_z100 Nouveau rendez-vous
+2026-10-18T11:31:43.581Z PASS — light_1440x900_z100 formulaire : aucun défilement horizontal
+2026-10-18T11:31:43.582Z PASS — light_1440x900_z100 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:31:44.099Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1440x900_z100_20261018T113138Z.png 1440x900
+2026-10-18T11:31:44.117Z PASS — Annuler la saisie
+2026-10-18T11:31:46.854Z PASS — zoom WebView2 effectif 125 %
+2026-10-18T11:31:46.855Z COMBINAISON — light_1440x900_z125 — vue CSS 1152×720
+2026-10-18T11:31:46.855Z PASS — light_1440x900_z125 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:31:47.042Z PASS — light_1440x900_z125 accueil : aucun défilement horizontal
+2026-10-18T11:31:47.218Z PASS — light_1440x900_z125 clients : aucun défilement horizontal
+2026-10-18T11:31:47.218Z PASS — light_1440x900_z125 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:31:47.295Z PASS — light_1440x900_z125 fiche
+2026-10-18T11:31:47.454Z PASS — light_1440x900_z125 fiche : aucun défilement horizontal
+2026-10-18T11:31:47.454Z PASS — light_1440x900_z125 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:31:47.642Z PASS — Jour suivant
+2026-10-18T11:31:47.971Z PASS — Jour suivant
+2026-10-18T11:31:48.288Z PASS — light_1440x900_z125 agenda : décalages serveur = poste
+2026-10-18T11:31:48.288Z PASS — light_1440x900_z125 agenda Jour : aucun défilement horizontal
+2026-10-18T11:31:48.289Z PASS — light_1440x900_z125 agenda Jour : rendez-vous accessible
+2026-10-18T11:31:48.306Z PASS — light_1440x900_z125 vue Semaine
+2026-10-18T11:31:48.325Z PASS — light_1440x900_z125 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:31:48.345Z PASS — light_1440x900_z125 vue Jour
+2026-10-18T11:31:48.383Z PASS — light_1440x900_z125 Nouveau rendez-vous
+2026-10-18T11:31:48.395Z PASS — light_1440x900_z125 formulaire : aucun défilement horizontal
+2026-10-18T11:31:48.396Z PASS — light_1440x900_z125 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:31:48.899Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1440x900_z125_20261018T113138Z.png 1440x900
+2026-10-18T11:31:48.916Z PASS — Annuler la saisie
+2026-10-18T11:31:50.286Z PASS — zoom WebView2 effectif 150 %
+2026-10-18T11:31:50.286Z COMBINAISON — light_1440x900_z150 — vue CSS 960×600
+2026-10-18T11:31:50.287Z PASS — light_1440x900_z150 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:31:50.475Z PASS — light_1440x900_z150 accueil : aucun défilement horizontal
+2026-10-18T11:31:50.649Z PASS — light_1440x900_z150 clients : aucun défilement horizontal
+2026-10-18T11:31:50.650Z PASS — light_1440x900_z150 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:31:50.729Z PASS — light_1440x900_z150 fiche
+2026-10-18T11:31:50.886Z PASS — light_1440x900_z150 fiche : aucun défilement horizontal
+2026-10-18T11:31:50.886Z PASS — light_1440x900_z150 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:31:51.072Z PASS — Jour suivant
+2026-10-18T11:31:51.403Z PASS — Jour suivant
+2026-10-18T11:31:51.717Z PASS — light_1440x900_z150 agenda : décalages serveur = poste
+2026-10-18T11:31:51.717Z PASS — light_1440x900_z150 agenda Jour : aucun défilement horizontal
+2026-10-18T11:31:51.717Z PASS — light_1440x900_z150 agenda Jour : rendez-vous accessible
+2026-10-18T11:31:51.735Z PASS — light_1440x900_z150 vue Semaine
+2026-10-18T11:31:51.755Z PASS — light_1440x900_z150 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:31:51.775Z PASS — light_1440x900_z150 vue Jour
+2026-10-18T11:31:51.814Z PASS — light_1440x900_z150 Nouveau rendez-vous
+2026-10-18T11:31:51.824Z PASS — light_1440x900_z150 formulaire : aucun défilement horizontal
+2026-10-18T11:31:51.825Z PASS — light_1440x900_z150 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:31:52.332Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1440x900_z150_20261018T113138Z.png 1440x900
+2026-10-18T11:31:52.349Z PASS — Annuler la saisie
+2026-10-18T11:31:53.714Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-18T11:31:57.780Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:31:57.781Z COMBINAISON — light_1920x1080_z100 — vue CSS 1920×1080
+2026-10-18T11:31:57.781Z PASS — light_1920x1080_z100 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:31:57.970Z PASS — light_1920x1080_z100 accueil : aucun défilement horizontal
+2026-10-18T11:31:58.144Z PASS — light_1920x1080_z100 clients : aucun défilement horizontal
+2026-10-18T11:31:58.145Z PASS — light_1920x1080_z100 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:31:58.222Z PASS — light_1920x1080_z100 fiche
+2026-10-18T11:31:58.379Z PASS — light_1920x1080_z100 fiche : aucun défilement horizontal
+2026-10-18T11:31:58.380Z PASS — light_1920x1080_z100 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:31:58.570Z PASS — Jour suivant
+2026-10-18T11:31:58.898Z PASS — Jour suivant
+2026-10-18T11:31:59.215Z PASS — light_1920x1080_z100 agenda : décalages serveur = poste
+2026-10-18T11:31:59.215Z PASS — light_1920x1080_z100 agenda Jour : aucun défilement horizontal
+2026-10-18T11:31:59.215Z PASS — light_1920x1080_z100 agenda Jour : rendez-vous accessible
+2026-10-18T11:31:59.232Z PASS — light_1920x1080_z100 vue Semaine
+2026-10-18T11:31:59.251Z PASS — light_1920x1080_z100 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:31:59.270Z PASS — light_1920x1080_z100 vue Jour
+2026-10-18T11:31:59.309Z PASS — light_1920x1080_z100 Nouveau rendez-vous
+2026-10-18T11:31:59.315Z PASS — light_1920x1080_z100 formulaire : aucun défilement horizontal
+2026-10-18T11:31:59.320Z PASS — light_1920x1080_z100 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:31:59.849Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1920x1080_z100_20261018T113138Z.png 1920x1080
+2026-10-18T11:31:59.866Z PASS — Annuler la saisie
+2026-10-18T11:32:02.596Z PASS — zoom WebView2 effectif 125 %
+2026-10-18T11:32:02.596Z COMBINAISON — light_1920x1080_z125 — vue CSS 1536×864
+2026-10-18T11:32:02.596Z PASS — light_1920x1080_z125 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:32:02.784Z PASS — light_1920x1080_z125 accueil : aucun défilement horizontal
+2026-10-18T11:32:02.956Z PASS — light_1920x1080_z125 clients : aucun défilement horizontal
+2026-10-18T11:32:02.957Z PASS — light_1920x1080_z125 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:03.035Z PASS — light_1920x1080_z125 fiche
+2026-10-18T11:32:03.191Z PASS — light_1920x1080_z125 fiche : aucun défilement horizontal
+2026-10-18T11:32:03.192Z PASS — light_1920x1080_z125 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:03.379Z PASS — Jour suivant
+2026-10-18T11:32:03.697Z PASS — Jour suivant
+2026-10-18T11:32:04.012Z PASS — light_1920x1080_z125 agenda : décalages serveur = poste
+2026-10-18T11:32:04.013Z PASS — light_1920x1080_z125 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:04.013Z PASS — light_1920x1080_z125 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:04.030Z PASS — light_1920x1080_z125 vue Semaine
+2026-10-18T11:32:04.048Z PASS — light_1920x1080_z125 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:04.068Z PASS — light_1920x1080_z125 vue Jour
+2026-10-18T11:32:04.106Z PASS — light_1920x1080_z125 Nouveau rendez-vous
+2026-10-18T11:32:04.113Z PASS — light_1920x1080_z125 formulaire : aucun défilement horizontal
+2026-10-18T11:32:04.117Z PASS — light_1920x1080_z125 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:04.633Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1920x1080_z125_20261018T113138Z.png 1920x1080
+2026-10-18T11:32:04.650Z PASS — Annuler la saisie
+2026-10-18T11:32:06.012Z PASS — zoom WebView2 effectif 150 %
+2026-10-18T11:32:06.013Z COMBINAISON — light_1920x1080_z150 — vue CSS 1280×720
+2026-10-18T11:32:06.013Z PASS — light_1920x1080_z150 : thème appliqué (luminance du fond 0.96)
+2026-10-18T11:32:06.200Z PASS — light_1920x1080_z150 accueil : aucun défilement horizontal
+2026-10-18T11:32:06.371Z PASS — light_1920x1080_z150 clients : aucun défilement horizontal
+2026-10-18T11:32:06.372Z PASS — light_1920x1080_z150 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:06.450Z PASS — light_1920x1080_z150 fiche
+2026-10-18T11:32:06.608Z PASS — light_1920x1080_z150 fiche : aucun défilement horizontal
+2026-10-18T11:32:06.608Z PASS — light_1920x1080_z150 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:06.796Z PASS — Jour suivant
+2026-10-18T11:32:07.125Z PASS — Jour suivant
+2026-10-18T11:32:07.442Z PASS — light_1920x1080_z150 agenda : décalages serveur = poste
+2026-10-18T11:32:07.442Z PASS — light_1920x1080_z150 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:07.443Z PASS — light_1920x1080_z150 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:07.459Z PASS — light_1920x1080_z150 vue Semaine
+2026-10-18T11:32:07.477Z PASS — light_1920x1080_z150 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:07.496Z PASS — light_1920x1080_z150 vue Jour
+2026-10-18T11:32:07.533Z PASS — light_1920x1080_z150 Nouveau rendez-vous
+2026-10-18T11:32:07.544Z PASS — light_1920x1080_z150 formulaire : aucun défilement horizontal
+2026-10-18T11:32:07.545Z PASS — light_1920x1080_z150 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:08.067Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_light_1920x1080_z150_20261018T113138Z.png 1920x1080
+2026-10-18T11:32:08.084Z PASS — Annuler la saisie
+2026-10-18T11:32:08.432Z PASS — thème dark
+2026-10-18T11:32:09.782Z PASS — fenêtre 1440×900 (client 1440x900)
+2026-10-18T11:32:13.860Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:32:13.860Z COMBINAISON — dark_1440x900_z100 — vue CSS 1440×900
+2026-10-18T11:32:13.860Z PASS — dark_1440x900_z100 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:14.048Z PASS — dark_1440x900_z100 accueil : aucun défilement horizontal
+2026-10-18T11:32:14.220Z PASS — dark_1440x900_z100 clients : aucun défilement horizontal
+2026-10-18T11:32:14.221Z PASS — dark_1440x900_z100 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:14.299Z PASS — dark_1440x900_z100 fiche
+2026-10-18T11:32:14.456Z PASS — dark_1440x900_z100 fiche : aucun défilement horizontal
+2026-10-18T11:32:14.456Z PASS — dark_1440x900_z100 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:14.646Z PASS — Jour suivant
+2026-10-18T11:32:14.976Z PASS — Jour suivant
+2026-10-18T11:32:15.292Z PASS — dark_1440x900_z100 agenda : décalages serveur = poste
+2026-10-18T11:32:15.292Z PASS — dark_1440x900_z100 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:15.292Z PASS — dark_1440x900_z100 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:15.302Z PASS — dark_1440x900_z100 vue Semaine
+2026-10-18T11:32:15.318Z PASS — dark_1440x900_z100 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:15.353Z PASS — dark_1440x900_z100 vue Jour
+2026-10-18T11:32:15.390Z PASS — dark_1440x900_z100 Nouveau rendez-vous
+2026-10-18T11:32:15.397Z PASS — dark_1440x900_z100 formulaire : aucun défilement horizontal
+2026-10-18T11:32:15.402Z PASS — dark_1440x900_z100 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:15.915Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1440x900_z100_20261018T113138Z.png 1440x900
+2026-10-18T11:32:15.932Z PASS — Annuler la saisie
+2026-10-18T11:32:18.677Z PASS — zoom WebView2 effectif 125 %
+2026-10-18T11:32:18.677Z COMBINAISON — dark_1440x900_z125 — vue CSS 1152×720
+2026-10-18T11:32:18.678Z PASS — dark_1440x900_z125 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:18.866Z PASS — dark_1440x900_z125 accueil : aucun défilement horizontal
+2026-10-18T11:32:19.040Z PASS — dark_1440x900_z125 clients : aucun défilement horizontal
+2026-10-18T11:32:19.041Z PASS — dark_1440x900_z125 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:19.120Z PASS — dark_1440x900_z125 fiche
+2026-10-18T11:32:19.292Z PASS — dark_1440x900_z125 fiche : aucun défilement horizontal
+2026-10-18T11:32:19.292Z PASS — dark_1440x900_z125 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:19.481Z PASS — Jour suivant
+2026-10-18T11:32:19.811Z PASS — Jour suivant
+2026-10-18T11:32:20.127Z PASS — dark_1440x900_z125 agenda : décalages serveur = poste
+2026-10-18T11:32:20.128Z PASS — dark_1440x900_z125 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:20.128Z PASS — dark_1440x900_z125 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:20.145Z PASS — dark_1440x900_z125 vue Semaine
+2026-10-18T11:32:20.164Z PASS — dark_1440x900_z125 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:20.188Z PASS — dark_1440x900_z125 vue Jour
+2026-10-18T11:32:20.236Z PASS — dark_1440x900_z125 Nouveau rendez-vous
+2026-10-18T11:32:20.248Z PASS — dark_1440x900_z125 formulaire : aucun défilement horizontal
+2026-10-18T11:32:20.254Z PASS — dark_1440x900_z125 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:20.765Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1440x900_z125_20261018T113138Z.png 1440x900
+2026-10-18T11:32:20.787Z PASS — Annuler la saisie
+2026-10-18T11:32:22.160Z PASS — zoom WebView2 effectif 150 %
+2026-10-18T11:32:22.161Z COMBINAISON — dark_1440x900_z150 — vue CSS 960×600
+2026-10-18T11:32:22.161Z PASS — dark_1440x900_z150 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:22.349Z PASS — dark_1440x900_z150 accueil : aucun défilement horizontal
+2026-10-18T11:32:22.523Z PASS — dark_1440x900_z150 clients : aucun défilement horizontal
+2026-10-18T11:32:22.524Z PASS — dark_1440x900_z150 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:22.603Z PASS — dark_1440x900_z150 fiche
+2026-10-18T11:32:22.760Z PASS — dark_1440x900_z150 fiche : aucun défilement horizontal
+2026-10-18T11:32:22.761Z PASS — dark_1440x900_z150 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:22.949Z PASS — Jour suivant
+2026-10-18T11:32:23.278Z PASS — Jour suivant
+2026-10-18T11:32:23.594Z PASS — dark_1440x900_z150 agenda : décalages serveur = poste
+2026-10-18T11:32:23.595Z PASS — dark_1440x900_z150 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:23.595Z PASS — dark_1440x900_z150 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:23.612Z PASS — dark_1440x900_z150 vue Semaine
+2026-10-18T11:32:23.630Z PASS — dark_1440x900_z150 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:23.649Z PASS — dark_1440x900_z150 vue Jour
+2026-10-18T11:32:23.686Z PASS — dark_1440x900_z150 Nouveau rendez-vous
+2026-10-18T11:32:23.693Z PASS — dark_1440x900_z150 formulaire : aucun défilement horizontal
+2026-10-18T11:32:23.694Z PASS — dark_1440x900_z150 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:24.199Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1440x900_z150_20261018T113138Z.png 1440x900
+2026-10-18T11:32:24.215Z PASS — Annuler la saisie
+2026-10-18T11:32:25.576Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-18T11:32:29.637Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:32:29.638Z COMBINAISON — dark_1920x1080_z100 — vue CSS 1920×1080
+2026-10-18T11:32:29.638Z PASS — dark_1920x1080_z100 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:29.824Z PASS — dark_1920x1080_z100 accueil : aucun défilement horizontal
+2026-10-18T11:32:29.998Z PASS — dark_1920x1080_z100 clients : aucun défilement horizontal
+2026-10-18T11:32:29.999Z PASS — dark_1920x1080_z100 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:30.076Z PASS — dark_1920x1080_z100 fiche
+2026-10-18T11:32:30.234Z PASS — dark_1920x1080_z100 fiche : aucun défilement horizontal
+2026-10-18T11:32:30.235Z PASS — dark_1920x1080_z100 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:30.422Z PASS — Jour suivant
+2026-10-18T11:32:30.751Z PASS — Jour suivant
+2026-10-18T11:32:31.068Z PASS — dark_1920x1080_z100 agenda : décalages serveur = poste
+2026-10-18T11:32:31.068Z PASS — dark_1920x1080_z100 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:31.068Z PASS — dark_1920x1080_z100 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:31.084Z PASS — dark_1920x1080_z100 vue Semaine
+2026-10-18T11:32:31.100Z PASS — dark_1920x1080_z100 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:31.118Z PASS — dark_1920x1080_z100 vue Jour
+2026-10-18T11:32:31.156Z PASS — dark_1920x1080_z100 Nouveau rendez-vous
+2026-10-18T11:32:31.164Z PASS — dark_1920x1080_z100 formulaire : aucun défilement horizontal
+2026-10-18T11:32:31.168Z PASS — dark_1920x1080_z100 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:31.698Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1920x1080_z100_20261018T113138Z.png 1920x1080
+2026-10-18T11:32:31.715Z PASS — Annuler la saisie
+2026-10-18T11:32:34.449Z PASS — zoom WebView2 effectif 125 %
+2026-10-18T11:32:34.450Z COMBINAISON — dark_1920x1080_z125 — vue CSS 1536×864
+2026-10-18T11:32:34.450Z PASS — dark_1920x1080_z125 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:34.640Z PASS — dark_1920x1080_z125 accueil : aucun défilement horizontal
+2026-10-18T11:32:34.813Z PASS — dark_1920x1080_z125 clients : aucun défilement horizontal
+2026-10-18T11:32:34.814Z PASS — dark_1920x1080_z125 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:34.892Z PASS — dark_1920x1080_z125 fiche
+2026-10-18T11:32:35.050Z PASS — dark_1920x1080_z125 fiche : aucun défilement horizontal
+2026-10-18T11:32:35.051Z PASS — dark_1920x1080_z125 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:35.238Z PASS — Jour suivant
+2026-10-18T11:32:35.569Z PASS — Jour suivant
+2026-10-18T11:32:35.871Z PASS — dark_1920x1080_z125 agenda : décalages serveur = poste
+2026-10-18T11:32:35.872Z PASS — dark_1920x1080_z125 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:35.872Z PASS — dark_1920x1080_z125 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:35.888Z PASS — dark_1920x1080_z125 vue Semaine
+2026-10-18T11:32:35.903Z PASS — dark_1920x1080_z125 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:35.921Z PASS — dark_1920x1080_z125 vue Jour
+2026-10-18T11:32:35.957Z PASS — dark_1920x1080_z125 Nouveau rendez-vous
+2026-10-18T11:32:35.959Z PASS — dark_1920x1080_z125 formulaire : aucun défilement horizontal
+2026-10-18T11:32:35.960Z PASS — dark_1920x1080_z125 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:36.480Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1920x1080_z125_20261018T113138Z.png 1920x1080
+2026-10-18T11:32:36.496Z PASS — Annuler la saisie
+2026-10-18T11:32:37.851Z PASS — zoom WebView2 effectif 150 %
+2026-10-18T11:32:37.851Z COMBINAISON — dark_1920x1080_z150 — vue CSS 1280×720
+2026-10-18T11:32:37.852Z PASS — dark_1920x1080_z150 : thème appliqué (luminance du fond 0.06)
+2026-10-18T11:32:38.040Z PASS — dark_1920x1080_z150 accueil : aucun défilement horizontal
+2026-10-18T11:32:38.215Z PASS — dark_1920x1080_z150 clients : aucun défilement horizontal
+2026-10-18T11:32:38.216Z PASS — dark_1920x1080_z150 clients : recherche et « Nouveau client » accessibles
+2026-10-18T11:32:38.293Z PASS — dark_1920x1080_z150 fiche
+2026-10-18T11:32:38.450Z PASS — dark_1920x1080_z150 fiche : aucun défilement horizontal
+2026-10-18T11:32:38.451Z PASS — dark_1920x1080_z150 fiche : « Prendre un rendez-vous » accessible
+2026-10-18T11:32:38.639Z PASS — Jour suivant
+2026-10-18T11:32:38.967Z PASS — Jour suivant
+2026-10-18T11:32:39.283Z PASS — dark_1920x1080_z150 agenda : décalages serveur = poste
+2026-10-18T11:32:39.284Z PASS — dark_1920x1080_z150 agenda Jour : aucun défilement horizontal
+2026-10-18T11:32:39.284Z PASS — dark_1920x1080_z150 agenda Jour : rendez-vous accessible
+2026-10-18T11:32:39.300Z PASS — dark_1920x1080_z150 vue Semaine
+2026-10-18T11:32:39.317Z PASS — dark_1920x1080_z150 agenda Semaine : aucun défilement horizontal
+2026-10-18T11:32:39.335Z PASS — dark_1920x1080_z150 vue Jour
+2026-10-18T11:32:39.370Z PASS — dark_1920x1080_z150 Nouveau rendez-vous
+2026-10-18T11:32:39.378Z PASS — dark_1920x1080_z150 formulaire : aucun défilement horizontal
+2026-10-18T11:32:39.381Z PASS — dark_1920x1080_z150 formulaire : « Créer » et « Annuler » accessibles
+2026-10-18T11:32:39.901Z CAPTURE — <EVIDENCE>\P03C_native_c3_matrice_dark_1920x1080_z150_20261018T113138Z.png 1920x1080
+2026-10-18T11:32:39.917Z PASS — Annuler la saisie
+2026-10-18T11:32:43.982Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:32:45.319Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-18T11:32:45.653Z PASS — thème light
+2026-10-18T11:32:45.812Z TERMINÉ — matrice-03c
+
+## Garde-fou de fuseau (O-03-22) — API de test en Africa/Casablanca
+2026-10-18T11:35:52.933Z SCÉNARIO — rdv-b3-guard
+2026-10-18T11:35:52.935Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T11:35:56.028Z PASS — thème light
+2026-10-18T11:35:56.227Z PASS — vue Semaine
+2026-10-18T11:35:56.250Z PASS — semaine courante (Casablanca) : décalages Windows = WebView2
+2026-10-18T11:35:56.298Z PASS — Semaine précédente (1)
+2026-10-18T11:35:56.433Z PASS — Semaine précédente (2)
+2026-10-18T11:35:56.573Z PASS — Semaine précédente (3)
+2026-10-18T11:35:56.715Z PASS — Semaine précédente (4)
+2026-10-18T11:35:56.857Z PASS — Semaine précédente (5)
+2026-10-18T11:35:57.009Z PASS — Semaine précédente (6)
+2026-10-18T11:35:57.149Z PASS — Semaine précédente (7)
+2026-10-18T11:35:57.294Z PASS — Semaine précédente (8)
+2026-10-18T11:35:57.449Z PASS — Semaine précédente (9)
+2026-10-18T11:35:57.584Z PASS — Semaine précédente (10)
+2026-10-18T11:35:57.724Z PASS — Semaine précédente (11)
+2026-10-18T11:35:57.866Z PASS — Semaine précédente (12)
+2026-10-18T11:35:58.018Z PASS — Semaine précédente (13)
+2026-10-18T11:35:58.159Z PASS — Semaine précédente (14)
+2026-10-18T11:35:58.303Z PASS — Semaine précédente (15)
+2026-10-18T11:35:58.445Z PASS — Semaine précédente (16)
+2026-10-18T11:35:58.580Z PASS — Semaine précédente (17)
+2026-10-18T11:35:58.721Z PASS — Semaine précédente (18)
+2026-10-18T11:35:58.861Z PASS — Semaine précédente (19)
+2026-10-18T11:35:59.003Z PASS — Semaine précédente (20)
+2026-10-18T11:35:59.153Z PASS — Semaine précédente (21)
+2026-10-18T11:35:59.295Z PASS — Semaine précédente (22)
+2026-10-18T11:35:59.437Z PASS — Semaine précédente (23)
+2026-10-18T11:35:59.580Z PASS — Semaine précédente (24)
+2026-10-18T11:35:59.713Z PASS — Semaine précédente (25)
+2026-10-18T11:35:59.856Z PASS — Semaine précédente (26)
+2026-10-18T11:35:59.999Z PASS — Semaine précédente (27)
+2026-10-18T11:36:00.149Z PASS — Semaine précédente (28)
+2026-10-18T11:36:00.290Z PASS — Semaine précédente (29)
+2026-10-18T11:36:00.433Z PASS — Semaine précédente (30)
+2026-10-18T11:36:00.587Z PASS — Semaine précédente (31)
+2026-10-18T11:36:00.720Z PASS — Semaine précédente (32)
+2026-10-18T11:36:00.862Z PASS — Semaine précédente (33)
+2026-10-18T11:36:01.003Z PASS — Semaine précédente (34)
+2026-10-18T11:36:01.153Z PASS — Semaine précédente (35)
+2026-10-18T11:36:01.282Z PASS — Semaine précédente (36)
+2026-10-18T11:36:01.409Z PASS — Semaine précédente (37)
+2026-10-18T11:36:01.535Z PASS — Semaine précédente (38)
+2026-10-18T11:36:01.661Z PASS — Semaine précédente (39)
+2026-10-18T11:36:01.786Z PASS — Semaine précédente (40)
+2026-10-18T11:36:01.911Z PASS — écart affiché : serveur UTC, poste UTC+1
+2026-10-18T11:36:01.912Z PASS — aucune création proposée sur la période bloquée
+2026-10-18T11:36:03.359Z CAPTURE — <EVIDENCE>\P03C_native_rdv_guard_week_blocked_1920x1080_20261018T113552Z.png 1920x1080
+2026-10-18T11:36:03.379Z PASS — Aujourd'hui
+2026-10-18T11:36:03.424Z PASS — Nouveau rendez-vous
+2026-10-18T11:36:03.428Z PASS — ouverture du sélecteur de client
+2026-10-18T11:36:03.824Z PASS — client Existant choisi
+2026-10-18T11:36:03.956Z PASS — Durée = 30 minutes
+2026-10-18T11:36:03.962Z PASS — Motif = Conseil / Devis
+2026-10-18T11:36:03.963Z PASS — Responsable = C3N Responsable Deux
+2026-10-18T11:36:03.965Z PASS — Créer (15/01/2026)
+2026-10-18T11:36:05.575Z CAPTURE — <EVIDENCE>\P03C_native_rdv_guard_write_refused_1920x1080_20261018T113552Z.png 1920x1080
+2026-10-18T11:36:05.594Z PASS — Annuler la saisie
+2026-10-18T11:36:05.700Z PASS — API : aucun rendez-vous enregistré en janvier 2026
+2026-10-18T11:36:05.700Z DÉCALAGES SERVEUR (semaine du 05/01/2026) — [{"fromUtc":"2026-01-01T00:00:00+00:00","toUtc":"2026-01-31T00:00:00+00:00","offsetMinutes":0}]
+2026-10-18T11:36:05.853Z TERMINÉ — rdv-b3-guard
+
+## Integration HTTPS sur le processus reel (node --use-system-ca, aucun contournement de certificat ; jeton jamais affiche)
+HTTPS POST /api/auth/login -> 200
+https://localhost:7267 GET /api/clients (authentifiÃ©) -> 200 
+http://localhost:5022 GET /api/clients (authentifiÃ©) -> 403 {"code":"https_required"}
+HTTP POST /api/auth/login -> 403 {"code":"https_required"}
+HTTPS POST /api/auth/logout -> 204
+curl (schannel, magasin de certificats Windows) : https://localhost:7267/api/clients -> 401 ssl_verify=0 ; /health/live -> 200
+
+## Executable release (npx tauri build --no-bundle, CARGO_TARGET_DIR court) lance seul : fenetre « MMV — ManageMyVision (développement) », ecran de connexion « Serveur MMV non configuré sur ce poste » (aucune adresse d API ni connect-src en production : attendu) — P03C_release_launch_1440x900.png
+
+## Nettoyage
+CIBLE : mmv_v2_test|mmv_v2_test|5433|180006
+NETTOYAGE 8bd08b8c : 4 rendez-vous, 2 Ã©ligibilitÃ©s, 24 sessions, 5 clients, 4 comptes supprimÃ©s ; lignes restantes dans mmv_v2_test (toutes tables mÃ©tier) = 0

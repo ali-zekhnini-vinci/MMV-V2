@@ -1,0 +1,95 @@
+# P03B3 — parcours natif Tauri (WebView2 155) → HTTPS → MMV.Api (code 03-B3, worktree) → PostgreSQL 18 mmv_v2_test, 2026-10-18
+# Magasin (valeurs du propriétaire, passées au seul processus de test) : Europe/Brussels, 09:00–19:00, aucun jour masqué, capacité d'accueil 1
+# Données fictives b3n-*-84f4a7f1 / Fictif-B3N-84f4a7f1 (outil jetable hors dépôt), nettoyées après la passe
+# Passes antérieures écartées (défauts du banc corrigés : thème avant connexion, libellé NOM Prénom, aside du Shell, nom abrégé en semaine ; liste des éligibles en cache → correctif applicatif), données remises à zéro avant chaque passe
+2026-10-18T10:35:56.763Z SCÉNARIO — rdv-b3
+2026-10-18T10:35:56.765Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T10:35:58.596Z PASS — thème light
+2026-10-18T10:35:59.082Z PASS — magasin configuré (pas de 503)
+2026-10-18T10:35:59.083Z PASS — aujourd'hui : décalages serveur = poste
+2026-10-18T10:35:59.102Z PASS — Jour suivant
+2026-10-18T10:36:00.960Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_day_empty_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:00.991Z PASS — Nouveau rendez-vous
+2026-10-18T10:36:01.006Z PASS — fuseau du magasin affiché
+2026-10-18T10:36:01.010Z PASS — ouverture du sélecteur de client
+2026-10-18T10:36:01.399Z PASS — client Natif choisi
+2026-10-18T10:36:01.533Z PASS — Durée = 30 minutes
+2026-10-18T10:36:01.539Z PASS — Motif = Conseil / Devis
+2026-10-18T10:36:01.540Z PASS — Responsable = B3N Responsable Un
+2026-10-18T10:36:03.043Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_form_filled_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:03.045Z PASS — Créer
+2026-10-18T10:36:03.302Z PASS — API : 10:00 Bruxelles = 08:00Z, responsable Un
+2026-10-18T10:36:04.723Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_created_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:04.751Z PASS — Nouveau rendez-vous
+2026-10-18T10:36:04.761Z PASS — ouverture du sélecteur de client
+2026-10-18T10:36:05.155Z PASS — client Accueil choisi
+2026-10-18T10:36:05.275Z PASS — Durée = 30 minutes
+2026-10-18T10:36:05.281Z PASS — Motif = Conseil / Devis
+2026-10-18T10:36:05.282Z PASS — Responsable = B3N Responsable Un
+2026-10-18T10:36:05.284Z PASS — Créer (conflit)
+2026-10-18T10:36:06.875Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_conflict_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:06.893Z PASS — Annuler la saisie
+2026-10-18T10:36:06.928Z PASS — Nouveau rendez-vous
+2026-10-18T10:36:06.938Z PASS — ouverture du sélecteur de client
+2026-10-18T10:36:07.326Z PASS — client Accueil choisi
+2026-10-18T10:36:07.444Z PASS — Durée = 30 minutes
+2026-10-18T10:36:07.450Z PASS — Motif = Retrait de commande
+2026-10-18T10:36:07.451Z PASS — Responsable = Non attribué (accueil)
+2026-10-18T10:36:07.453Z PASS — Créer (accueil)
+2026-10-18T10:36:07.644Z PASS — Nouveau rendez-vous
+2026-10-18T10:36:07.654Z PASS — ouverture du sélecteur de client
+2026-10-18T10:36:08.035Z PASS — client Fiche choisi
+2026-10-18T10:36:08.155Z PASS — Durée = 30 minutes
+2026-10-18T10:36:08.161Z PASS — Motif = SAV / Réparation
+2026-10-18T10:36:08.161Z PASS — Responsable = Non attribué (accueil)
+2026-10-18T10:36:08.163Z PASS — Créer (accueil complet)
+2026-10-18T10:36:09.762Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_capacity_full_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:09.778Z PASS — Annuler la saisie
+2026-10-18T10:36:09.810Z PASS — ouverture de « Natif Fictif-B3N-84f4a7f1 »
+2026-10-18T10:36:09.844Z PASS — Modifier
+2026-10-18T10:36:09.913Z PASS — Enregistrer
+2026-10-18T10:36:11.510Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_detail_modified_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:11.535Z PASS — Déplacer
+2026-10-18T10:36:11.769Z PASS — API : déplacé à 12:00 Bruxelles (10:00Z)
+2026-10-18T10:36:11.786Z PASS — fermeture du détail
+2026-10-18T10:36:11.792Z GLISSER — départ (1101, 581), hauteur 28 px
+2026-10-18T10:36:13.947Z PASS — API : déposé à 13:00 Bruxelles (11:00Z) — obtenu 2026-10-19T11:00:00+00:00
+2026-10-18T10:36:15.376Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_drag_drop_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:17.026Z OUTIL — éligibilité de b3n-resp1 : off
+2026-10-18T10:36:17.048Z PASS — ouverture de « Natif Fictif-B3N-84f4a7f1 »
+2026-10-18T10:36:17.081Z PASS — Déplacer (responsable retiré)
+2026-10-18T10:36:18.674Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_responsible_ineligible_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:18.695Z PASS — Annuler la saisie
+2026-10-18T10:36:18.759Z PASS — API : créneau inchangé
+2026-10-18T10:36:18.780Z PASS — ouverture de « Natif Fictif-B3N-84f4a7f1 »
+2026-10-18T10:36:18.806Z PASS — Modifier (responsable retiré)
+2026-10-18T10:36:18.884Z PASS — Enregistrer (notes)
+2026-10-18T10:36:20.711Z OUTIL — éligibilité de b3n-resp1 : on
+2026-10-18T10:36:20.744Z PASS — Annuler le rendez-vous
+2026-10-18T10:36:20.831Z PASS — annulation confirmée
+2026-10-18T10:36:22.459Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_cancelled_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:22.479Z PASS — Rétablir
+2026-10-18T10:36:22.701Z PASS — API : rendez-vous replanifié
+2026-10-18T10:36:22.886Z PASS — fiche du client Fiche
+2026-10-18T10:36:23.042Z PASS — Prendre un rendez-vous
+2026-10-18T10:36:23.214Z PASS — aucune seconde recherche
+2026-10-18T10:36:24.641Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_from_client_form_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:24.772Z PASS — Durée = 30 minutes
+2026-10-18T10:36:24.778Z PASS — Motif = Prise de mesures
+2026-10-18T10:36:24.779Z PASS — Responsable = B3N Responsable Deux
+2026-10-18T10:36:24.780Z PASS — Créer depuis la fiche
+2026-10-18T10:36:24.943Z PASS — retour à la fiche proposé
+2026-10-18T10:36:26.392Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_from_client_created_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:26.393Z PASS — Retour à la fiche
+2026-10-18T10:36:26.752Z PASS — vue Semaine
+2026-10-18T10:36:26.787Z PASS — Semaine suivante
+2026-10-18T10:36:26.956Z PASS — semaine du 25/10 : décalages Windows = WebView2
+2026-10-18T10:36:28.391Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_week_dst_1920x1080_20261018T103556Z.png 1920x1080
+2026-10-18T10:36:29.827Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_week_dst_1440x900_20261018T103556Z.png 1440x900
+2026-10-18T10:36:29.828Z PASS — 1440×900 : aucun défilement horizontal
+2026-10-18T10:36:38.397Z FUSEAUX WebView2 — {"userAgent":"Edg/155.0.0.0","casablanca":["2026-02-15T02:00:00.000Z GMT+01:00→GMT+00:00","2026-03-22T02:00:00.000Z GMT+00:00→GMT+01:00","2026-09-20T01:00:00.000Z GMT+01:00→GMT+00:00"],"brussels":["2026-03-29T01:00:00.000Z GMT+01:00→GMT+02:00","2026-10-25T01:00:00.000Z GMT+02:00→GMT+01:00","2027-03-28T01:00:00.000Z GMT+01:00→GMT+02:00","2027-10-31T01:00:00.000Z GMT+02:00→GMT+01:00"]}
+2026-10-18T10:36:38.422Z PASS — vue Jour
+2026-10-18T10:36:38.525Z PASS — API (autre poste) : 3 rendez-vous planifiés le 19/10
+2026-10-18T10:36:38.721Z TERMINÉ — rdv-b3
+# CIBLE : mmv_v2_test|mmv_v2_test|5433|180006
+# NETTOYAGE 84f4a7f1 : 3 rendez-vous, 2 éligibilités, 9 sessions, 3 clients, 4 comptes supprimés ; lignes restantes dans mmv_v2_test (toutes tables métier) = 0

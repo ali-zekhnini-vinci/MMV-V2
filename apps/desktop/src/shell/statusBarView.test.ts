@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { apiError } from "../api/client.ts";
 import type { TechnicalStatus } from "../api/health.ts";
-import { databaseIndicator, serverIndicator, sessionIndicator } from "./statusBarView.ts";
+import { compactIndicatorText, databaseIndicator, serverIndicator, sessionIndicator } from "./statusBarView.ts";
 
 const live = {
   status: "Healthy",
@@ -36,6 +36,14 @@ describe("barre d'état : valeurs réelles uniquement", () => {
     const status: TechnicalStatus = { state: "ready", live, ready };
     assert.equal(serverIndicator(status, true).text, "Serveur MMV joignable (vérification…)");
     assert.equal(databaseIndicator(status).text, "Base de données disponible");
+  });
+
+  test("O-03-34 : libellés compacts des fenêtres étroites, même information", () => {
+    assert.equal(compactIndicatorText("Base de données disponible"), "Base disponible");
+    assert.equal(compactIndicatorText("Base de données — non vérifiée"), "Base — non vérifiée");
+    assert.equal(compactIndicatorText("Serveur MMV joignable (vérification…)"), "Serveur joignable…");
+    assert.equal(compactIndicatorText("Serveur MMV injoignable"), "Serveur injoignable");
+    assert.equal(compactIndicatorText("Session active — fin au plus tard à 18:42"), "Session jusqu'à 18:42");
   });
 
   test("session : heure locale de fin au plus tard", () => {

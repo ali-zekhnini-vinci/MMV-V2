@@ -37,6 +37,18 @@ export function databaseIndicator(status: TechnicalStatus | null): Indicator {
 }
 
 /**
+ * Libellé compact des fenêtres étroites (O-03-34, 03-D1 : 1440×900 à 150 % ≈ 960 px CSS tronquait « Base de données
+ * disponible »). Même information, mots raccourcis ; le libellé complet reste en info-bulle et pour les lecteurs d'écran.
+ */
+export function compactIndicatorText(text: string): string {
+  return text
+    .replace("Session active — fin au plus tard à", "Session jusqu'à")
+    .replace("Serveur MMV", "Serveur")
+    .replace("Base de données", "Base")
+    .replace(" (vérification…)", "…");
+}
+
+/**
  * « Session active — fin au plus tard à 18:42 » (heure locale). L'échéance absolue est connue ;
  * l'inactivité prolongée peut fermer la session plus tôt (contrôlée par le serveur).
  */

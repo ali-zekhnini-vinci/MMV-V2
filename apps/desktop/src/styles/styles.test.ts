@@ -42,3 +42,27 @@ describe("pile de style", () => {
     assert.doesNotMatch(entry, /--(background|foreground|primary|ring|sidebar)\s*:|oklch\(/);
   });
 });
+
+describe("module Clients (phase 03-A)", () => {
+  test("CSS Clients et boîtes de dialogue : couleurs exclusivement issues des jetons (clair et sombre)", () => {
+    for (const file of ["clients/Clients.css", "components/ui/overlays.css"]) {
+      const css = read(file).replace(/\/\*[\s\S]*?\*\//g, "");
+      assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|oklch\(/i, `${file} : couleur littérale`);
+      assert.match(css, /var\(--/, file);
+    }
+  });
+
+  test("le thème sombre redéfinit chaque jeton de couleur utilisé par le module Clients", () => {
+    const tokens = read("styles/tokens.css");
+    const darkStart = tokens.indexOf('[data-theme="dark"]');
+    assert.ok(darkStart > 0);
+    const dark = tokens.slice(darkStart);
+    // Jetons de COULEUR seulement (les jetons typographiques --text-body, --text-sm… sont communs aux deux thèmes).
+    const colorToken = /var\((--(?:accent[a-z-]*|surface-[a-z]+|text-(?:primary|secondary|tertiary|disabled|on-accent)|border[a-z-]*|success[a-z-]*|warning[a-z-]*|error[a-z-]*|info[a-z-]*))\)/g;
+    const used = new Set(
+      [...read("clients/Clients.css").matchAll(colorToken), ...read("components/ui/overlays.css").matchAll(colorToken)].map((match) => match[1]),
+    );
+    assert.ok(used.size > 10);
+    for (const token of used) assert.match(dark, new RegExp(`${token}:`), `${token} absent du thème sombre`);
+  });
+});

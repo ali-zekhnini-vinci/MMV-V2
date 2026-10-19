@@ -231,7 +231,10 @@ public sealed class AuthEndpointsTests : IDisposable
     [InlineData("POST", "/api/auth/bootstrap")]
     [InlineData("POST", "/api/admin/bootstrap")]
     [InlineData("POST", "/api/auth/reset-password")]
-    [InlineData("GET", "/api/clients")]
+    // Phase 03-A2 : /api/clients existe désormais (protégé par clients.*, ClientsEndpointsTests) ; les modules
+    // non livrés restent absents.
+    // 17/10/2026 (03-B2) : /api/appointments existe désormais (protégée, 401 anonyme : AppointmentsEndpointsTests).
+    [InlineData("GET", "/api/prescriptions")]
     public async Task NoPublicSignupBootstrapOrBusinessRoute(string method, string path)
     {
         using var client = Https();

@@ -1,0 +1,30 @@
+# P03A2 — PostgreSQL (17/10/2026, poste Windows 11, PG18 5433) — sans migration 0003
+## dotnet test tests/MMV.PostgreSql.Tests --filter "Stage!=IdentityWrite&Stage!=ClientsWrite&Stage!=PostMigration"
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches [198 ms]
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.TestDatabase_IsRefusedAsBootstrapTarget [198 ms]
+  Réussi MMV.PostgreSql.Tests.ClientReferenceFormatPostgreSqlTests.ReferenceExpression_PadsToSixDigitsAndNeverTruncates [203 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5432;Database=mmv_v2_test;User"···) [1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=postgres;Usernam"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.DevDatabase_IsTheAllowedBootstrapTarget [2 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches [5 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState [223 ms]
+  Réussi MMV.PostgreSql.Tests.TransactionalRollbackTests.TestDatabase_TemporaryWriteIsRolledBackWithoutResidue [331 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations [519 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [24 ms]
+Nombre total de tests : 14
+     Réussi(s) : 14
+
+## dotnet test tests/MMV.PostgreSql.Tests --filter "Stage=PostMigration" (constat : bases à l'état AuthIdentity, migration 0003 NON appliquée)
+     Non réussi(s) : 2
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [161 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [196 ms]
+ lignes __EFMigrationsHistory (2) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4
+[xUnit.net 00:00:00.39]         lignes __EFMigrationsHistory (2) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4
+[xUnit.net 00:00:00.39]       Collection: ["schémas : attendu [auth | clients], obtenu [auth]", "relations : attendu [auth.bootstrap_record kind=r "···, "lignes : attendu [20261015125000_InitialBaseline 1"···, "co
+[xUnit.net 00:00:00.55]         lignes __EFMigrationsHistory (2) : 20261015125000_InitialBaseline 10.0.4 | 20261015223849_AuthIdentity 10.0.4
+[xUnit.net 00:00:00.55]       Collection: ["schémas : attendu [auth | clients], obtenu [auth]", "relations : attendu [auth.bootstrap_record kind=r "···, "lignes : attendu [20261015125000_InitialBaseline 1"···, "co
+Collection: ["schémas : attendu [auth | clients], obtenu [auth]", "relations : attendu [auth.bootstrap_record kind=r "···, "lignes : attendu [20261015125000_InitialBaseline 1"···, "colonnes clients : attendu [clie
+Nombre total de tests : 2

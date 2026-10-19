@@ -36,4 +36,67 @@ Prérequis Node : **22.22 ou plus** (exigence de `react-router` 8).
 
 Le CSS spécifique au design (login, shell : grille 260/72/64/32, dégradé, infobulles du rail) reste dans `src/login/LoginScreen.css` et `src/shell/Shell.css`, **hors couche** : il prime sur les utilitaires Tailwind et sur le preflight. Ajout d'un composant shadcn : `npx shadcn add <composant>` puis remplacement des classes du thème par défaut (`bg-primary`, `text-muted-foreground`…) par les jetons MMV (`bg-accent`, `text-text-secondary`…) — un test (`src/styles/styles.test.ts`) refuse les variables du thème shadcn par défaut.
 
-Non installés volontairement (aucun cas d'usage réel en phase 02) : TanStack Query/Table, Sonner, Zustand, FullCalendar, Recharts.
+Non installés volontairement (aucun cas d'usage réel en phase 02) : TanStack Query/Table, Sonner, Zustand, FullCalendar, Recharts. *(TanStack installé en 03-A, FullCalendar en 03-B : voir plus bas.)*
+
+## Ajouts phase 03-A (17/10/2026)
+
+| Technologie | Version | Utilisation réelle |
+|---|---|---|
+| TanStack Query | 5.104.1 | `src/api/queryClient.ts` (politique : nouvel essai unique sur erreur de transport, aucun persister), `src/clients/clientQueries.ts`, `QueryClientProvider` par session dans `src/shell/Shell.tsx` |
+| TanStack Table | 8.21.3 | `src/clients/ClientsTable.tsx` (tri et pagination serveur) |
+| Radix `react-alert-dialog` / `react-tabs` | 1.2.1 / 1.2.1 | `src/components/ui/alert-dialog.tsx`, `src/components/ui/tabs.tsx` (styles `overlays.css`, jetons MMV) |
+
+Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; service activé en 03-A2, voir ci-dessous.)* Le service était **désactivé** (`src/clients/clientsService.ts`, `CLIENTS_API_ENABLED = false`) tant que le dossier G03-METIER n'est pas ratifié ; les tests l'activent contre le double `src/test/fakeClientsApi.ts` (données fictives de test uniquement). Toujours non installés : Sonner, Zustand, FullCalendar (03-B), Recharts, `openapi-typescript`.
+
+## Ajouts phase 03-A2 (17/10/2026)
+
+- Service Clients **activé** (`src/clients/clientsService.ts`, `CLIENTS_API_ENABLED = true`) : TanStack Query / Table interrogent les routes réelles `/api/clients` de MMV.Api (contrat `docs/phase/03/API_CLIENTS.md`). Tant que la migration `0003_ClientsModule` n'est pas appliquée, aucun compte ne peut recevoir de droit `clients.*` : l'écran affiche « Accès non autorisé » (403 serveur). L'état « Service Clients non activé » reste disponible comme interrupteur de repli (tests).
+- Contrat : `src/api/contract/clients.openapi.json` (extrait du document OpenAPI réel, mis à jour par `MMV_UPDATE_OPENAPI_SNAPSHOT=1 dotnet test tests/MMV.Api.Tests --filter "FullyQualifiedName~OpenApiContract"`) et `src/api/clientsContract.test.ts` (types, nullabilité, énumérations, bornes, parseurs).
+- Aucune dépendance ajoutée.
+
+## Ajouts phase 03-A3 (17/10/2026)
+
+- Actions Clients selon les permissions de la session (`src/clients/clientPermissions.ts`) : sans `clients.write`, « Nouveau client » et Modifier sont masqués (liste) ou désactivés (fiche) avec motif ; sans `clients.archive`, Archiver/Réactiver de même. Garde d'affichage uniquement, le serveur décide.
+- Surlignage de recherche mot par mot, insensible aux accents (`src/clients/searchText.ts`).
+- Banc natif `e2e/run-native.mjs` : scénarios `clients-admin-only`, `clients-full`, `clients-read`, `clients-write`, option `--prefix`, thème imposé ; exécution avec `node --use-system-ca` (certificat de développement approuvé, aucun contournement TLS). Mode d'emploi : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-A3.
+- Aucune dépendance ajoutée.
+
+## Ajouts phase 03-B (17/10/2026)
+
+- Dépendances (versions figées, MIT) : `@fullcalendar/react` **7.1.0** (FullCalendar Standard, vues par sous-chemins `timegrid` / `interaction`, `skeleton.css`) et `temporal-polyfill` **1.0.5** (pair de FullCalendar 7, utilisé par `src/appointments/time.ts`). Aucun plugin Premium.
+- Module Rendez-vous : `src/appointments/` (chargé à la demande, chunk `AppointmentsModule`), route `/rendez-vous`. *(État 03-B ; service activé en 03-B2, voir ci-dessous.)* **Service désactivé** (`src/appointments/appointmentsService.ts`, `APPOINTMENTS_API_ENABLED = false`) : contrat `docs/phase/03/API_APPOINTMENTS_PROPOSED.md` non implémenté par MMV.Api, décisions D-03-13 à D-03-18 `PROPOSED`. Les tests activent le service avec le double `src/test/fakeAppointmentsApi.ts` et une horloge fixe.
+- Clavier : rendez-vous focalisables (Entrée / Espace = détail), ↑/↓ entre rendez-vous, Échap ferme les panneaux, création et déplacement par formulaire, sélecteur de client en combobox.
+- Module Clients : notice de confirmation rattachée à l'écran (O-03-15).
+- `src/components/ui/alert-dialog.tsx` : contenu facultatif entre le texte et les actions.
+
+
+## Ajouts phase 03-B2 (17/10/2026)
+
+- Service Rendez-vous **activé** (`APPOINTMENTS_API_ENABLED = true`) sur le contrat implémenté `docs/phase/03/API_APPOINTMENTS.md` ; tant que le serveur n'a pas les paramètres du magasin, l'écran affiche « Agenda non configuré » (503 `appointments_not_configured`). L'état « service non activé » reste un interrupteur de repli testé.
+- Formulaire aligné sur D-03-13 à D-03-18 : champ Responsable selon le mode du motif (personnalisé : obligatoire ; accueil : « Non attribué (accueil) » seulement si une capacité est configurée), pas de 5 minutes, heures inexistantes **et ambiguës** refusées (`src/appointments/time.ts`), messages des nouveaux codes serveur (capacité d'accueil atteinte, collaborateur non éligible, changement d'heure).
+- Fiche client : « Prendre un rendez-vous » (`src/clients/ClientDetailView.tsx`, `src/appointments/appointmentLaunch.ts`) ouvre l'agenda avec le client présélectionné et permet de revenir à la fiche ; proposé avec `appointments.write`, désactivé pour un client archivé.
+- Contrat OpenAPI : `src/api/contract/appointments.openapi.json`, contrôlé par `src/api/appointmentsContract.test.ts` (et côté .NET). Aucune dépendance ajoutée.
+
+## Ajouts phase 03-B3 (18/10/2026)
+
+- Contrat Rendez-vous élargi (`docs/phase/03/API_APPOINTMENTS.md`) : chaque saisie envoie `startsAtLocal` ; la liste reçoit `timeZoneOffsets`, comparés aux conversions du poste (`src/appointments/time.ts`, `findOffsetDivergence`) — en cas d'écart, l'agenda de la période est bloqué (« Heure incohérente entre ce poste et le serveur MMV »). Le poste et MMV.Api doivent être à la même version.
+- Rendez-vous commencé : « Déplacer », glisser-déposer et « Rétablir » désactivés ; « Modifier » limité au motif et aux notes ; « Dernière modification le … par … » dans le détail.
+- Parcours natif : `e2e/cdp.mjs` (`drag`, glisser-déposer à la souris), `e2e/run-native.mjs` scénarios `rdv-b3` et `rdv-b3-guard` ; données fictives créées et nettoyées par un outil jetable hors dépôt (variables `MMV_E2E_CREDENTIALS_FILE`, `MMV_E2E_TOOL`) — commandes : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-B3.
+
+## Ajouts phase 03-C (18/10/2026)
+
+- Aucun changement de `src/`. Banc natif : scénarios `parcours-03c` (parcours complet accueil → client → fiche → rendez-vous → modification → déplacement clavier et glisser-déposer → annulation / rétablissement au clavier → fiche ; options `--theme`, `--size`, `--zoom`, `--day-offset`, `--first-name`, `--captures`) et `matrice-03c` (2 thèmes × 1440×900 / 1920×1080 × 100 / 125 / 150 %) ; `rdv-b3-guard` paramétrable (`--client-first`, `--responsible`).
+- Corrections du banc : `e2e/send-keys.ps1` lève le verrou de premier plan de Windows et échoue si la fenêtre n'est pas au premier plan ; `e2e/capture-window.ps1 -ResizeOnly` ; une seule session API par compte et par scénario (limite de connexion du serveur) ; zoom réglé après la connexion (qui recharge la page). Commandes : `docs/phase/03/IMPLEMENTATION_SPEC.md` § Réalisation 03-C.
+
+## Ajouts phase 03-D (18/10/2026)
+
+- Dépendances (versions figées, MIT) : `react-day-picker` **10.0.2** (+ `date-fns` 4.4.0, `@date-fns/tz` 1.5.0) et `@radix-ui/react-popover` **1.3.1**.
+- Sélecteurs : `src/components/ui/date-picker.tsx` (calendrier dans un Popover, jours portés par des dates civiles, aucune conversion UTC), `time-picker.tsx` (liste ARIA défilante, saisie de chiffres, heures désactivées avec motif), `popover.tsx`, `picker-values.ts`. Formulaire Rendez-vous : aucune saisie manuelle de date ni d'heure.
+- Fiche client : onglet « Rendez-vous » (`src/appointments/ClientAppointmentsTab.tsx`, droit `appointments.read`) et onglet « Historique » (`src/audit/ClientHistoryTab.tsx`, droit dédié `audit.read`, exige la migration 0005 côté serveur).
+- Corrections : focus rendu après Échap dans les confirmations (`components/ui/alert-dialog.tsx`), barre d'état compacte sous 1100 px, panneau Rendez-vous superposé en fenêtre étroite, ordre « NOM Prénom » partout, glisser sur un créneau libre (aperçu de sélection sans rendez-vous).
+- Banc natif : scénario `parcours-03d1` (`e2e/run-native.mjs`, aides `pickDateNative`, `pickTimeNative` ; `fillAppointment` passe par les sélecteurs).
+
+## Ajouts phase 03-D3 (19/10/2026)
+
+- Notice Clients : « Modifications enregistrées » de nouveau affichée sur la fiche après une modification (O-03-43, `src/clients/ClientsModule.tsx`).
+- Banc natif : scénario `historique-03d3` (onglet « Historique » de bout en bout) ; options `--api`, `--process`, `--page-url` pour un banc isolé (API de test et exécutable de test distincts, à côté des processus du propriétaire) ; valeurs par défaut inchangées.

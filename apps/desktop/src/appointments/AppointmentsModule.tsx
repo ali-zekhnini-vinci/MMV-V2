@@ -1,0 +1,609 @@
+// Module Rendez-vous (sous-lots 03-B / 03-B2, Lot 2 DRAFT planches 28–43) : agenda Jour / Semaine (FullCalendar
+// Standard), panneau détail, formulaire, sélecteur de client, annulation / rétablissement, conflits, capacité
+// d'accueil, états. Raccordé à MMV.Api (03-B2) : tant que les paramètres du magasin ne sont pas configurés côté
+// serveur, l'écran l'indique (503 `appointments_not_configured`), sans donnée fictive.
+// Route unique `/rendez-vous` : vue, date et panneau sont un état d'écran (rien n'est persisté). Arrivée depuis
+// une fiche client (appointmentLaunch.ts) : formulaire de création ouvert avec ce client, retour à la fiche.
+// Cohérence des fuseaux (B2-REV-03, 03-B3) : chaque liste porte les décalages UTC du SERVEUR sur la période ; s'ils
+// diffèrent de ceux de ce poste (ICU de WebView2), l'agenda de la période est bloqué (heures potentiellement
+// décalées d'une heure) et aucune création n'y est proposée ; chaque écriture est en outre revérifiée par le serveur.
+import { AlertTriangle, ArrowLeft, CalendarCheck, CalendarDays, CalendarX, CheckCircle2, ChevronLeft, ChevronRight, Clock, Info, Plus, RefreshCw, ServerOff, Settings, ShieldAlert, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { type ReactNode, useCallback, useId, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
+import { Temporal } from "temporal-polyfill";
+import { type AppointmentDetail, type AppointmentOptions, type AppointmentSummary, getAppointment } from "../api/appointments.ts";
+import { ApiRequestError, unwrap } from "../api/queryClient.ts";
+import { useAuth } from "../auth/authContext.ts";
+import { formatIsoDate } from "../clients/clientForm.ts";
+import { LoadingBlock, StateBlock } from "../clients/ClientStates.tsx";
+import "../clients/Clients.css";
+import { ConfirmDialog } from "../components/ui/alert-dialog.tsx";
+import { Button } from "../components/ui/button.tsx";
+import { cn } from "../lib/utils.ts";
+import {
+  appointmentClientName,
+  type AppointmentFormValues,
+  cancellationSchema,
+  EMPTY_APPOINTMENT_FORM,
+  slotFormPreset,
+  toAppointmentFormValues,
+  toAppointmentInputFrom,
+} from "./appointmentForm.ts";
+import { AppointmentDetailPanel } from "./AppointmentDetailPanel.tsx";
+import { AppointmentFormPanel, type FormMode } from "./AppointmentFormPanel.tsx";
+import { type AppointmentLaunchState, readAppointmentLaunch } from "./appointmentLaunch.ts";
+import { APPOINTMENTS_READ_ONLY_HINT, useAppointmentPermissions } from "./appointmentPermissions.ts";
+import { appointmentKeys, useAppointmentList, useAppointmentOptions, useCancelAppointment, useRestoreAppointment, useUpdateAppointment } from "./appointmentQueries.ts";
+import { AppointmentsCalendar } from "./AppointmentsCalendar.tsx";
+import { useAppointmentsService } from "./appointmentsService.ts";
+import { describeAppointmentFailure, type FailureView, formatWhen, isStoreNotConfigured, reasonLabel } from "./appointmentsView.ts";
+import {
+  type CalendarView,
+  type CivilDate,
+  findOffsetDivergence,
+  formatLongDate,
+  formatShortDay,
+  formatWeekShort,
+  formatWeekTitle,
+  minutesBetween,
+  shiftDate,
+  todayIn,
+  utcToWall,
+  viewRangeUtc,
+  visibleDays,
+} from "./time.ts";
+import "./Appointments.css";
+
+export function AppointmentsModule() {
+  const { enabled } = useAppointmentsService();
+  const options = useAppointmentOptions();
+
+  if (!enabled) {
+    return (
+      <div className="clients-view rdv-view">
+        <PageHead subtitle="Agenda du magasin" />
+        <StateBlock tone="info" icon={ServerOff} title="Service Rendez-vous non activé">
+          <p>
+            L&apos;agenda n&apos;est pas encore raccordé au serveur MMV : les règles de rendez-vous (fuseau horaire, durées, responsables,
+            conflits, annulation, droits) attendent la validation du propriétaire.
+          </p>
+          <p>Aucun rendez-vous n&apos;est créé ni affiché tant que ce service n&apos;est pas activé.</p>
+        </StateBlock>
+      </div>
+    );
+  }
+  if (options.isPending) {
+    return (
+      <div className="clients-view rdv-view">
+        <PageHead subtitle="Agenda du magasin" />
+        <LoadingBlock label="Chargement de l'agenda…" />
+      </div>
+    );
+  }
+  if (options.isError) {
+    const forbidden = options.error.error.kind === "forbidden";
+    return (
+      <div className="clients-view rdv-view">
+        <PageHead subtitle="Agenda du magasin" />
+        {isStoreNotConfigured(options.error) ? (
+          <StateBlock tone="info" icon={Settings} title="Agenda non configuré">
+            <p>
+              Les paramètres du magasin (fuseau horaire, plage d&apos;affichage, capacité d&apos;accueil) ne sont pas encore configurés sur le
+              serveur MMV.
+            </p>
+            <p>Aucun rendez-vous ne peut être créé ni affiché tant que cette configuration n&apos;est pas faite.</p>
+          </StateBlock>
+        ) : forbidden ? (
+          <StateBlock tone="warning" icon={ShieldAlert} title="Accès non autorisé" role="alert">
+            <p>Le serveur MMV a refusé l&apos;accès à l&apos;agenda pour votre compte (droit appointments.read).</p>
+          </StateBlock>
+        ) : (
+          <StateBlock
+            tone="error"
+            icon={AlertTriangle}
+            title="Impossible de charger l'agenda"
+            role="alert"
+            action={
+              <Button variant="primary" onClick={() => void options.refetch()} disabled={options.isFetching}>
+                <RefreshCw size={16} aria-hidden="true" />
+                Réessayer
+              </Button>
+            }
+          >
+            <p>{options.error.error.message}</p>
+          </StateBlock>
+        )}
+      </div>
+    );
+  }
+  return <Agenda options={options.data} />;
+}
+
+/** « UTC+1 », « UTC », « UTC+5:30 » ; `null` → « inconnu ». */
+function formatOffset(minutes: number | null): string {
+  if (minutes === null) return "inconnu";
+  if (minutes === 0) return "UTC";
+  const sign = minutes > 0 ? "+" : "−";
+  const absolute = Math.abs(minutes);
+  const rest = absolute % 60;
+  return `UTC${sign}${Math.floor(absolute / 60)}${rest === 0 ? "" : `:${String(rest).padStart(2, "0")}`}`;
+}
+
+function BackButton({ back, onBack }: { back: { label: string; to: string }; onBack: (to: string) => void }) {
+  return (
+    <Button variant="tertiary" size="sm" className="rdv-notice__back" onClick={() => onBack(back.to)}>
+      <ArrowLeft size={16} aria-hidden="true" />
+      {back.label}
+    </Button>
+  );
+}
+
+function PageHead({ subtitle, actions, hint }: { subtitle: string; actions?: ReactNode; hint?: string }) {
+  return (
+    <header className="clients-head">
+      <div>
+        <h1 className="clients-head__title">Rendez-vous</h1>
+        <p className="clients-head__sub">{subtitle}</p>
+        {hint && (
+          <p className="clients-head__hint" role="note">
+            {hint}
+          </p>
+        )}
+      </div>
+      {actions && <div className="clients-actions">{actions}</div>}
+    </header>
+  );
+}
+
+type Panel =
+  | { kind: "none" }
+  | { kind: "detail"; id: string }
+  | { kind: "form"; mode: FormMode; values: AppointmentFormValues; appointment?: AppointmentDetail; key: number };
+
+interface Notice {
+  title: string;
+  message: string;
+  /** Retour à la fiche client d'origine (prise de rendez-vous depuis la fiche). */
+  back?: { label: string; to: string };
+}
+
+function Agenda({ options }: { options: AppointmentOptions }) {
+  const { now } = useAppointmentsService();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Lu une seule fois à l'arrivée : le client choisi sur sa fiche est conservé, sans seconde recherche.
+  const [launch] = useState<AppointmentLaunchState | null>(() => readAppointmentLaunch(location.state));
+  const permissions = useAppointmentPermissions();
+  const { authorized } = useAuth();
+  const queryClient = useQueryClient();
+  const update = useUpdateAppointment();
+  const cancel = useCancelAppointment();
+  const restore = useRestoreAppointment();
+  const today = useCallback(() => todayIn(options.timeZone, now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : undefined), [options.timeZone, now]);
+
+  const [view, setView] = useState<CalendarView>("day");
+  const [date, setDate] = useState<CivilDate>(() => launch?.openAppointment?.date ?? today());
+  // Rendez-vous ouvert depuis l'historique de la fiche (03-D1) : annulés affichés, il peut l'être.
+  const [showCancelled, setShowCancelled] = useState(launch?.openAppointment !== undefined);
+  const [panel, setPanel] = useState<Panel>(() =>
+    launch?.newAppointmentFor
+      ? {
+          kind: "form",
+          mode: "create",
+          values: { ...EMPTY_APPOINTMENT_FORM, ...launch.newAppointmentFor, date: formatIsoDate(todayIn(options.timeZone, now ? Temporal.Instant.fromEpochMilliseconds(now().getTime()) : undefined)) },
+          key: 0,
+        }
+      : launch?.openAppointment
+        ? { kind: "detail", id: launch.openAppointment.id }
+        : { kind: "none" },
+  );
+  // Une seule opération rattachée à la fiche d'origine : après elle, l'agenda reprend son fonctionnement normal.
+  const [origin, setOrigin] = useState<AppointmentLaunchState | null>(launch);
+  const [selectedId, setSelectedId] = useState<string | null>(launch?.openAppointment?.id ?? null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [gridFailure, setGridFailure] = useState<FailureView | null>(null);
+  const [detailFailure, setDetailFailure] = useState<FailureView | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<AppointmentDetail | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
+  const reasonId = useId();
+
+  const range = useMemo(() => ({ ...viewRangeUtc(date, view, options.timeZone), status: showCancelled ? ("all" as const) : ("planned" as const) }), [date, view, options.timeZone, showCancelled]);
+  const list = useAppointmentList(range);
+  // Période en cours de chargement : la précédente reste affichée, contrôlée sur sa propre couverture.
+  const divergence = useMemo(
+    () => (list.data ? findOffsetDivergence(list.data.timeZoneOffsets, options.timeZone, list.isPlaceholderData ? undefined : range) : null),
+    [list.data, list.isPlaceholderData, options.timeZone, range],
+  );
+  const appointments = useMemo(() => (divergence ? [] : (list.data?.items ?? [])), [list.data, divergence]);
+  const canWrite = permissions.canWrite && divergence === null;
+  const days = visibleDays(date, view, options.hiddenWeekdays);
+  const visibleCount = appointments.filter((appointment) => days.includes(utcToWall(appointment.startsAtUtc, options.timeZone).date)).length;
+
+  const clearMessages = () => {
+    setNotice(null);
+    setGridFailure(null);
+    setDetailFailure(null);
+  };
+
+  const openForm = (mode: FormMode, values: AppointmentFormValues, appointment?: AppointmentDetail) => {
+    clearMessages();
+    setOrigin(null);
+    const key = formKey + 1;
+    setFormKey(key);
+    setPanel({ kind: "form", mode, values, appointment, key });
+  };
+
+  const openCreate = (preset?: Partial<AppointmentFormValues>) =>
+    openForm("create", { ...EMPTY_APPOINTMENT_FORM, date: formatIsoDate(date), ...preset });
+
+  const openDetail = (appointment: Pick<AppointmentSummary, "id">) => {
+    clearMessages();
+    setOrigin(null);
+    setSelectedId(appointment.id);
+    setPanel({ kind: "detail", id: appointment.id });
+  };
+
+  const navigateTo = (next: CivilDate, nextView: CalendarView = view) => {
+    setDate(next);
+    setView(nextView);
+  };
+
+  const onSaved = (saved: AppointmentDetail, mode: FormMode) => {
+    const name = appointmentClientName(saved);
+    const when = formatWhen(saved.startsAtUtc, options.timeZone);
+    const back = origin && mode === "create" ? { label: `Retour à la fiche de ${origin.returnLabel}`, to: origin.returnTo } : undefined;
+    setOrigin(null);
+    setNotice(
+      mode === "create"
+        ? { title: "Rendez-vous créé", message: `${name} · ${when} · ${reasonLabel(options, saved.reasonCode)}.`, back }
+        : mode === "move"
+          ? { title: "Rendez-vous déplacé", message: `${name} · ${when}.` }
+          : { title: "Rendez-vous modifié", message: `${name} · ${when}.` },
+    );
+    setSelectedId(saved.id);
+    setDate(utcToWall(saved.startsAtUtc, options.timeZone).date);
+    setPanel(mode === "create" ? { kind: "none" } : { kind: "detail", id: saved.id });
+  };
+
+  const onDrop = (summary: AppointmentSummary, startsAtUtc: string, revert: () => void) => {
+    clearMessages();
+    void (async () => {
+      let detail: AppointmentDetail;
+      try {
+        // Le corps PUT est complet (notes comprises) : le détail est relu avant d'écrire.
+        detail = await queryClient.fetchQuery({
+          queryKey: appointmentKeys.detail(summary.id),
+          queryFn: async ({ signal }) => unwrap(await authorized((url, token) => getAppointment(url, token, summary.id, signal))),
+          staleTime: 0,
+        });
+      } catch (error) {
+        revert();
+        if (error instanceof ApiRequestError) setGridFailure(describeAppointmentFailure(error));
+        return;
+      }
+      const input = toAppointmentInputFrom(detail, startsAtUtc, options.timeZone);
+      update.mutate(
+        { id: detail.id, input, version: detail.version },
+        {
+          onSuccess: (saved) => {
+            setSelectedId(saved.id);
+            setNotice({ title: "Rendez-vous déplacé", message: `${appointmentClientName(saved)} · ${formatWhen(saved.startsAtUtc, options.timeZone)}.` });
+          },
+          onError: (error) => {
+            revert();
+            const end = Temporal.Instant.from(startsAtUtc).add({ minutes: minutesBetween(detail.startsAtUtc, detail.endsAtUtc) }).toString();
+            setGridFailure(describeAppointmentFailure(error, { startsAtUtc, endsAtUtc: end, timeZone: options.timeZone }));
+          },
+        },
+      );
+    })();
+  };
+
+  const onSelectSlot = (startUtc: string, endUtc: string) => {
+    if (!canWrite) return;
+    openCreate(slotFormPreset(startUtc, endUtc, options));
+  };
+
+  const confirmCancel = () => {
+    if (cancelTarget === null) return;
+    const parsed = cancellationSchema.safeParse({ reason: cancelReason });
+    if (!parsed.success) {
+      setCancelError(parsed.error.issues[0]?.message ?? "Motif invalide");
+      return;
+    }
+    const reason = cancelReason.trim() === "" ? null : cancelReason.trim();
+    cancel.mutate(
+      { id: cancelTarget.id, version: cancelTarget.version, reason },
+      {
+        onSuccess: (saved) => {
+          setCancelTarget(null);
+          setNotice({ title: "Rendez-vous annulé", message: `${appointmentClientName(saved)} · ${formatWhen(saved.startsAtUtc, options.timeZone)}. Le créneau est libéré.` });
+        },
+        onError: (error) => {
+          setCancelTarget(null);
+          setDetailFailure(describeAppointmentFailure(error));
+        },
+      },
+    );
+  };
+
+  const onRestore = (appointment: AppointmentDetail) => {
+    clearMessages();
+    restore.mutate(
+      { id: appointment.id, version: appointment.version },
+      {
+        onSuccess: (saved) => setNotice({ title: "Rendez-vous rétabli", message: `${appointmentClientName(saved)} · ${formatWhen(saved.startsAtUtc, options.timeZone)}.` }),
+        onError: (error) => setDetailFailure(describeAppointmentFailure(error, { startsAtUtc: appointment.startsAtUtc, endsAtUtc: appointment.endsAtUtc, timeZone: options.timeZone })),
+      },
+    );
+  };
+
+  const subtitle = view === "day" ? formatLongDate(date) : formatWeekTitle(days);
+  const dateLabel = view === "day" ? formatShortDay(date) : formatWeekShort(days);
+  const unit = view === "day" ? "Jour" : "Semaine";
+  const listForbidden = list.isError && list.error.error.kind === "forbidden";
+
+  return (
+    <div className="clients-view rdv-view">
+      {origin?.openAppointment && (
+        <div>
+          <BackButton back={{ label: `Retour à la fiche de ${origin.returnLabel}`, to: origin.returnTo }} onBack={(to) => navigate(to)} />
+        </div>
+      )}
+      <PageHead
+        subtitle={subtitle}
+        hint={permissions.canWrite ? undefined : APPOINTMENTS_READ_ONLY_HINT}
+        actions={
+          <>
+            <Button onClick={() => navigateTo(today())}>
+              <CalendarDays size={16} aria-hidden="true" />
+              Aujourd&apos;hui
+            </Button>
+            {canWrite && (
+              <Button variant="primary" onClick={() => openCreate()}>
+                <Plus size={16} aria-hidden="true" />
+                Nouveau rendez-vous
+              </Button>
+            )}
+          </>
+        }
+      />
+      {notice && (
+        <div className="clients-notice" role="status">
+          <span className="clients-notice__icon" aria-hidden="true">
+            {notice.title === "Rendez-vous annulé" ? <CalendarX size={20} /> : notice.title === "Rendez-vous créé" ? <CalendarCheck size={20} /> : <CheckCircle2 size={20} />}
+          </span>
+          <div>
+            <div className="clients-notice__title">{notice.title}</div>
+            <div className="clients-notice__text">{notice.message}</div>
+            {notice.back && <BackButton back={notice.back} onBack={(to) => navigate(to)} />}
+          </div>
+          <button type="button" className="clients-notice__close" aria-label="Fermer le message" onClick={() => setNotice(null)}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      {gridFailure && (
+        <div className={cn("clients-banner", `clients-banner--${gridFailure.tone}`)} role="alert">
+          <span className="clients-banner__icon" aria-hidden="true">
+            <AlertTriangle size={18} />
+          </span>
+          <div>
+            <div className="clients-banner__title">{gridFailure.slotConflict ? "Créneau indisponible" : gridFailure.title}</div>
+            <div className="clients-banner__text">{gridFailure.text} Le rendez-vous a été remis à sa place.</div>
+          </div>
+          <button type="button" className="clients-notice__close" aria-label="Fermer le message" onClick={() => setGridFailure(null)}>
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <div className="rdv-main">
+        <section className="rdv-cal" aria-label="Agenda">
+          <div className="rdv-cal__top">
+            <div className="rdv-cal__nav">
+              <button type="button" className="rdv-iconbtn" aria-label={view === "day" ? "Jour précédent" : "Semaine précédente"} onClick={() => navigateTo(shiftDate(date, view, -1))}>
+                <ChevronLeft size={18} aria-hidden="true" />
+              </button>
+              <button type="button" className="rdv-iconbtn" aria-label={view === "day" ? "Jour suivant" : "Semaine suivante"} onClick={() => navigateTo(shiftDate(date, view, 1))}>
+                <ChevronRight size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <span className="rdv-cal__date" aria-live="polite">
+              {dateLabel}
+            </span>
+            <span className="rdv-grow" />
+            <button
+              type="button"
+              className={cn("clients-chip", showCancelled && "clients-chip--on")}
+              aria-pressed={showCancelled}
+              onClick={() => setShowCancelled((value) => !value)}
+            >
+              Afficher les annulés
+            </button>
+            <div className="rdv-seg" role="group" aria-label="Vue de l'agenda">
+              {(["day", "week"] as const).map((option) => (
+                <button key={option} type="button" aria-pressed={view === option} className={cn(view === option && "rdv-seg--on")} onClick={() => setView(option)}>
+                  {option === "day" ? "Jour" : "Semaine"}
+                </button>
+              ))}
+            </div>
+            <span className="rdv-cal__hint" id="rdv-keyboard-hint">
+              <Info size={14} aria-hidden="true" />
+              Sélection clavier ↑↓ · ⏎ pour ouvrir
+            </span>
+          </div>
+          <div className="rdv-cal__body" aria-busy={list.isFetching} aria-describedby="rdv-keyboard-hint">
+            {listForbidden ? (
+              <StateBlock tone="warning" icon={ShieldAlert} title="Accès non autorisé" role="alert">
+                <p>Le serveur MMV a refusé la lecture des rendez-vous pour votre compte.</p>
+              </StateBlock>
+            ) : list.isError && list.data === undefined ? (
+              <StateBlock
+                tone="error"
+                icon={AlertTriangle}
+                title="Impossible de charger les rendez-vous"
+                role="alert"
+                action={
+                  <Button variant="primary" onClick={() => void list.refetch()} disabled={list.isFetching}>
+                    <RefreshCw size={16} aria-hidden="true" />
+                    Réessayer
+                  </Button>
+                }
+              >
+                <p>{list.error.error.message}</p>
+              </StateBlock>
+            ) : divergence ? (
+              <StateBlock tone="error" icon={Clock} title="Heure incohérente entre ce poste et le serveur MMV" role="alert">
+                <p>
+                  Pour cette période, ce poste et le serveur MMV ne placent pas l&apos;heure du magasin ({options.timeZone}) au même moment : à partir de{" "}
+                  {divergence.atUtc.replace("T", " ").replace(/:00(\.0+)?Z$/, " UTC")}, décalage {formatOffset(divergence.serverOffsetMinutes)} selon le serveur,{" "}
+                  {formatOffset(divergence.localOffsetMinutes)} selon ce poste.
+                </p>
+                <p>
+                  Les heures affichées pourraient être fausses : l&apos;agenda de cette période est bloqué et aucun rendez-vous ne peut y être créé ni
+                  déplacé. Mettez à jour Windows et Microsoft Edge WebView2 sur ce poste et sur le serveur, puis rouvrez l&apos;agenda.
+                </p>
+              </StateBlock>
+            ) : (
+              <>
+                <AppointmentsCalendar
+                  view={view}
+                  date={date}
+                  options={options}
+                  appointments={appointments}
+                  selectedId={selectedId}
+                  canWrite={canWrite}
+                  now={now}
+                  onOpen={openDetail}
+                  onSelectSlot={onSelectSlot}
+                  onDrop={onDrop}
+                />
+                {list.isPending && (
+                  <p className="rdv-cal__loading" role="status">
+                    Chargement des rendez-vous…
+                  </p>
+                )}
+                {list.isSuccess && !list.isPlaceholderData && visibleCount === 0 && (
+                  <div className="rdv-empty">
+                    <div className="rdv-empty__card" role="status">
+                      <span className="rdv-empty__icon" aria-hidden="true">
+                        <CalendarCheck size={32} />
+                      </span>
+                      <h2 className="rdv-empty__title">{view === "day" ? "Aucun rendez-vous ce jour" : "Aucun rendez-vous cette semaine"}</h2>
+                      <p className="rdv-empty__text">
+                        {view === "day" ? "La journée est libre." : "La semaine est libre."} {canWrite ? "Planifiez un rendez-vous ou changez de date." : "Changez de date pour consulter l'agenda."}
+                      </p>
+                      {canWrite && (
+                        <Button variant="primary" onClick={() => openCreate()}>
+                          <Plus size={16} aria-hidden="true" />
+                          Nouveau rendez-vous
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+            <p className="rdv-sr-only" aria-live="polite">
+              {list.isSuccess && !divergence ? `${unit} : ${visibleCount} rendez-vous affiché${visibleCount > 1 ? "s" : ""}.` : ""}
+            </p>
+          </div>
+        </section>
+        {panel.kind === "detail" && (
+          <AppointmentDetailPanel
+            key={panel.id}
+            appointmentId={panel.id}
+            options={options}
+            permissions={permissions}
+            failure={detailFailure}
+            restoring={restore.isPending}
+            onClose={() => {
+              // Détail ouvert depuis l'historique de la fiche (03-D1) : fermer = revenir à cette fiche.
+              if (origin?.openAppointment && origin.openAppointment.id === panel.id) {
+                navigate(origin.returnTo);
+                return;
+              }
+              setPanel({ kind: "none" });
+            }}
+            onEdit={(appointment) => openForm("edit", toAppointmentFormValues(appointment, options.timeZone), appointment)}
+            onMove={(appointment) => openForm("move", toAppointmentFormValues(appointment, options.timeZone), appointment)}
+            onCancel={(appointment) => {
+              setCancelReason("");
+              setCancelError(null);
+              setCancelTarget(appointment);
+            }}
+            onRestore={onRestore}
+          />
+        )}
+        {panel.kind === "form" && (
+          <AppointmentFormPanel
+            key={panel.key}
+            mode={panel.mode}
+            options={options}
+            initialValues={panel.values}
+            appointment={panel.appointment}
+            canPickClient={permissions.canPickClient}
+            returnLabel={origin && panel.mode === "create" ? `Retour à la fiche de ${origin.returnLabel}` : undefined}
+            onClose={() => {
+              // Abandon d'une prise de rendez-vous lancée depuis une fiche : retour direct à cette fiche.
+              if (origin && panel.mode === "create") {
+                navigate(origin.returnTo);
+                return;
+              }
+              setPanel(panel.appointment ? { kind: "detail", id: panel.appointment.id } : { kind: "none" });
+            }}
+            onSaved={onSaved}
+          />
+        )}
+      </div>
+      <ConfirmDialog
+        open={cancelTarget !== null}
+        onOpenChange={(open) => !open && !cancel.isPending && setCancelTarget(null)}
+        tone="error"
+        icon={<CalendarX size={28} />}
+        title="Annuler ce rendez-vous ?"
+        description={
+          cancelTarget ? (
+            <>
+              Le rendez-vous de <b>{appointmentClientName(cancelTarget)}</b> du {formatWhen(cancelTarget.startsAtUtc, options.timeZone)} sera annulé. Il
+              pourra être rétabli depuis le détail si le créneau est toujours libre.
+            </>
+          ) : null
+        }
+        cancelLabel="Conserver"
+        confirmLabel={cancel.isPending ? "Annulation…" : "Annuler le rendez-vous"}
+        confirmIcon={<CalendarX size={16} aria-hidden="true" />}
+        pending={cancel.isPending}
+        onConfirm={confirmCancel}
+      >
+        <div className="clients-field rdv-cancel__field">
+          <label htmlFor={reasonId} className="clients-field__label">
+            Motif d&apos;annulation (facultatif)
+          </label>
+          <div className={cn("clients-input clients-input--area", cancelError && "clients-input--error")}>
+            <textarea
+              id={reasonId}
+              rows={2}
+              maxLength={200}
+              value={cancelReason}
+              aria-invalid={cancelError ? true : undefined}
+              aria-describedby={cancelError ? `${reasonId}-error` : undefined}
+              onChange={(event) => {
+                setCancelReason(event.target.value);
+                setCancelError(null);
+              }}
+            />
+          </div>
+          {cancelError && (
+            <div className="clients-field__error" id={`${reasonId}-error`}>
+              {cancelError}
+            </div>
+          )}
+        </div>
+      </ConfirmDialog>
+    </div>
+  );
+}

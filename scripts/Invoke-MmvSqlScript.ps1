@@ -11,6 +11,8 @@
   - Exécution : psql -v ON_ERROR_STOP=1 -f <script>. Les scripts EF Core sont transactionnels
     (START TRANSACTION … COMMIT) : en cas d'erreur, rien n'est appliqué.
   - Aucune migration au démarrage de l'API, aucun EnsureCreated().
+  - Après COMMIT : liste des migrations relue en lecture seule (requête transmise par l'entrée standard, O-03-16).
+  - Tests (psql simulé, aucune connexion) : scripts/tests/Invoke-MmvSqlScript.Tests.ps1.
 
 .EXAMPLE
   ./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-api -Key ConnectionStrings:Mmv -Database mmv_v2_dev `
@@ -56,7 +58,17 @@ try {
     & $Psql @common -f $Script
     if ($LASTEXITCODE -ne 0) { throw "Echec du script (psql exit $LASTEXITCODE) : transaction annulee." }
     "APPLIQUE : exit 0"
-    & $Psql @common -A -t -c 'SELECT string_agg("MigrationId", '', '' ORDER BY "MigrationId") FROM "__EFMigrationsHistory"'
+    # O-02-15 / O-03-16 : Windows PowerShell 5.1 retire les guillemets doubles d'un argument passé à un exécutable
+    # natif (psql recevait __EFMigrationsHistory sans guillemets, replié en minuscules). La requête de contrôle, en
+    # lecture seule, est donc transmise par l'entrée standard, identique quelle que soit la version de PowerShell.
+    # Après COMMIT, un échec de cette lecture ne remet pas l'application en cause : il est signalé, sans exception.
+    $migrations = 'SELECT string_agg("MigrationId", '', '' ORDER BY "MigrationId") FROM "__EFMigrationsHistory";' | & $Psql @common -A -t
+    if ($LASTEXITCODE -eq 0) {
+        "MIGRATIONS : $(([string]$migrations).Trim())"
+    }
+    else {
+        "AVERTISSEMENT : script applique (COMMIT), lecture de controle impossible (psql exit $LASTEXITCODE) : relire les migrations en lecture seule."
+    }
 }
 finally {
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue

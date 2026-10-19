@@ -1,0 +1,63 @@
+# P03B3 — garde-fou de fuseau (B2-REV-03) en natif sur la divergence RÉELLE de ce poste (O-03-22), 2026-10-18
+# MMV.Api de TEST configuré Africa/Casablanca pour cet essai uniquement (pas la configuration du magasin : Europe/Brussels) ; mmv_v2_test, mêmes données fictives b3n-*-84f4a7f1
+2026-10-18T10:37:53.719Z SCÉNARIO — rdv-b3-guard
+2026-10-18T10:37:53.721Z PASS — zoom WebView2 effectif 100 %
+2026-10-18T10:37:56.809Z PASS — thème light
+2026-10-18T10:37:57.041Z PASS — vue Semaine
+2026-10-18T10:37:57.066Z PASS — semaine courante (Casablanca) : décalages Windows = WebView2
+2026-10-18T10:37:57.119Z PASS — Semaine précédente (1)
+2026-10-18T10:37:57.260Z PASS — Semaine précédente (2)
+2026-10-18T10:37:57.402Z PASS — Semaine précédente (3)
+2026-10-18T10:37:57.544Z PASS — Semaine précédente (4)
+2026-10-18T10:37:57.686Z PASS — Semaine précédente (5)
+2026-10-18T10:37:57.837Z PASS — Semaine précédente (6)
+2026-10-18T10:37:57.981Z PASS — Semaine précédente (7)
+2026-10-18T10:37:58.136Z PASS — Semaine précédente (8)
+2026-10-18T10:37:58.276Z PASS — Semaine précédente (9)
+2026-10-18T10:37:58.409Z PASS — Semaine précédente (10)
+2026-10-18T10:37:58.549Z PASS — Semaine précédente (11)
+2026-10-18T10:37:58.690Z PASS — Semaine précédente (12)
+2026-10-18T10:37:58.839Z PASS — Semaine précédente (13)
+2026-10-18T10:37:58.979Z PASS — Semaine précédente (14)
+2026-10-18T10:37:59.123Z PASS — Semaine précédente (15)
+2026-10-18T10:37:59.279Z PASS — Semaine précédente (16)
+2026-10-18T10:37:59.412Z PASS — Semaine précédente (17)
+2026-10-18T10:37:59.554Z PASS — Semaine précédente (18)
+2026-10-18T10:37:59.696Z PASS — Semaine précédente (19)
+2026-10-18T10:37:59.846Z PASS — Semaine précédente (20)
+2026-10-18T10:37:59.988Z PASS — Semaine précédente (21)
+2026-10-18T10:38:00.130Z PASS — Semaine précédente (22)
+2026-10-18T10:38:00.285Z PASS — Semaine précédente (23)
+2026-10-18T10:38:00.419Z PASS — Semaine précédente (24)
+2026-10-18T10:38:00.561Z PASS — Semaine précédente (25)
+2026-10-18T10:38:00.705Z PASS — Semaine précédente (26)
+2026-10-18T10:38:00.855Z PASS — Semaine précédente (27)
+2026-10-18T10:38:00.996Z PASS — Semaine précédente (28)
+2026-10-18T10:38:01.138Z PASS — Semaine précédente (29)
+2026-10-18T10:38:01.279Z PASS — Semaine précédente (30)
+2026-10-18T10:38:01.412Z PASS — Semaine précédente (31)
+2026-10-18T10:38:01.553Z PASS — Semaine précédente (32)
+2026-10-18T10:38:01.695Z PASS — Semaine précédente (33)
+2026-10-18T10:38:01.837Z PASS — Semaine précédente (34)
+2026-10-18T10:38:01.987Z PASS — Semaine précédente (35)
+2026-10-18T10:38:02.116Z PASS — Semaine précédente (36)
+2026-10-18T10:38:02.242Z PASS — Semaine précédente (37)
+2026-10-18T10:38:02.381Z PASS — Semaine précédente (38)
+2026-10-18T10:38:02.507Z PASS — Semaine précédente (39)
+2026-10-18T10:38:02.633Z PASS — Semaine précédente (40)
+2026-10-18T10:38:02.756Z PASS — écart affiché : serveur UTC, poste UTC+1
+2026-10-18T10:38:02.756Z PASS — aucune création proposée sur la période bloquée
+2026-10-18T10:38:04.225Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_guard_week_blocked_1920x1080_20261018T103753Z.png 1920x1080
+2026-10-18T10:38:04.247Z PASS — Aujourd'hui
+2026-10-18T10:38:04.290Z PASS — Nouveau rendez-vous
+2026-10-18T10:38:04.302Z PASS — ouverture du sélecteur de client
+2026-10-18T10:38:04.696Z PASS — client Natif choisi
+2026-10-18T10:38:04.829Z PASS — Durée = 30 minutes
+2026-10-18T10:38:04.835Z PASS — Motif = Conseil / Devis
+2026-10-18T10:38:04.835Z PASS — Responsable = B3N Responsable Deux
+2026-10-18T10:38:04.837Z PASS — Créer (15/01/2026)
+2026-10-18T10:38:06.458Z CAPTURE — <EVIDENCE>\P03B3_native_rdv_guard_write_refused_1920x1080_20261018T103753Z.png 1920x1080
+2026-10-18T10:38:06.477Z PASS — Annuler la saisie
+2026-10-18T10:38:06.588Z PASS — API : aucun rendez-vous enregistré en janvier 2026
+2026-10-18T10:38:06.588Z DÉCALAGES SERVEUR (semaine du 05/01/2026) — [{"fromUtc":"2026-01-01T00:00:00+00:00","toUtc":"2026-01-31T00:00:00+00:00","offsetMinutes":0}]
+2026-10-18T10:38:06.745Z TERMINÉ — rdv-b3-guard

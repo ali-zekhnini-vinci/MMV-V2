@@ -4,7 +4,8 @@ namespace MMV.Api.Cors;
 /// CORS du client Tauri : origines explicites lues dans <c>Cors:AllowedOrigins</c> (définies en
 /// développement seulement), sans identifiants (aucun cookie). Deux politiques sur les mêmes origines :
 /// <see cref="PolicyName"/> (santé, GET seul, 01B) et <see cref="ApiPolicyName"/> (routes <c>/api</c>,
-/// phase 02 : GET/POST, en-têtes <c>Authorization</c> et <c>Content-Type</c> seulement). Toute origine
+/// phase 02 : GET/POST ; phase 03-A2 : + PUT pour la modification d'un client ; en-têtes <c>Authorization</c>
+/// et <c>Content-Type</c> seulement, jamais DELETE). Toute origine
 /// joker ou non absolue fait échouer le démarrage plutôt que d'ouvrir l'API.
 /// </summary>
 internal static class DesktopCors
@@ -34,7 +35,7 @@ internal static class DesktopCors
                 .WithMethods(HttpMethods.Get));
             options.AddPolicy(ApiPolicyName, policy => policy
                 .WithOrigins(origins)
-                .WithMethods(HttpMethods.Get, HttpMethods.Post)
+                .WithMethods(HttpMethods.Get, HttpMethods.Post, HttpMethods.Put)
                 .WithHeaders("Authorization", "Content-Type"));
         });
 

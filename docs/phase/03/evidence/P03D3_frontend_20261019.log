@@ -1,0 +1,52 @@
+# 03-D3 — frontend final (19/10/2026, apres O-03-43) : npm run check ; npm run lint ; vitest run ; vite build (sortie hors depot)
+## npm run check
+
+> mmv-v2-desktop@0.1.0 check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+exit 0
+## npm run lint
+
+> mmv-v2-desktop@0.1.0 lint
+> eslint .
+
+
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src\clients\ClientsTable.tsx
+  153:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src\clients\ClientsTable.tsx:153:17
+  151 |   // Avertissement lint attendu (react-hooks/incompatible-library) : useReactTable renvoie des fonctions
+  152 |   // non mémoïsables ; le React Compiler ignore alors ce composant, qui reste correct (rendu à chaque état).
+> 153 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  154 |     data: rows,
+  155 |     columns,
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+exit 0
+## vitest run
+ RUN  v5.0.3 C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/apps/desktop
+
+
+ Test Files  20 passed (20)
+      Tests  226 passed (226)
+   Start at  15:27:04
+   Duration  58.05s (tests 81%, environment 7%, import 7%, transform 5%)
+
+## vite build --outDir <bloc-notes>
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 964ms[39m
+exit 0
+
+## npx tauri build --no-bundle (release, apres O-03-43)
+    Finished `release` profile [optimized] target(s) in 1m 31s
+       Built application at: C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src-tauri\target\release\mmv-desktop.exe
+exit 0 en 104 s

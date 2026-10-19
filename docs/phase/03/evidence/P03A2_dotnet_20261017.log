@@ -1,0 +1,28 @@
+# Phase 03-A2 — backend .NET, 17/10/2026 (heure locale ~01:30, poste Windows 11 Home 10.0.26200)
+# Aucun processus MMV.Api / Vite du propriétaire actif (Get-CimInstance Win32_Process : seuls les serveurs de langage Serena).
+## dotnet tool run dotnet-ef migrations add ClientsModule --project src/MMV.Infrastructure --startup-project src/MMV.Infrastructure --output-dir Persistence/Migrations
+Build succeeded.
+Done. To undo this action, use 'ef migrations remove'
+-> 20261016230630_ClientsModule (.cs + .Designer.cs), MmvDbContextModelSnapshot.cs mis à jour ; aucune connexion (fabrique design-time sans chaîne)
+## dotnet tool run dotnet-ef migrations list --no-connect …
+20261015125000_InitialBaseline
+20261015223849_AuthIdentity
+20261016230630_ClientsModule
+## dotnet tool run dotnet-ef migrations script 20261015223849_AuthIdentity 20261016230630_ClientsModule [--idempotent] … ; script inverse (rollback)
+-> docs/phase/03/sql/0003_ClientsModule.sql, .idempotent.sql, .rollback.sql (BOM et CRLF retirés, comme 0002)
+7f61f0a826d6337a489ca988a8ffe6f185361395458674ef16c8b341eb3ce756  0003_ClientsModule.sql
+4dbb0d84940d0891915adce2538fb0fee66e054bf4b3e9c347429c18d3db1c3b  0003_ClientsModule.idempotent.sql
+8481adb044bc33a62ace3993ff65b4ea726016d4b577c6cdbd125f13f508a600  0003_ClientsModule.rollback.sql
+## dotnet build MMV.slnx --no-incremental
+    0 Avertissement(s)
+    0 Erreur(s)
+## dotnet test MMV.slnx --no-build --filter "Stage!=IdentityWrite&Stage!=ClientsWrite&Stage!=PostMigration"
+Réussi!  - échec :     0, réussite :    14, ignorée(s) :     0, total :    14, durée : 1 s - MMV.PostgreSql.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+Réussi!  - échec :     0, réussite :   182, ignorée(s) :     0, total :   182, durée : 17 s - MMV.Api.Tests.dll (net10.0)
+## Non exécutés (NOT_RUN) : Stage=ClientsWrite (5 tests, exigent 0003 appliquée sur mmv_v2_test) ; Stage=IdentityWrite (5 tests, aucune écriture en base sans GO)
+## Stage=PostMigration : 2 FAIL attendus (voir P03A2_postgresql_20261017.log) — preuve que 0003 n'est appliquée ni sur mmv_v2_dev ni sur mmv_v2_test
+## Instantané OpenAPI : MMV_UPDATE_OPENAPI_SNAPSHOT=1 dotnet test tests/MMV.Api.Tests --filter "FullyQualifiedName~OpenApiContract"
+Réussi!  - échec :     0, réussite :     2 -> apps/desktop/src/api/contract/clients.openapi.json (puis comparé sans la variable dans la suite complète)
+## graphify update .
+graph.json, graph.html et GRAPH_REPORT.md mis à jour (2327 nœuds) ; graphify query « permissions clients.write … » -> Permissions, Client, ClientService, ClientRulesTests

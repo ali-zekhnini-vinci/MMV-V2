@@ -1,0 +1,72 @@
+# P03C — régression 2026-10-18, worktree jetable du bloc-notes sur 9caf7ed (code applicatif inchangé en 03-C ; aucune compilation dans src/ en place)
+
+## .NET : dotnet build MMV.slnx ; dotnet test tests/MMV.Api.Tests ; dotnet test tests/MMV.Maintenance.Tests
+La génération a réussi.
+    0 Avertissement(s)
+    0 Erreur(s)
+
+Temps écoulé 00:00:05.43
+Série de tests pour <bloc-notes>\wt\tests\MMV.Api.Tests\bin\Debug\net10.0\MMV.Api.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :   314, ignorée(s) :     0, total :   314, durée : 23 s - MMV.Api.Tests.dll (net10.0)
+Série de tests pour <bloc-notes>\wt\tests\MMV.Maintenance.Tests\bin\Debug\net10.0\MMV.Maintenance.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 6 s - MMV.Maintenance.Tests.dll (net10.0)
+
+## PostgreSQL 18 réel (mmv_v2_test, assembly séquentielle) : dotnet test tests/MMV.PostgreSql.Tests
+2026-10-18T11:22:46Z
+Série de tests pour <bloc-notes>\wt\tests\MMV.PostgreSql.Tests\bin\Debug\net10.0\MMV.PostgreSql.Tests.dll (.NETCoreApp,Version=v10.0)
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :    40, ignorée(s) :     0, total :    40, durée : 5 s - MMV.PostgreSql.Tests.dll (net10.0)
+2026-10-18T11:22:54Z
+
+## Frontend : npm ci ; vitest run ; npm run lint ; npm run build (check tsc inclus)
+
+added 310 packages in 17s
+== test
+ RUN  v5.0.3 C:/Users/Ali Zekhnini/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/0348bd11-e46a-4ae1-b799-f23b4224f517/scratchpad/wt/apps/desktop
+
+
+ Test Files  17 passed (17)
+      Tests  196 passed (196)
+   Start at  13:18:13
+   Duration  37.57s (tests 84%, environment 7%, import 5%, transform 4%)
+
+== lint
+  155 |     columns,
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+== build
+dist/assets/index-Dz30binx.css                                      31.77 kB │ gzip:   7.65 kB
+dist/assets/appointmentLaunch-AKmjeQ7_.js                           27.60 kB │ gzip:   9.46 kB
+dist/assets/ClientsModule-g-ml4FBY.js                               88.37 kB │ gzip:  24.92 kB
+dist/assets/AppointmentsModule-B7uUXoog.js                         379.42 kB │ gzip: 108.04 kB
+dist/assets/index-CSv2EQWB.js                                      550.17 kB │ gzip: 174.71 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 619ms
+
+## Build natif release : npx tauri build --no-bundle — 1re tentative (cible dans le worktree) : échec LNK1104, chemin > MAX_PATH (environnement du bloc-notes, pas le code)
+failed to build app: failed to build app
+       Error failed to build app: failed to build app
+exit 1
+2026-10-18T11:19:32Z
+
+## 2e tentative : CARGO_TARGET_DIR=<bloc-notes>/tg
+✓ built in 645ms
+    Finished `release` profile [optimized] target(s) in 2m 36s
+       Built application at: <bloc-notes>\tg\release\mmv-desktop.exe
+exit 0
+2026-10-18T11:22:49Z
+mmv-desktop.exe (release) : 5 173 760 octets
+
+## Script SQL (O-03-16) : voir P03C_O-03-16_sqlscript_tests_20261018.log (15/15 après correctif ; 4 échecs reproduits sur le script de 9caf7ed)

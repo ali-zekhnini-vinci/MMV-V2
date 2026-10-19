@@ -10,6 +10,9 @@ export type ApiErrorKind =
   | "unauthorized"
   | "forbidden"
   | "rate-limited"
+  | "not-found"
+  | "conflict"
+  | "validation"
   | "http"
   | "invalid-response";
 
@@ -17,6 +20,10 @@ export interface ApiError {
   kind: ApiErrorKind;
   message: string;
   status?: number;
+  /** Code métier borné renvoyé par le serveur (`{ code }`) pour 400/404/409/422 ; jamais un texte libre. */
+  code?: string;
+  /** Codes d'erreur par champ (`{ errors: { champ: [codes] } }`) pour 400/422 ; bornés, jamais affichés tels quels. */
+  fieldErrors?: Record<string, string[]>;
 }
 
 export type ApiResult<T> =
@@ -33,6 +40,9 @@ const MESSAGES: Record<ApiErrorKind, string> = {
   unauthorized: "Session absente, expirée ou révoquée.",
   forbidden: "Accès non autorisé pour ce compte.",
   "rate-limited": "Trop de tentatives. Veuillez patienter avant de réessayer.",
+  "not-found": "Élément introuvable sur le serveur MMV.",
+  conflict: "Cet élément a été modifié depuis un autre poste.",
+  validation: "Le serveur MMV a refusé les données saisies.",
   http: "Réponse HTTP inattendue du serveur MMV.",
   "invalid-response": "Réponse du serveur MMV illisible ou incohérente.",
 };
@@ -40,8 +50,36 @@ const MESSAGES: Record<ApiErrorKind, string> = {
 const KIND_BY_STATUS: Partial<Record<number, ApiErrorKind>> = {
   401: "unauthorized",
   403: "forbidden",
+  404: "not-found",
+  409: "conflict",
+  422: "validation",
+  400: "validation",
   429: "rate-limited",
 };
+
+/** Statuts dont le corps d'erreur `{ code, errors }` est lu (borné) pour guider l'écran. */
+// 503 : code borné éventuel (ex. `appointments_not_configured`, 03-B2) ; le statut reste qualifié « http ».
+const STATUSES_WITH_ERROR_BODY: readonly number[] = [400, 404, 409, 422, 503];
+const CODE_PATTERN = /^[a-z0-9_.-]{1,64}$/;
+const FIELD_PATTERN = /^[A-Za-z0-9_.]{1,64}$/;
+
+/** Extrait `{ code, errors }` d'un corps d'erreur, en ignorant tout ce qui n'est pas un code borné. */
+export function parseErrorBody(body: unknown): Pick<ApiError, "code" | "fieldErrors"> {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return {};
+  const { code, errors } = body as Record<string, unknown>;
+  const result: Pick<ApiError, "code" | "fieldErrors"> = {};
+  if (typeof code === "string" && CODE_PATTERN.test(code)) result.code = code;
+  if (typeof errors === "object" && errors !== null && !Array.isArray(errors)) {
+    const fieldErrors: Record<string, string[]> = {};
+    for (const [field, codes] of Object.entries(errors as Record<string, unknown>).slice(0, 50)) {
+      if (!FIELD_PATTERN.test(field) || !Array.isArray(codes)) continue;
+      const valid = codes.filter((item): item is string => typeof item === "string" && CODE_PATTERN.test(item)).slice(0, 10);
+      if (valid.length > 0) fieldErrors[field] = valid;
+    }
+    if (Object.keys(fieldErrors).length > 0) result.fieldErrors = fieldErrors;
+  }
+  return result;
+}
 
 export function apiError(kind: ApiErrorKind, status?: number): ApiError {
   return status === undefined
@@ -50,7 +88,7 @@ export function apiError(kind: ApiErrorKind, status?: number): ApiError {
 }
 
 export interface RequestOptions<T> {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT";
   /** Corps JSON (POST). */
   body?: unknown;
   /** Jeton de session opaque, envoyé en `Authorization: Bearer`. */
@@ -114,7 +152,15 @@ export async function requestJson<T>(
     }
 
     if (!acceptedStatuses.includes(response.status)) {
-      return { ok: false, error: apiError(KIND_BY_STATUS[response.status] ?? "http", response.status) };
+      const error = apiError(KIND_BY_STATUS[response.status] ?? "http", response.status);
+      if (STATUSES_WITH_ERROR_BODY.includes(response.status)) {
+        try {
+          Object.assign(error, parseErrorBody(await response.json()));
+        } catch {
+          // Corps absent ou illisible : l'erreur reste qualifiée par son seul statut.
+        }
+      }
+      return { ok: false, error };
     }
 
     if (response.status === 204) {

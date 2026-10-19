@@ -1,0 +1,9 @@
+# P03B .NET — 17/10/2026 — worktree jetable (bin séparés ; MMV.Api du propriétaire non touché)
+## HEAD bb3d25f (backend inchangé) : dotnet test tests/MMV.Api.Tests
+Réussi!  - échec :     0, réussite :   182, ignorée(s) :     0, total :   182 (relevé en session)
+## HEAD + code proposé 0004 (Appointment, AppointmentModel, permissions, DbContext, migration, test Grantable)
+dotnet build MMV.slnx : 0 Avertissement(s), 0 Erreur(s)
+1re exécution : 181/182 — PermissionAdministrationServiceTests.SystemAdmin_ImpliesNoClientsPermission (liste Grantable figée, attendu) ; test étendu dans le diff proposé
+2e exécution : Réussi!  - échec :     0, réussite :   182, ignorée(s) :     0, total :   182 - MMV.Api.Tests.dll (net10.0)
+## dotnet ef (hors connexion) : migrations add AppointmentsModule ; migrations script 20261016230630_ClientsModule 20261017141136_AppointmentsModule [--idempotent] ; script inverse ; migrations list --no-connect
+20261015125000_InitialBaseline / 20261015223849_AuthIdentity / 20261016230630_ClientsModule / 20261017141136_AppointmentsModule

@@ -1,0 +1,108 @@
+﻿# 03-D3 — parcours natif « historique-03d3 » : Tauri (WebView2) → HTTPS → MMV.Api → PostgreSQL 18.6 (5433) → audit.events, base mmv_v2_test, 0005 APPLIQUEE
+# Banc isole a cote des processus ouverts par le proprietaire (MMV.Api sur 7267/mmv_v2_dev, tauri dev/Vite 1420, mmv-desktop) laisses intacts :
+#   API de test : build hors src/ (.agent-artifacts, arbre de travail 03-D3), https://localhost:7367, magasin Europe/Brussels 09:00-19:00, capacite 1 ;
+#   poste de test : npx tauri build --debug --no-bundle, identifiant com.mmv.v2.d3test (profil WebView2 distinct), VITE_MMV_API_BASE_URL=https://localhost:7367,
+#   CSP connect-src https://localhost:7367, cible cargo hors depot, executable renomme mmv-d3test.exe, CDP 9223 (http://tauri.localhost).
+# Donnees fictives : comptes d3n-*-<suffixe> (accueil avec audit.read ; autre poste SANS audit.read ; 2 responsables), clients « Fictif-D3N-<suffixe> » crees par l'interface.
+
+2026-10-19T13:22:41.640Z SCÉNARIO — historique-03d3
+2026-10-19T13:22:41.653Z PARCOURS 03-D3 — light_1920x1080_z100, API https://localhost:7367, jour 2026-10-22 10:00, client FICTIF-D3N-6FA21E6C Journal
+2026-10-19T13:22:43.022Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-19T13:22:46.101Z PASS — zoom WebView2 effectif 100 %
+2026-10-19T13:22:46.102Z PASS — thème light
+2026-10-19T13:22:46.273Z PASS — Nouveau client
+2026-10-19T13:22:47.613Z PASS — Voir la fiche
+2026-10-19T13:22:47.721Z PASS — API : client enregistré (CLI-000525)
+2026-10-19T13:22:47.766Z PASS — API : 1 événement (création)
+2026-10-19T13:22:47.767Z PASS — Modifier
+2026-10-19T13:22:47.897Z PASS — Enregistrer
+2026-10-19T13:22:48.069Z PASS — API : 2 événements
+2026-10-19T13:22:48.070Z PASS — Modifier (sans changement)
+2026-10-19T13:22:48.077Z PASS — Enregistrer sans changement
+2026-10-19T13:22:48.247Z PASS — API : version 4246 et date de modification inchangées
+2026-10-19T13:22:48.252Z PASS — API : aucun événement pour l'enregistrement sans changement
+2026-10-19T13:22:48.253Z PASS — Modifier (formulaire ouvert avant l'autre poste)
+2026-10-19T13:22:48.318Z PASS — autre poste : ville modifiée (200)
+2026-10-19T13:22:48.385Z PASS — Enregistrer (version périmée)
+2026-10-19T13:22:49.079Z CAPTURE — <EVIDENCE>\P03D3_native_d3_light_1920x1080_z100_01_conflit_client_20261019T132241Z.png 1920x1080
+2026-10-19T13:22:49.085Z PASS — API : 3 événements (le refus 409 n'en ajoute aucun)
+2026-10-19T13:22:49.090Z PASS — Recharger la fiche
+2026-10-19T13:22:49.102Z PASS — Archiver
+2026-10-19T13:22:49.103Z PASS — Archiver le client
+2026-10-19T13:22:49.263Z PASS — Réactiver
+2026-10-19T13:22:49.264Z PASS — Réactiver le client
+2026-10-19T13:22:49.432Z PASS — Prendre un rendez-vous
+2026-10-19T13:22:49.596Z PASS — ouverture du calendrier
+2026-10-19T13:22:49.599Z PASS — calendrier : Choisir l'année = 2026
+2026-10-19T13:22:49.807Z PASS — calendrier : Choisir le mois = 9
+2026-10-19T13:22:50.015Z PASS — jour 2026-10-22
+2026-10-19T13:22:50.023Z PASS — ouverture de la liste des heures
+2026-10-19T13:22:50.027Z PASS — heure 10:00
+2026-10-19T13:22:50.029Z PASS — Durée = 30 minutes
+2026-10-19T13:22:50.030Z PASS — Motif = Conseil / Devis
+2026-10-19T13:22:50.031Z PASS — Responsable = D3N Responsable Un
+2026-10-19T13:22:50.089Z PASS — Créer
+2026-10-19T13:22:50.255Z PASS — API : rendez-vous 10:00 Europe/Brussels
+2026-10-19T13:22:50.333Z PASS — Nouveau rendez-vous (même responsable, créneau chevauchant)
+2026-10-19T13:22:50.339Z PASS — ouverture du sélecteur de client
+2026-10-19T13:22:50.720Z PASS — client Journal choisi
+2026-10-19T13:22:50.727Z PASS — ouverture du calendrier
+2026-10-19T13:22:50.731Z PASS — calendrier : Choisir l'année = 2026
+2026-10-19T13:22:50.938Z PASS — calendrier : Choisir le mois = 9
+2026-10-19T13:22:51.141Z PASS — jour 2026-10-22
+2026-10-19T13:22:51.149Z PASS — ouverture de la liste des heures
+2026-10-19T13:22:51.154Z PASS — heure 10:15
+2026-10-19T13:22:51.155Z PASS — Durée = 30 minutes
+2026-10-19T13:22:51.157Z PASS — Motif = Conseil / Devis
+2026-10-19T13:22:51.158Z PASS — Responsable = D3N Responsable Un
+2026-10-19T13:22:51.159Z PASS — Créer (conflit)
+2026-10-19T13:22:51.862Z CAPTURE — <EVIDENCE>\P03D3_native_d3_light_1920x1080_z100_02_conflit_horaire_20261019T132241Z.png 1920x1080
+2026-10-19T13:22:51.867Z PASS — API : le conflit horaire n'ajoute aucun événement
+2026-10-19T13:22:51.872Z PASS — Annuler la saisie
+2026-10-19T13:22:52.181Z GLISSER — départ CSS (1108, 374), hauteur 32 px, échelle CDP 1.00
+2026-10-19T13:22:54.286Z PASS — API : déplacé à 11:00
+2026-10-19T13:22:54.294Z PASS — ouverture de « FICTIF-D3N-6FA21E6C Journal »
+2026-10-19T13:22:54.303Z PASS — Modifier le rendez-vous
+2026-10-19T13:22:54.306Z PASS — Responsable = D3N Responsable Deux
+2026-10-19T13:22:54.307Z PASS — Enregistrer
+2026-10-19T13:22:54.472Z PASS — API : responsable Deux
+2026-10-19T13:22:54.482Z PASS — Annuler le rendez-vous
+2026-10-19T13:22:54.547Z PASS — confirmation de l'annulation
+2026-10-19T13:22:54.710Z PASS — Rétablir le rendez-vous
+2026-10-19T13:22:54.879Z PASS — Voir la fiche client
+2026-10-19T13:22:54.887Z PASS — onglet Historique
+2026-10-19T13:22:55.050Z HISTORIQUE — 1. Rendez-vous rétabli — D3N Accueil — [] — Voir le rendez-vous
+2026-10-19T13:22:55.050Z HISTORIQUE — 2. Rendez-vous annulé — D3N Accueil — [Motif d'annulation] — Voir le rendez-vous
+2026-10-19T13:22:55.050Z HISTORIQUE — 3. Changement de responsable — D3N Accueil — [Responsable : D3N Responsable Un → D3N Responsable Deux] — Voir le rendez-vous
+2026-10-19T13:22:55.050Z HISTORIQUE — 4. Rendez-vous déplacé — D3N Accueil — [Date et heure : 22/10/2026 10:00 → 22/10/2026 11:00] — Voir le rendez-vous
+2026-10-19T13:22:55.050Z HISTORIQUE — 5. Rendez-vous créé — D3N Accueil — [Date et heure : 22/10/2026 10:00 | Durée : 30 min | Motif : Conseil / Devis | Responsable : D3N Responsable Un | Notes] — Voir le rendez-vous
+2026-10-19T13:22:55.050Z HISTORIQUE — 6. Réactivation du dossier — D3N Accueil — []
+2026-10-19T13:22:55.050Z HISTORIQUE — 7. Archivage du dossier — D3N Accueil — []
+2026-10-19T13:22:55.050Z HISTORIQUE — 8. Modification des informations — D3N Autre poste — [Ville]
+2026-10-19T13:22:55.050Z HISTORIQUE — 9. Modification des informations — D3N Accueil — [Téléphone | Ville]
+2026-10-19T13:22:55.050Z HISTORIQUE — 10. Création du dossier client — D3N Accueil — [Prénom | Nom | Téléphone | Ville]
+2026-10-19T13:22:55.050Z PASS — chronologie : du plus récent au plus ancien, 10 actions réussies
+2026-10-19T13:22:55.050Z PASS — auteurs réels (dont « D3N Autre poste » pour la modification de l'autre poste)
+2026-10-19T13:22:55.050Z PASS — champs modifiés cités, valeurs personnelles masquées
+2026-10-19T13:22:55.050Z PASS — changement de responsable : Un → Deux
+2026-10-19T13:22:55.050Z PASS — déplacement : Date et heure : 22/10/2026 10:00 → 22/10/2026 11:00
+2026-10-19T13:22:55.050Z PASS — motif d'annulation masqué
+2026-10-19T13:22:55.050Z PASS — création : responsable nommé, notes masquées
+2026-10-19T13:22:55.050Z PASS — « Voir le rendez-vous » sur les seules actions de rendez-vous
+2026-10-19T13:22:55.055Z PASS — API : 10 événements, mêmes auteurs dans le même ordre
+2026-10-19T13:22:55.055Z PASS — API : horodatages décroissants
+2026-10-19T13:22:55.056Z PASS — aucune valeur personnelle dans l'historique
+2026-10-19T13:22:55.056Z PASS — historique : aucun défilement horizontal
+2026-10-19T13:22:55.609Z CAPTURE — <EVIDENCE>\P03D3_native_d3_light_1920x1080_z100_03_historique_20261019T132241Z.png 1920x1080
+2026-10-19T13:22:55.611Z PASS — Type d'action = Rendez-vous
+2026-10-19T13:22:55.776Z PASS — Type d'action = Dossier client
+2026-10-19T13:22:56.475Z CAPTURE — <EVIDENCE>\P03D3_native_d3_light_1920x1080_z100_04_historique_filtre_dossier_20261019T132241Z.png 1920x1080
+2026-10-19T13:22:56.477Z PASS — Période = 7 derniers jours
+2026-10-19T13:22:56.511Z PASS — API : lecture de l'historique refusée sans audit.read (403)
+2026-10-19T13:22:58.496Z PASS — zoom WebView2 effectif 100 %
+2026-10-19T13:22:58.870Z PASS — Consulter la fiche
+2026-10-19T13:22:59.028Z PASS — onglet Historique absent sans audit.read
+2026-10-19T13:22:59.558Z CAPTURE — <EVIDENCE>\P03D3_native_d3_light_1920x1080_z100_05_sans_audit_read_20261019T132241Z.png 1920x1080
+2026-10-19T13:22:59.559Z PASS — zoom 100 % effectif
+2026-10-19T13:22:59.729Z FIN — light_1920x1080_z100
+2026-10-19T13:22:59.729Z TERMINÉ — historique-03d3

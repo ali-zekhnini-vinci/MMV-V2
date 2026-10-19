@@ -1,0 +1,8 @@
+# Résumé du document OpenAPI exposé par MMV.Api en développement (GET /openapi/v1.json, 17/10/2026)
+# Instance MMV.Api déjà en cours d'exécution (PID 26332, non lancée par la session) ; lecture seule.
+openapi: 3.1.1
+POST /api/auth/login | réponses documentées: 200 | corps de requête: oui
+POST /api/auth/logout | réponses documentées: 200 | corps de requête: non
+GET /api/auth/session | réponses documentées: 200 | corps de requête: non
+GET /api/admin/accounts | réponses documentées: 200 | corps de requête: non
+schémas: LoginRequest

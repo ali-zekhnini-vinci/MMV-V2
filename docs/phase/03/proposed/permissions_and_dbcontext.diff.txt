@@ -1,0 +1,45 @@
+diff --git a/src/MMV.Domain/Identity/Permissions.cs b/src/MMV.Domain/Identity/Permissions.cs
+index 66a0eeb..efae0b5 100644
+--- a/src/MMV.Domain/Identity/Permissions.cs
++++ b/src/MMV.Domain/Identity/Permissions.cs
+@@ -9,9 +9,15 @@ public static class Permissions
+ {
+     public const string SystemAdmin = "system.admin";
+ 
++    public const string ClientsRead = "clients.read";
++
++    public const string ClientsWrite = "clients.write";
++
++    public const string ClientsArchive = "clients.archive";
++
+     public const int MaxLength = 64;
+ 
+-    public static IReadOnlyList<string> All { get; } = [SystemAdmin];
++    public static IReadOnlyList<string> All { get; } = [SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive];
+ 
+     public static bool IsKnown(string permission) => All.Contains(permission, StringComparer.Ordinal);
+ }
+diff --git a/src/MMV.Infrastructure/Persistence/MmvDbContext.cs b/src/MMV.Infrastructure/Persistence/MmvDbContext.cs
+index fd4b59b..457fa76 100644
+--- a/src/MMV.Infrastructure/Persistence/MmvDbContext.cs
++++ b/src/MMV.Infrastructure/Persistence/MmvDbContext.cs
+@@ -1,5 +1,7 @@
+ using Microsoft.EntityFrameworkCore;
++using MMV.Domain.Clients;
+ using MMV.Domain.Identity;
++using MMV.Infrastructure.Clients;
+ using MMV.Infrastructure.Identity;
+ 
+ namespace MMV.Infrastructure.Persistence;
+@@ -16,8 +18,11 @@ public sealed class MmvDbContext(DbContextOptions<MmvDbContext> options) : DbCon
+ 
+     public DbSet<BootstrapRecord> BootstrapRecords => Set<BootstrapRecord>();
+ 
++    public DbSet<Client> Clients => Set<Client>();
++
+     protected override void OnModelCreating(ModelBuilder modelBuilder)
+     {
+         IdentityModel.Configure(modelBuilder);
++        ClientModel.Configure(modelBuilder);
+     }
+ }

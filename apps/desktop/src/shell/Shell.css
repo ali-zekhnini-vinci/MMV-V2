@@ -440,6 +440,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* O-03-34 : libellés compacts en fenêtre étroite (le libellé complet reste dans l'info-bulle). */
+.statusbar__short {
+  display: none;
+}
+
 .statusbar__spin {
   animation: login-spin 0.9s linear infinite;
 }
@@ -628,6 +633,23 @@
   .topbar,
   .statusbar {
     padding: 0 var(--space-4);
+  }
+
+  .statusbar__items {
+    gap: var(--space-3);
+  }
+
+  .statusbar__long {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .statusbar__short {
+    display: inline;
   }
 
   .facts div,
