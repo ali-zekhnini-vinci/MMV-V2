@@ -212,3 +212,14 @@ Sources supplémentaires lues : `prompts/PHASE03_D_GO_CLAUDE_CODE.md` (message d
 | §5 Politique d'audit | `docs/phase/03/AUDIT_JOURNAL_03D.md` § 1, § 5, § 6, § 9 ; `docs/ADR_ET_DECISIONS.md` ; `docs/PERIMETRE_ET_SEQUENCE.md` |
 | §6 Incident `desktop.zip` | aucun fichier modifié ; registre O-03-41 (`GATES_AND_DECISIONS.md`) |
 | §7–8 Documentation et livraison | `README.md`, `docs/phase/03.md`, `docs/phase/03/QA_MATRIX.md`, `GATES_AND_DECISIONS.md`, `IMPLEMENTATION_SPEC.md`, `RAPPORT_CLOTURE_03D3.md`, `docs/ARCHITECTURE_ET_STACK.md`, `apps/desktop/README.md` ; mandat `prompts/PHASE03_D3_GO_CLAUDE_CODE.md` ; branche locale `feat/phase-03-clients-rdv`, archive `git archive` hors suivi |
+
+## Traçabilité préparation du merge (mandat `prompts/PHASE03_MERGE_PREP_GO.md`)
+
+| Exigence du GO | Chemins |
+|---|---|
+| §1 État Git, ascendance, intégrité | branche `feat/phase-03-clients-rdv` (HEAD vérifié `93df475`), `origin/main` `cb79d1f` ; preuve `docs/phase/03/QA_MATRIX.md` Q-03-259 |
+| §2 Tests et documentation | Q-03-263 à Q-03-265 ; `README.md`, `docs/phase/03.md`, `docs/phase/03/GATES_AND_DECISIONS.md`, `docs/PERIMETRE_ET_SEQUENCE.md` |
+| §3 Fichiers personnels non suivis | `apps/desktop/desktop.zip`, `apps/desktop/desktop.recovered.zip`, archives `MMV-V2-phase*.zip` : non suivis, non modifiés |
+| §4 Secrets et artefacts | Q-03-260 à Q-03-262 (outil jetable hors dépôt, aucune valeur affichée) |
+| §5–7 Push préparé, PR et merge | aucun push avant confirmation du propriétaire ; PR et merge par le propriétaire |
+| §8 Réserves | `docs/phase/03/RESERVES_PHASES_FUTURES.md` |
