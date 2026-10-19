@@ -120,14 +120,16 @@ public sealed class ClientService(IClientStore store, TimeProvider clock, IAudit
             return new ClientWriteResult(ClientWriteStatus.ValidationFailed, Errors: validation.Errors);
         }
 
-        var before = ClientAuditChanges.Snapshot(client);
-        client.Update(validation.Details!, userId, now);
-        var changes = ClientAuditChanges.Between(before, validation.Details!);
-        if (changes.Count > 0)
+        // 03-D3 : informations identiques après normalisation → rien n'est écrit (ni auteur ni date de dernière
+        // modification, version xmin inchangée, aucun événement d'audit) ; le client courant est renvoyé tel quel.
+        var changes = ClientAuditChanges.Between(ClientAuditChanges.Snapshot(client), validation.Details!);
+        if (changes.Count == 0)
         {
-            Record(client, AuditActions.ClientUpdated, changes, userId, now);
+            return new ClientWriteResult(ClientWriteStatus.Success, client);
         }
 
+        client.Update(validation.Details!, userId, now);
+        Record(client, AuditActions.ClientUpdated, changes, userId, now);
         return await SaveAsync(client, cancellationToken);
     }
 

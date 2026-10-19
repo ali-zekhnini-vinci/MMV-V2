@@ -264,7 +264,21 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
             Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
             Assert.Equal("""{"code":"version_conflict"}""", await stale.Content.ReadAsStringAsync());
 
-            var newVersion = (await ReadAsync(updated)).GetProperty("version").GetUInt32();
+            var afterUpdate = await ReadAsync(updated);
+            var newVersion = afterUpdate.GetProperty("version").GetUInt32();
+
+            // 03-D3 : même saisie avec la version courante → 200, état inchangé, ni version (xmin) ni date ni événement nouveaux.
+            var events = await CommittedAuditCleanup.CountAsync(users, []);
+            using var unchanged = await SendAsync(http, HttpMethod.Put, $"/api/clients/{id}", token, body with { version = newVersion });
+            Assert.Equal(HttpStatusCode.OK, unchanged.StatusCode);
+            var same = await ReadAsync(unchanged);
+            Assert.Equal(newVersion, same.GetProperty("version").GetUInt32());
+            Assert.Equal(afterUpdate.GetProperty("updatedAtUtc").GetString(), same.GetProperty("updatedAtUtc").GetString());
+            Assert.Equal(events, await CommittedAuditCleanup.CountAsync(users, []));
+            var xmin = await CommittedTestData.CountAsync("SELECT xmin::text::bigint FROM clients.clients WHERE id = @i", ("i", Guid.Parse(id!)));
+            Assert.Equal(newVersion, (uint)xmin);
+            output.WriteLine($"modification sans changement : 200, version {newVersion} conservée (xmin {xmin}), {events} événement(s) inchangés");
+
             using var archived = await SendAsync(http, HttpMethod.Post, $"/api/clients/{id}/archive", token, new { version = newVersion });
             Assert.Equal(HttpStatusCode.OK, archived.StatusCode);
             Assert.Equal("archived", (await ReadAsync(archived)).GetProperty("status").GetString());
@@ -273,10 +287,12 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
         {
             using var scope = factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+            var events = await CommittedAuditCleanup.PurgeAsync(users, []);
             var clients = await context.Clients.Where(c => users.Contains(c.CreatedByUserId) || users.Contains(c.UpdatedByUserId)).ExecuteDeleteAsync();
             var deleted = await context.Users.Where(u => users.Contains(u.Id)).ExecuteDeleteAsync();
-            output.WriteLine($"nettoyage : {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
+            output.WriteLine($"nettoyage : {events} événement(s) d'audit, {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
             Assert.Equal(2, deleted);
+            Assert.Equal(0L, await CommittedAuditCleanup.CountAsync(users, []));
         }
     }
 
@@ -408,16 +424,18 @@ public sealed class ClientsPostgreSqlTests(ITestOutputHelper output)
         {
             using var scope = factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+            var events = await CommittedAuditCleanup.PurgeAsync(users, []);
             var clients = await context.Clients.Where(c => users.Contains(c.CreatedByUserId) || users.Contains(c.UpdatedByUserId)).ExecuteDeleteAsync();
             var deleted = await context.Users.Where(u => users.Contains(u.Id)).ExecuteDeleteAsync();
-            output.WriteLine($"nettoyage : {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
+            output.WriteLine($"nettoyage : {events} événement(s) d'audit, {clients} client(s) fictif(s) et {deleted} compte(s) supprimés");
             Assert.Equal(4, deleted);
 
             var residue = await context.Database.SqlQuery<int>(
                 $"""
                 SELECT ((SELECT count(*) FROM clients.clients WHERE last_name LIKE {"%" + suffix})
                       + (SELECT count(*) FROM auth.users WHERE user_name LIKE {"%" + suffix})
-                      + (SELECT count(*) FROM auth.sessions WHERE user_id = ANY({users})))::int AS "Value"
+                      + (SELECT count(*) FROM auth.sessions WHERE user_id = ANY({users}))
+                      + (SELECT count(*) FROM audit.events WHERE actor_user_id = ANY({users})))::int AS "Value"
                 """).SingleAsync();
             output.WriteLine($"résidus : {residue}");
             Assert.Equal(0, residue);

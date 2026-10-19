@@ -128,6 +128,50 @@ public sealed class AuditPostgreSqlTests(ITestOutputHelper output)
         Assert.Equal("Responsable Audit PG", names[alice.Id]);
     }
 
+    /// <summary>
+    /// 03-D3 : modification sans changement réel (client, rendez-vous) → aucune ligne réécrite. Dans une transaction
+    /// unique, xmin ne distingue pas une réécriture : la preuve est l'emplacement physique (<c>ctid</c>) inchangé, que
+    /// toute mise à jour PostgreSQL déplace (nouvelle version de ligne), avec la date de modification et le journal.
+    /// La version xmin validée est contrôlée par les matrices HTTP réelles (Stage=ClientsWrite / AppointmentsWrite).
+    /// </summary>
+    [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
+    public async Task UpdatesWithoutRealChange_RewriteNoRow_AndRecordNoEvent()
+    {
+        await using var fixture = await RolledBackScope.OpenAsync(output);
+        var author = await AddUserAsync(fixture, "Auteur Audit PG");
+        var other = await AddUserAsync(fixture, "Autre Auteur PG");
+        var alice = await AddUserAsync(fixture, "Responsable Audit PG", eligible: true);
+        var clients = fixture.Get<ClientService>();
+        var client = (await clients.CreateAsync(Eloise, author.Id, CancellationToken.None)).Client!;
+        fixture.Context.ChangeTracker.Clear();
+        var appointments = new AppointmentService(fixture.Get<IAppointmentStore>(), AppointmentsPostgreSqlTests.Settings, TimeProvider.System, fixture.Get<IAuditRecorder>());
+        var input = AppointmentsPostgreSqlTests.In(client.Id, alice.Id, AppointmentsPostgreSqlTests.Ten, 30, "conseil_devis", "Note");
+        var appointment = (await appointments.CreateAsync(input, author.Id, CancellationToken.None)).Appointment!.Appointment;
+        fixture.Context.ChangeTracker.Clear();
+
+        const string clientRow = "SELECT ctid::text || '|' || updated_at_utc::text || '|' || updated_by_user_id::text FROM clients.clients WHERE id = @i";
+        const string appointmentRow = "SELECT ctid::text || '|' || updated_at_utc::text || '|' || updated_by_user_id::text FROM appointments.appointments WHERE id = @i";
+        var (clientBefore, appointmentBefore) = (await fixture.ScalarAsync<string>(clientRow, ("i", client.Id)), await fixture.ScalarAsync<string>(appointmentRow, ("i", appointment.Id)));
+        var events = await CountAsync(fixture, client.Id);
+
+        var sameClient = await clients.UpdateAsync(client.Id, Eloise with { FirstName = " Éloïse ", City = "Namur  " }, client.Version, other.Id, CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+        var sameAppointment = await appointments.UpdateAsync(appointment.Id, input with { Notes = "  Note " }, appointment.Version, other.Id, CancellationToken.None);
+        fixture.Context.ChangeTracker.Clear();
+
+        Assert.Equal((ClientWriteStatus.Success, client.Version), (sameClient.Status, sameClient.Client!.Version));
+        Assert.Equal((AppointmentWriteStatus.Success, appointment.Version), (sameAppointment.Status, sameAppointment.Appointment!.Appointment.Version));
+        Assert.Equal(clientBefore, await fixture.ScalarAsync<string>(clientRow, ("i", client.Id)));
+        Assert.Equal(appointmentBefore, await fixture.ScalarAsync<string>(appointmentRow, ("i", appointment.Id)));
+        Assert.Equal(events, await CountAsync(fixture, client.Id));
+
+        // Témoin : un changement réel déplace la ligne et produit son événement.
+        await clients.UpdateAsync(client.Id, Eloise with { City = "Liège" }, client.Version, other.Id, CancellationToken.None);
+        Assert.NotEqual(clientBefore, await fixture.ScalarAsync<string>(clientRow, ("i", client.Id)));
+        Assert.Equal(events + 1, await CountAsync(fixture, client.Id));
+        output.WriteLine($"client {clientBefore} ; rendez-vous {appointmentBefore} ; événements {events} → {events + 1} après le témoin");
+    }
+
     [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
     public async Task Journal_IsAppendOnly_AndAcceptsTheAuditReadPermission()
     {

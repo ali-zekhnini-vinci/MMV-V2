@@ -131,6 +131,8 @@ internal sealed class CommittedTestData : IAsyncDisposable
         {
             var users = Users.ToArray();
             var clients = Clients.ToArray();
+            // 03-D3 : événements d'audit fictifs d'abord (clés étrangères RESTRICT vers comptes et clients).
+            var events = await CommittedAuditCleanup.PurgeAsync(users, clients);
             var appointments = await ExecuteAsync(
                 "DELETE FROM appointments.appointments WHERE client_id = ANY(@c) OR created_by_user_id = ANY(@u) OR updated_by_user_id = ANY(@u) OR responsible_user_id = ANY(@u)",
                 ("c", clients), ("u", users));
@@ -145,10 +147,11 @@ internal sealed class CommittedTestData : IAsyncDisposable
                      + (SELECT count(*) FROM clients.clients WHERE last_name = @n)
                      + (SELECT count(*) FROM auth.users WHERE user_name LIKE @p)
                      + (SELECT count(*) FROM auth.sessions WHERE user_id = ANY(@u))
+                     + (SELECT count(*) FROM audit.events WHERE actor_user_id = ANY(@u) OR client_id = ANY(@c))
                 """,
                 ("c", clients), ("u", users), ("n", $"Fictif-B3-{Suffix}"), ("p", $"b3-%-{Suffix}"));
             _output.WriteLine(
-                $"nettoyage (suffixe {Suffix}) : {appointments} rendez-vous, {responsibles} éligibilité(s), {sessions} session(s), "
+                $"nettoyage (suffixe {Suffix}) : {events} événement(s) d'audit, {appointments} rendez-vous, {responsibles} éligibilité(s), {sessions} session(s), "
                 + $"{deletedClients} client(s), {deletedUsers} compte(s) supprimés ; résidus = {Residue}");
         }
         finally
@@ -486,6 +489,19 @@ public sealed class AppointmentsHttpPostgreSqlTests(ITestOutputHelper output)
                 Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
                 await Expect(HttpStatusCode.Conflict, "version_conflict", HttpMethod.Put, $"/api/appointments/{id}", "ecriture", Body(ten, full, notes: "Autre poste", version: version));
                 version = root.GetProperty("version").GetUInt32();
+
+                // 03-D3 : corps identique avec la version courante (auteur différent) → 200, état inchangé, ni version
+                // (xmin) ni auteur ni date de dernière modification ni événement d'audit nouveaux.
+                var events = await CommittedAuditCleanup.CountAsync(data.Users, data.Clients);
+                using var unchanged = await SendAsync(http, HttpMethod.Put, $"/api/appointments/{id}", tokens["complet"], Body(ten, full, notes: " Note modifiée ", version: version));
+                var same = await ReadAsync(unchanged);
+                Assert.Equal(HttpStatusCode.OK, unchanged.StatusCode);
+                Assert.Equal(version, same.GetProperty("version").GetUInt32());
+                Assert.Equal(root.GetProperty("updatedAtUtc").GetString(), same.GetProperty("updatedAtUtc").GetString());
+                Assert.Equal("B3 ecriture", same.GetProperty("updatedByDisplayName").GetString());
+                Assert.Equal(events, await CommittedAuditCleanup.CountAsync(data.Users, data.Clients));
+                Assert.Equal(version, (uint)await CommittedTestData.CountAsync("SELECT xmin::text::bigint FROM appointments.appointments WHERE id = @i", ("i", id)));
+                checks++;
             }
 
             await Expect(HttpStatusCode.BadRequest, "version_required", HttpMethod.Put, $"/api/appointments/{id}", "ecriture", Body(ten, full));

@@ -130,11 +130,13 @@ internal static class AuditEndpoints
     private static AuditEventResponse ToResponse(AuditEntryView view, IReadOnlyList<AuditChange> changes, IReadOnlyDictionary<Guid, string> names, AppointmentSettings settings)
     {
         var e = view.Event;
+        // 03-D3 : une création n'a pas de valeur précédente — aucun libellé « avant » (pas de « Non attribué → … »).
+        var created = e.Action is AuditActions.ClientCreated or AuditActions.AppointmentCreated;
         return new AuditEventResponse(
             e.Id, e.OccurredAtUtc, e.ActorUserId, view.ActorDisplayName, e.Module, e.Action, e.EntityType, e.EntityId,
             [.. changes.Select(c => new AuditChangeResponse(
                 c.Field, c.Masked, c.Masked ? null : c.Old, c.Masked ? null : c.New,
-                c.Masked ? null : Display(c.Field, c.Old, names, settings), c.Masked ? null : Display(c.Field, c.New, names, settings)))]);
+                c.Masked || created ? null : Display(c.Field, c.Old, names, settings), c.Masked ? null : Display(c.Field, c.New, names, settings)))]);
     }
 
     /// <summary>Libellé d'une valeur conservée ; <c>null</c> pour une valeur absente (création, aucun responsable → « Non attribué »).</summary>

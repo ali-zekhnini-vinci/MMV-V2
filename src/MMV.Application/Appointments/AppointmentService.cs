@@ -288,9 +288,17 @@ public sealed class AppointmentService(IAppointmentStore store, AppointmentSetti
             }
         }
 
+        // 03-D3 : corps identique au rendez-vous courant → rien n'est écrit (ni auteur ni date de dernière modification,
+        // version xmin inchangée, aucun événement d'audit) ; la transaction est abandonnée et l'état courant renvoyé.
         var before = AppointmentAuditChanges.Snapshot(appointment);
+        var categories = AppointmentAuditChanges.Updated(before, value.ToDetails());
+        if (categories.Count == 0)
+        {
+            return await SuccessAsync(appointment.Id, cancellationToken);
+        }
+
         appointment.Update(value.ToDetails(), userId, now);
-        foreach (var (action, changes) in AppointmentAuditChanges.Updated(before, value.ToDetails()))
+        foreach (var (action, changes) in categories)
         {
             Record(appointment.ClientId, appointment.Id, action, changes, userId, now);
             // Changement de client : la sortie du rendez-vous figure aussi au dossier d'origine.

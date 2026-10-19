@@ -73,13 +73,40 @@ public sealed class AuditRecordingTests
 
         Assert.Equal(ClientWriteStatus.ValidationFailed, (await service.CreateAsync(Input(firstName: ""), Author, CancellationToken.None)).Status);
         Assert.Equal(ClientWriteStatus.VersionConflict, (await service.UpdateAsync(client.Id, Input(firstName: "Autre"), client.Version + 1, Author, CancellationToken.None)).Status);
-        // Modification sans changement : enregistrée (auteur, date) mais aucune action à journaliser.
+        // Modification sans changement (03-D3) : rien n'est enregistré ni journalisé (voir le test dédié ci-dessous).
         Assert.Equal(ClientWriteStatus.Success, (await service.UpdateAsync(client.Id, Input(), client.Version, Author, CancellationToken.None)).Status);
         // Écriture concurrente détectée À L'ENREGISTREMENT : l'événement préparé est abandonné avec elle (en dernier :
         // le double partage l'objet modifié, là où EF vide son suivi).
         store.FailNextSave = true;
         Assert.Equal(ClientWriteStatus.VersionConflict, (await service.UpdateAsync(client.Id, Input(firstName: "Autre"), client.Version, Author, CancellationToken.None)).Status);
         Assert.Empty(store.Audit.Committed);
+    }
+
+    [Fact]
+    public async Task ClientUpdate_WithoutRealChange_WritesNothing_AndReturnsTheCurrentClient()
+    {
+        var store = new InMemoryClientStore(_clock);
+        var service = new ClientService(store, _clock, store.Audit);
+        var client = store.Seed("Jeanne", "Martin", city: "Bruxelles");
+        var (version, updatedAt, updatedBy, saves) = (client.Version, client.UpdatedAtUtc, client.UpdatedByUserId, store.SaveCount);
+        _clock.Advance(TimeSpan.FromMinutes(5));
+
+        // Même saisie, espaces superflus compris : identique après normalisation.
+        var result = await service.UpdateAsync(
+            client.Id, new ClientInput("  Jeanne ", "Martin  ", null, null, null, null, " Bruxelles", null, null), version, Author, CancellationToken.None);
+
+        Assert.Equal(ClientWriteStatus.Success, result.Status);
+        Assert.Same(client, result.Client);
+        Assert.Equal((version, updatedAt, updatedBy), (result.Client!.Version, result.Client.UpdatedAtUtc, result.Client.UpdatedByUserId));
+        Assert.Equal(saves, store.SaveCount);
+        Assert.Empty(store.Audit.Committed);
+
+        // Un seul champ réellement modifié : enregistrement et événement comme avant.
+        var changed = await service.UpdateAsync(client.Id, new ClientInput("Jeanne", "Martin", null, null, null, null, "Liège", null, null), version, Author, CancellationToken.None);
+        Assert.Equal(ClientWriteStatus.Success, changed.Status);
+        Assert.NotEqual(version, changed.Client!.Version);
+        Assert.Equal((Author, _clock.GetUtcNow()), (changed.Client.UpdatedByUserId, changed.Client.UpdatedAtUtc));
+        Assert.Equal(["city"], Assert.Single(store.Audit.Committed).Changes.Select(c => c.Field));
     }
 
     private sealed class AppointmentBench
@@ -195,12 +222,35 @@ public sealed class AuditRecordingTests
         Assert.Equal(AppointmentWriteStatus.SlotConflict, (await bench.Service.CreateAsync(bench.Input(bench.Alice, AppointmentBench.At(10, 15)), Author, CancellationToken.None)).Status);
         Assert.Equal(AppointmentWriteStatus.ValidationFailed, (await bench.Service.CreateAsync(bench.Input(bench.Alice, AppointmentBench.At(10), 31), Author, CancellationToken.None)).Status);
         Assert.Equal(AppointmentWriteStatus.VersionConflict, (await bench.Service.CancelAsync(existing.Id, existing.Version + 1, null, Author, CancellationToken.None)).Status);
-        // Aucune modification réelle : rien à journaliser.
-        var same = (await bench.Service.UpdateAsync(existing.Id, bench.Input(bench.Alice, AppointmentBench.At(10)), existing.Version, Author, CancellationToken.None)).Appointment!.Appointment;
+        // Aucune modification réelle : rien à enregistrer ni à journaliser (03-D3, test dédié ci-dessous).
+        var same =(await bench.Service.UpdateAsync(existing.Id, bench.Input(bench.Alice, AppointmentBench.At(10)), existing.Version, Author, CancellationToken.None)).Appointment!.Appointment;
         // Conflit détecté à la validation de la transaction : l'événement préparé disparaît avec elle.
         bench.Store.FailNextCommit = true;
         Assert.Equal(AppointmentWriteStatus.VersionConflict, (await bench.Service.UpdateAsync(same.Id, bench.Input(bench.Alice, AppointmentBench.At(12)), same.Version, Author, CancellationToken.None)).Status);
         Assert.Empty(bench.Store.Audit.Committed);
+    }
+
+    [Fact]
+    public async Task AppointmentUpdate_WithoutRealChange_CommitsNothing_EvenOnceStarted()
+    {
+        var bench = new AppointmentBench(_clock);
+        var appointment = (await bench.Service.CreateAsync(bench.Input(bench.Alice, AppointmentBench.At(10), notes: "Note"), Author, CancellationToken.None)).Appointment!.Appointment;
+        bench.Store.Audit.Committed.Clear();
+        var (version, updatedAt, updatedBy, commits) = (appointment.Version, appointment.UpdatedAtUtc, appointment.UpdatedByUserId, bench.Store.CommitCount);
+        var other = Guid.Parse("0199a000-0000-7000-8000-00000000000b");
+
+        foreach (var advance in new[] { TimeSpan.FromHours(1), TimeSpan.FromDays(1) })
+        {
+            // Avant le début, puis rendez-vous commencé : corps identique (notes à normaliser comprises) → succès sans écriture.
+            _clock.Advance(advance);
+            var result = await bench.Service.UpdateAsync(appointment.Id, bench.Input(bench.Alice, AppointmentBench.At(10), notes: "  Note "), version, other, CancellationToken.None);
+
+            Assert.Equal(AppointmentWriteStatus.Success, result.Status);
+            var current = result.Appointment!.Appointment;
+            Assert.Equal((version, updatedAt, updatedBy), (current.Version, current.UpdatedAtUtc, current.UpdatedByUserId));
+            Assert.Equal(commits, bench.Store.CommitCount);
+            Assert.Empty(bench.Store.Audit.Committed);
+        }
     }
 
     [Fact]
@@ -371,7 +421,9 @@ public sealed class AuditEndpointsTests : IDisposable
         Assert.Equal("30 min", created["durationMinutes"]);
         Assert.Equal("Conseil / Devis", created["reasonCode"]);
         Assert.Equal("Alice Opticienne", created["responsibleUserId"]);
-        var change = Assert.Single(items[0].GetProperty("changes").EnumerateArray());
+        // 03-D3 : une création n'a pas de libellé « avant » (pas de « Non attribué → Alice Opticienne »).
+        Assert.All(items[1].GetProperty("changes").EnumerateArray(), c => Assert.Equal(JsonValueKind.Null, c.GetProperty("oldDisplay").ValueKind));
+        var change =Assert.Single(items[0].GetProperty("changes").EnumerateArray());
         Assert.Equal(("Alice Opticienne", "Non attribué"), (change.GetProperty("oldDisplay").GetString(), change.GetProperty("newDisplay").GetString()));
         var masked = items[2].GetProperty("changes").EnumerateArray().ToList();
         Assert.All(masked, c =>
