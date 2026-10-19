@@ -190,6 +190,22 @@ describe("liste des clients", () => {
     assert.equal(screen.queryByText(/a été retiré\(e\) des listes actives/), null);
   });
 
+  test("O-03-43 : la confirmation d'une modification s'affiche sur la fiche atteinte, puis disparaît en la quittant", async () => {
+    const { user } = await openClients();
+    await user.click(await screen.findByRole("button", { name: "Consulter BENALI Omar" }));
+    await screen.findByRole("heading", { name: "BENALI Omar", level: 1 });
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    const city = await screen.findByLabelText("Ville");
+    await user.clear(city);
+    await user.type(city, "Fès");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await screen.findByRole("heading", { name: "BENALI Omar", level: 1 });
+    await screen.findByText("Modifications enregistrées");
+    await user.click(screen.getByRole("button", { name: "Retour à la liste" }));
+    await screen.findByRole("table");
+    assert.equal(screen.queryByText("Modifications enregistrées"), null);
+  });
+
   test("conflit de concurrence à l'archivage : message métier, données actualisées", async () => {
     const { user, api } = await openClients();
     await screen.findByRole("table");

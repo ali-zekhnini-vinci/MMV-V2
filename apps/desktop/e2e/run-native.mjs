@@ -19,6 +19,10 @@ const outDir = resolve(option("--out", "."));
 // Préfixe des captures : P02_native (phase 02, défaut) ou P03_native (scénarios clients-*, phase 03-A3) ;
 // P03B3_native (rdv-b3*), P03C_native (parcours-03c, matrice-03c), P03D_native (parcours-03d1).
 const prefix = option("--prefix", "P02_native");
+// 03-D3 : banc isolé à côté des processus ouverts par le propriétaire (son MMV.Api garde 7267, son mmv-desktop reste
+// ouvert) : origine de l'API de test et nom du processus de la fenêtre testée (exécutable renommé).
+const API = option("--api", "https://localhost:7267");
+const windowProcess = option("--process", "mmv-desktop");
 const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
 
 const log = (step, detail = "") => console.log(`${new Date().toISOString()} ${step}${detail ? ` — ${detail}` : ""}`);
@@ -33,7 +37,7 @@ function capture(name, { width = 0, height = 0 } = {}) {
   const extra = width ? ["-ClientWidth", String(width), "-ClientHeight", String(height)] : [];
   const output = execFileSync(
     "powershell.exe",
-    ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, "-Process", "mmv-desktop", "-Out", file, "-ClientOnly", ...extra],
+    ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, "-Process", windowProcess, "-Out", file, "-ClientOnly", ...extra],
     { encoding: "utf8" },
   ).trim();
   log("CAPTURE", output.replace(outDir, "<EVIDENCE>"));
@@ -43,7 +47,7 @@ function capture(name, { width = 0, height = 0 } = {}) {
 /** Vraies frappes système (SendKeys) vers la fenêtre Tauri. */
 function osKeys(keys, repeat = 1) {
   execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", resolve("e2e/send-keys.ps1"),
-    "-Process", "mmv-desktop", "-Keys", keys, "-Repeat", String(repeat)]);
+    "-Process", windowProcess, "-Keys", keys, "-Repeat", String(repeat)]);
 }
 
 /** Zoom WebView2 réel (Ctrl++ / Ctrl+- du moteur : paliers 100, 110, 125, 150 %…), vérifié par devicePixelRatio. */
@@ -117,7 +121,7 @@ async function openClients(page) {
 
 /** Autre poste : modification directe sur l'API réelle avec un autre compte éphémère (jeton jamais affiché). */
 async function otherPostUpdate(account, search, city) {
-  const base = "https://localhost:7267";
+  const base = API;
   const json = { "Content-Type": "application/json" };
   const login = await fetch(`${base}/api/auth/login`, { method: "POST", headers: json, body: JSON.stringify({ userName: account.userName, password: account.password }) });
   const auth = { Authorization: `Bearer ${(await login.json()).accessToken}` };
@@ -137,7 +141,6 @@ async function otherPostUpdate(account, search, city) {
 // masqué, capacité d'accueil 1), données FICTIVES validées sur mmv_v2_test par l'outil jetable désigné par
 // MMV_E2E_TOOL (comptes b3n-*, clients « Fictif-B3N-* »), nettoyées après la passe.
 const J = JSON.stringify;
-const API = "https://localhost:7267";
 
 // 03-C : une seule session API par compte pendant le scénario (la connexion est limitée à 10 tentatives par minute
 // et par adresse) ; toutes fermées à la fin du scénario (apiLogoutAll).
@@ -253,7 +256,7 @@ function targetDay(offset) {
 /** Zone cliente de la fenêtre Tauri (résolution d'essai), sans capture. */
 function resize(width, height) {
   const output = execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", resolve("e2e/capture-window.ps1"),
-    "-Process", "mmv-desktop", "-Out", "unused.png", "-ResizeOnly", "-ClientWidth", String(width), "-ClientHeight", String(height)], { encoding: "utf8" }).trim();
+    "-Process", windowProcess, "-Out", "unused.png", "-ResizeOnly", "-ClientWidth", String(width), "-ClientHeight", String(height)], { encoding: "utf8" }).trim();
   check(output === `client ${width}x${height}`, `fenêtre ${width}×${height} (${output})`);
 }
 
@@ -360,7 +363,230 @@ const pickerText = (label) => `(${pickerButton(label)})?.textContent.trim()`;
 const tabByName = (label) => `[...document.querySelectorAll('[role=tab]')].find(t => t.textContent.trim() === ${J(label)})`;
 const historyRows = "[...document.querySelectorAll('section.client-rdv tbody tr')]";
 
+// ——— 03-D3 : historique des actions (journal d'audit 0005 appliqué) ———
+/** Écriture ou lecture par l'API réelle avec la session du compte (jeton jamais affiché) : statut et corps. */
+async function apiSend(account, method, path, body) {
+  if (!apiSessions.has(account.userName)) await apiGet(account, "/api/clients?pageSize=1");
+  const headers = { ...apiSessions.get(account.userName), ...(body ? { "Content-Type": "application/json" } : {}) };
+  const response = await fetch(`${API}${path}`, { method, headers, body: body ? J(body) : undefined });
+  const textBody = await response.text();
+  return { status: response.status, json: textBody ? JSON.parse(textBody) : null };
+}
+
+const auditItems = "[...document.querySelectorAll('ol.client-history__list > li')]";
+/** Entrées affichées de l'onglet Historique : action, auteur, champs. */
+const readHistory = (page) =>
+  page.evaluate(`${auditItems}.map(li => ({
+    action: li.querySelector('.client-history__action')?.textContent.trim(),
+    actor: li.querySelector('.client-history__actor')?.textContent.trim(),
+    changes: [...li.querySelectorAll('.client-history__change')].map(c => c.textContent.trim()),
+    open: !!li.querySelector('.client-history__open'),
+  }))`);
+
+async function openTab(page, label) {
+  await page.waitFor(`!!${tabByName(label)}`, { label: `onglet ${label}` });
+  // Onglets Radix : activation à l'appui du bouton de la souris (mousedown), pas au clic synthétique.
+  await click(page, `(() => { const t = ${tabByName(label)}; t?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 })); return t; })()`, `onglet ${label}`);
+}
+
+async function openFiche(page, first, upper) {
+  await openClients(page);
+  await page.evaluate("document.querySelector('.clients-search input').focus(); document.querySelector('.clients-search input').select()");
+  await page.type(`${first} ${upper}`);
+  await click(page, `(() => { const r = [...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(first)})); return r?.querySelector('button[aria-label^="Consulter"]'); })()`, "Consulter la fiche");
+  await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(first)})`, { label: "fiche client" });
+}
+
 const scenarios = {
+  /**
+   * 03-D3 — historique des actions sur PostgreSQL 18 réel (0005 appliquée) : Tauri → HTTPS → MMV.Api → PostgreSQL →
+   * audit.events, données fictives d3n-* / « Fictif-D3N-* » sur mmv_v2_test (outil jetable), nettoyées après. Création,
+   * modification, enregistrement sans changement (aucun événement), modification par un autre poste (auteur réel),
+   * conflit 409 (aucun événement), archivage, réactivation, rendez-vous créé, conflit horaire refusé (aucun événement),
+   * glisser-déposer, changement de responsable, annulation, rétablissement ; chronologie, auteurs et champs relus à
+   * l'écran ET par l'API ; filtres ; refus sans audit.read. Options : --theme, --size, --zoom, --day-offset,
+   * --first-name, --time, --captures all|key, --api, --process.
+   */
+  async "historique-03d3"(page) {
+    const { agent, other, clientLastName: last } = credentials();
+    const theme = option("--theme", "light");
+    const [width, height] = option("--size", "1920x1080").split("x").map(Number);
+    const zoom = Number(option("--zoom", "1"));
+    const day = targetDay(Number(option("--day-offset", "3")));
+    const first = option("--first-name", "Journal");
+    const time = option("--time", "10:00");
+    const all = option("--captures", "all") === "all";
+    const tag = `${theme}_${width}x${height}_z${Math.round(zoom * 100)}`;
+    const shot = (name, key = false) => (all || key) && capture(`d3_${tag}_${name}`);
+    const upper = last.toUpperCase();
+    const who = `${upper} ${first}`;
+    const [hh, mm] = time.split(":").map(Number);
+    const later = (minutes) => `${String(hh + Math.floor((mm + minutes) / 60)).padStart(2, "0")}:${String((mm + minutes) % 60).padStart(2, "0")}`;
+    log("PARCOURS 03-D3", `${tag}, API ${API}, jour ${day.iso} ${time}, client ${who}`);
+
+    resize(width, height);
+    await signIn(page, agent);
+    await setZoom(page, zoom);
+    await setTheme(page, theme);
+
+    // 1. Création du client (Ctrl+S).
+    await openClients(page);
+    await click(page, buttonByText("Nouveau client"), "Nouveau client");
+    await page.waitFor("!!document.querySelector('form')", { label: "formulaire client" });
+    await fillField(page, "Prénom", first);
+    await fillField(page, "Nom", last);
+    await fillField(page, "Téléphone", "0470 00 00 00");
+    await fillField(page, "Ville", "Namur");
+    osKeys("^s");
+    await page.waitFor(hasText("Client créé"), { label: "client créé (Ctrl+S)" });
+    await click(page, buttonByText("Voir la fiche"), "Voir la fiche");
+    await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(first)})`, { label: "fiche" });
+    const client = (await apiGet(agent, `/api/clients?q=${encodeURIComponent(last)}&status=all&pageSize=100`)).items.find((c) => c.firstName === first);
+    check(!!client, `API : client enregistré (${client?.reference})`);
+    const events = async () => (await apiGet(agent, `/api/audit/clients/${client.id}?pageSize=100`));
+    check((await events()).totalCount === 1, "API : 1 événement (création)");
+
+    // 2. Modification réelle (téléphone et ville).
+    await click(page, buttonByText("Modifier"), "Modifier");
+    await page.waitFor("!!document.querySelector('form')", { label: "formulaire de modification" });
+    await fillField(page, "Téléphone", "0470 11 22 33");
+    await fillField(page, "Ville", "Liège");
+    await click(page, buttonByText("Enregistrer"), "Enregistrer");
+    await page.waitFor(hasText("Modifications enregistrées"), { label: "modification enregistrée" });
+    const afterEdit = (await apiSend(agent, "GET", `/api/clients/${client.id}`)).json;
+    check((await events()).totalCount === 2, "API : 2 événements");
+
+    // 3. Enregistrement SANS changement : succès affiché, aucune écriture (version, date) ni événement.
+    await click(page, buttonByText("Modifier"), "Modifier (sans changement)");
+    await page.waitFor("!!document.querySelector('form')", { label: "formulaire de modification" });
+    await click(page, buttonByText("Enregistrer"), "Enregistrer sans changement");
+    await page.waitFor(hasText("Modifications enregistrées"), { label: "succès cohérent" });
+    const unchanged = (await apiSend(agent, "GET", `/api/clients/${client.id}`)).json;
+    check(unchanged.version === afterEdit.version && unchanged.updatedAtUtc === afterEdit.updatedAtUtc,
+      `API : version ${unchanged.version} et date de modification inchangées`);
+    check((await events()).totalCount === 2, "API : aucun événement pour l'enregistrement sans changement");
+
+    // 4. Autre poste (compte sans audit.read) : modification réelle ; puis l'écran, périmé, est refusé (409) sans événement.
+    await click(page, buttonByText("Modifier"), "Modifier (formulaire ouvert avant l'autre poste)");
+    await page.waitFor("!!document.querySelector('form')", { label: "formulaire de modification" });
+    const otherPut = await apiSend(other, "PUT", `/api/clients/${client.id}`, {
+      firstName: unchanged.firstName, lastName: unchanged.lastName, birthDate: unchanged.birthDate, phone: unchanged.phone, email: unchanged.email,
+      addressLine: unchanged.addressLine, city: "Mons", postalCode: unchanged.postalCode, notes: unchanged.notes, version: unchanged.version,
+    });
+    check(otherPut.status === 200, "autre poste : ville modifiée (200)");
+    await fillField(page, "Code postal", "4000");
+    await click(page, buttonByText("Enregistrer"), "Enregistrer (version périmée)");
+    await page.waitFor(hasText("modifié depuis un autre poste"), { label: "conflit 409 affiché" });
+    shot("01_conflit_client");
+    check((await events()).totalCount === 3, "API : 3 événements (le refus 409 n'en ajoute aucun)");
+    await click(page, inDialog("Recharger la fiche"), "Recharger la fiche");
+    await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(first)}) && !!${buttonByText("Archiver")}`, { label: "fiche rechargée" });
+
+    // 5. Archivage puis réactivation.
+    await click(page, buttonByText("Archiver"), "Archiver");
+    await click(page, inDialog("Archiver le client"), "Archiver le client");
+    await page.waitFor(hasText("Client archivé"), { label: "client archivé" });
+    await click(page, buttonByText("Réactiver"), "Réactiver");
+    await click(page, inDialog("Réactiver le client"), "Réactiver le client");
+    await page.waitFor(hasText("Client réactivé"), { label: "client réactivé" });
+    await page.waitFor(`!!${buttonByText("Archiver")}`, { label: "client actif" });
+
+    // 6. Rendez-vous depuis la fiche ; tentative en conflit horaire refusée (aucun événement).
+    await click(page, buttonByText("Prendre un rendez-vous"), "Prendre un rendez-vous");
+    await page.waitFor(`document.querySelector('aside button[aria-haspopup="listbox"]')?.textContent.includes(${J(first)})`, { label: "client présélectionné" });
+    await fillAppointment(page, { date: day.fr, time, duration: "30 minutes", reason: "Conseil / Devis", responsible: "D3N Responsable Un", notes: "Note fictive D3" });
+    await click(page, inAside("Créer"), "Créer");
+    await page.waitFor(hasText("Rendez-vous créé"), { label: "rendez-vous créé" });
+    let mine = (await dayList(agent, day.iso)).find((i) => i.clientId === client.id);
+    check(mine && storeWall(mine.startsAtUtc) === time, `API : rendez-vous ${time} ${STORE_TZ}`);
+    const before = (await events()).totalCount;
+    await click(page, buttonByText("Nouveau rendez-vous"), "Nouveau rendez-vous (même responsable, créneau chevauchant)");
+    await page.waitFor("!!document.querySelector('aside form')", { label: "formulaire" });
+    await fillAppointment(page, { client: first, last, date: day.fr, time: later(15), duration: "30 minutes", reason: "Conseil / Devis", responsible: "D3N Responsable Un" });
+    await click(page, inAside("Créer"), "Créer (conflit)");
+    await page.waitFor(hasText("Conflit horaire"), { label: "conflit horaire refusé" });
+    shot("02_conflit_horaire");
+    check((await events()).totalCount === before, "API : le conflit horaire n'ajoute aucun événement");
+    await abandonForm(page);
+
+    // 7. Déplacement par glisser-déposer (+1 h), puis changement de responsable.
+    await page.waitFor(`!!${eventFor(who)}`, { label: "rendez-vous visible" });
+    await dragEvent(page, who, 2);
+    await page.waitFor(hasText("Rendez-vous déplacé"), { label: "glisser-déposer accepté", timeoutMs: 15000 });
+    await page.sleep(800);
+    mine = (await dayList(agent, day.iso)).find((i) => i.id === mine.id);
+    check(storeWall(mine.startsAtUtc) === later(60), `API : déplacé à ${later(60)}`);
+    await openEvent(page, who);
+    await click(page, inAside("Modifier"), "Modifier le rendez-vous");
+    await page.waitFor("!!document.querySelector('aside[aria-label=\"Modifier le rendez-vous\"]')", { label: "formulaire de modification" });
+    await setSelect(page, "Responsable", "D3N Responsable Deux");
+    await click(page, inAside("Enregistrer"), "Enregistrer");
+    await page.waitFor(hasText("Rendez-vous modifié"), { label: "responsable changé" });
+    mine = (await dayList(agent, day.iso)).find((i) => i.id === mine.id);
+    check(mine.responsibleDisplayName === "D3N Responsable Deux", "API : responsable Deux");
+
+    // 8. Annulation (motif saisi) puis rétablissement.
+    await click(page, inAside("Annuler le rendez-vous"), "Annuler le rendez-vous");
+    await page.waitFor("!!document.querySelector('[role=alertdialog] textarea')", { label: "confirmation d'annulation" });
+    await page.evaluate("document.querySelector('[role=alertdialog] textarea').focus()");
+    await page.type("Motif fictif D3");
+    await click(page, inDialog("Annuler le rendez-vous"), "confirmation de l'annulation");
+    await page.waitFor(hasText("Rendez-vous annulé"), { label: "annulation" });
+    await click(page, inAside("Rétablir le rendez-vous"), "Rétablir le rendez-vous");
+    await page.waitFor(hasText("Rendez-vous rétabli"), { label: "rétablissement" });
+
+    // 9. Fiche → Historique : chronologie, auteurs réels, champs ; vérité serveur.
+    await click(page, `[...document.querySelectorAll('aside button')].find(b => b.textContent.trim() === 'Voir la fiche client')`, "Voir la fiche client");
+    await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(first)}) && !!${buttonByText("Prendre un rendez-vous")}`, { label: "retour sur la fiche" });
+    await openTab(page, "Historique");
+    await page.waitFor(`${auditItems}.length === 10`, { label: "10 actions affichées" });
+    const rows = await readHistory(page);
+    rows.forEach((r, i) => log("HISTORIQUE", `${i + 1}. ${r.action} — ${r.actor} — [${r.changes.join(" | ")}]${r.open ? " — Voir le rendez-vous" : ""}`));
+    const expected = ["Rendez-vous rétabli", "Rendez-vous annulé", "Changement de responsable", "Rendez-vous déplacé", "Rendez-vous créé",
+      "Réactivation du dossier", "Archivage du dossier", "Modification des informations", "Modification des informations", "Création du dossier client"];
+    check(J(rows.map((r) => r.action)) === J(expected), "chronologie : du plus récent au plus ancien, 10 actions réussies");
+    check(rows.every((r, i) => r.actor === (i === 7 ? other.displayName : agent.displayName)), `auteurs réels (dont « ${other.displayName} » pour la modification de l'autre poste)`);
+    check(J(rows[8].changes) === J(["Téléphone", "Ville"]) && J(rows[7].changes) === J(["Ville"]), "champs modifiés cités, valeurs personnelles masquées");
+    check(rows[2].changes.some((c) => c === "Responsable : D3N Responsable Un → D3N Responsable Deux"), "changement de responsable : Un → Deux");
+    check(rows[3].changes.some((c) => c.startsWith("Date et heure :") && c.includes("→")), `déplacement : ${rows[3].changes.join(" ; ")}`);
+    check(J(rows[1].changes) === J(["Motif d'annulation"]), "motif d'annulation masqué");
+    check(rows[4].changes.includes("Responsable : D3N Responsable Un") && rows[4].changes.includes("Notes"), "création : responsable nommé, notes masquées");
+    check(rows.slice(0, 5).every((r) => r.open) && rows.slice(5).every((r) => !r.open), "« Voir le rendez-vous » sur les seules actions de rendez-vous");
+    const served = await events();
+    check(served.totalCount === 10 && J(served.items.map((e) => e.actorDisplayName)) === J(rows.map((r) => r.actor)), "API : 10 événements, mêmes auteurs dans le même ordre");
+    const instants = served.items.map((e) => Date.parse(e.occurredAtUtc));
+    check(instants.every((t, i) => i === 0 || instants[i - 1] >= t), "API : horodatages décroissants");
+    const listed = await page.evaluate("document.querySelector('ol.client-history__list').innerText");
+    check(["0470", "Namur", "Liège", "Mons", "4000", "Note fictive", "Motif fictif"].every((v) => !listed.includes(v)), "aucune valeur personnelle dans l'historique");
+    check(await page.noHorizontalScroll(), "historique : aucun défilement horizontal");
+    shot("03_historique", true);
+    await setSelect(page, "Type d'action", "Rendez-vous");
+    await page.waitFor(`${auditItems}.length === 5`, { label: "filtre Rendez-vous : 5 actions" });
+    await setSelect(page, "Type d'action", "Dossier client");
+    await page.waitFor(`${auditItems}.length === 5 && ${auditItems}.every(li => !li.querySelector('.client-history__open'))`, { label: "filtre Dossier client : 5 actions" });
+    shot("04_historique_filtre_dossier");
+    await setSelect(page, "Période", "7 derniers jours");
+    await page.waitFor(`${auditItems}.length === 5`, { label: "période 7 jours : 5 actions" });
+
+    // 10. Compte sans audit.read : onglet absent, lecture refusée par le serveur (403).
+    const refused = await apiSend(other, "GET", `/api/audit/clients/${client.id}`);
+    check(refused.status === 403, `API : lecture de l'historique refusée sans audit.read (${refused.status})`);
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+    await signIn(page, other);
+    await setZoom(page, zoom);
+    await openFiche(page, first, upper);
+    await page.waitFor(`!!${tabByName("Informations")}`, { label: "onglets de la fiche" });
+    check(!(await page.evaluate(`!!${tabByName("Historique")}`)), "onglet Historique absent sans audit.read");
+    shot("05_sans_audit_read", true);
+    check(Math.abs((await page.zoomFactor()) - zoom) < 0.01, `zoom ${Math.round(zoom * 100)} % effectif`);
+    await page.evaluate(`document.querySelector('[aria-label="Se déconnecter"]').click()`);
+    await page.waitFor(hasText("Bienvenue,"), { label: "déconnexion" });
+    await apiLogoutAll();
+    log("FIN", tag);
+  },
+
+
   /**
    * 03-D1 — sélecteurs de date et d'heure, préremplissage depuis la grille, historique des rendez-vous sur la fiche,
    * corrections O-03-33 (focus après Échap), O-03-34 (barre d'état étroite), O-03-35 (panneau superposé), O-03-36
@@ -1288,7 +1514,8 @@ if (!scenarios[scenario]) {
   process.exit(1);
 }
 
-const page = await connect(port);
+// 03-D3 : exécutable construit (ressources embarquées) servi par http://tauri.localhost ; défaut : serveur Vite de `tauri dev`.
+const page = await connect(port, option("--page-url", "http://localhost:1420"));
 try {
   log("SCÉNARIO", scenario);
   await scenarios[scenario](page);

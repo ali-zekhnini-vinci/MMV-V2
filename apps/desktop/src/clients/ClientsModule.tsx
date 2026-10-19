@@ -20,9 +20,15 @@ export function ClientsModule() {
   const [listState, setListState] = useState<ClientListState>(INITIAL_LIST_STATE);
   const { pathname } = useLocation();
   const [scoped, setScoped] = useState<ScopedClientNotice | null>(null);
+  const [shownPath, setShownPath] = useState(pathname);
   // O-03-15 : un message de confirmation n'appartient qu'à l'écran pour lequel il a été émis ; il est
   // effacé dès que l'écran change (ajustement pendant le rendu, sans effet ni affichage intermédiaire).
-  if (scoped !== null && scoped.path !== pathname) setScoped(null);
+  // O-03-43 (03-D3) : un message destiné à l'écran SUIVANT (modification → fiche) est émis avant la navigation, que
+  // React Router mène en transition : il n'est effacé qu'au changement d'écran effectif, jamais avant.
+  if (shownPath !== pathname) {
+    setShownPath(pathname);
+    if (scoped !== null && scoped.path !== pathname) setScoped(null);
+  }
   const notice = scoped !== null && scoped.path === pathname ? scoped : null;
   const setNotice = useCallback(
     (next: ClientNotice | null, path?: string) => setScoped(next === null ? null : { ...next, path: path ?? pathname }),
