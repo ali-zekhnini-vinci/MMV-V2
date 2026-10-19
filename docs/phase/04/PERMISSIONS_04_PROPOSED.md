@@ -91,3 +91,7 @@ Notes : (1) `system.admin` n'implique rien ; un administrateur qui exerce aussi 
 | voir les événements optiques de l'historique | `audit.read` + `optical.read` |
 
 *Précision (19/10/2026) :* la « matrice d'affichage » ci-dessus vaut à partir de l'activation réelle (04-C). Pendant 04-A / 04-B, les sessions sans `optical.read` (tous les comptes réels) conservent l'onglet reporté et l'entrée `later` actuels (O-04-16, [`PREPARATION_04A.md`](PREPARATION_04A.md) § 2).
+
+## Amendement daté — 19/10/2026 (04-A)
+
+Aucune permission créée ni attribuée. Le banc 04-A affiche le prototype selon des **profils simulés** (`apps/desktop/src/bench/benchProfiles.ts`) recopiant la matrice indicative ci-dessus, lus par le seul double en mémoire ; l'application réelle ignore ces noms (une session qui les porterait garde l'onglet reporté et l'entrée `later`, test `src/optical/realAppIsolation.test.tsx`). La matrice reste à valider compte par compte selon les profils réels du magasin (D-04-13.c), sans déduire un accès universel.

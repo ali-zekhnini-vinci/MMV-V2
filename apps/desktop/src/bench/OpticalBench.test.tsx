@@ -1,0 +1,370 @@
+// @vitest-environment jsdom
+// Parcours 04-A sur le BANC ISOLÉ (prototype, données fictives, droits simulés) : J-04-01, J-04-02, J-04-04, J-04-06,
+// J-04-07, J-04-08, J-04-09 (clavier), états du Lot 3 et états complémentaires. La garde réseau du banc est installée :
+// aucune requête ne sort (preuve en fin de chaque test). Ce ne sont PAS des preuves serveur ni natives.
+import assert from "node:assert/strict";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, test } from "vitest";
+import { type BenchNetwork, installBenchNetwork } from "./benchNetwork.ts";
+import { createBenchClients } from "./benchSeed.ts";
+import { OpticalBench } from "./OpticalBench.tsx";
+
+let network: BenchNetwork | null = null;
+
+afterEach(() => {
+  cleanup();
+  network?.restore();
+  network = null;
+});
+
+async function openBench(route: string, profileId = "all") {
+  window.innerWidth = 1440;
+  const clients = createBenchClients();
+  network = installBenchNetwork(() => clients);
+  const user = userEvent.setup();
+  render(<OpticalBench clients={clients} network={network} initialRoute={route} profileId={profileId} />);
+  await screen.findByRole("note", { name: "Banc de démonstration" });
+  return { user, network };
+}
+
+const tab = (name: string) => screen.getByRole("tab", { name });
+
+async function openRecord(user: ReturnType<typeof userEvent.setup>, reference: string) {
+  await user.click(await screen.findByRole("button", { name: new RegExp(`^${reference}`) }));
+  return screen.findByRole("heading", { level: 1, name: new RegExp(reference) });
+}
+
+function assertNoNetwork() {
+  assert.deepEqual(network?.blocked, [], "aucun appel réseau ne doit être émis par le banc");
+}
+
+describe("banc 04-A — isolement", () => {
+  test("bannière permanente « BANC DE DÉMONSTRATION », décisions PROPOSED, aucun appel réseau", async () => {
+    await openBench("/");
+    const banner = screen.getByRole("note", { name: "Banc de démonstration" });
+    assert.match(banner.textContent ?? "", /BANC DE DÉMONSTRATION ET DE TEST 04-A — PROTOTYPE/);
+    assert.match(banner.textContent ?? "", /PROPOSED/);
+    assert.match(banner.textContent ?? "", /Ordonnances — phase ultérieure/);
+    await screen.findByRole("heading", { name: "Banc 04-A — dossier optique (prototype)" });
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-01 — depuis la fiche client", () => {
+  test("onglet Dossier optique : deux sections distinctes vides, choix explicite du type, brouillon, retour à l'onglet", async () => {
+    const { user } = await openBench("/clients/cli-fictif-3");
+    await screen.findByRole("heading", { level: 1, name: "FICTIF-CHARLIE Noa" });
+    assert.equal(screen.queryByRole("tab", { name: "Ordonnances" }), null);
+    await user.click(tab("Dossier optique"));
+    const prescriptions = await screen.findByRole("region", { name: /Ordonnances médicales/ });
+    const measurements = screen.getByRole("region", { name: /Mesures magasin/ });
+    within(prescriptions).getByText("Aucune ordonnance médicale n'est enregistrée pour ce client.");
+    within(measurements).getByText("Aucune mesure magasin n'est enregistrée pour ce client.");
+
+    await user.click(screen.getByRole("button", { name: "Ajouter…" }));
+    const chooser = await screen.findByRole("alertdialog", { name: "Que souhaitez-vous ajouter ?" });
+    const options = within(chooser).getAllByRole("button").filter((button) => /Ordonnance médicale|Mesure magasin/.test(button.textContent ?? ""));
+    assert.equal(options.length, 2);
+    assert.equal(document.activeElement, options[0], "focus initial sur la première option");
+    await user.keyboard("{Escape}");
+    await waitFor(() => assert.equal(screen.queryByRole("alertdialog"), null));
+
+    await user.click(screen.getByRole("button", { name: "Ajouter…" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: /^Ordonnance médicale/ }));
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
+    screen.getByText(/Client : FICTIF-CHARLIE Noa · CLI-FICTIF-003/);
+    await user.type(screen.getByLabelText("Sphère OD"), "+1,25");
+    await user.type(screen.getByLabelText("Axe OD"), "0");
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+
+    await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
+    screen.getByText("Brouillon enregistré");
+    screen.getByText("Brouillon non confirmé");
+    const values = screen.getByRole("table", { name: /Correction optique/ });
+    within(values).getByText("+1,25");
+    within(values).getByText("0");
+    await user.click(screen.getByRole("button", { name: /^Retour à la fiche — FICTIF-CHARLIE Noa/ }));
+    await screen.findByRole("heading", { level: 1, name: "FICTIF-CHARLIE Noa" });
+    assert.equal(tab("Dossier optique").getAttribute("aria-selected"), "true", "onglet rouvert sans nouvelle recherche");
+    await screen.findByText("Brouillon");
+    assertNoNetwork();
+  });
+
+  test("client archivé : consultation seule, « Ajouter… » désactivé ; saisie forcée refusée par le service (409)", async () => {
+    const { user } = await openBench("/clients/cli-fictif-4");
+    await screen.findByRole("heading", { level: 1, name: "FICTIF-DELTA Alix" });
+    await user.click(tab("Dossier optique"));
+    await screen.findByText("Client archivé — consultation seule");
+    assert.equal((screen.getByRole("button", { name: "Ajouter…" }) as HTMLButtonElement).disabled, true);
+
+    await user.click(screen.getByRole("button", { name: "Accueil du banc" }));
+    await user.click(await screen.findByRole("button", { name: /^Saisie forcée pour FICTIF-DELTA Alix/ }));
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    const alert = await screen.findByRole("alert");
+    within(alert).getByText("Client archivé");
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-02 — depuis la liste globale", () => {
+  test("liste : type sur chaque ligne, invalidés exclus par défaut puis inclus, recherche, aucun résultat", async () => {
+    const { user } = await openBench("/optique");
+    const table = await screen.findByRole("table", { name: /Dossiers optiques, page 1 sur 2/ });
+    assert.ok(within(table).getAllByText("Ordonnance médicale").length > 0);
+    assert.ok(within(table).getAllByText("Mesure magasin").length > 0);
+    screen.getByText(/10 enregistrements · tous types · invalidés exclus/);
+    assert.equal(within(table).queryByText("Invalidé"), null);
+    await user.click(screen.getByRole("button", { name: "Inclure les invalidés" }));
+    await screen.findByText(/11 enregistrements · tous types · invalidés inclus/);
+
+    await user.type(screen.getByRole("searchbox", { name: "Rechercher par client ou prescripteur" }), "Delta");
+    await screen.findByText(/^1 enregistrement · tous types/);
+    assert.match(within(screen.getByRole("table")).getAllByRole("row")[1].textContent ?? "", /FICTIF-DELTA Alix/);
+    await user.clear(screen.getByRole("searchbox"));
+    await user.type(screen.getByRole("searchbox"), "zzzz");
+    await screen.findByRole("heading", { name: "Aucun résultat pour « zzzz »" });
+    await user.click(screen.getByRole("button", { name: "Effacer la recherche" }));
+    await screen.findByRole("table");
+    assertNoNetwork();
+  });
+
+  test("« Nouveau… » → type → client ACTIF (ClientPicker réutilisé) → formulaire avec client conservé", async () => {
+    const { user, network } = await openBench("/optique");
+    await user.click(await screen.findByRole("button", { name: "Nouveau…" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: /^Mesure magasin/ }));
+    const search = await screen.findByRole("combobox", { name: "Rechercher un client actif" });
+    await user.type(search, "Fictif");
+    const listbox = await screen.findByRole("listbox", { name: "Clients actifs" });
+    await within(listbox).findByText("FICTIF-ALPHA Camille");
+    assert.equal(within(listbox).queryByText("FICTIF-DELTA Alix"), null, "client archivé exclu");
+    await user.click(within(listbox).getByText("FICTIF-ALPHA Camille"));
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle mesure magasin" });
+    screen.getByText(/Client : FICTIF-ALPHA Camille · CLI-FICTIF-001/);
+    screen.getByLabelText("Collaborateur ayant mesuré");
+    assert.equal(screen.queryByLabelText("Prescripteur — nom (tel que sur le document)"), null, "aucun prescripteur sur une mesure magasin");
+    assert.ok(network.served.length > 0);
+    assertNoNetwork();
+  });
+});
+
+describe("grille OD / OG neutre (Q-04-158)", () => {
+  test("saisie conservée, flèches sans effet, aucun champ désactivé ni requis, absence ≠ 0", async () => {
+    const { user } = await openBench("/clients/cli-fictif-3");
+    await user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
+    await user.click(await screen.findByRole("button", { name: "Transcrire une ordonnance médicale" }));
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
+    const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
+    await user.type(sphere, "-0.5{ArrowUp}{ArrowUp}");
+    assert.equal(sphere.value, "-0.5", "aucun pas au clavier, aucune normalisation");
+    const grid = [...document.querySelectorAll<HTMLElement>("fieldset.optical-eye")];
+    assert.equal(grid.length, 2);
+    for (const input of grid.flatMap((group) => within(group).getAllByRole("textbox"))) {
+      assert.equal((input as HTMLInputElement).disabled, false);
+      assert.equal(input.getAttribute("aria-required"), null);
+      assert.equal((input as HTMLInputElement).required, false);
+    }
+    assert.equal((screen.getByLabelText("Cylindre OD") as HTMLInputElement).value, "", "champ vide = non renseigné, jamais 0");
+    assertNoNetwork();
+  });
+
+  test("ordre de Tab : OD avant OG ; erreurs de forme du service sous le champ (aria-describedby)", async () => {
+    const { user } = await openBench("/clients/cli-fictif-3");
+    await user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
+    await user.click(await screen.findByRole("button", { name: "Transcrire une ordonnance médicale" }));
+    const acuityOd = await screen.findByLabelText("Acuité visuelle OD");
+    acuityOd.focus();
+    await user.tab();
+    assert.equal((document.activeElement as HTMLInputElement).type, "radio", "après OD : l'état de l'œil gauche");
+    assert.match(document.activeElement?.closest("fieldset")?.textContent ?? "", /Œil gauche/);
+
+    await user.type(screen.getByLabelText("Sphère OD"), "abc");
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    const message = await screen.findByText("Nombre attendu, tel qu'il figure sur la source (ex. +1,25).", { selector: ".clients-field__error" });
+    assert.ok((screen.getByLabelText("Sphère OD").getAttribute("aria-describedby") ?? "").includes(message.id));
+    assert.equal((screen.getByLabelText("Sphère OD") as HTMLInputElement).value, "abc", "saisie conservée");
+    assert.equal(document.activeElement, screen.getByLabelText("Sphère OD"), "focus sur le premier champ en erreur");
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-04 — rectification, révision confirmée toujours affichée, comparaison", () => {
+  test("rectifier → brouillon ; la révision 1 reste en vigueur ; comparer ; confirmer → révision 2", async () => {
+    const { user } = await openBench("/optique");
+    await user.click(await screen.findByRole("button", { name: "Consulter Ordonnance médicale RX-FICTIF-0006" }));
+    await screen.findByRole("heading", { level: 1, name: "Ordonnance médicale RX-FICTIF-0006" });
+    screen.getByText("Préparer une vente · Phase ultérieure");
+    assert.equal((screen.getByRole("button", { name: /Préparer une vente/ }) as HTMLButtonElement).disabled, true);
+    await user.click(screen.getByRole("button", { name: "Rectifier" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Rectifier cet enregistrement ?" });
+    await user.click(within(dialog).getByRole("button", { name: "Ouvrir la rectification" }));
+    within(dialog).getByText("Choisissez un motif de rectification.");
+    await user.selectOptions(within(dialog).getByLabelText("Motif"), "transcription_error");
+    await user.click(within(dialog).getByRole("button", { name: "Ouvrir la rectification" }));
+
+    await screen.findByRole("heading", { level: 1, name: "Rectification de la révision 1" });
+    const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
+    assert.equal(sphere.value, "-0,75", "brouillon prérempli de la révision de base");
+    await user.clear(sphere);
+    await user.type(sphere, "-1,10");
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+
+    await screen.findByText(/^Rectification en cours — ouverte le/);
+    screen.getByRole("heading", { name: "Révision 1 — en vigueur" });
+    within(screen.getByRole("table", { name: /Correction optique — Révision 1/ })).getByText("-0,75");
+    const compare = screen.getByRole("table", { name: /Comparaison/ });
+    within(compare).getByText("OD — Sphère");
+    within(compare).getByText("Différent");
+    await user.click(screen.getByRole("button", { name: "Voir le brouillon" }));
+    within(screen.getByRole("table", { name: /Correction optique — Brouillon de rectification/ })).getByText("-1,10");
+    await user.click(screen.getByRole("button", { name: "Confirmer la rectification" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "Confirmer la transcription ?" });
+    within(confirm).getByText(/Cela ne signifie pas « validé médicalement »/);
+    await user.click(within(confirm).getByRole("button", { name: "Confirmer" }));
+    await screen.findByText("Révision 2 enregistrée");
+    screen.getByRole("heading", { name: "Révision 2 — en vigueur" });
+    assertNoNetwork();
+  });
+
+  test("confirmation refusée par le service (422 incomplete) : motifs listés, brouillon conservé", async () => {
+    const { user } = await openBench("/");
+    await openRecord(user, "RX-FICTIF-0004");
+    await user.click(screen.getByRole("button", { name: "Confirmer la transcription" }));
+    await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Confirmer" }));
+    const alert = await screen.findByRole("alert");
+    within(alert).getByText("Confirmation refusée");
+    within(alert).getByText("OG — état");
+    within(alert).getByText("Prescripteur — nom");
+    screen.getByText("Brouillon non confirmé");
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-06 — deux postes (GAP-04-09)", () => {
+  test("écriture d'un autre poste : 409, saisie conservée, rechargement proposé", async () => {
+    const { user } = await openBench("/");
+    await openRecord(user, "RX-FICTIF-0004");
+    await user.click(screen.getByRole("button", { name: "Poursuivre le brouillon" }));
+    await screen.findByRole("heading", { level: 1, name: /^Brouillon/ });
+    await user.click(screen.getByRole("button", { name: "Autre poste : modifier l'enregistrement ouvert" }));
+    const notes = screen.getByLabelText("Remarques complémentaires (facultatif)") as HTMLTextAreaElement;
+    await user.type(notes, " poste A");
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    const alert = await screen.findByRole("alert");
+    within(alert).getByText("Modifié depuis un autre poste");
+    assert.match(notes.value, /poste A$/, "saisie conservée à l'écran");
+    within(alert).getByRole("button", { name: "Recharger" });
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-07 — invalidation (pas de suppression)", () => {
+  test("menu secondaire « Invalider… », motif, bandeau ; brouillon de rectification abandonné dans la même opération", async () => {
+    const { user } = await openBench("/");
+    await openRecord(user, "RX-FICTIF-0002");
+    assert.equal(screen.queryByRole("button", { name: /Supprimer/ }), null);
+    await user.click(screen.getByRole("button", { name: "Plus d'actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Invalider…" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Invalider cette ordonnance médicale ?" });
+    within(dialog).getByText(/La rectification en cours sera abandonnée dans la même opération/);
+    await user.selectOptions(within(dialog).getByLabelText("Motif"), "duplicate");
+    await user.click(within(dialog).getByRole("button", { name: "Invalider" }));
+    await screen.findByText(/^Invalidé le/);
+    screen.getByText(/est conservé et signalé « Invalidé »/);
+    screen.getByText(/La rectification ouverte a été abandonnée dans la même opération/);
+    assert.equal(screen.queryByRole("button", { name: "Plus d'actions" }), null);
+    assertNoNetwork();
+  });
+});
+
+describe("J-04-08 — pièces source (GAP-04-06, GAP-04-14)", () => {
+  test("pièce invalidée citée par la révision 1 : avertissement avant transmission, libellé « transmis », jamais « consulté »", async () => {
+    const { user } = await openBench("/");
+    await openRecord(user, "RX-FICTIF-0002");
+    const panel = screen.getByRole("region", { name: /Pièces source/ });
+    within(panel).getByText(/Invalidée le .* — motif : Illisible/);
+    const showButtons = within(panel).getAllByRole("button", { name: "Afficher la pièce" });
+    await user.click(showButtons[0]);
+    const warn = await screen.findByRole("alertdialog", { name: "Afficher une pièce invalidée ?" });
+    await user.click(within(warn).getByRole("button", { name: "Afficher quand même" }));
+    const preview = await screen.findByRole("region", { name: /Aperçu : photo-fictive.jpg/ });
+    within(preview).getByText(/contenu transmis au poste/);
+    within(preview).getByText(/Aperçu indisponible dans cet environnement/);
+    await screen.findByText(/Contenu d'une pièce transmis au poste au poste de/);
+    assert.equal(screen.queryByText(/consultée? par/i), null);
+    assertNoNetwork();
+  });
+
+  test("joindre une pièce synthétique ; refus de format ; sans optical.documents.read : nombre seulement", async () => {
+    const { user } = await openBench("/");
+    await openRecord(user, "RX-FICTIF-0001");
+    await user.click(screen.getByRole("button", { name: "Joindre une pièce" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Image SVG renommée en .png (refusée)" }));
+    await screen.findByText("Format refusé");
+    await user.click(screen.getByRole("button", { name: "Joindre une pièce" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Scan PDF synthétique" }));
+    await screen.findByText("scan-fictif.pdf");
+
+    await user.selectOptions(screen.getByLabelText("Profil simulé (affichage seulement)"), "reader");
+    await user.click(screen.getByRole("button", { name: "Accueil du banc" }));
+    await openRecord(user, "RX-FICTIF-0001");
+    screen.getByText(/3 pièces — accès non autorisé/);
+    // Régression : la première lecture après un changement de profil utilise bien les droits du NOUVEAU profil.
+    assert.ok(screen.queryByText("recto-fictif.png") === null, "aucun nom de pièce sans optical.documents.read");
+    assert.equal(screen.queryByRole("button", { name: "Rectifier" }), null, "lecture seule déduite des droits");
+    screen.getByText(/Consultation seule : ce profil ne permet pas de modifier/);
+    assertNoNetwork();
+  });
+});
+
+describe("erreurs techniques bornées (états 9, 31)", () => {
+  test("liste : erreur sans trace technique + Réessayer ; invalidation en échec : rien n'est invalidé", async () => {
+    const { user } = await openBench("/");
+    await user.click(screen.getByRole("button", { name: "Échec de la prochaine liste" }));
+    await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
+    await screen.findByRole("heading", { name: "Impossible de charger les dossiers optiques" });
+    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await screen.findByRole("table", { name: /Dossiers optiques/ });
+
+    await user.click(screen.getByRole("button", { name: "Consulter Ordonnance médicale RX-FICTIF-0006" }));
+    await screen.findByRole("heading", { level: 1, name: "Ordonnance médicale RX-FICTIF-0006" });
+    await user.click(screen.getByRole("button", { name: "Échec de la prochaine écriture" }));
+    await user.click(screen.getByRole("button", { name: "Plus d'actions" }));
+    await user.click(await screen.findByRole("menuitem", { name: "Invalider…" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.selectOptions(within(dialog).getByLabelText("Motif"), "entry_error");
+    await user.click(within(dialog).getByRole("button", { name: "Invalider" }));
+    const alert = await screen.findByRole("alert");
+    within(alert).getByText("Erreur technique");
+    within(alert).getByText(/Aucune modification n'a été enregistrée/);
+    assert.equal(screen.queryByText(/^Invalidé le/), null);
+    assertNoNetwork();
+  });
+});
+
+describe("accès refusé et comptes sans droit optique (GAP-04-05, O-04-16)", () => {
+  test("sans optical.read : fiche avec l'onglet reporté actuel, accès direct au module refusé", async () => {
+    const { user } = await openBench("/clients/cli-fictif-1", "none");
+    await screen.findByRole("heading", { level: 1, name: "FICTIF-ALPHA Camille" });
+    assert.equal(screen.queryByRole("tab", { name: "Dossier optique" }), null);
+    await user.click(tab("Ordonnances"));
+    await screen.findByText("Ordonnances — phase ultérieure");
+    await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
+    await screen.findByRole("heading", { name: "Accès non autorisé" });
+    assertNoNetwork();
+  });
+
+  test("garde de sortie : quitter un formulaire modifié demande confirmation", async () => {
+    const { user } = await openBench("/clients/cli-fictif-3");
+    await user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
+    await user.click(await screen.findByRole("button", { name: "Saisir une mesure magasin" }));
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle mesure magasin" });
+    await user.type(screen.getByLabelText("Sphère OD"), "+0,50");
+    await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Quitter sans enregistrer ?" });
+    await user.click(within(dialog).getByRole("button", { name: "Continuer la saisie" }));
+    assert.equal((screen.getByLabelText("Sphère OD") as HTMLInputElement).value, "+0,50");
+    assertNoNetwork();
+  });
+});

@@ -121,3 +121,8 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - Revue indépendante : G04-00 « cadrage techniquement acceptable ». **D-04-01 APPROVED** (définitive) ; D-04-02 à D-04-09 `PROPOSED` (inchangées) ; **D-04-10 à D-04-14 `PROPOSED`** ajoutées (`docs/phase/04/ETUDES_PRE_MODELE_04.md`).
 - Aucun ADR modifié. **ADR-008** (`PROPOSED`) : les pièces source domineraient le volume de la base et des sauvegardes (taille ≈ volume des pièces) ; chiffrement, copie hors serveur et restauration avec vérification des empreintes deviennent des préalables explicites à un pilote (O-04-19) ; le choix sauvegarde logique / physique reste à prendre au seuil mesuré. **ADR-014** : aucune dépendance ajoutée ni proposée (contrôles de fichiers sans bibliothèque ; AMSI = appel système Windows, à évaluer, O-04-17).
+
+## Note datée — 19/10/2026 (Phase 04-A, GO G04-A — UI ONLY)
+
+- **G04-A APPROVED — UI ONLY** et **O-04-16 APPROVED** (propriétaire) : prototypes des écrans du dossier optique **uniquement** dans un banc de démonstration isolé (`apps/desktop/optical-bench.html`, hors `vite build`) ; comptes réels inchangés (« Ordonnances — phase ultérieure »). D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (illustrées par le prototype, non tranchées).
+- Aucun ADR modifié. **ADR-014** respecté : aucune dépendance ajoutée (React Hook Form, TanStack Query, Radix, react-day-picker, Lucide existants). **ADR-003** : aucune base touchée, aucune migration. Bilan : `docs/phase/04/LIVRAISON_04A.md`.

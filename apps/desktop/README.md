@@ -100,3 +100,10 @@ Module Clients : `src/clients/` (chargé à la demande). *(État au 03-A ; servi
 
 - Notice Clients : « Modifications enregistrées » de nouveau affichée sur la fiche après une modification (O-03-43, `src/clients/ClientsModule.tsx`).
 - Banc natif : scénario `historique-03d3` (onglet « Historique » de bout en bout) ; options `--api`, `--process`, `--page-url` pour un banc isolé (API de test et exécutable de test distincts, à côté des processus du propriétaire) ; valeurs par défaut inchangées.
+
+## Ajouts phase 04-A (19/10/2026) — prototype sur banc isolé
+
+- **Banc de démonstration et de test** `optical-bench.html` → `src/bench/main.tsx` : page distincte servie par Vite en développement seulement (**absente de `vite build`**, donc de l'application Tauri) ; bannière permanente, données fictives (`src/bench/benchSeed.ts`), droits simulés (`benchProfiles.ts`), double en mémoire (`inMemoryOpticalGateway.ts`), garde réseau refusant tout appel (`benchNetwork.ts`). Lancement : `node e2e/bench-04a/serve.mjs` puis `http://127.0.0.1:1520/optical-bench.html` (port et cache de dépendances distincts de `tauri dev`).
+- **Prototype du dossier optique** `src/optical/` (contrat provisoire sans HTTP, écrans, `Optical.css`) ; jamais importé par l'application (test `src/optical/realAppIsolation.test.tsx`).
+- `src/clients/ClientDetailView.tsx` : props facultatives `opticalTab` / `initialTab`, utilisées par le banc seulement.
+- Captures navigateur : `e2e/bench-04a/plan.mjs` et `shoot.mjs` (Edge sans interface, CDP). Aucune dépendance ajoutée.

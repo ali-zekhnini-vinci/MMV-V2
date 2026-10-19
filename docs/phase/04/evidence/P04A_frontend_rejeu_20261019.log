@@ -1,0 +1,10 @@
+# 04-A — rejeu complet de Vitest (19/10/2026), sans autre charge
+
+ RUN  v5.0.3 C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/apps/desktop
+
+
+ Test Files  24 passed (24)
+      Tests  265 passed (265)
+   Start at  20:35:27
+   Duration  54.00s (tests 75%, environment 11%, import 9%, transform 5%)
+

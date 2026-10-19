@@ -193,3 +193,10 @@ Mandat : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04
 | D-04-14.a–g | contrôles des fichiers, limites, sauvegardes (E-05) | liste blanche par signature ; 10 Mo et 10 pièces actives ; marqueurs PDF actifs refusés ; pièce conservée telle que reçue ; antivirus A puis B étudiée ; seuil d'alerte 20 Go ; volumes réels à fournir | — | |
 
 *Comme pour le formulaire principal, aucune ligne n'est pré-remplie : l'absence de réponse vaut `PROPOSED`.*
+
+---
+
+## Note datée — 19/10/2026 (04-A réalisé, UI ONLY)
+
+Aucune réponse n'a été reçue : **D-04-02 à D-04-14 restent `PROPOSED`**, les formulaires ci-dessus restent vierges. Le prototype 04-A les illustre sans les trancher (banc isolé, données fictives). L'**examen métier consolidé avec un opticien** (D-04-02.b/c, D-04-06 a–d, listes fermées de D-04-03.a/b) peut se tenir **sur le banc** : ordre du jour et points à observer dans [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 9. Les règles et la migration `0006` ne seront figées qu'après cet examen (G04-METIER).
+

@@ -106,3 +106,41 @@ Suites existantes : **`NOT_RERUN`** (aucun code modifié depuis `6924860`).
 | Q-04-145 | sauvegarde / restauration avec pièces synthétiques | restauration complète, empreintes identiques, durées et tailles consignées (04-C, O-04-19) |
 | Q-04-157 | 04-A : aucun changement visible sans `optical.read` | onglet reporté et entrée `later` inchangés (O-04-16) |
 | Q-04-158 | 04-A : grille neutre | valeur saisie restituée à l'identique ; aucune borne, aucun pas, aucun champ désactivé, aucune normalisation |
+
+## 04-A — contrôles exécutés le 19/10/2026 (GO G04-A — UI ONLY)
+
+Prototype sur banc isolé ([`LIVRAISON_04A.md`](LIVRAISON_04A.md)). Toutes les preuves ci-dessous portent sur le **banc** et le **double en mémoire** : aucune n'est une preuve serveur, PostgreSQL ou native.
+
+| ID | Contrôle | Méthode | Résultat |
+|---|---|---|---|
+| Q-04-019 | préflight Git | `git log`, `git merge-base --is-ancestor origin/main HEAD`, `git status --short` | PASS — HEAD `1d18b81`, `origin/main` `6924860` ancêtre, aucune modification suivie, non suivis du propriétaire intacts |
+| Q-04-020 | référence avant code | `npm run check`, `eslint .`, `vitest run` | PASS — 226 / 226, lint 0 erreur (1 avertissement connu O-03-02) |
+| Q-04-021 | typage | `npm run check` (3 projets TypeScript) | PASS ([`evidence/P04A_frontend_20261019.log`](evidence/P04A_frontend_20261019.log)) |
+| Q-04-022 | lint | `eslint .` | PASS — 0 erreur, 1 avertissement connu |
+| Q-04-023 | tests frontend | `vitest run` | **PASS au rejeu 265 / 265** ([`evidence/P04A_frontend_rejeu_20261019.log`](evidence/P04A_frontend_rejeu_20261019.log)) ; exécution précédente 264 / 265 — échec intermittent d'un test Phase 03 non modifié (O-04-26), PASS seul 3 × puis en suite complète |
+| Q-04-024 | build | `vite build --outDir <hors dépôt>` | PASS (avertissement connu de taille de bloc) |
+| Q-04-025 | banc absent du bundle | recherche de `BANC DE D`, `optical-bench`, `RX-FICTIF`, `MES-FICTIF`, `Fictif-`, `InMemoryOpticalGateway`, `banc-04a`, `OpticalModule`, `/optique` dans la sortie | PASS — aucune occurrence ; libellé « Dossier optique » seul présent (branche facultative inutilisée, O-04-24) ([`evidence/P04A_bundle_20261019.log`](evidence/P04A_bundle_20261019.log)) |
+| Q-04-026 | double optique (cycle, pièces, droits, valeurs) | `src/bench/inMemoryOpticalGateway.test.ts` | PASS — 14 tests |
+| Q-04-027 | parcours sur le banc | `src/bench/OpticalBench.test.tsx` (jsdom, garde réseau active, `blocked = []` vérifié à chaque test) | PASS — 16 tests |
+| Q-04-028 | application réelle inchangée | `src/optical/realAppIsolation.test.tsx` (imports, `index.html`, `vite.config.ts`, navigation, parcours réel contre le double `node:http`) | PASS — 4 tests |
+| Q-04-029 | outils d'écran | `src/optical/opticalUi.test.ts` | PASS — 5 tests |
+| Q-04-030 | captures navigateur | `e2e/bench-04a/plan.mjs` + `shoot.mjs` (Edge sans interface, CDP, clics réels du moteur) après le dernier changement de code | PASS — 54 captures, 0 erreur console, 0 défilement horizontal de page ([`evidence/P04A_captures_rapport_20261019.json`](evidence/P04A_captures_rapport_20261019.json)) |
+| Q-04-031 | aucun SQL, migration, base, route ou permission optique | `git diff --stat` : seuls `apps/desktop/` (prototype, banc, tests, `ClientDetailView.tsx`), `docs/`, `prompts/`, `README.md` ; aucune commande `psql` / `dotnet` | PASS |
+| Q-04-032 | tests .NET et PostgreSQL réel | — | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié depuis `6924860`) |
+
+### Statut des tests prévus de l'interface (04-A)
+
+| ID | Statut au 19/10/2026 | Preuve |
+|---|---|---|
+| Q-04-150 | PASS sur le banc pour les états réalisés / adaptés ; 4 états EN ATTENTE (16, 17, 21, 36) — validation visuelle **requise** | [`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md), captures |
+| Q-04-151 | PASS (badge sur ligne, détail, formulaire ; journal du banc) — historique réel : 04-B | J-04-01, J-04-02 |
+| Q-04-152 | PASS (banc) | J-04-01 : onglet rouvert, aucune recherche |
+| Q-04-153 | PASS partiel (banc, jsdom) : ordre OD → OG, erreurs sous champ, Échap, focus du choix du type, focus du premier champ en erreur ; ordre exact après D-04-03 / D-04-06 | parcours ; capture `43-etat34-focus-visible` |
+| Q-04-154 | PASS (navigateur) : OD sur OG à 1024 px, aucun défilement horizontal de page | captures `50`–`52` |
+| Q-04-155 | **NOT_TESTED** (natif) ; navigateur : 2 thèmes, 1440×900 / 1920×1080 / 1024×700, zooms 125 / 150 % simulés | captures |
+| Q-04-156 | PASS (banc) | J-04-04 |
+| Q-04-157 | PASS — application réelle inchangée, prototypes dans le banc seulement | Q-04-028 |
+| Q-04-158 | PASS (banc) | grille neutre ; double : valeurs |
+| Q-04-160 | PASS (au rejeu) | Q-04-023 |
+| Q-04-100 à Q-04-145 | **NOT_TESTED** (serveur, PostgreSQL, journal, fichiers réels : 04-B / 04-C) ; le double en illustre les refus attendus sans les prouver | — |
+

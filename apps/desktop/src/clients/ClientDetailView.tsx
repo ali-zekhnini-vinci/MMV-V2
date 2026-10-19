@@ -5,7 +5,9 @@
 // avec `appointments.write` ; désactivé pour un client archivé (D-03-16). Le serveur reste seul juge.
 // 03-D1 : onglet « Rendez-vous » (historique servi par le module Rendez-vous), présent avec `appointments.read` seulement.
 // 03-D2 : onglet « Historique » (journal d'audit du dossier), présent avec le droit dédié `audit.read` seulement.
-import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarDays, CalendarPlus, ClipboardList, History, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
+// 04-A (O-04-16 APPROVED) : l'onglet reporté « Ordonnances » reste tel quel dans l'application. Seul le banc de
+// démonstration isolé (src/bench/) fournit `opticalTab` (prototype « Dossier optique ») et l'onglet à rouvrir au retour.
+import { Archive, ArchiveRestore, ArrowLeft, Calendar, CalendarDays, CalendarPlus, ClipboardList, Glasses, History, Mail, MapPin, Pencil, Phone, ShoppingCart, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 import type { ClientDetail } from "../api/clients.ts";
@@ -24,7 +26,15 @@ import { NO_ARCHIVE_TITLE, NO_WRITE_TITLE, READ_ONLY_HINT, useClientPermissions 
 import { StateBlock } from "./ClientStates.tsx";
 import { StatusBadge } from "./ClientsTable.tsx";
 
-export function ClientDetailView({ client }: { client: ClientDetail }) {
+interface ClientDetailViewProps {
+  client: ClientDetail;
+  /** Banc 04-A seulement : contenu de l'onglet « Dossier optique » qui remplace l'onglet reporté. */
+  opticalTab?: ReactNode;
+  /** Onglet ouvert à l'affichage, s'il est monté (retour depuis un écran rattaché à la fiche). */
+  initialTab?: string;
+}
+
+export function ClientDetailView({ client, opticalTab, initialTab }: ClientDetailViewProps) {
   const navigate = useNavigate();
   const lifecycle = useClientLifecycle();
   const { canWrite, canArchive } = useClientPermissions();
@@ -135,7 +145,7 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
         </p>
       )}
 
-      <Tabs defaultValue="info" className="client-tabs">
+      <Tabs defaultValue={initialTab === "optical" && opticalTab !== undefined ? "optical" : "info"} className="client-tabs">
         <TabsList aria-label="Sections de la fiche client">
           <TabsTrigger value="info">
             <User size={16} aria-hidden="true" />
@@ -153,10 +163,17 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
               Historique
             </TabsTrigger>
           )}
-          <TabsTrigger value="prescriptions">
-            <ClipboardList size={16} aria-hidden="true" />
-            Ordonnances
-          </TabsTrigger>
+          {opticalTab === undefined ? (
+            <TabsTrigger value="prescriptions">
+              <ClipboardList size={16} aria-hidden="true" />
+              Ordonnances
+            </TabsTrigger>
+          ) : (
+            <TabsTrigger value="optical">
+              <Glasses size={16} aria-hidden="true" />
+              Dossier optique
+            </TabsTrigger>
+          )}
           <TabsTrigger value="sales">
             <ShoppingCart size={16} aria-hidden="true" />
             Ventes &amp; commandes
@@ -175,14 +192,18 @@ export function ClientDetailView({ client }: { client: ClientDetail }) {
             <ClientHistoryTab client={client} clientName={name} canOpenAppointments={canReadAppointments} />
           </TabsContent>
         )}
-        <TabsContent value="prescriptions">
-          <StateBlock tone="neutral" icon={ClipboardList} title="Ordonnances — phase ultérieure">
-            <p>
-              Les ordonnances et dossiers optiques relèvent de la Phase 04 (règles de confidentialité et droits spécifiques). Aucune
-              donnée n&apos;est disponible ici pour le moment.
-            </p>
-          </StateBlock>
-        </TabsContent>
+        {opticalTab === undefined ? (
+          <TabsContent value="prescriptions">
+            <StateBlock tone="neutral" icon={ClipboardList} title="Ordonnances — phase ultérieure">
+              <p>
+                Les ordonnances et dossiers optiques relèvent de la Phase 04 (règles de confidentialité et droits spécifiques). Aucune
+                donnée n&apos;est disponible ici pour le moment.
+              </p>
+            </StateBlock>
+          </TabsContent>
+        ) : (
+          <TabsContent value="optical">{opticalTab}</TabsContent>
+        )}
         <TabsContent value="sales">
           <StateBlock tone="neutral" icon={ShoppingCart} title="Ventes et commandes — phase ultérieure">
             <p>Les ventes, paiements et commandes seront rattachés au client dans une phase ultérieure. Aucune donnée n&apos;est disponible ici pour le moment.</p>

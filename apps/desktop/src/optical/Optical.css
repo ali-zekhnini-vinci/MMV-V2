@@ -1,0 +1,634 @@
+/* PROTOTYPE 04-A — styles propres au dossier optique. Les gabarits communs (page, carte, table, champ, bannière,
+   badge, puce) viennent de Clients.css ; ici seulement ce qui n'existe pas ailleurs. Couleurs : jetons MMV
+   uniquement (thèmes clair / sombre automatiques). */
+
+/* ---------- Badges de type et de statut (texte toujours présent) ---------- */
+.optical-kind--prescription {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.optical-kind--measurement {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  border: 1px dashed var(--border-strong);
+}
+
+.optical-status--draft {
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.optical-status--confirmed {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.optical-status--rectification {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+.optical-status--invalidated {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.optical-proposed {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-full);
+  font-size: var(--text-2xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  color: var(--text-secondary);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.optical-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Choix du type (GAP-04-01) ---------- */
+.optical-chooser {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.optical-chooser__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: var(--space-4);
+  text-align: left;
+}
+
+.optical-chooser__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.optical-chooser__option:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.optical-chooser__option:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.optical-chooser__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+}
+
+.optical-chooser__name {
+  display: block;
+  font-weight: var(--weight-bold);
+  font-size: 15px;
+}
+
+.optical-chooser__text {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ---------- Onglet de la fiche (GAP-04-04) ---------- */
+.optical-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.optical-tab__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.optical-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optical-section__empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.optical-row--invalidated td {
+  color: var(--text-tertiary);
+}
+
+.optical-summary {
+  min-width: 190px;
+  font-size: var(--text-xs);
+}
+
+.optical-table .clients-cell__name,
+.optical-table .clients-cell__ref,
+.optical-table td:first-child {
+  white-space: nowrap;
+}
+
+/* ---------- Formulaire et grille OD / OG neutre ---------- */
+.optical-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: 22px 26px;
+}
+
+.optical-form__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.optical-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.optical-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.optical-eyes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.optical-eye {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.optical-eye__legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.optical-eye__side {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-family: var(--font-heading);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-xs);
+}
+
+.optical-eye--og .optical-eye__side {
+  background: var(--text-primary);
+  color: var(--surface-card);
+}
+
+.optical-eye__title {
+  display: block;
+  font-weight: var(--weight-bold);
+}
+
+.optical-eye__latin {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.optical-eye__state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.optical-eye__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.optical-radio,
+.optical-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.optical-radio input,
+.optical-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.optical-radio input:focus-visible,
+.optical-check input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.optical-eye__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 12px 14px;
+}
+
+.optical-eye__field--text {
+  grid-column: span 2;
+}
+
+.optical-input {
+  height: 40px;
+  background: var(--surface-card);
+}
+
+.optical-input input {
+  font-variant-numeric: tabular-nums;
+}
+
+.optical-input__unit {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.optical-select {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.optical-select option {
+  background: var(--surface-card);
+  color: var(--text-primary);
+}
+
+.optical-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.optical-date > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.optical-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.optical-errors {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* ---------- Détail, révisions, comparaison ---------- */
+.optical-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.optical-detail > .clients-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.optical-provenance {
+  margin: 0;
+}
+
+.optical-banner__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.optical-eyetable th[scope="row"] {
+  white-space: nowrap;
+}
+
+.optical-eyetable__unit {
+  font-weight: var(--weight-regular);
+  color: var(--text-tertiary);
+}
+
+.optical-value {
+  font-weight: var(--weight-semibold);
+  white-space: pre;
+}
+
+.optical-changed {
+  background: var(--info-soft);
+}
+
+.optical-changed__mark {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--info-text);
+}
+
+.optical-revisions__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.optical-revisions__item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.optical-revisions__item--confirmed {
+  border-left-color: var(--success);
+}
+
+.optical-revisions__item--draft {
+  border-left-color: var(--info);
+  border-style: dashed;
+  border-left-style: solid;
+}
+
+.optical-revisions__item--discarded {
+  border-left-color: var(--text-tertiary);
+  color: var(--text-secondary);
+}
+
+.optical-revisions__name {
+  font-weight: var(--weight-semibold);
+}
+
+.optical-compare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.optical-compare__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.optical-compare__pickers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 12px 16px;
+}
+
+/* ---------- Pièces source ---------- */
+.optical-docs__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.optical-docs__bar p {
+  margin: 0;
+}
+
+.optical-docs__denied {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.optical-docs__subtitle {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.optical-docs__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.optical-doc {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.optical-doc__icon {
+  display: inline-flex;
+  color: var(--text-secondary);
+}
+
+.optical-doc__main {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+  font-size: var(--text-sm);
+}
+
+.optical-doc__name {
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.optical-doc--invalidated .optical-doc__name {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.optical-doc__invalid {
+  font-weight: var(--weight-semibold);
+  color: var(--warning-text);
+}
+
+.optical-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+}
+
+.optical-preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: var(--text-sm);
+}
+
+.optical-preview__warn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--warning-text);
+}
+
+.optical-preview__img {
+  max-width: min(100%, 520px);
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--mmv-white);
+}
+
+/* ---------- Journal, dialogues, sélecteur de client ---------- */
+.optical-events {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+}
+
+.optical-events li {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.optical-recap {
+  margin: var(--space-3) 0 0;
+  text-align: left;
+}
+
+.optical-dialog__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  text-align: left;
+}
+
+.optical-dialog__note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.optical-picker {
+  width: min(520px, 100%);
+  max-height: 560px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+/* ---------- Fenêtre réduite (état 32) : OD au-dessus d'OG, aucun défilement horizontal ---------- */
+@media (max-width: 1100px) {
+  .optical-eyes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .optical-compare__pickers {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .optical-events li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}

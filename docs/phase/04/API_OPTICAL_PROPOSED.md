@@ -75,3 +75,8 @@ Les §§ 1 à 7 sont conservés tels qu'écrits en 04-00. Si D-04-10 à D-04-12 
 | `GET /api/optical/documents/{documentId}/content` | événement **`document.content_served`** (au lieu de `document.viewed`) validé avant le premier octet ; `Content-Type` = type détecté ; avertissement d'invalidation porté par les métadonnées, pas par le contenu |
 
 Mêmes changements pour `/api/optical/measurements` (sans pièces en 04). Toujours **aucune** route `DELETE`.
+
+## Note datée — 19/10/2026 (04-A)
+
+Toujours **aucune route créée**. Le prototype 04-A décrit ces échanges par des types TypeScript **provisoires** (`apps/desktop/src/optical/opticalContract.ts`, interface `OpticalGateway`) servis par un double **en mémoire** du banc isolé ; ces types ne sont pas un contrat et seront remplacés par l'extrait OpenAPI généré en 04-B (§ 7). Les codes de refus illustrés par le double (`version_conflict`, `draft_exists`, `revision_conflict`, `client_archived`, `invalidated`, `already_invalidated`, `not_draft`, `incomplete`, `too_large`, `unsupported_media_type`, `duplicate_document`, `too_many_documents`) sont ceux de ce document et de son amendement, sans nouveauté.
+

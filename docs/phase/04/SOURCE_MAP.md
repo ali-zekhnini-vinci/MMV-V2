@@ -61,3 +61,15 @@ INAMI article 30 et formulaires opticiens (Belgique) ; CNDP et loi 09-08 (Maroc)
 | `references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` (empreinte inchangée) | libellés des colonnes de la grille (Sphère, Cylindre, Axe, Addition, Prisme, Base) ; aucune règle reprise |
 
 Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée. Les volumes de stockage de l'étude E-05 sont des **hypothèses** de l'agent, à remplacer par les chiffres du propriétaire (D-04-14.g).
+
+## Complément daté — 19/10/2026 (04-A, GO G04-A — UI ONLY)
+
+| Source | Usage |
+|---|---|
+| `prompts/PHASE04_A_GO_CLAUDE_CODE.md` | mandat 04-A (message de session du propriétaire, reproduit à l'identique) |
+| tous les documents de `docs/phase/04/` (y compris le pack non suivi `CADRAGE_OFFICIEL_PHASE04_ORDONNANCES.md`, `README_PACK.md`, lus sans modification) | périmètre, propositions, états, parcours |
+| `references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` (SHA-256 `c103df9e…c06c213` revérifié le 19/10/2026) | libellés du Lot 3 repris : « Informations générales », « Correction optique », « Œil droit (OD) » / « Oculus dexter », Sphère, Cylindre, Axe, Addition, Prisme, Base, Acuité visuelle, « Remarques complémentaires (facultatif) », « Rechercher par client ou médecin » (adapté : prescripteur), « Veuillez corriger les erreurs avant d'enregistrer » ; **non repris** : pas de 0,25 et boutons ± , signe « + » imposé, plages numériques, axe / base désactivés, normalisation d'axe, suppression, « Créer une vente », identités de démonstration de la maquette (remplacées par des identités `Fictif-…`) |
+| `apps/desktop/src/` (Phase 03 fusionnée) | composants réutilisés (voir [`IMPLEMENTATION_SPEC.md`](IMPLEMENTATION_SPEC.md) § 9) |
+
+Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL (17 ou 18), aucune dépendance ajoutée. Données du banc : identités, prescripteurs, collaborateurs, valeurs optiques et pièces **fictives et synthétiques**, générées en mémoire (`apps/desktop/src/bench/benchSeed.ts`, `benchImages.ts`).
+

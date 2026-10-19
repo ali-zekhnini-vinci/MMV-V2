@@ -94,3 +94,7 @@ La maquette ne connaît qu'un type et aucune des fonctions suivantes. Ces états
 | GAP-04-14 | pièce invalidée citée par une révision confirmée (ligne libellée, avertissement avant transmission) | rattachement historisé | D-04-10 |
 
 - **Traitement en 04-A des états dépendant de D-04-06** : état 25 (`axisNormalized`) — aucune normalisation, axe affiché tel que saisi ; état 36 (`disabledFields`) — **non implémenté** (aucune dépendance entre champs tant que D-04-06 n'est pas ratifiée) ; états 16, 17, 21, 23, 33 — mécanique construite, règles absentes ([`PREPARATION_04A.md`](PREPARATION_04A.md) § 3).
+
+## Amendement daté — 19/10/2026 (04-A réalisé sur banc isolé)
+
+Les tableaux ci-dessus restent la cartographie `PROPOSED`. Réalisation 04-A (G04-A APPROVED — UI ONLY) : **50 états tracés** — 24 RÉALISÉ, 20 ADAPTÉ, 1 AUTRE COMPOSANT (état 13, `ClientPicker`), 1 ADAPTÉ partiel (33), 4 EN ATTENTE d'avis métier (16, 17, 21 : mécanique seule ; 36 : non implémenté) — détail, captures et tests : [`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md). Statut visuel de chaque état : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED` ; aucun `APPROVED`.

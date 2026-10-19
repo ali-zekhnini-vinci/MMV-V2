@@ -1,0 +1,147 @@
+/* BANC 04-A — cadre de la page de démonstration (bannière permanente, commandes, contenu). Jetons MMV seulement. */
+.bench {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "banner banner"
+    "side content";
+  height: 100vh;
+  overflow: hidden;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+}
+
+.bench :focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.bench__banner {
+  grid-area: banner;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--space-5);
+  border-bottom: 2px solid var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning-text);
+  font-size: var(--text-sm);
+}
+
+.bench__side {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+  border-right: 1px solid var(--border);
+  background: var(--surface-card);
+}
+
+.bench__nav,
+.bench__controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bench__controls {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.bench__navitem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bench__navitem:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.bench__navitem[aria-current="page"] {
+  background: var(--surface-selected);
+  color: var(--accent);
+}
+
+.bench__hint,
+.bench__message {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.bench__message {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+.bench__content {
+  grid-area: content;
+  min-width: 0;
+  overflow: auto;
+  padding: var(--space-6);
+}
+
+.bench__scenarios,
+.bench__clients {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bench__scenarios li,
+.bench__clients li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.bench__clients {
+  padding: var(--space-3);
+}
+
+/* Fenêtre réduite : commandes au-dessus du contenu, aucun défilement horizontal de la page. */
+@media (max-width: 1100px) {
+  .bench {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "banner"
+      "side"
+      "content";
+  }
+
+  .bench__side {
+    max-height: 30vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .bench__content {
+    padding: var(--space-4);
+  }
+}

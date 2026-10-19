@@ -1,6 +1,6 @@
 # 04 — Préparation du sous-lot 04-A (interface sur double de test)
 
-**Statut : `PROPOSED — OWNER_GO_04A_REQUIRED`** (19/10/2026). Mandat : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md). Ce document **prépare** 04-A ; aucun écran n'est construit, aucune ligne d'`apps/desktop/src/` n'est modifiée. Le démarrage de 04-A attend un GO explicite du propriétaire sur le périmètre ci-dessous (§ 3).
+**Statut : `PROPOSED — OWNER_GO_04A_REQUIRED`** (19/10/2026). Mandat : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md). Ce document **prépare** 04-A ; aucun écran n'est construit, aucune ligne d'`apps/desktop/src/` n'est modifiée. Le démarrage de 04-A attend un GO explicite du propriétaire sur le périmètre ci-dessous (§ 3). *19/10/2026 : GO G04-A reçu (UI ONLY) et 04-A réalisé — écarts et renvois dans l'amendement daté en fin de document.*
 
 Sources : composants V2 existants ([`IMPLEMENTATION_SPEC.md`](IMPLEMENTATION_SPEC.md) § 3), maquette Lot 3 DRAFT (36 états, [`STATE_MAP_36.md`](STATE_MAP_36.md)), parcours [`PARCOURS_04.md`](PARCOURS_04.md), études [`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md). Aucune lecture de l'ancien dépôt MMV ; les notes de la maquette qui en proviennent restent ignorées (D-000).
 
@@ -130,3 +130,19 @@ Aucune dépendance nouvelle (ADR-014) : React Hook Form, Zod, TanStack Query / T
 | **D-04-06**, D-04-02.b/c, listes D-04-03 [AVIS OPTICIEN] | toute règle de saisie, l'ordre de Tab définitif, états 16, 17, 21, 25, 33, 36 définitifs | la grille neutre |
 | O-04-01 (CSP `blob:`) et O-04-18 (commandes de la visionneuse PDF) | l'aperçu PDF et l'aperçu dans le poste natif | l'aperçu image dans le navigateur de test |
 | G04-LEGAL, O-04-08 (rôle SQL), O-04-09 (restauration) | tout pilote sur données réelles | 04-A, 04-B |
+
+## Amendement daté — 19/10/2026 (GO G04-A, réalisation)
+
+Le statut ci-dessus (`PROPOSED — OWNER_GO_04A_REQUIRED`) est conservé comme historique. **G04-A APPROVED — UI ONLY** et **O-04-16 APPROVED** ([`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md)). Réalisation : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) ; couverture : [`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md).
+
+Écarts assumés par rapport aux §§ 2, 6 et 7 (tous réversibles) :
+
+| Prévu | Réalisé | Motif |
+|---|---|---|
+| § 2.3 onglet et entrée de menu montés pour une session portant `optical.read` | **aucun** montage dans l'application réelle ; prototypes seulement dans le banc isolé `apps/desktop/optical-bench.html` (page distincte, hors `vite build`) | O-04-16 APPROVED : « accessibles exclusivement dans un banc… toute navigation directe hors du banc doit rester bloquée » |
+| § 6 `test/fakeOpticalApi.ts` (serveur `node:http`) branché dans `fakeMmvApi.ts` | `src/bench/inMemoryOpticalGateway.ts` : double **en mémoire** derrière l'interface `OpticalGateway` | le banc tourne dans un navigateur sans serveur ; aucune surface réseau ni route `/api/optical`, même factice |
+| § 6 `api/optical.ts` (types et appels provisoires) | `src/optical/opticalContract.ts` (types seulement, **aucun appel HTTP**) | éviter tout client HTTP vers des routes non ratifiées ; contrat OpenAPI en 04-B |
+| § 6 modifications `shell/navigation.ts`, `shell/Shell.tsx`, `audit/` | **non modifiés** ; libellés d'événements prototypes dans le détail (journal de gestion du banc) | O-04-16 ; l'historique réel reste filtré par le serveur en 04-B (O-04-04) |
+| § 7 A1 socle CSS commun (O-04-11) | **reporté** ; réutilisation directe de `clients/Clients.css`, ajout de `optical/Optical.css` | ne pas toucher aux modules fusionnés pour un prototype |
+| § 3 élément 15 sélecteur de fichier natif | pièces **synthétiques** proposées par le banc ; aucun fichier du poste lu | « aperçus de pièces uniquement synthétiques et locaux au banc » (mandat § 3) |
+| § 4 GAP-04-05 onglet absent sans droit | onglet reporté actuel conservé (O-04-16) ; page 403 sur accès direct au module du banc | décision O-04-16 ; O-04-22 |
