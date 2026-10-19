@@ -109,3 +109,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **Limite** : les déclencheurs d'ajout seul ne protègent pas contre un superutilisateur PostgreSQL ni contre le rôle propriétaire de la table (rôle de migration, aujourd'hui aussi rôle de connexion de MMV.Api). **À prévoir** : rôle SQL applicatif distinct du rôle de migration (O-B04) et politique de rétention contrôlée.
 - **D-03-22 OUVERTE** : durées de conservation ; obligations RGPD / APD (Belgique) et loi 09-08 / CNDP (Maroc), avec un conseil juridique.
 - **Modification sans changement** (O-03-44) : aucune écriture (ni auteur, ni date, ni version, ni événement) ; résultat HTTP 200 avec l'état courant.
+
+## Note datée — 19/10/2026 (phase 04-00)
+
+- Phase 03 **fusionnée** (`origin/main` = `6924860`, PR #4, vérifié par `git fetch`).
+- **D-04-01 APPROVED** (propriétaire, 19/10/2026) : ordonnances médicales reçues et mesures réalisées en magasin = deux types métier distincts, sans conversion ni assimilation ; provenance, auteur et statut explicites ; aucun SQL autorisé par cette décision.
+- **D-04-02 à D-04-09 PROPOSED** (complétude, provenance et pièces, révisions et invalidation, permissions optiques, validations optiques, client archivé, navigation, pays et confidentialité) — demande consolidée : `docs/phase/04/DECISIONS_04_METIER_PROPOSED.md`. D-04-06 exige l'avis d'un opticien ; D-04-09 un conseil juridique (Belgique : RGPD / APD ; Maroc : loi 09-08 / CNDP), et prolonge D-03-22 (conservation, OUVERTE).
+- Aucun ADR modifié : ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`, ADR-003 respecté (dossier optique proposé en PostgreSQL seul). **ADR-014** : aucune dépendance ajoutée.
