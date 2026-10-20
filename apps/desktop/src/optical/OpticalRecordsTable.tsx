@@ -7,7 +7,7 @@ import { Highlight } from "../clients/highlight.tsx";
 import { formatIsoDate } from "../clients/clientForm.ts";
 import { cn } from "../lib/utils.ts";
 import type { OpticalRecordSummary } from "./opticalContract.ts";
-import { eyeStateLabel, formatDateTime, KIND_LABEL } from "./opticalLabels.ts";
+import { formatDateTime, KIND_LABEL } from "./opticalLabels.ts";
 import { KindBadge, OpticalStatusBadge } from "./OpticalBadges.tsx";
 import { eyeSummary } from "./opticalUi.ts";
 
@@ -69,8 +69,8 @@ export function OpticalRecordsTable({ rows, caption, showClient, showSummary, se
                 </td>
                 {showSummary && (
                   <td className="tnum optical-summary">
-                    <div>{eyeSummary("od", row.od, eyeStateLabel(row.kind, row.od.state))}</div>
-                    <div>{eyeSummary("og", row.og, eyeStateLabel(row.kind, row.og.state))}</div>
+                    <div>{eyeSummary("od", row.od)}</div>
+                    <div>{eyeSummary("og", row.og)}</div>
                   </td>
                 )}
                 <td className="tnum clients-muted">{formatDateTime(row.recordedAtUtc)}</td>

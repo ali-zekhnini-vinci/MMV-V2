@@ -1,11 +1,12 @@
-// Double en mémoire du banc 04-A : cycle de vie PROPOSÉ (E-02), pièces liées par révision (E-01), refus du contrat
-// proposé, valeurs conservées à l'identique, droits simulés. Aucun réseau, aucune base. Ce n'est pas une preuve
+// Double en mémoire du banc 04-A : cycle de vie PROPOSÉ (E-02), simplification D-04-16 (ni état d'œil ni pièce source),
+// refus du contrat proposé, valeurs conservées à l'identique, droits simulés. Aucun réseau, aucune base. Ce n'est pas une preuve
 // serveur : MMV.Api n'a aucune route optique (04-B non commencé).
 import assert from "node:assert/strict";
 import { describe, test } from "vitest";
 import { OPTICAL_PERMISSIONS } from "../optical/opticalAccess.ts";
-import { emptyContent, EMPTY_EYE_VALUES, type PrescriptionContent } from "../optical/opticalContract.ts";
-import { ALL_OPTICAL_PERMISSIONS, BENCH_MEASURERS, createBenchClients, createSeededGateway, SYNTHETIC_DOCUMENTS } from "./benchSeed.ts";
+import { emptyContent, EMPTY_EYE_VALUES, EYE_FIELDS, type PrescriptionContent } from "../optical/opticalContract.ts";
+import { compareRows } from "../optical/opticalRevisions.ts";
+import { ALL_OPTICAL_PERMISSIONS, BENCH_MEASURERS, createBenchClients, createSeededGateway } from "./benchSeed.ts";
 import type { BenchSession, InMemoryOpticalGateway } from "./inMemoryOpticalGateway.ts";
 
 const actor = BENCH_MEASURERS[0];
@@ -16,12 +17,6 @@ async function setup(permissions: readonly string[] = ALL_OPTICAL_PERMISSIONS) {
   return { gateway, session };
 }
 
-function syn(id: string) {
-  const choice = SYNTHETIC_DOCUMENTS.find((candidate) => candidate.id === id);
-  if (!choice) throw new Error(`pièce synthétique inconnue : ${id}`);
-  return choice;
-}
-
 function refOf(gateway: InMemoryOpticalGateway, reference: string) {
   const found = gateway.findByReference(reference);
   if (!found) throw new Error(`référence fictive absente : ${reference}`);
@@ -30,7 +25,7 @@ function refOf(gateway: InMemoryOpticalGateway, reference: string) {
 
 function rxContent(values: Partial<typeof EMPTY_EYE_VALUES> = {}): PrescriptionContent {
   const content = emptyContent("prescription") as PrescriptionContent;
-  return { ...content, od: { state: "filled", values: { ...EMPTY_EYE_VALUES, ...values } } };
+  return { ...content, od: { ...EMPTY_EYE_VALUES, ...values } };
 }
 
 const must = <T>(result: { ok: true; data: T } | { ok: false; error: unknown }): T => {
@@ -43,11 +38,11 @@ describe("double optique du banc — valeurs et forme", () => {
     const { gateway } = await setup();
     const values = { sphere: "+1,25", cylinder: "-0.5", axis: "0", addition: "2", prism: "0,00", base: "BN", acuity: "8/10" };
     const record = must(await gateway.createRecord("cli-fictif-3", rxContent(values)));
-    assert.deepEqual(record.openDraft?.content.od.values, values);
-    assert.equal(record.openDraft?.content.og.values.sphere, "");
+    assert.deepEqual(record.openDraft?.content.od, values);
+    assert.equal(record.openDraft?.content.og.sphere, "");
     const again = must(await gateway.getRecord("prescription", record.id));
-    assert.equal(again.openDraft?.content.od.values.axis, "0", "aucune normalisation 0° → 180°");
-    assert.equal(again.openDraft?.content.od.values.prism, "0,00");
+    assert.equal(again.openDraft?.content.od.axis, "0", "aucune normalisation 0° → 180°");
+    assert.equal(again.openDraft?.content.od.prism, "0,00");
   });
 
   test("seules des erreurs de FORME : nombre attendu, longueur ; aucune borne", async () => {
@@ -63,24 +58,25 @@ describe("double optique du banc — valeurs et forme", () => {
 });
 
 describe("double optique du banc — cycle de vie proposé (E-02)", () => {
-  test("brouillon → 422 incomplete (règle de démonstration) → confirmé révision 1", async () => {
+  test("brouillon → 422 incomplete (provenance, règle de démonstration) → confirmé révision 1 avec OG laissé vide", async () => {
     const { gateway } = await setup();
     const draft = must(await gateway.createRecord("cli-fictif-3", rxContent({ sphere: "+1,00" })));
     const refused = await gateway.confirmDraft("prescription", draft.id, draft.version);
     assert.equal(refused.ok, false);
     if (!refused.ok) {
       assert.equal(refused.error.code, "incomplete");
-      assert.deepEqual(Object.keys(refused.error.fieldErrors ?? {}).sort(), ["og.state", "provenance.prescribedOn", "provenance.prescriberName"]);
+      // Aucun critère sur les valeurs OD / OG (D-04-16 ; complétude clinique ouverte, D-04-02.b).
+      assert.deepEqual(Object.keys(refused.error.fieldErrors ?? {}).sort(), ["provenance.prescribedOn", "provenance.prescriberName"]);
     }
     const complete: PrescriptionContent = {
       ...(draft.openDraft?.content as PrescriptionContent),
       provenance: { ...(draft.openDraft?.content as PrescriptionContent).provenance, prescriberName: "Dr Fictif-Test", prescribedOn: "2026-10-01" },
-      og: { state: "not_prescribed", values: { ...EMPTY_EYE_VALUES } },
     };
     const saved = must(await gateway.saveDraft("prescription", draft.id, complete, draft.version));
     const confirmed = must(await gateway.confirmDraft("prescription", saved.id, saved.version));
     assert.equal(confirmed.lastConfirmed?.revisionNo, 1);
     assert.equal(confirmed.openDraft, null);
+    assert.deepEqual(confirmed.lastConfirmed?.content.og, EMPTY_EYE_VALUES, "OG vide conservé vide, jamais assimilé à 0");
   });
 
   test("rectification : révision 1 intacte, un seul brouillon (409 draft_exists), numéro attribué à la confirmation", async () => {
@@ -159,46 +155,40 @@ describe("double optique du banc — cycle de vie proposé (E-02)", () => {
   });
 });
 
-describe("double optique du banc — pièces source (E-01, E-05)", () => {
-  test("liens par révision : la révision 1 cite le recto seul, la révision 2 recto + verso, contenu stocké une fois", async () => {
+describe("double optique du banc — simplification D-04-16 (APPROVED)", () => {
+  test("ni état d'œil ni pièce source : contenu = provenance + OD / OG + notes ; aucune opération documentaire", async () => {
     const { gateway } = await setup();
-    const ref = refOf(gateway, "RX-FICTIF-0001");
-    const record = must(await gateway.getRecord(ref.kind, ref.id));
-    const [recto, verso] = record.documents ?? [];
-    const byNo = (no: number) => record.revisions.find((revision) => revision.revisionNo === no)?.content as PrescriptionContent;
-    assert.deepEqual(byNo(1).linkedDocumentIds, [recto.id]);
-    assert.deepEqual(byNo(2).linkedDocumentIds, [recto.id, verso.id]);
-    assert.equal(record.documents?.length, 2);
+    const record = must(await gateway.getRecord("prescription", refOf(gateway, "RX-FICTIF-0001").id));
+    const content = record.lastConfirmed?.content as PrescriptionContent;
+    assert.deepEqual(Object.keys(content).sort(), ["kind", "notes", "od", "og", "provenance"]);
+    assert.deepEqual(Object.keys(content.od), [...EYE_FIELDS], "un œil = ses seules valeurs, aucun champ « état »");
+    assert.deepEqual(Object.keys(content.provenance).sort(), ["prescribedOn", "prescriberIdentifier", "prescriberName", "prescriberQualification", "receivedOn"]);
+    assert.equal("documents" in record || "documentCount" in record, false, "aucune pièce servie");
+    for (const method of ["attachDocument", "invalidateDocument", "fetchDocumentContent"]) assert.equal(method in gateway, false, `${method} absent`);
   });
 
-  test("refus : 413 trop volumineux, 415 signature ≠ type annoncé (SVG, HTML), 409 doublon d'empreinte", async () => {
+  test("révisions conservées : comparaison des valeurs, motif de rectification, auteurs tracés", async () => {
     const { gateway } = await setup();
-    const ref = refOf(gateway, "RX-FICTIF-0001");
-    const code = async (id: string) => {
-      const result = await gateway.attachDocument(ref.id, syn(id));
-      return result.ok ? "ok" : `${result.error.status} ${result.error.code}`;
-    };
-    assert.equal(await code("syn-big"), "413 too_large");
-    assert.equal(await code("syn-svg"), "415 unsupported_media_type");
-    assert.equal(await code("syn-html"), "415 unsupported_media_type");
-    assert.equal(await code("syn-recto"), "409 duplicate_document");
-    assert.equal(await code("syn-scan"), "ok");
-  });
-
-  test("pièce invalidée : liens historiques conservés, plus liable à un brouillon, contenu servi avec événement « transmis »", async () => {
-    const { gateway } = await setup();
-    const ref = refOf(gateway, "RX-FICTIF-0002");
-    const record = must(await gateway.getRecord(ref.kind, ref.id));
-    const photo = record.documents?.find((document) => document.invalidation !== null);
-    assert.ok(photo);
-    assert.deepEqual((record.lastConfirmed?.content as PrescriptionContent).linkedDocumentIds, [photo.id]);
-    const link = await gateway.saveDraft(ref.kind, ref.id, { ...(record.openDraft?.content as PrescriptionContent), linkedDocumentIds: [photo.id] }, record.version);
-    assert.deepEqual(!link.ok && link.error.fieldErrors, { linkedDocumentIds: ["invalid_document"] });
-    const before = record.events.length;
-    assert.equal((await gateway.fetchDocumentContent(photo.id)).ok, true);
-    const after = must(await gateway.getRecord(ref.kind, ref.id));
-    assert.equal(after.events.length, before + 1);
-    assert.equal(after.events[after.events.length - 1].code, "document.content_served");
+    const record = must(await gateway.getRecord("prescription", refOf(gateway, "RX-FICTIF-0001").id));
+    const byNo = (no: number) => record.revisions.find((revision) => revision.revisionNo === no);
+    const [one, two] = [byNo(1), byNo(2)];
+    assert.ok(one && two);
+    assert.equal(two.baseRevisionNo, 1);
+    assert.equal(two.reasonCode, "additional_information");
+    assert.ok(two.reasonComment.length > 0);
+    for (const revision of [one, two]) {
+      assert.equal(revision.startedBy.id, actor.id, "auteur de la saisie");
+      assert.equal(revision.confirmedBy?.id, actor.id, "auteur de la confirmation");
+      assert.ok(revision.confirmedAtUtc);
+    }
+    const different = compareRows(one.content, two.content, BENCH_MEASURERS).filter((row) => row.left !== row.right);
+    assert.deepEqual(
+      different.map((row) => [row.key, row.left, row.right]),
+      [
+        ["od.addition", "", "+2,00"],
+        ["og.addition", "", "+2,00"],
+      ],
+    );
   });
 });
 
@@ -214,22 +204,12 @@ describe("double optique du banc — droits simulés (D-04-05, PROPOSED)", () =>
     assert.equal(!(await gateway.listRecords({ search: "", kind: "all", status: "all", includeInvalidated: true, sort: "date:desc", page: 1, pageSize: 8 })).ok, true);
   });
 
-  test("droit d'écriture par TYPE ; pièces : nombre seulement sans optical.documents.read, contenu refusé sans événement", async () => {
+  test("droit d'écriture par TYPE ; aucun droit sur des pièces sources (D-04-16)", async () => {
     const { gateway, session } = await setup();
     session.current = { actor, permissions: ["clients.read", OPTICAL_PERMISSIONS.read, OPTICAL_PERMISSIONS.measurementsWrite] };
     const rx = await gateway.createRecord("cli-fictif-3", rxContent());
     assert.equal(!rx.ok && rx.error.status, 403);
     assert.equal((await gateway.createRecord("cli-fictif-3", emptyContent("measurement"))).ok, true);
-    const ref = refOf(gateway, "RX-FICTIF-0001");
-    const record = must(await gateway.getRecord(ref.kind, ref.id));
-    assert.equal(record.documents, null);
-    assert.equal(record.documentCount, 2);
-    session.current = { actor, permissions: ALL_OPTICAL_PERMISSIONS };
-    const docId = must(await gateway.getRecord(ref.kind, ref.id)).documents?.[0]?.id ?? "";
-    session.current = { actor, permissions: ["clients.read", OPTICAL_PERMISSIONS.read] };
-    const events = record.events.length;
-    assert.equal(!(await gateway.fetchDocumentContent(docId)).ok, true);
-    session.current = { actor, permissions: ALL_OPTICAL_PERMISSIONS };
-    assert.equal(must(await gateway.getRecord(ref.kind, ref.id)).events.length, events, "refus non journalisé (D-04-12.d)");
+    assert.deepEqual(Object.values(OPTICAL_PERMISSIONS).filter((permission) => permission.includes("document")), []);
   });
 });

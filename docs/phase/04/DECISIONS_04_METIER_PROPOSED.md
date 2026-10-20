@@ -200,3 +200,25 @@ Mandat : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04
 
 Aucune réponse n'a été reçue : **D-04-02 à D-04-14 restent `PROPOSED`**, les formulaires ci-dessus restent vierges. Le prototype 04-A les illustre sans les trancher (banc isolé, données fictives). L'**examen métier consolidé avec un opticien** (D-04-02.b/c, D-04-06 a–d, listes fermées de D-04-03.a/b) peut se tenir **sur le banc** : ordre du jour et points à observer dans [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 9. Les règles et la migration `0006` ne seront figées qu'après cet examen (G04-METIER).
 
+## Décision datée — 20/10/2026 : D-04-16 APPROVED (simplification du dossier optique)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). **D-04-16 — APPROVED (propriétaire, 20/10/2026)** : *« Je conserve le système de révisions, mais je demande la suppression du champ « État de l'œil » et le report de la gestion des « Pièces sources ». »* Objectif : simplifier le parcours quotidien de l'opticien sans compromettre la traçabilité des corrections. Les sections précédentes sont **conservées telles qu'écrites** (historique des choix) ; leur effet est le suivant.
+
+| Réf. | Effet de D-04-16 | État après le 20/10/2026 |
+|---|---|---|
+| D-04-02.c | l'**état par œil** (`renseigné` / `non prescrit sur le document` / `non mesuré` / `non transcrit`) est **retiré** des formulaires, de la validation du prototype et du modèle proposé. Reste acquis le principe « une valeur absente n'est jamais convertie en 0,00 » : chaque champ optique peut rester vide ; « plan » se saisit explicitement | partie « état » **RETIRÉE** ; principe « absence ≠ 0 » maintenu (déjà appliqué) |
+| D-04-02.b | **non modifiée** (règle clinique ouverte, consigne 8). Sa recommandation B renvoyait à l'état par œil : elle devra être reformulée (par exemple au regard des valeurs elles-mêmes) — aucune reformulation n'est proposée ici | **PROPOSED** [AVIS OPTICIEN] ; O-04-30 |
+| D-04-02.a, d | inchangées | PROPOSED |
+| D-04-03.a, b | inchangées ; prescripteur (nom, qualité, identifiant), date de prescription, date de réception, et provenance de la mesure **conservés** | PROPOSED [AVIS OPTICIEN] |
+| D-04-03.c | pièce source : **reportée** au backlog permanent **BL-04-01** (gestion documentaire) ; aucune table ni API en Phase 04 ; aucune mention « sans pièce source » | **REPORTÉE** (hors Phase 04) |
+| D-04-04 | inchangée : révisions immuables, motif de rectification, invalidation motivée, comparaison ; motif d'invalidation « document non recevable » conservé (il qualifie l'ordonnance reçue, O-04-32) | PROPOSED |
+| D-04-05 | option B réduite à **4 droits** : `optical.read`, `optical.prescriptions.write`, `optical.measurements.write`, `optical.invalidate` ; `optical.documents.read` / `.write` reportés avec BL-04-01 ; d (« journal des pièces seulement ») sans objet en 04 | PROPOSED |
+| D-04-06 | **non modifiée** (bornes, pas, axe, prisme / base, acuité) | PROPOSED [AVIS OPTICIEN] |
+| D-04-10 | rattachement historisé des pièces aux révisions : **reporté** avec BL-04-01 (étude E-01 conservée pour la reprise) | **REPORTÉE** |
+| D-04-11 | inchangée : révision confirmée et rectification en brouillon, numéro attribué à la confirmation, abandon conservé | PROPOSED |
+| D-04-12 | a, b, d (événements d'accès aux pièces) **reportées** avec BL-04-01 ; **c** (journalisation des lectures de dossiers, avant pilote, G04-LEGAL) maintenue | a, b, d **REPORTÉES** ; c PROPOSED |
+| D-04-13 | inchangée ; la mention « métadonnées des pièces » d'`optical.read` est sans objet | PROPOSED |
+| D-04-14 | contrôles de fichiers, limites, volumes de pièces : **reportés** avec BL-04-01 (étude E-05 conservée) | **REPORTÉE** |
+| D-04-01, D-04-15 | inchangées : deux types distincts ; maquette Lot 3 avec boutons ± | APPROVED |
+
+**Formulaire de réponse.** Les lignes D-04-03.c, D-04-10, D-04-12.a/b/d et D-04-14 des formulaires ci-dessus **n'appellent plus de réponse en Phase 04** (elles seront reposées à la reprise de BL-04-01). Les autres lignes restent attendues ; D-04-02.a–d se lit désormais sans état par œil.

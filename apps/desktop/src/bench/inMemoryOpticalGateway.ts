@@ -1,17 +1,17 @@
 // BANC 04-A — double EN MÉMOIRE du futur service optique (aucun réseau, aucune base, aucune persistance). Il
-// reproduit les refus du contrat PROPOSÉ (API_OPTICAL_PROPOSED.md + amendements E-01/E-02/E-05) pour que les écrans
-// puissent les afficher ; ce n'est PAS une implémentation de référence et il ne tranche aucune décision.
+// reproduit les refus du contrat PROPOSÉ (API_OPTICAL_PROPOSED.md + amendement E-02 ; E-01 et E-05 retirés par
+// D-04-16) pour que les écrans puissent les afficher ; ce n'est PAS une implémentation de référence et il ne tranche
+// aucune décision. Aucune pièce source (gestion documentaire reportée au backlog permanent, D-04-16).
 // - Erreurs de champ : seulement des erreurs de FORME (nombre attendu, longueur). Aucune borne, aucun pas, aucune
 //   dépendance entre champs (D-04-06 ouverte, avis opticien requis).
-// - Critère de confirmation (`422 incomplete`) : RÈGLE DE DÉMONSTRATION tirée des recommandations PROPOSED
-//   D-04-02.b (option B : aucun œil « non transcrit ») et D-04-03.a/b (provenance minimale) ; le poste ne la code pas.
+// - Critère de confirmation (`422 incomplete`) : RÈGLE DE DÉMONSTRATION tirée de la recommandation PROPOSED D-04-03.a/b
+//   (provenance minimale) ; le poste ne la code pas. Aucun critère sur les valeurs OD / OG : sans état d'œil
+//   (D-04-16), chaque champ peut rester vide, et le critère clinique de complétude reste ouvert (D-04-02.b).
 // - Valeurs conservées EXACTEMENT telles que reçues (aucune normalisation, aucun arrondi).
 import { type ApiError, apiError, type ApiResult } from "../api/client.ts";
 import { findFolded } from "../clients/searchText.ts";
 import {
   displayStatus,
-  type DocumentContent,
-  type DocumentInvalidationReason,
   EYE_FIELDS,
   EYE_SIDES,
   type InvalidationRequest,
@@ -28,15 +28,9 @@ import {
   type RecordContent,
   type RectificationRequest,
   shownRevision,
-  type SourceDocument,
-  type SyntheticDocumentChoice,
 } from "../optical/opticalContract.ts";
 import { OPTICAL_PERMISSIONS } from "../optical/opticalAccess.ts";
 
-/** Limites proposées (D-04-14.b, PROPOSED) appliquées par le double pour illustrer les refus. */
-export const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
-export const DOCUMENT_MAX_ACTIVE = 10;
-const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
 const NUMERIC_FIELDS = new Set(["sphere", "cylinder", "axis", "addition", "prism"]);
 // Forme d'un nombre décimal signé (point ou virgule) ; la valeur reçue n'est jamais réécrite.
 const NUMBER_SHAPE = /^[+\-−]?\s?\d+(?:[.,]\d+)?$/u;
@@ -58,11 +52,6 @@ export interface BenchFaults {
   failNextWrite: boolean;
 }
 
-interface StoredDocument extends SourceDocument {
-  digest: string;
-  label: string;
-}
-
 interface StoredRecord {
   kind: OpticalKind;
   id: string;
@@ -71,7 +60,6 @@ interface StoredRecord {
   lifecycle: "active" | "invalidated";
   invalidation: OpticalRecord["invalidation"];
   revisions: OpticalRevision[];
-  documents: StoredDocument[];
   events: OpticalEvent[];
   createdAtUtc: string;
   createdBy: OpticalActor;
@@ -84,20 +72,7 @@ export interface InMemoryOpticalGatewayOptions {
   session: () => BenchSession;
   faults?: () => BenchFaults;
   now?: () => string;
-  /** Génère l'aperçu SYNTHÉTIQUE d'une pièce image (canvas du banc) ; `null` si indisponible. */
-  renderImage?: (document: { label: string; mediaType: string }) => string | null;
 }
-
-/** Métadonnées servies : ni empreinte ni libellé interne du banc. */
-const publicDocument = (document: StoredDocument): SourceDocument => ({
-  id: document.id,
-  mediaType: document.mediaType,
-  sizeBytes: document.sizeBytes,
-  uploadedAtUtc: document.uploadedAtUtc,
-  uploadedBy: document.uploadedBy,
-  originalName: document.originalName,
-  invalidation: document.invalidation,
-});
 
 const NO_FAULTS: BenchFaults = { latencyMs: 0, failedListReads: 0, failNextWrite: false };
 
@@ -115,7 +90,7 @@ export function shapeErrors(content: RecordContent): Record<string, string[]> {
   const errors: Record<string, string[]> = {};
   for (const side of EYE_SIDES) {
     for (const field of EYE_FIELDS) {
-      const value = content[side].values[field];
+      const value = content[side][field];
       if (value.length > EYE_VALUE_MAX) errors[`${side}.${field}`] = ["too_long"];
       else if (value.trim() !== "" && NUMERIC_FIELDS.has(field) && !NUMBER_SHAPE.test(value.trim())) errors[`${side}.${field}`] = ["number_expected"];
     }
@@ -132,7 +107,6 @@ export function shapeErrors(content: RecordContent): Record<string, string[]> {
 /** Règle de DÉMONSTRATION du double (recommandations PROPOSED), jamais reprise par le poste. */
 export function incompleteErrors(content: RecordContent): Record<string, string[]> {
   const errors: Record<string, string[]> = {};
-  for (const side of EYE_SIDES) if (content[side].state === "not_transcribed") errors[`${side}.state`] = ["not_transcribed"];
   if (content.kind === "prescription") {
     if (content.provenance.prescriberName.trim() === "") errors["provenance.prescriberName"] = ["required_to_confirm"];
     if (content.provenance.prescribedOn === "") errors["provenance.prescribedOn"] = ["required_to_confirm"];
@@ -198,8 +172,7 @@ export class InMemoryOpticalGateway implements OpticalGateway {
   }
 
   private event(record: StoredRecord, action: string, extra: Partial<OpticalEvent> = {}) {
-    const code = action.startsWith("document.") ? action : `${record.kind}.${action}`;
-    record.events.push({ id: this.nextId("EVT"), atUtc: this.now(), code, actor: this.options.session().actor, ...extra });
+    record.events.push({ id: this.nextId("EVT"), atUtc: this.now(), code: `${record.kind}.${action}`, actor: this.options.session().actor, ...extra });
   }
 
   private draftOf(record: StoredRecord): OpticalRevision | undefined {
@@ -212,7 +185,6 @@ export class InMemoryOpticalGateway implements OpticalGateway {
 
   private view(record: StoredRecord): OpticalRecord {
     const client = this.client(record.clientId) ?? { id: record.clientId, reference: "—", displayName: "Client inconnu", status: "active" as const };
-    const readDocs = this.has(OPTICAL_PERMISSIONS.documentsRead);
     const lastConfirmed = this.lastConfirmedOf(record) ?? null;
     const openDraft = this.draftOf(record) ?? null;
     return clone({
@@ -225,9 +197,6 @@ export class InMemoryOpticalGateway implements OpticalGateway {
       lastConfirmed,
       openDraft,
       revisions: record.revisions,
-      // Sans `optical.documents.read` : aucune métadonnée nominative, seulement le nombre (D-04-05).
-      documents: readDocs ? record.documents.map(publicDocument) : null,
-      documentCount: record.documents.length,
       events: record.events,
       createdAtUtc: record.createdAtUtc,
       createdBy: record.createdBy,
@@ -257,16 +226,6 @@ export class InMemoryOpticalGateway implements OpticalGateway {
   private sourceOf(content: RecordContent): string {
     if (content.kind === "prescription") return content.provenance.prescriberName;
     return this.options.measurers.find((actor) => actor.id === content.provenance.measuredByUserId)?.displayName ?? "";
-  }
-
-  /** Vérifie les pièces liées à un brouillon : même enregistrement, non invalidées (E-01). */
-  private linkErrors(record: StoredRecord, content: RecordContent): Record<string, string[]> {
-    if (content.kind !== "prescription") return {};
-    const invalid = content.linkedDocumentIds.some((id) => {
-      const document = record.documents.find((candidate) => candidate.id === id);
-      return document === undefined || document.invalidation !== null;
-    });
-    return invalid ? { linkedDocumentIds: ["invalid_document"] } : {};
   }
 
   private checkKind(record: StoredRecord, content: RecordContent): boolean {
@@ -351,8 +310,6 @@ export class InMemoryOpticalGateway implements OpticalGateway {
         const actor = this.options.session().actor;
         const prefix = content.kind === "prescription" ? "RX-FICTIF" : "MES-FICTIF";
         const rank = this.records.filter((candidate) => candidate.kind === content.kind).length + 1;
-        // Une première saisie ne lie aucune pièce : la pièce se joint ensuite à l'enregistrement (E-01).
-        const initial: RecordContent = content.kind === "prescription" ? { ...content, linkedDocumentIds: [] } : content;
         const record: StoredRecord = {
           kind: content.kind,
           id: this.nextId(content.kind === "prescription" ? "rx" : "mes"),
@@ -360,8 +317,7 @@ export class InMemoryOpticalGateway implements OpticalGateway {
           clientId,
           lifecycle: "active",
           invalidation: null,
-          revisions: [this.newRevision(initial, null, null, "", at, actor)],
-          documents: [],
+          revisions: [this.newRevision(content, null, null, "", at, actor)],
           events: [],
           createdAtUtc: at,
           createdBy: actor,
@@ -415,7 +371,7 @@ export class InMemoryOpticalGateway implements OpticalGateway {
         if (!draft) return fail("conflict", 409, "not_draft");
         if (!this.checkKind(record, content)) return fail("validation", 422, "kind_mismatch");
         if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
-        const errors = { ...shapeErrors(content), ...this.linkErrors(record, content) };
+        const errors = shapeErrors(content);
         if (Object.keys(errors).length > 0) return fail("validation", 422, "validation_failed", errors);
         // Corps identique : aucune écriture, aucun événement (comme O-03-44).
         if (JSON.stringify(draft.content) === JSON.stringify(content)) return ok(this.view(record));
@@ -467,12 +423,8 @@ export class InMemoryOpticalGateway implements OpticalGateway {
         const last = this.lastConfirmedOf(record);
         if (!last || last.revisionNo !== request.expectedRevisionNo) return fail("conflict", 409, "revision_conflict");
         if (request.reasonCode === "other" && request.comment.trim() === "") return fail("validation", 422, "validation_failed", { comment: ["required"] });
-        // Le brouillon reprend le contenu et les LIENS de la révision de base, pas les octets des pièces (E-01).
-        const content = clone(last.content);
-        if (content.kind === "prescription") {
-          content.linkedDocumentIds = content.linkedDocumentIds.filter((docId) => record.documents.find((doc) => doc.id === docId)?.invalidation === null);
-        }
-        record.revisions.push(this.newRevision(content, last.revisionNo, request.reasonCode, request.comment, this.now(), this.options.session().actor));
+        // Le brouillon reprend le contenu de la révision de base ; celle-ci reste intacte.
+        record.revisions.push(this.newRevision(last.content, last.revisionNo, request.reasonCode, request.comment, this.now(), this.options.session().actor));
         record.version += 1;
         this.event(record, "rectification_started", { reasonCode: request.reasonCode });
         return ok(this.view(record), 201);
@@ -529,80 +481,6 @@ export class InMemoryOpticalGateway implements OpticalGateway {
       },
       true,
     );
-  }
-
-  // ---------- pièces source (ordonnances seulement, D-04-03.c) ----------
-
-  attachDocument(id: string, choice: SyntheticDocumentChoice): Promise<ApiResult<OpticalRecord>> {
-    return this.respond(
-      `attachDocument ${id}`,
-      () => {
-        if (!this.canRead() || !this.has(OPTICAL_PERMISSIONS.documentsWrite)) return fail("forbidden", 403);
-        const record = this.find("prescription", id);
-        if (!record) return fail("not-found", 404, "not_found");
-        if (record.lifecycle === "invalidated") return fail("conflict", 409, "invalidated");
-        if (choice.sizeBytes > DOCUMENT_MAX_BYTES) return fail("validation", 413, "too_large");
-        // Type reconnu par la « signature » (simulée) et concordant avec le type annoncé, sinon 415 (E-05).
-        const accepted = (ACCEPTED_TYPES as readonly string[]).includes(choice.detectedType);
-        if (!accepted || choice.detectedType !== choice.declaredType) return fail("validation", 415, "unsupported_media_type");
-        if (record.documents.some((document) => document.digest === choice.digest)) return fail("conflict", 409, "duplicate_document");
-        if (record.documents.filter((document) => document.invalidation === null).length >= DOCUMENT_MAX_ACTIVE) return fail("conflict", 409, "too_many_documents");
-        const document: StoredDocument = {
-          id: this.nextId("doc"),
-          mediaType: choice.detectedType as StoredDocument["mediaType"],
-          sizeBytes: choice.sizeBytes,
-          uploadedAtUtc: this.now(),
-          uploadedBy: this.options.session().actor,
-          originalName: choice.name,
-          invalidation: null,
-          digest: choice.digest,
-          label: choice.label,
-        };
-        record.documents.push(document);
-        // Brouillon ouvert : la pièce lui est liée (lien modifiable jusqu'à la confirmation, E-01).
-        const draft = this.draftOf(record);
-        if (draft && draft.content.kind === "prescription") draft.content.linkedDocumentIds.push(document.id);
-        record.version += 1;
-        this.event(record, "document.attached");
-        return ok(this.view(record), 201);
-      },
-      true,
-    );
-  }
-
-  invalidateDocument(id: string, documentId: string, reasonCode: DocumentInvalidationReason): Promise<ApiResult<OpticalRecord>> {
-    return this.respond(
-      `invalidateDocument ${documentId}`,
-      () => {
-        if (!this.canRead() || !this.has(OPTICAL_PERMISSIONS.documentsWrite)) return fail("forbidden", 403);
-        const record = this.find("prescription", id);
-        const document = record?.documents.find((candidate) => candidate.id === documentId);
-        if (!record || !document) return fail("not-found", 404, "not_found");
-        if (document.invalidation !== null) return fail("conflict", 409, "already_invalidated");
-        document.invalidation = { atUtc: this.now(), by: this.options.session().actor, reasonCode };
-        // Retirée du brouillon ouvert ; les liens des révisions CONFIRMÉES sont conservés (historique, E-01).
-        const draft = this.draftOf(record);
-        if (draft && draft.content.kind === "prescription") draft.content.linkedDocumentIds = draft.content.linkedDocumentIds.filter((linked) => linked !== documentId);
-        record.version += 1;
-        this.event(record, "document.invalidated");
-        return ok(this.view(record));
-      },
-      true,
-    );
-  }
-
-  fetchDocumentContent(documentId: string): Promise<ApiResult<DocumentContent>> {
-    return this.respond(`fetchDocumentContent ${documentId}`, () => {
-      // Refus sans événement (D-04-12.d) ; même réponse pour une pièce inconnue sans droit.
-      if (!this.canRead() || !this.has(OPTICAL_PERMISSIONS.documentsRead)) return fail("forbidden", 403);
-      const record = this.records.find((candidate) => candidate.documents.some((document) => document.id === documentId));
-      const document = record?.documents.find((candidate) => candidate.id === documentId);
-      if (!record || !document) return fail("not-found", 404, "not_found");
-      // Événement écrit AVANT la transmission : il atteste une transmission autorisée et commencée, pas une lecture.
-      this.event(record, "document.content_served");
-      const imageDataUrl = document.mediaType === "application/pdf" ? null : (this.options.renderImage?.({ label: document.label, mediaType: document.mediaType }) ?? null);
-      return ok({ mediaType: document.mediaType, imageDataUrl });
-    });
   }
 
   // ---------- commandes du banc (jamais exposées par le futur serveur) ----------

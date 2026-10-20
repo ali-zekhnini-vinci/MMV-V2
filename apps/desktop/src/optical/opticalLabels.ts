@@ -5,10 +5,8 @@
 // seule la valeur « Non précisée » existe.
 import type {
   DisplayStatus,
-  DocumentInvalidationReason,
   EyeField,
   EyeSide,
-  EyeState,
   InvalidationReason,
   OpticalKind,
   RectificationReason,
@@ -64,12 +62,6 @@ export const FIELD_UNIT_SHORT: Record<EyeField, string> = { sphere: "D", cylinde
 /** Libellés de base proposés par la maquette Lot 3 (aide à la saisie seulement ; liste non approuvée, D-04-06). */
 export const BASE_SUGGESTIONS: readonly string[] = ["Nasal", "Temporal", "Supérieur", "Inférieur"];
 
-export function eyeStateLabel(kind: OpticalKind, state: EyeState): string {
-  if (state === "filled") return "Renseigné";
-  if (state === "not_prescribed") return kind === "prescription" ? "Non prescrit sur le document" : "Non mesuré";
-  return kind === "prescription" ? "Non transcrit" : "Non saisi";
-}
-
 export const RECTIFICATION_REASON_LABEL: Record<RectificationReason, string> = {
   transcription_error: "Erreur de transcription",
   additional_information: "Complément d'information",
@@ -83,18 +75,10 @@ export const INVALIDATION_REASON_LABEL: Record<InvalidationReason, string> = {
   other: "Autre (préciser)",
 };
 
-export const DOCUMENT_INVALIDATION_REASON_LABEL: Record<DocumentInvalidationReason, string> = {
-  attached_by_mistake: "Jointe par erreur",
-  illegible: "Illisible",
-  other: "Autre",
-};
-
 export const UNSPECIFIED_LABEL = "Non précisée";
 export const LIST_PENDING_NOTE = "liste à fournir (avis opticien, D-04-03)";
 
-export const MEDIA_LABEL: Record<string, string> = { "application/pdf": "PDF", "image/jpeg": "JPEG", "image/png": "PNG" };
-
-/** Libellés des événements de gestion (D-04-12 : « transmis », jamais « consulté » ; aucune valeur optique). */
+/** Libellés des événements de gestion (D-04-12 ; aucune valeur optique). */
 const EVENT_LABEL: Record<string, string> = {
   created: "Saisie créée (brouillon)",
   draft_updated: "Brouillon modifié",
@@ -102,13 +86,9 @@ const EVENT_LABEL: Record<string, string> = {
   rectification_started: "Rectification ouverte",
   rectification_discarded: "Rectification abandonnée",
   invalidated: "Enregistrement invalidé",
-  "document.attached": "Pièce source jointe",
-  "document.invalidated": "Pièce source invalidée",
-  "document.content_served": "Contenu d'une pièce transmis au poste",
 };
 
 export function eventLabel(code: string): string {
-  if (code.startsWith("document.")) return EVENT_LABEL[code] ?? code;
   const action = code.split(".").slice(1).join(".");
   return EVENT_LABEL[action] ?? code;
 }
@@ -117,11 +97,6 @@ export function formatDateTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return date.toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-export function formatSize(bytes: number): string {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Mo`;
-  return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString("fr-FR")} Ko`;
 }
 
 /** Mention commune des écrans fondés sur des décisions encore PROPOSED. */

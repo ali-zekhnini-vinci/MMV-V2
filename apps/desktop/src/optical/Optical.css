@@ -440,15 +440,6 @@
   font-size: var(--text-xs);
 }
 
-.optical-eye__choices {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 14px;
-  min-height: 42px;
-}
-
-.optical-radio,
 .optical-check {
   display: inline-flex;
   align-items: center;
@@ -457,7 +448,6 @@
   cursor: pointer;
 }
 
-.optical-radio input,
 .optical-check input {
   width: 16px;
   height: 16px;
@@ -465,7 +455,6 @@
   accent-color: var(--accent);
 }
 
-.optical-radio input:focus-visible,
 .optical-check input:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
@@ -661,15 +650,6 @@
   min-width: 0;
 }
 
-.optical-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 .optical-errors {
   margin: 6px 0 0;
   padding-left: 18px;
@@ -785,115 +765,11 @@
   gap: 12px 16px;
 }
 
-/* ---------- Pièces source ---------- */
-.optical-docs__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.optical-docs__bar p {
-  margin: 0;
-}
-
-.optical-docs__denied {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: var(--text-secondary);
-}
-
-.optical-docs__subtitle {
+.optical-detail__subtitle {
   margin: var(--space-2) 0 0;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
-}
-
-.optical-docs__list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 8px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.optical-doc {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 14px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-
-.optical-doc__icon {
-  display: inline-flex;
-  color: var(--text-secondary);
-}
-
-.optical-doc__main {
-  display: flex;
-  flex: 1 1 260px;
-  flex-direction: column;
-  min-width: 0;
-  gap: 2px;
-  font-size: var(--text-sm);
-}
-
-.optical-doc__name {
-  font-weight: var(--weight-semibold);
-  overflow-wrap: anywhere;
-}
-
-.optical-doc--invalidated .optical-doc__name {
-  text-decoration: line-through;
-  color: var(--text-secondary);
-}
-
-.optical-doc__invalid {
-  font-weight: var(--weight-semibold);
-  color: var(--warning-text);
-}
-
-.optical-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--surface-sunken);
-}
-
-.optical-preview__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: var(--text-sm);
-}
-
-.optical-preview__warn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--warning-text);
-}
-
-.optical-preview__img {
-  max-width: min(100%, 520px);
-  height: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--mmv-white);
 }
 
 /* ---------- Journal, dialogues, sélecteur de client ---------- */

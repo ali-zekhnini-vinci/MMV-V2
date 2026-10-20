@@ -44,7 +44,6 @@ add("13-etat06-aucun-resultat", u("route=/optique"), [typeIn("Rechercher par cli
 add("14-etat08-chargement", u("route=/optique&latency=3000"), [], W, { waitMs: 900 });
 add("15-etat09-erreur", u(""), [click("Échec de la prochaine liste", 300), click("Dossiers optiques", 900)]);
 add("16-etats12-13-selection-client", u("route=/optique"), [click("Nouveau…", 800), click("Ordonnance médicale", 800), typeIn("Rechercher un client actif", "Fictif"), pause(1000)]);
-add("22-gap14-piece-invalidee", u(""), [click("RX-FICTIF-0002", 1000), scrollTo("Pièces source")]);
 add("23-gap07-revisions-comparaison", u(""), [click("RX-FICTIF-0001", 1000), scrollTo("Révisions")]);
 add("24-gap08-etat30-invalide", u(""), [click("RX-FICTIF-0003", 1000)]);
 add("25-etats16-21-brouillon-partiel", u(""), [click("RX-FICTIF-0004", 1000)]);
@@ -54,9 +53,8 @@ add("28-gap03-detail-mesure", u(""), [click("MES-FICTIF-0001", 1000)]);
 add("29-etat23-rectifier-motif", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Rectifier", 800)]);
 add("32-etats28-29-invalider", u(""), [click("RX-FICTIF-0001", 1000), click("Plus d'actions", 600), click("Invalider…", 900)]);
 add("32b-etat31-erreur-invalidation", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Échec de la prochaine écriture", 300), click("Plus d'actions", 600), click("Invalider…", 900), setSelect("Motif", "entry_error"), click("Invalider", 1000)]);
-add("33-gap06-apercu-piece-synthetique", u(""), [click("RX-FICTIF-0001", 1000), scrollTo("Pièces source"), click("Afficher la pièce", 1000), scrollTo("Pièces source")]);
-add("34-gap06-format-refuse", u(""), [click("RX-FICTIF-0001", 1000), scrollTo("Pièces source"), click("Joindre une pièce", 700), click("Image SVG renommée en .png (refusée)", 900), scrollTo("Pièces source")]);
-add("35-etat22-lecture-seule-sans-pieces", u("profile=reader"), [click("RX-FICTIF-0002", 1000)]);
+// 22, 33, 34 (pièces sources) retirées le 20/10/2026 : gestion documentaire reportée au backlog permanent (D-04-16).
+add("35-etat22-lecture-seule", u("profile=reader"), [click("RX-FICTIF-0002", 1000)]);
 add("36-gap05-sans-droit-optique-fiche", card("cli-fictif-1") + "&profile=none", [click("Ordonnances", 700)]);
 add("37-gap05-acces-direct-refuse", u("route=/optique&profile=none"));
 add("38-etats17-35-erreurs-sous-champ", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "abc"), typeIn("Prescripteur — nom (tel que sur le document)", "Dr Fictif-Test"), click("Enregistrer le brouillon", 1000)]);

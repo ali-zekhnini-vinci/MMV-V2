@@ -22,8 +22,7 @@ export function RevisionsPanel({ record, measurers }: { record: OpticalRecord; m
   const [onlyDifferent, setOnlyDifferent] = useState(true);
   const left = record.revisions.find((revision) => revision.id === leftId);
   const right = record.revisions.find((revision) => revision.id === rightId);
-  const documentName = (docId: string) => record.documents?.find((document) => document.id === docId)?.originalName ?? "pièce (nom non communiqué)";
-  const rows = left && right ? compareRows(left.content, right.content, measurers, documentName) : [];
+  const rows = left && right ? compareRows(left.content, right.content, measurers) : [];
   const different = rows.filter((row) => row.left !== row.right);
   const shown = onlyDifferent ? different : rows;
 

@@ -1,0 +1,409 @@
+{
+ "date": "2026-10-20",
+ "objet": "04-A simplification D-04-16 — captures navigateur (Edge sans interface), banc servi par le serveur de banc déjà actif (127.0.0.1:1520)",
+ "plan_lot3_apres": {
+  "captures": 34,
+  "erreurs_console": 0,
+  "defilement_horizontal": 0,
+  "fichiers": [
+   "apres-base-liste-proposee.jpg",
+   "apres-etat34-focus-stepper.jpg",
+   "apres-etat35-erreur-sous-champ.jpg",
+   "apres-mesure-1024x700-z100-clair.jpg",
+   "apres-mesure-1024x700-z100-sombre.jpg",
+   "apres-mesure-1024x700-z125-clair.jpg",
+   "apres-mesure-1024x700-z125-sombre.jpg",
+   "apres-mesure-1024x700-z150-clair.jpg",
+   "apres-mesure-1024x700-z150-sombre.jpg",
+   "apres-mesure-1920x1080-z100-clair.jpg",
+   "apres-mesure-1920x1080-z100-sombre.jpg",
+   "apres-mesure-1920x1080-z125-clair.jpg",
+   "apres-mesure-1920x1080-z125-sombre.jpg",
+   "apres-mesure-1920x1080-z150-clair.jpg",
+   "apres-mesure-1920x1080-z150-sombre.jpg",
+   "apres-mesure-saisie-rapide-1920-clair.jpg",
+   "apres-mesure-saisie-rapide-1920-sombre.jpg",
+   "apres-ordonnance-1024x700-z100-clair.jpg",
+   "apres-ordonnance-1024x700-z100-sombre.jpg",
+   "apres-ordonnance-1024x700-z125-clair.jpg",
+   "apres-ordonnance-1024x700-z125-sombre.jpg",
+   "apres-ordonnance-1024x700-z150-clair.jpg",
+   "apres-ordonnance-1024x700-z150-sombre.jpg",
+   "apres-ordonnance-1920x1080-z100-clair.jpg",
+   "apres-ordonnance-1920x1080-z100-sombre.jpg",
+   "apres-ordonnance-1920x1080-z125-clair.jpg",
+   "apres-ordonnance-1920x1080-z125-sombre.jpg",
+   "apres-ordonnance-1920x1080-z150-clair.jpg",
+   "apres-ordonnance-1920x1080-z150-sombre.jpg",
+   "apres-ordonnance-saisie-rapide-1024.jpg",
+   "apres-ordonnance-saisie-rapide-1920-clair.jpg",
+   "apres-ordonnance-saisie-rapide-1920-sombre.jpg",
+   "apres-pas-configurable-0125.jpg",
+   "apres-valeur-manuelle-hors-pas.jpg"
+  ]
+ },
+ "plan_regression_04a": {
+  "captures": 51,
+  "erreurs_console": 0,
+  "defilement_horizontal": 0,
+  "detail": [
+   {
+    "n": "01-banc-accueil",
+    "notes": [],
+    "h": false,
+    "h1": "Banc 04-A — dossier optique (prototype)",
+    "err": 0
+   },
+   {
+    "n": "02-etat05-fiche-dossier-optique",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-ALPHA Camille",
+    "err": 0
+   },
+   {
+    "n": "10-etat01-liste-globale",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "20-etat19-detail-rx-revision2",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "21-gap13-rectification-en-cours",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0002",
+    "err": 0
+   },
+   {
+    "n": "30-etat10-formulaire-ordonnance",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "31-gap02-formulaire-mesure",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle mesure magasin",
+    "err": 0
+   },
+   {
+    "n": "01-banc-accueil-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Banc 04-A — dossier optique (prototype)",
+    "err": 0
+   },
+   {
+    "n": "02-etat05-fiche-dossier-optique-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-ALPHA Camille",
+    "err": 0
+   },
+   {
+    "n": "10-etat01-liste-globale-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "20-etat19-detail-rx-revision2-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "21-gap13-rectification-en-cours-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0002",
+    "err": 0
+   },
+   {
+    "n": "30-etat10-formulaire-ordonnance-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "31-gap02-formulaire-mesure-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle mesure magasin",
+    "err": 0
+   },
+   {
+    "n": "03-etat07-fiche-vide-par-section",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-CHARLIE Noa",
+    "err": 0
+   },
+   {
+    "n": "04-etat18-client-archive",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-DELTA Alix",
+    "err": 0
+   },
+   {
+    "n": "05-gap01-choix-du-type",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-ALPHA Camille",
+    "err": 0
+   },
+   {
+    "n": "11-etat04-filtres-invalides-inclus-resume",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "12-etat03-recherche",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "13-etat06-aucun-resultat",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "14-etat08-chargement",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "15-etat09-erreur",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "16-etats12-13-selection-client",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "23-gap07-revisions-comparaison",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "24-gap08-etat30-invalide",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0003",
+    "err": 0
+   },
+   {
+    "n": "25-etats16-21-brouillon-partiel",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0004",
+    "err": 0
+   },
+   {
+    "n": "26-gap10-confirmation",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0004",
+    "err": 0
+   },
+   {
+    "n": "27-confirmation-refusee-422",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0004",
+    "err": 0
+   },
+   {
+    "n": "28-gap03-detail-mesure",
+    "notes": [],
+    "h": false,
+    "h1": "Mesure magasin MES-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "29-etat23-rectifier-motif",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0006",
+    "err": 0
+   },
+   {
+    "n": "32-etats28-29-invalider",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "32b-etat31-erreur-invalidation",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0006",
+    "err": 0
+   },
+   {
+    "n": "35-etat22-lecture-seule",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0002",
+    "err": 0
+   },
+   {
+    "n": "36-gap05-sans-droit-optique-fiche",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-ALPHA Camille",
+    "err": 0
+   },
+   {
+    "n": "37-gap05-acces-direct-refuse",
+    "notes": [],
+    "h": false,
+    "h1": "Accès non autorisé",
+    "err": 0
+   },
+   {
+    "n": "38-etats17-35-erreurs-sous-champ",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "38b-etat17-bandeau-erreurs",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "39-etat14-enregistrement-en-cours",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "40-gap09-conflit-deux-postes",
+    "notes": [],
+    "h": false,
+    "h1": "Brouillon — ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "41-etat26-garde-de-sortie",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "42-etat27-revision-enregistree",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0006",
+    "err": 0
+   },
+   {
+    "n": "43-etat34-focus-visible",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "50-etat32-fenetre-reduite-formulaire",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "51-etat32-fenetre-reduite-formulaire-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "52-fenetre-reduite-detail",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0002",
+    "err": 0
+   },
+   {
+    "n": "53-1920-detail-rx",
+    "notes": [],
+    "h": false,
+    "h1": "Ordonnance médicale RX-FICTIF-0001",
+    "err": 0
+   },
+   {
+    "n": "54-1920-fiche-dossier-optique-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "FICTIF-ALPHA Camille",
+    "err": 0
+   },
+   {
+    "n": "60-zoom125-formulaire",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "61-zoom125-liste-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   },
+   {
+    "n": "60-zoom150-formulaire",
+    "notes": [],
+    "h": false,
+    "h1": "Nouvelle ordonnance médicale",
+    "err": 0
+   },
+   {
+    "n": "61-zoom150-liste-sombre",
+    "notes": [],
+    "h": false,
+    "h1": "Dossiers optiques",
+    "err": 0
+   }
+  ]
+ }
+}

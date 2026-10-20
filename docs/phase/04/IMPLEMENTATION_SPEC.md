@@ -1,6 +1,6 @@
 # 04 — IMPLEMENTATION_SPEC (cadrage 04-00, aucune implémentation)
 
-**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé) ; *20/10/2026 :* **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 10, refonte UX des formulaires, D-04-15). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
+**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé) ; *20/10/2026 :* **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 10, refonte UX des formulaires, D-04-15) ; *20/10/2026 (simplification) :* **`PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 11, D-04-16). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
 
 ## 1. Base de départ vérifiée
 
@@ -91,8 +91,8 @@ Les §§ 1 à 8 sont conservés. **G04-A APPROVED — UI ONLY**, O-04-16 APPROVE
 
 | Couche | Emplacement | Contenu |
 |---|---|---|
-| Prototype d'interface | `apps/desktop/src/optical/` | contrat provisoire `opticalContract.ts` (types, sans HTTP), `opticalQueries.ts` (TanStack Query sur une passerelle fournie par contexte ; passerelle par défaut = « service non activé »), `opticalAccess.ts` (affichage selon droits simulés), onglet `ClientOpticalTab`, liste `OpticalListView`, choix `OpticalTypeChooser`, formulaire `OpticalRecordForm` + grille neutre `EyeGrid`, détail `OpticalRecordDetail`, `RevisionsPanel`, `SourceDocumentsPanel`, dialogues, `Optical.css` |
-| Banc isolé | `apps/desktop/optical-bench.html`, `apps/desktop/src/bench/` | hôte `OpticalBench` (bannière permanente, profils simulés, latence et pannes simulées, autre poste simulé), double en mémoire `inMemoryOpticalGateway.ts`, jeu fictif `benchSeed.ts`, garde réseau `benchNetwork.ts`, aperçus synthétiques `benchImages.ts` |
+| Prototype d'interface | `apps/desktop/src/optical/` | contrat provisoire `opticalContract.ts` (types, sans HTTP), `opticalQueries.ts` (TanStack Query sur une passerelle fournie par contexte ; passerelle par défaut = « service non activé »), `opticalAccess.ts` (affichage selon droits simulés), onglet `ClientOpticalTab`, liste `OpticalListView`, choix `OpticalTypeChooser`, formulaire `OpticalRecordForm` + grille neutre `EyeGrid`, détail `OpticalRecordDetail`, `RevisionsPanel`, `SourceDocumentsPanel` *(supprimé le 20/10/2026, D-04-16)*, dialogues, `Optical.css` |
+| Banc isolé | `apps/desktop/optical-bench.html`, `apps/desktop/src/bench/` | hôte `OpticalBench` (bannière permanente, profils simulés, latence et pannes simulées, autre poste simulé), double en mémoire `inMemoryOpticalGateway.ts`, jeu fictif `benchSeed.ts`, garde réseau `benchNetwork.ts`, aperçus synthétiques `benchImages.ts` *(supprimé le 20/10/2026, D-04-16)* |
 | Code existant modifié | `apps/desktop/src/clients/ClientDetailView.tsx` | props facultatives `opticalTab` / `initialTab` ; sans elles (application réelle), rendu identique |
 | Outils | `apps/desktop/e2e/bench-04a/` | serveur Vite isolé (port 1520, cache hors dépôt), plan et prise des captures (Edge sans interface, CDP) |
 
@@ -111,3 +111,16 @@ Les §§ 1 à 9 sont conservés. **D-04-15 APPROVED** : la maquette Claude Desig
 | Banc | `apps/desktop/src/bench/OpticalBench.tsx`, `main.tsx` | fournisseur `OpticalStepContext`, commande « Pas des boutons ± (démonstration) », paramètre `step` |
 
 À l'activation (04-C) : le pas, les bornes, le format et les règles croisées viendront de D-04-06 (aucune valeur codée en dur ailleurs que `DEMO_STEP`) ; revérifier l'en-tête collant dans le Shell réel (O-04-28). Rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 11.
+
+## 11. Amendement daté — 20/10/2026 (simplification, D-04-16 APPROVED)
+
+Les §§ 1 à 10 sont conservés. **D-04-16 APPROVED** ([`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md)) : « État de l'œil » supprimé, gestion documentaire reportée au backlog permanent BL-04-01, révisions conservées. Effets sur la spécification :
+
+| § | Changement |
+|---|---|
+| § 2 architecture | `src/MMV.Infrastructure/Optical/` : **aucun stockage de pièces** ; interface : plus de zone « pièces » (`SourceDocumentsPanel.tsx` supprimé) |
+| § 3 composants | aperçu de pièce et sélecteur de fichier sans objet en 04 ; grille OD / OG sans sélecteur d'état |
+| § 4 sous-lots | 04-B (après G04-METIER, G04-SQL) : en-têtes et révisions des deux types, 4 droits optiques, **aucune** table ni API de pièces ; 04-C : CSP, visionneuse et preuves de fichiers sans objet |
+| § 5 sécurité | ligne « Pièces sécurisées, aucun lien public » sans objet en 04 (reprise avec BL-04-01) ; `no-store`, 403 / 404 indiscernables et absence de valeur optique dans l'audit maintenus |
+
+Prototype : contrat `apps/desktop/src/optical/opticalContract.ts` (`EyeValues` sans état, `OpticalGateway` sans opération documentaire) ; double `apps/desktop/src/bench/inMemoryOpticalGateway.ts`. Rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 12.

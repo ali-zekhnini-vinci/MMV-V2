@@ -1,6 +1,8 @@
 # 04-A — Livraison : interfaces du dossier optique (prototype sur banc isolé)
 
-**Statut (20/10/2026, refonte UX Lot 3) : `PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md) — **D-04-15 APPROVED** (référence UX officielle des formulaires optiques : maquette Claude Design Lot 3, contrôles rapides ± et saisie clavier complémentaire). Formulaires « Ordonnance médicale » et « Mesure magasin » refondus selon la maquette, toujours **uniquement** dans le banc isolé ; D-04-02 à D-04-14 restent `PROPOSED` (le pas des boutons est un paramètre de démonstration, D-04-06 ouverte). Détail : **§ 11**.
+**Statut (20/10/2026, simplification) : `PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md) — **D-04-16 APPROVED** : champ « État de l'œil » supprimé, gestion des pièces sources reportée au backlog permanent (BL-04-01), révisions, comparaison, motif et auteurs conservés. Toujours **uniquement** dans le banc isolé ; aucune règle clinique ouverte modifiée. Détail : **§ 12**.
+
+*Historique —* **Statut (20/10/2026, refonte UX Lot 3) : `PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md) — **D-04-15 APPROVED** (référence UX officielle des formulaires optiques : maquette Claude Design Lot 3, contrôles rapides ± et saisie clavier complémentaire). Formulaires « Ordonnance médicale » et « Mesure magasin » refondus selon la maquette, toujours **uniquement** dans le banc isolé ; D-04-02 à D-04-14 restent `PROPOSED` (le pas des boutons est un paramètre de démonstration, D-04-06 ouverte). Détail : **§ 11**.
 
 *Historique —* **Statut (19/10/2026) : `PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) — **G04-A APPROVED — UI ONLY**, **O-04-16 APPROVED**. D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (aucune n'est tranchée par ce lot). Branche locale `feat/phase-04-00-cadrage` ; commits locaux seulement (aucun push, PR ni merge).
 
@@ -24,7 +26,7 @@
 | banc absent de l'application livrée | `vite build` ne construit que `index.html` ; aucun module de l'application n'importe `optical/` ni `bench/` | test d'imports + recherche dans le bundle de production : aucune occurrence de `BANC DE D`, `optical-bench`, `RX-FICTIF`, `Fictif-`, `InMemoryOpticalGateway`, `/optique` ([`evidence/P04A_bundle_20261019.log`](evidence/P04A_bundle_20261019.log)) ; seul le libellé « Dossier optique » de la branche facultative inutilisée de `ClientDetailView` y figure (O-04-24) |
 | aucune authentification contournée | le banc n'ouvre **aucune** session MMV.Api et ne contacte aucun serveur : `fetch` est remplacé avant le premier rendu ; seule la recherche de clients du `ClientPicker` réutilisé est servie **en mémoire** (clients fictifs, origine réservée `.invalid`), tout autre appel est refusé sans émission et compté | chaque test de parcours vérifie `blocked = []` ; compteur affiché dans le banc |
 | aucune API ni permission optique | aucune route `/api/optical`, aucun ajout à `Permissions.cs` ni à la contrainte SQL ; les noms `optical.*` n'existent que dans le prototype (affichage) et le double en mémoire | `git diff --stat` : aucun fichier de `src/` (.NET) ni SQL modifié |
-| aucune donnée de santé réelle | identités `Fictif-…`, domaines `exemple.test`, prescripteurs `Dr Fictif-Prescripteur …`, collaborateurs `Fictif-…`, valeurs de démonstration ; pièces **synthétiques** dessinées localement (mention « Aucune donnée réelle ») ; aucun fichier du poste n'est lu | `src/bench/benchSeed.ts`, `benchImages.ts` ; captures |
+| aucune donnée de santé réelle | identités `Fictif-…`, domaines `exemple.test`, prescripteurs `Dr Fictif-Prescripteur …`, collaborateurs `Fictif-…`, valeurs de démonstration ; pièces **synthétiques** dessinées localement (mention « Aucune donnée réelle ») ; aucun fichier du poste n'est lu | `src/bench/benchSeed.ts`, `benchImages.ts` *(supprimé le 20/10/2026, D-04-16)* ; captures |
 
 ## 3. Fichiers livrés
 
@@ -32,7 +34,7 @@
 |---|---|
 | `apps/desktop/src/optical/opticalContract.ts` | contrat **provisoire** (types seulement, aucun HTTP) : deux types distincts (union discriminée `prescription` / `measurement`), révisions `draft` / `confirmed` / `discarded`, pièces, interface `OpticalGateway` |
 | `apps/desktop/src/optical/opticalLabels.ts`, `opticalUi.ts`, `opticalAccess.ts`, `opticalUiState.ts`, `opticalQueries.ts`, `opticalRevisions.ts` | libellés (vocabulaire D-04-01), chemins et contexte de retour validé, messages bornés, droits simulés (affichage), état de liste, TanStack Query, comparaison |
-| `apps/desktop/src/optical/OpticalModule.tsx`, `OpticalListView.tsx`, `ClientOpticalTab.tsx`, `OpticalTypeChooser.tsx`, `OpticalRecordForm.tsx`, `EyeGrid.tsx`, `OpticalRecordDetail.tsx`, `RevisionsPanel.tsx`, `SourceDocumentsPanel.tsx`, `OpticalDialogs.tsx`, `OpticalBadges.tsx`, `OpticalRecordsTable.tsx`, `Optical.css` | écrans du prototype |
+| `apps/desktop/src/optical/OpticalModule.tsx`, `OpticalListView.tsx`, `ClientOpticalTab.tsx`, `OpticalTypeChooser.tsx`, `OpticalRecordForm.tsx`, `EyeGrid.tsx`, `OpticalRecordDetail.tsx`, `RevisionsPanel.tsx`, `SourceDocumentsPanel.tsx` *(supprimé le 20/10/2026, D-04-16)*, `OpticalDialogs.tsx`, `OpticalBadges.tsx`, `OpticalRecordsTable.tsx`, `Optical.css` | écrans du prototype |
 | `apps/desktop/optical-bench.html`, `apps/desktop/src/bench/*` | banc isolé : hôte, double en mémoire, jeu fictif, profils simulés, garde réseau, aperçus synthétiques, styles |
 | `apps/desktop/src/clients/ClientDetailView.tsx` | **seule modification de code existant** : props facultatives `opticalTab` / `initialTab` (sans elles, rendu inchangé) |
 | `apps/desktop/e2e/bench-04a/serve.mjs`, `plan.mjs`, `shoot.mjs` | serveur Vite isolé (port 1520, cache hors dépôt), plan et prise des captures (Edge sans interface, CDP) |
@@ -217,3 +219,68 @@ Captures brutes : `P04A_UX_navigateur_apres-*.jpg` (34), `P04A_UX_navigateur_ava
 3. **D-04-03.a / b** — date de prescription obligatoire (astérisque de la maquette) ; listes fermées des qualités du prescripteur et des catégories de mesure.
 4. Ordre de Tab exact (état 33) après D-04-03 / D-04-06.
 5. Validation visuelle de la refonte par le propriétaire (`OWNER_VISUAL_REVIEW_REQUIRED`).
+
+## 12. Simplification du dossier optique — 20/10/2026 (D-04-16 APPROVED)
+
+Décision **D-04-16 — APPROVED (propriétaire, 20/10/2026)** : *« Je conserve le système de révisions, mais je demande la suppression du champ « État de l'œil » et le report de la gestion des « Pièces sources ». »* Objectif : simplifier le parcours quotidien de l'opticien sans compromettre la traçabilité des corrections. Identifiant vérifié libre avant inscription. Les §§ 1 à 11 sont conservés comme historique ; ce qu'ils décrivent de l'état de l'œil et des pièces n'est plus l'état courant.
+
+### 12.1 Préflight
+
+| Contrôle | Résultat |
+|---|---|
+| HEAD au départ | `9be2fda` sur `feat/phase-04-00-cadrage` ; aucune modification suivie ; non suivis du propriétaire intacts |
+| lecture | code du prototype (`apps/desktop/src/optical/`, `apps/desktop/src/bench/`, plans de captures) et documents de `docs/phase/04/` concernés, avant modification |
+| PostgreSQL, ancien MMV | **non consultés** ; aucune migration `0006`, aucun backend optique, aucune activation réelle |
+
+### 12.2 Changements (prototype, banc isolé)
+
+| Fichier | Changement |
+|---|---|
+| `apps/desktop/src/optical/opticalContract.ts` | `EyeState` / `EYE_STATES` supprimés ; un œil = `EyeValues` (sept chaînes, `""` = non renseigné) ; `linkedDocumentIds`, `SourceDocument`, `documents` / `documentCount`, `SyntheticDocumentChoice`, `DocumentContent`, motifs d'invalidation de pièce et opérations `attachDocument` / `invalidateDocument` / `fetchDocumentContent` supprimés |
+| `EyeGrid.tsx` | rangée « État de l'œil » (boutons radio) supprimée ; colonne « État » du tableau de lecture supprimée ; Tab va directement de l'Acuité OD à la Sphère OG ; boutons ± et design Lot 3 inchangés |
+| `OpticalRecordForm.tsx` | carte « Pièces liées à cette révision » supprimée ; provenance (prescripteur, date de prescription, date de réception ; date, collaborateur, catégorie pour la mesure) inchangée |
+| `OpticalRecordDetail.tsx`, `RevisionsPanel.tsx`, `opticalRevisions.ts` | panneau « Pièces source » supprimé ; comparaison sans lignes « état » ni « Pièces liées » ; liste des révisions (numéro, motif, auteur, dates), comparaison des valeurs et journal de gestion conservés |
+| `OpticalDialogs.tsx` | récapitulatif de confirmation : « États par œil » remplacé par « Correction » (résumé OD / OG tel que saisi, « non renseigné » pour un œil vide) |
+| `opticalUi.ts`, `opticalLabels.ts`, `OpticalRecordsTable.tsx` | résumé OD / OG sans état (œil vide = « non renseigné », `0` reste `0`) ; messages et libellés des pièces et de l'état supprimés |
+| `opticalAccess.ts`, `opticalQueries.ts` | droits simulés `optical.documents.*`, hooks et contexte des pièces supprimés |
+| `SourceDocumentsPanel.tsx`, `src/bench/benchImages.ts` | **supprimés** |
+| `Optical.css` | styles des pièces (`optical-docs*`, `optical-doc*`, `optical-preview*`, `optical-links`) et de l'état (`optical-radio`, `optical-eye__choices`) supprimés ; sous-titre renommé `optical-detail__subtitle` |
+| `src/bench/inMemoryOpticalGateway.ts` | stockage et opérations de pièces supprimés ; règle de démonstration `422 incomplete` réduite à la provenance (aucun critère sur les valeurs OD / OG, D-04-02.b ouverte, O-04-30) |
+| `src/bench/benchSeed.ts`, `benchProfiles.ts`, `OpticalBench.tsx` | jeu fictif sans pièces ni état (RX-FICTIF-0001 : révision 2 « Complément d'information » ajoutant l'addition ; RX-FICTIF-0002 : rectification en cours ; brouillons avec un œil laissé vide) ; profils simulés sans droits de pièces ; scénarios de l'accueil mis à jour |
+| `e2e/bench-04a/plan.mjs` | captures 22, 33, 34 (pièces) retirées ; 35 renommée `35-etat22-lecture-seule` |
+| tests | `OpticalBench.test.tsx` : 2 parcours « pièces » remplacés par 3 parcours « simplification » ; ordre de Tab, refus 422 et récapitulatif adaptés ; `inMemoryOpticalGateway.test.ts` : 3 tests « pièces » remplacés par 2 tests « simplification » ; `opticalUi.test.ts` adapté |
+
+Aucune dépendance ajoutée ; aucun fichier .NET, SQL ni de configuration serveur modifié ; application réelle inchangée.
+
+### 12.3 Ce qui est conservé
+
+- **Révisions** (E-02, D-04-11 PROPOSED) : brouillon → confirmation, rectification motivée en brouillon, dernière révision confirmée affichée par défaut, un seul brouillon, numéro à la confirmation, abandon conservé, invalidation motivée.
+- **Comparaison des valeurs** champ à champ (OD / OG, provenance, notes), « Différent » écrit en toutes lettres.
+- **Motif de rectification** (liste D-04-04.b proposée, commentaire) et **traçabilité des auteurs** (saisie, modification, confirmation, abandon ; journal de gestion).
+- **Provenance** : prescripteur (nom, qualité « Non précisée », identifiant), date de prescription, date de réception ; mesure : date, collaborateur, catégorie.
+- **D-04-01** (deux types distincts) et **D-04-15** (maquette Lot 3, boutons ±, pas de démonstration).
+- **Absence ≠ 0** : chaque champ peut rester vide (« — », nom accessible « Non renseigné »), jamais assimilé à `0`.
+
+### 12.4 Qualité et preuves (20/10/2026, après le dernier changement de code)
+
+| Contrôle | Statut |
+|---|---|
+| typage `npm run check` | PASS |
+| lint `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Vitest (toutes suites) | **PASS 279 / 279** (25 fichiers) — [`evidence/P04A_SIMPL_frontend_20261020.log`](evidence/P04A_SIMPL_frontend_20261020.log) |
+| build `vite build` | PASS ; banc, pièces et état de l'œil absents du bundle — [`evidence/P04A_SIMPL_bundle_20261020.log`](evidence/P04A_SIMPL_bundle_20261020.log) |
+| captures navigateur | PASS — `plan-lot3.mjs` (34) et `plan.mjs` (51), 0 erreur console, 0 défilement horizontal — [`evidence/P04A_SIMPL_captures_rapport_20261020.json`](evidence/P04A_SIMPL_captures_rapport_20261020.json) ; sélection versionnée : `evidence/P04A_SIMPL_navigateur_*.jpg` (15) |
+| interface Tauri native | **NOT_TESTED** (banc hors application, O-04-16) |
+| tests .NET, PostgreSQL | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+
+Détail : [`QA_MATRIX.md`](QA_MATRIX.md), section « 04-A — simplification (D-04-16) ». Captures prises sur le serveur de banc déjà actif du poste (O-04-31).
+
+### 12.5 Points encore dépendants d'une validation métier
+
+1. **D-04-02.b [AVIS OPTICIEN]** — critère de confirmation à reformuler sans état d'œil (O-04-30) ; aucune règle n'est inventée dans le prototype.
+2. **D-04-06 [AVIS OPTICIEN]** — inchangé (§ 11.8, point 1).
+3. **D-04-03.a / b** — inchangé (§ 11.8, point 3).
+4. Motif d'invalidation « Document non recevable » conservé (O-04-32).
+5. Validation visuelle de la simplification par le propriétaire (`OWNER_VISUAL_REVIEW_REQUIRED`).
+
+Reporté au **backlog permanent BL-04-01** (gestion documentaire) : D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14, droits `optical.documents.*`, O-04-01 / 02 / 03 / 13 / 17 / 18 / 23, volet « pièces » d'O-04-19 ; études E-01, E-03 (pièces) et E-05 conservées pour la reprise.

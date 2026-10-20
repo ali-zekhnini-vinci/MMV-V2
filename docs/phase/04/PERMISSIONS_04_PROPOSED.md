@@ -95,3 +95,11 @@ Notes : (1) `system.admin` n'implique rien ; un administrateur qui exerce aussi 
 ## Amendement daté — 19/10/2026 (04-A)
 
 Aucune permission créée ni attribuée. Le banc 04-A affiche le prototype selon des **profils simulés** (`apps/desktop/src/bench/benchProfiles.ts`) recopiant la matrice indicative ci-dessus, lus par le seul double en mémoire ; l'application réelle ignore ces noms (une session qui les porterait garde l'onglet reporté et l'entrée `later`, test `src/optical/realAppIsolation.test.tsx`). La matrice reste à valider compte par compte selon les profils réels du magasin (D-04-13.c), sans déduire un accès universel.
+
+## Amendement daté — 20/10/2026 (D-04-16 APPROVED : pièces sources reportées)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Les sections précédentes sont conservées comme historique. Aucune permission créée ni attribuée.
+
+- Proposition recommandée (option B de D-04-05.a) **réduite à 4 droits** : `optical.read`, `optical.prescriptions.write`, `optical.measurements.write`, `optical.invalidate`. Les droits `optical.documents.read` et `optical.documents.write`, les combinaisons « Afficher / Joindre une pièce » et la ligne « Pièces source » de la matrice d'affichage sont **reportés** avec la gestion documentaire (backlog permanent BL-04-01).
+- Matrice indicative par profil : colonnes `optical.documents.read` / `optical.documents.write` sans objet en 04 ; les autres colonnes sont inchangées et restent à valider compte par compte (D-04-13.c).
+- Banc : profils simulés alignés (`apps/desktop/src/bench/benchProfiles.ts`) — « Lecture seule (technicien atelier, indicatif) » remplace « Lecture seule, sans les pièces » ; `OPTICAL_PERMISSIONS` (`apps/desktop/src/optical/opticalAccess.ts`) ne contient plus aucun droit sur des pièces (test Q-04-186).

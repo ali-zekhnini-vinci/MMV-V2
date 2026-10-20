@@ -24,17 +24,16 @@ import "../clients/Clients.css";
 import { ClientOpticalTab } from "../optical/ClientOpticalTab.tsx";
 import { OpticalAccessContext, opticalAccess, useOpticalAccess } from "../optical/opticalAccess.ts";
 import { OpticalModule } from "../optical/OpticalModule.tsx";
-import { DocumentSourceContext, OpticalGatewayContext } from "../optical/opticalQueries.ts";
+import { OpticalGatewayContext } from "../optical/opticalQueries.ts";
 import { DEMO_STEP, OpticalStepContext, stepLabel } from "../optical/opticalStep.ts";
 import { kindFromSegment } from "../optical/opticalLabels.ts";
 import { opticalDetailPath, readClientTab } from "../optical/opticalUi.ts";
 import { INITIAL_OPTICAL_LIST, type OpticalListState, OpticalUiContext } from "../optical/opticalUiState.ts";
 import { type LeaveGuard, NavigationGuardContext, type NavigationGuardRegistry } from "../shell/navigationGuard.ts";
 import "../shell/Shell.css";
-import { renderSyntheticImage } from "./benchImages.ts";
 import { BENCH_API_ORIGIN, type BenchNetwork } from "./benchNetwork.ts";
 import { BENCH_PROFILES, type BenchProfile, findProfile } from "./benchProfiles.ts";
-import { BENCH_OTHER_WORKSTATION, createSeededGateway, SYNTHETIC_DOCUMENTS } from "./benchSeed.ts";
+import { BENCH_OTHER_WORKSTATION, createSeededGateway } from "./benchSeed.ts";
 import type { BenchFaults, InMemoryOpticalGateway } from "./inMemoryOpticalGateway.ts";
 import "./bench.css";
 
@@ -87,7 +86,6 @@ function useBenchGateway(clients: readonly ClientDetail[], profileRef: { current
       clients,
       session: () => ({ actor: profileRef.current.actor, permissions: profileRef.current.permissions }),
       faults: () => control.faults,
-      renderImage: renderSyntheticImage,
     })
       .then((gateway) => !cancelled && setState({ gateway, generation }))
       .catch((error: unknown) => !cancelled && setFailure(error instanceof Error ? error.message : "Préparation impossible."));
@@ -194,9 +192,7 @@ function BenchProviders({ gateway, profile, children }: { gateway: InMemoryOptic
         <ClientsUiContext.Provider value={clientsUi}>
           <OpticalGatewayContext.Provider value={gateway}>
             <OpticalAccessContext.Provider value={access}>
-              <OpticalUiContext.Provider value={opticalUi}>
-                <DocumentSourceContext.Provider value={SYNTHETIC_DOCUMENTS}>{children}</DocumentSourceContext.Provider>
-              </OpticalUiContext.Provider>
+              <OpticalUiContext.Provider value={opticalUi}>{children}</OpticalUiContext.Provider>
             </OpticalAccessContext.Provider>
           </OpticalGatewayContext.Provider>
         </ClientsUiContext.Provider>
@@ -394,10 +390,10 @@ function BenchHome({ gateway, clients }: { gateway: InMemoryOpticalGateway; clie
     { label: `Fiche ${name("cli-fictif-3")} (aucun enregistrement)`, detail: "État 7 : vide par section", run: () => card("cli-fictif-3") },
     { label: `Fiche ${name("cli-fictif-4")} (client archivé)`, detail: "État 18 : consultation seule, ajout et rectification refusés", run: () => card("cli-fictif-4") },
     { label: "Liste globale", detail: "J-04-02, états 1–4, 6, 8, 9 ; « Nouveau… » → type → client actif", run: () => navigate("/optique") },
-    { label: "RX-FICTIF-0001 — révisions 1 et 2", detail: "GAP-04-07 : comparaison ; pièces liées par révision (D-04-10)", run: () => openRef("RX-FICTIF-0001") },
-    { label: "RX-FICTIF-0002 — rectification en cours, pièce invalidée", detail: "GAP-04-13, GAP-04-14 : révision 1 en vigueur malgré le brouillon", run: () => openRef("RX-FICTIF-0002") },
+    { label: "RX-FICTIF-0001 — révisions 1 et 2", detail: "GAP-04-07 : comparaison des valeurs, motif et auteurs", run: () => openRef("RX-FICTIF-0001") },
+    { label: "RX-FICTIF-0002 — rectification en cours", detail: "GAP-04-13 : révision 1 en vigueur malgré le brouillon", run: () => openRef("RX-FICTIF-0002") },
     { label: "RX-FICTIF-0003 — invalidée (doublon)", detail: "GAP-04-08, état 30", run: () => openRef("RX-FICTIF-0003") },
-    { label: "RX-FICTIF-0004 — brouillon partiel", detail: "États 16, 21 ; confirmation refusée par le double (422)", run: () => openRef("RX-FICTIF-0004") },
+    { label: "RX-FICTIF-0004 — brouillon partiel", detail: "États 16, 21 : OG laissé vide ; confirmation refusée par le double (422, provenance)", run: () => openRef("RX-FICTIF-0004") },
     { label: "MES-FICTIF-0001 — mesure magasin confirmée", detail: "GAP-04-03 : provenance propre, jamais une ordonnance", run: () => openRef("MES-FICTIF-0001") },
     {
       label: `Saisie forcée pour ${name("cli-fictif-4")} (archivé)`,

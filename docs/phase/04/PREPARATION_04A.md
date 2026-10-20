@@ -146,3 +146,7 @@ Le statut ci-dessus (`PROPOSED — OWNER_GO_04A_REQUIRED`) est conservé comme h
 | § 7 A1 socle CSS commun (O-04-11) | **reporté** ; réutilisation directe de `clients/Clients.css`, ajout de `optical/Optical.css` | ne pas toucher aux modules fusionnés pour un prototype |
 | § 3 élément 15 sélecteur de fichier natif | pièces **synthétiques** proposées par le banc ; aucun fichier du poste lu | « aperçus de pièces uniquement synthétiques et locaux au banc » (mandat § 3) |
 | § 4 GAP-04-05 onglet absent sans droit | onglet reporté actuel conservé (O-04-16) ; page 403 sur accès direct au module du banc | décision O-04-16 ; O-04-22 |
+
+## Note datée — 20/10/2026 (D-04-16 APPROVED)
+
+Préparation conservée comme historique. Depuis D-04-16 ([`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md)) : élément **9** (états par œil) **retiré** ; élément **15** (pièces source), états GAP-04-06 / GAP-04-14 et fichier `SourceDocumentsPanel.tsx` (§ 6) **reportés** au backlog permanent BL-04-01 ; dans le § 5, la ligne « Absence » se lit sans état par œil (champ vide = non renseigné, jamais « 0,00 »).

@@ -98,3 +98,7 @@ La maquette ne connaît qu'un type et aucune des fonctions suivantes. Ces états
 ## Amendement daté — 19/10/2026 (04-A réalisé sur banc isolé)
 
 Les tableaux ci-dessus restent la cartographie `PROPOSED`. Réalisation 04-A (G04-A APPROVED — UI ONLY) : **50 états tracés** — 24 RÉALISÉ, 20 ADAPTÉ, 1 AUTRE COMPOSANT (état 13, `ClientPicker`), 1 ADAPTÉ partiel (33), 4 EN ATTENTE d'avis métier (16, 17, 21 : mécanique seule ; 36 : non implémenté) — détail, captures et tests : [`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md). Statut visuel de chaque état : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED` ; aucun `APPROVED`.
+
+## Amendement daté — 20/10/2026 (D-04-16 APPROVED)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Cartographie ci-dessus conservée. Effets : état **21** (`detailPartial`) — la distinction « non prescrit » / « non transcrit » est abandonnée avec l'état par œil ; une absence reste écrite « — » (« Non renseigné »), jamais « 0,00 » ; **GAP-04-06** (pièce source) et **GAP-04-14** (pièce invalidée citée) sont **reportés** au backlog permanent BL-04-01. Couverture courante : [`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md), dernière section.

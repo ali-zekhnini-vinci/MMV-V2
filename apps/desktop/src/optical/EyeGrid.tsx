@@ -3,38 +3,36 @@
 // Saisie au clavier conservée EXACTEMENT : aucun arrondi, aucun signe ajouté, aucune conversion (0° reste 0°), aucune
 // borne, aucune dépendance entre champs, aucun champ désactivé (états 25 et 36 non repris, D-04-06 ouverte). Seul un
 // clic ± (ou ↑ / ↓ dans le champ) produit une nouvelle valeur, calculée sans alignement sur le pas (opticalStep.ts).
-// Champ vide = non renseigné, affiché « — », distinct de la valeur « 0 ». État explicite par œil (D-04-02.c,
-// proposition). Ordre de Tab = ordre DOM : OD (état puis Sphère → Acuité) → OG ; les boutons ± et « Effacer » sont des
-// raccourcis souris hors de l'ordre de Tab (le clavier dispose de ↑ / ↓ et de la saisie directe).
+// Champ vide = non renseigné, affiché « — », distinct de la valeur « 0 » ; chaque champ peut rester vide. Aucun
+// « état de l'œil » (D-04-16 APPROVED, retire la proposition D-04-02.c). Ordre de Tab = ordre DOM : OD (Sphère →
+// Acuité) → OG ; les boutons ± et « Effacer » sont des raccourcis souris hors de l'ordre de Tab (le clavier dispose de
+// ↑ / ↓ et de la saisie directe).
 import { ChevronDown, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useContext, useId, useRef, useState } from "react";
-import { type Control, Controller, type UseFormRegister } from "react-hook-form";
+import { type Control, Controller } from "react-hook-form";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu.tsx";
 import { cn } from "../lib/utils.ts";
-import { EYE_FIELDS, EYE_SIDES, EYE_STATES, type EyeEntry, type EyeField, type EyeSide, type OpticalKind, type RecordContent } from "./opticalContract.ts";
-import { BASE_SUGGESTIONS, eyeStateLabel, FIELD_LABEL, FIELD_UNIT, FIELD_UNIT_SHORT, SIDE_LABEL, SIDE_SHORT } from "./opticalLabels.ts";
-import { ProposedTag } from "./OpticalBadges.tsx";
+import { EYE_FIELDS, EYE_SIDES, type EyeField, type EyeSide, type EyeValues, type RecordContent } from "./opticalContract.ts";
+import { BASE_SUGGESTIONS, FIELD_LABEL, FIELD_UNIT, FIELD_UNIT_SHORT, SIDE_LABEL, SIDE_SHORT } from "./opticalLabels.ts";
 import { isSteppable, OpticalStepContext, STEPPER_FIELDS, stepLabel, stepValue } from "./opticalStep.ts";
 
 const LATIN: Record<EyeSide, string> = { od: "Oculus dexter", og: "Oculus sinister" };
 const EYE_TITLE: Record<EyeSide, string> = { od: "Œil droit", og: "Œil gauche" };
 
 interface EyeGridProps {
-  kind: OpticalKind;
   control: Control<RecordContent>;
-  register: UseFormRegister<RecordContent>;
-  /** Erreurs renvoyées par le double, par chemin (`od.sphere`, `og.state`…) ; aucune règle locale. */
+  /** Erreurs renvoyées par le double, par chemin (`od.sphere`, `og.axis`…) ; aucune règle locale. */
   errors: Record<string, string>;
 }
 
-export function EyeGrid({ kind, control, register, errors }: EyeGridProps) {
+export function EyeGrid({ control, errors }: EyeGridProps) {
   // Annonce de la valeur produite par un bouton ± (le champ ne reçoit pas le focus lors d'un clic).
   const [announce, setAnnounce] = useState("");
   return (
     <>
       <div className="optical-eyes">
         {EYE_SIDES.map((side) => (
-          <EyeCard key={side} kind={kind} side={side} control={control} register={register} errors={errors} onAnnounce={setAnnounce} />
+          <EyeCard key={side} side={side} control={control} errors={errors} onAnnounce={setAnnounce} />
         ))}
       </div>
       <div className="visually-hidden" aria-live="polite">
@@ -46,9 +44,7 @@ export function EyeGrid({ kind, control, register, errors }: EyeGridProps) {
 
 type EyeCardProps = EyeGridProps & { side: EyeSide; onAnnounce: (message: string) => void };
 
-function EyeCard({ kind, side, control, register, errors, onAnnounce }: EyeCardProps) {
-  const id = useId();
-  const stateError = errors[`${side}.state`];
+function EyeCard({ side, control, errors, onAnnounce }: EyeCardProps) {
   return (
     <fieldset className={cn("optical-eye", `optical-eye--${side}`)}>
       <legend className="optical-eye__head">
@@ -65,33 +61,11 @@ function EyeCard({ kind, side, control, register, errors, onAnnounce }: EyeCardP
       </legend>
 
       <div className="optical-eye__body">
-        <div className="optical-row" role="radiogroup" aria-labelledby={`${id}-state`} aria-describedby={stateError ? `${id}-state-error` : undefined}>
-          <span id={`${id}-state`} className="optical-row__label">
-            État de l&apos;œil
-          </span>
-          <div className="optical-row__ctrl">
-            <div className="optical-eye__choices">
-              {EYE_STATES.map((state) => (
-                <label key={state} className="optical-radio">
-                  <input type="radio" value={state} {...register(`${side}.state`)} />
-                  <span>{eyeStateLabel(kind, state)}</span>
-                </label>
-              ))}
-              <ProposedTag refs="D-04-02.c" />
-            </div>
-            {stateError && (
-              <span id={`${id}-state-error`} className="clients-field__error" role="alert">
-                {stateError}
-              </span>
-            )}
-          </div>
-        </div>
-
         {EYE_FIELDS.map((field) => (
           <Controller
             key={field}
             control={control}
-            name={`${side}.values.${field}`}
+            name={`${side}.${field}`}
             render={({ field: input }) => (
               <EyeRow
                 side={side}
@@ -333,15 +307,13 @@ function BaseInput(props: InputProps) {
 
 /** Lecture seule : valeurs restituées telles que saisies ; l'absence est écrite en toutes lettres (état 21). */
 export function EyeTable({
-  kind,
   od,
   og,
   caption,
   highlight,
 }: {
-  kind: OpticalKind;
-  od: EyeEntry;
-  og: EyeEntry;
+  od: EyeValues;
+  og: EyeValues;
   caption: string;
   /** Champs à signaler comme différents (comparaison de révisions, GAP-04-07). */
   highlight?: ReadonlySet<string>;
@@ -354,7 +326,6 @@ export function EyeTable({
         <thead>
           <tr>
             <th scope="col">Œil</th>
-            <th scope="col">État</th>
             {EYE_FIELDS.map((field) => (
               <th key={field} scope="col">
                 {FIELD_LABEL[field]}
@@ -365,17 +336,12 @@ export function EyeTable({
         </thead>
         <tbody>
           {EYE_SIDES.map((side) => {
-            const entry = entries[side];
-            const stateChanged = highlight?.has(`${side}.state`);
+            const values = entries[side];
             return (
               <tr key={side}>
                 <th scope="row">{SIDE_LABEL[side]}</th>
-                <td className={cn(stateChanged && "optical-changed")}>
-                  {eyeStateLabel(kind, entry.state)}
-                  {stateChanged && <ChangedMark />}
-                </td>
                 {EYE_FIELDS.map((field) => {
-                  const value = entry.values[field];
+                  const value = values[field];
                   const changed = highlight?.has(`${side}.${field}`);
                   return (
                     <td key={field} className={cn("tnum", changed && "optical-changed")}>

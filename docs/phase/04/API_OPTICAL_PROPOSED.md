@@ -80,3 +80,18 @@ Mêmes changements pour `/api/optical/measurements` (sans pièces en 04). Toujou
 
 Toujours **aucune route créée**. Le prototype 04-A décrit ces échanges par des types TypeScript **provisoires** (`apps/desktop/src/optical/opticalContract.ts`, interface `OpticalGateway`) servis par un double **en mémoire** du banc isolé ; ces types ne sont pas un contrat et seront remplacés par l'extrait OpenAPI généré en 04-B (§ 7). Les codes de refus illustrés par le double (`version_conflict`, `draft_exists`, `revision_conflict`, `client_archived`, `invalidated`, `already_invalidated`, `not_draft`, `incomplete`, `too_large`, `unsupported_media_type`, `duplicate_document`, `too_many_documents`) sont ceux de ce document et de son amendement, sans nouveauté.
 
+## Amendement daté — 20/10/2026 (D-04-16 APPROVED : simplification)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Toujours **aucune route créée** ni aucun backend optique. Effets sur le contrat proposé (sections précédentes conservées comme historique) :
+
+| Élément | Changement |
+|---|---|
+| § 4 « Pièces source » (`POST …/prescriptions/{id}/documents`, `GET /api/optical/documents/{documentId}/content`, `POST …/documents/{documentId}/invalidate`) et lignes « pièces » de l'amendement du 19/10/2026 | **retirés du périmètre de la Phase 04** — reportés au backlog permanent BL-04-01 ; aucune route, aucun multipart, aucun flux binaire |
+| corps des brouillons (`POST …/prescriptions`, `PUT …/draft`, rectification) | aucun état par œil (`od.state` / `og.state` supprimés) ; aucun `linkedDocumentIds` ; valeurs par œil facultatives une à une (`""` ou absent = non renseigné, jamais `0`) |
+| `GET …/prescriptions/{id}`, `GET …/revisions/{revisionNo}` | sans métadonnées de pièces ni nombre de pièces ; révisions, motif, auteurs (`startedBy`, `confirmedBy`, `discardedBy`) et dates **conservés** |
+| `POST …/confirm` → `422 incomplete` | critère décidé par le serveur (D-04-02.b **ouverte**, O-04-30) ; plus aucun code `not_transcribed` ; le double du banc ne contrôle que la provenance (démonstration) |
+| codes de refus | retirés : `too_large`, `unsupported_media_type`, `duplicate_document`, `too_many_documents`, `invalid_document` ; conservés : `version_conflict`, `draft_exists`, `revision_conflict`, `client_archived`, `invalidated`, `already_invalidated`, `not_draft`, `not_rectification`, `incomplete`, `validation_failed`, `kind_mismatch` |
+| § 1 en-têtes | `Cache-Control: no-store` conservé ; `Content-Disposition` / `nosniff` des pièces sans objet en 04 |
+| permissions exigées | 4 droits optiques ([`PERMISSIONS_04_PROPOSED.md`](PERMISSIONS_04_PROPOSED.md), amendement du 20/10/2026) |
+
+Le prototype reflète ce contrat réduit : `apps/desktop/src/optical/opticalContract.ts` (`EyeValues` sans état, `OpticalGateway` sans opération documentaire) et le double `apps/desktop/src/bench/inMemoryOpticalGateway.ts`.

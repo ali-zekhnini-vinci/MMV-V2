@@ -71,7 +71,7 @@ Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune
 | `references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` (SHA-256 `c103df9e…c06c213` revérifié le 19/10/2026) | libellés du Lot 3 repris : « Informations générales », « Correction optique », « Œil droit (OD) » / « Oculus dexter », Sphère, Cylindre, Axe, Addition, Prisme, Base, Acuité visuelle, « Remarques complémentaires (facultatif) », « Rechercher par client ou médecin » (adapté : prescripteur), « Veuillez corriger les erreurs avant d'enregistrer » ; **non repris** : pas de 0,25 et boutons ± , signe « + » imposé, plages numériques, axe / base désactivés, normalisation d'axe, suppression, « Créer une vente », identités de démonstration de la maquette (remplacées par des identités `Fictif-…`) |
 | `apps/desktop/src/` (Phase 03 fusionnée) | composants réutilisés (voir [`IMPLEMENTATION_SPEC.md`](IMPLEMENTATION_SPEC.md) § 9) |
 
-Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL (17 ou 18), aucune dépendance ajoutée. Données du banc : identités, prescripteurs, collaborateurs, valeurs optiques et pièces **fictives et synthétiques**, générées en mémoire (`apps/desktop/src/bench/benchSeed.ts`, `benchImages.ts`).
+Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL (17 ou 18), aucune dépendance ajoutée. Données du banc : identités, prescripteurs, collaborateurs, valeurs optiques et pièces **fictives et synthétiques**, générées en mémoire (`apps/desktop/src/bench/benchSeed.ts`, `benchImages.ts` *(supprimé le 20/10/2026, D-04-16)*).
 
 ## Complément daté — 20/10/2026 (04-A, refonte UX Lot 3, D-04-15)
 
@@ -82,3 +82,12 @@ Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL (17 ou 
 | `C:\Users\…\Downloads\MMV initialisation projet V1\` (dossier de conception du propriétaire, **lecture seule**, non copié) : `MMV-Lot3-Ordonnances.dc.html` (même empreinte), `support.js` (SHA-256 `ae4f0ac8449655e17cca1e3b179effcb6817a3b0d8dc47f112a9c39c25c39fd7`), `_ds/mmv-managemyvision-design-system-90800da0-…/` | **rendu** de la maquette pour les captures comparatives (serveur statique local 127.0.0.1:1530, Edge sans interface) ; `support.js` charge React 18.3.1 et Babel depuis unpkg, la maquette charge Lucide 0.544.0 depuis unpkg : ce chargement concerne **le rendu de la maquette seulement**, jamais le banc (garde réseau inchangée) |
 
 Toujours aucune lecture de l'ancien dépôt ni de l'ancien code MMV, aucune connexion PostgreSQL, aucune dépendance ajoutée. Les cadres capturés de la maquette contiennent ses identités de démonstration (conception du propriétaire) ; le banc n'emploie que des données `Fictif-…`.
+
+## Complément daté — 20/10/2026 (04-A, simplification, D-04-16)
+
+| Source | Usage |
+|---|---|
+| `prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md` | mandat de la simplification (message de session du propriétaire, reproduit à l'identique) ; **D-04-16 APPROVED** |
+| code du prototype `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/` (HEAD `9be2fda`) | état de départ modifié (§ 12 de [`LIVRAISON_04A.md`](LIVRAISON_04A.md)) ; `SourceDocumentsPanel.tsx` et `src/bench/benchImages.ts` supprimés |
+
+Maquette Lot 3 non modifiée et non rouverte (D-04-15 inchangée : les cartes OD / OG de la maquette ne comportent pas d'état de l'œil). Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée.

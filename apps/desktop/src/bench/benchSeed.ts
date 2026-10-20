@@ -1,21 +1,19 @@
 // BANC 04-A — jeu de démonstration EXPLICITEMENT FICTIF, construit en mémoire à l'ouverture du banc (aucune base,
 // aucun fichier de données). Identités préfixées « Fictif- », domaines `exemple.test`, valeurs optiques de
 // démonstration sans lien avec une personne réelle. Construit par les opérations publiques du double, pour que chaque
-// état (brouillon, confirmé, rectification en cours, invalidé, pièces liées par révision) soit cohérent.
+// état (brouillon, confirmé, rectification en cours, invalidé) soit cohérent. Aucune pièce source (D-04-16).
 import type { ClientDetail } from "../api/clients.ts";
 import {
   emptyContent,
-  type EyeEntry,
   type EyeValues,
   EMPTY_EYE_VALUES,
   type MeasurementContent,
   type OpticalActor,
   type OpticalClientRef,
   type PrescriptionContent,
-  type SyntheticDocumentChoice,
 } from "../optical/opticalContract.ts";
 import { OPTICAL_PERMISSIONS } from "../optical/opticalAccess.ts";
-import { type BenchFaults, type BenchSession, InMemoryOpticalGateway, type InMemoryOpticalGatewayOptions } from "./inMemoryOpticalGateway.ts";
+import { type BenchFaults, type BenchSession, InMemoryOpticalGateway } from "./inMemoryOpticalGateway.ts";
 
 export const BENCH_MEASURERS: readonly OpticalActor[] = [
   { id: "usr-fictif-1", displayName: "Fictif-Opticien Un" },
@@ -66,24 +64,14 @@ export const toClientRef = (detail: ClientDetail): OpticalClientRef => ({
   status: detail.status,
 });
 
-/** Pièces SYNTHÉTIQUES proposées par « Joindre une pièce » : aucun fichier du poste n'est lu dans le banc. */
-export const SYNTHETIC_DOCUMENTS: readonly SyntheticDocumentChoice[] = [
-  { id: "syn-recto", label: "Recto synthétique", name: "recto-fictif.png", declaredType: "image/png", detectedType: "image/png", sizeBytes: 412_000, digest: "syn-recto" },
-  { id: "syn-verso", label: "Verso synthétique", name: "verso-fictif.jpg", declaredType: "image/jpeg", detectedType: "image/jpeg", sizeBytes: 655_000, digest: "syn-verso" },
-  { id: "syn-scan", label: "Scan PDF synthétique", name: "scan-fictif.pdf", declaredType: "application/pdf", detectedType: "application/pdf", sizeBytes: 1_240_000, digest: "syn-scan" },
-  { id: "syn-photo", label: "Photo synthétique", name: "photo-fictive.jpg", declaredType: "image/jpeg", detectedType: "image/jpeg", sizeBytes: 2_900_000, digest: "syn-photo" },
-  { id: "syn-big", label: "Fichier trop volumineux (12 Mo simulés)", name: "trop-gros-fictif.pdf", declaredType: "application/pdf", detectedType: "application/pdf", sizeBytes: 12 * 1024 * 1024, digest: "syn-big" },
-  { id: "syn-svg", label: "Image SVG renommée en .png (refusée)", name: "image-fictive.png", declaredType: "image/png", detectedType: "image/svg+xml", sizeBytes: 9_000, digest: "syn-svg" },
-  { id: "syn-html", label: "Page HTML renommée en .pdf (refusée)", name: "page-fictive.pdf", declaredType: "application/pdf", detectedType: "text/html", sizeBytes: 4_000, digest: "syn-html" },
-];
-
-const eye = (values: Partial<EyeValues>, state: EyeEntry["state"] = "filled"): EyeEntry => ({ state, values: { ...EMPTY_EYE_VALUES, ...values } });
+/** Valeurs d'un œil ; `eye({})` = œil laissé entièrement vide (non renseigné, jamais 0). */
+const eye = (values: Partial<EyeValues>): EyeValues => ({ ...EMPTY_EYE_VALUES, ...values });
 
 const rx = (
   prescriberName: string,
   prescribedOn: string,
-  od: EyeEntry,
-  og: EyeEntry,
+  od: EyeValues,
+  og: EyeValues,
   extra: Partial<PrescriptionContent["provenance"]> = {},
   notes = "Valeurs FICTIVES de démonstration.",
 ): PrescriptionContent => {
@@ -91,7 +79,7 @@ const rx = (
   return { ...base, provenance: { ...base.provenance, prescriberName, prescribedOn, ...extra }, od, og, notes };
 };
 
-const mes = (measuredOn: string, measuredByUserId: string, od: EyeEntry, og: EyeEntry, notes = "Relevé FICTIF de démonstration."): MeasurementContent => {
+const mes = (measuredOn: string, measuredByUserId: string, od: EyeValues, og: EyeValues, notes = "Relevé FICTIF de démonstration."): MeasurementContent => {
   const base = emptyContent("measurement") as MeasurementContent;
   return { ...base, provenance: { ...base.provenance, measuredOn, measuredByUserId }, od, og, notes };
 };
@@ -116,9 +104,8 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
     if (!value.ok) throw new Error(`Jeu de démonstration incohérent : ${value.error.code ?? "erreur"}`);
     return value.data;
   };
-  const find = (id: string) => SYNTHETIC_DOCUMENTS.find((choice) => choice.id === id) as SyntheticDocumentChoice;
 
-  // 1. Alpha — ordonnance confirmée (révision 1 sur le recto), verso reçu ensuite → révision 2 (recto + verso).
+  // 1. Alpha — ordonnance confirmée (révision 1), addition omise à la transcription → révision 2 (complément).
   tick(2);
   let record = await must(
     gateway.createRecord(
@@ -127,13 +114,9 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
     ),
   );
   tick(2);
-  record = await must(gateway.attachDocument(record.id, find("syn-recto")));
-  tick(2);
   record = await must(gateway.confirmDraft("prescription", record.id, record.version));
   tick(5);
-  record = await must(gateway.startRectification("prescription", record.id, { expectedRevisionNo: 1, reasonCode: "additional_information", comment: "Verso reçu (fictif).", version: record.version }));
-  tick(5);
-  record = await must(gateway.attachDocument(record.id, find("syn-verso")));
+  record = await must(gateway.startRectification("prescription", record.id, { expectedRevisionNo: 1, reasonCode: "additional_information", comment: "Addition figurant au verso de l'ordonnance (fictif).", version: record.version }));
   const draft = record.openDraft?.content as PrescriptionContent;
   tick(5);
   record = await must(gateway.saveDraft("prescription", record.id, { ...draft, od: eye({ sphere: "+1,25", cylinder: "-0,50", axis: "90", addition: "+2,00" }), og: eye({ sphere: "+1,00", cylinder: "-0,25", axis: "85", addition: "+2,00" }) }, record.version));
@@ -146,19 +129,11 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
   tick(6);
   await must(gateway.confirmDraft("measurement", record.id, record.version));
 
-  // 3. Bravo — ordonnance confirmée dont la pièce a été invalidée après coup, rectification en cours (GAP-04-13/14).
+  // 3. Bravo — ordonnance confirmée, rectification en cours (GAP-04-13 : la révision 1 reste en vigueur).
   tick(7);
   record = await must(gateway.createRecord("cli-fictif-2", rx("Dr Fictif-Prescripteur B", "2026-10-01", eye({ sphere: "-2,25", cylinder: "-0,75", axis: "0" }), eye({ sphere: "-2,00" }))));
   tick(7);
-  record = await must(gateway.attachDocument(record.id, find("syn-photo")));
-  tick(7);
   record = await must(gateway.confirmDraft("prescription", record.id, record.version));
-  tick(8);
-  const photo = record.documents?.[0];
-  if (photo) record = await must(gateway.invalidateDocument(record.id, photo.id, "illegible"));
-  tick(8);
-  record = await must(gateway.attachDocument(record.id, find("syn-scan")));
-  const scan = record.documents?.find((document) => document.invalidation === null);
   tick(9);
   record = await must(gateway.startRectification("prescription", record.id, { expectedRevisionNo: 1, reasonCode: "transcription_error", comment: "", version: record.version }));
   const rectification = record.openDraft?.content as PrescriptionContent;
@@ -167,7 +142,7 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
     gateway.saveDraft(
       "prescription",
       record.id,
-      { ...rectification, od: eye({ sphere: "-2,25", cylinder: "-0,50", axis: "0" }), linkedDocumentIds: scan ? [scan.id] : [] },
+      { ...rectification, od: eye({ sphere: "-2,25", cylinder: "-0,50", axis: "0" }) },
       record.version,
     ),
   );
@@ -178,13 +153,13 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
   tick(10);
   await must(gateway.invalidateRecord("prescription", record.id, { reasonCode: "duplicate", comment: "", version: record.version }));
 
-  // 5. Bravo — mesure magasin en brouillon, OG non mesuré.
+  // 5. Bravo — mesure magasin en brouillon, OG laissé vide (non renseigné).
   tick(11);
-  await must(gateway.createRecord("cli-fictif-2", mes("2026-10-11", "usr-fictif-1", eye({ sphere: "-2,00", cylinder: "-0,50", axis: "180" }), eye({}, "not_prescribed"))));
+  await must(gateway.createRecord("cli-fictif-2", mes("2026-10-11", "usr-fictif-1", eye({ sphere: "-2,00", cylinder: "-0,50", axis: "180" }), eye({}))));
 
-  // 6. Echo — brouillon partiel d'ordonnance (OG non transcrit, provenance incomplète) : refus 422 à la confirmation.
+  // 6. Echo — brouillon partiel d'ordonnance (OG vide, provenance incomplète) : refus 422 à la confirmation.
   tick(12);
-  await must(gateway.createRecord("cli-fictif-5", rx("", "", eye({ sphere: "0,00", acuity: "8/10" }), eye({}, "not_transcribed"))));
+  await must(gateway.createRecord("cli-fictif-5", rx("", "", eye({ sphere: "0,00", acuity: "8/10" }), eye({}))));
 
   // 7. Delta (client archivé) — ordonnance confirmée, consultable ; création et rectification refusées.
   tick(13);
@@ -217,7 +192,6 @@ export async function createSeededGateway(options: {
   clients: readonly ClientDetail[];
   session: () => BenchSession;
   faults?: () => BenchFaults;
-  renderImage?: InMemoryOpticalGatewayOptions["renderImage"];
 }): Promise<InMemoryOpticalGateway> {
   let seeding = true;
   let seedSession: BenchSession | null = null;
@@ -228,7 +202,6 @@ export async function createSeededGateway(options: {
     session: () => seedSession ?? options.session(),
     faults: () => (seeding ? SEED_FAULTS : (options.faults?.() ?? SEED_FAULTS)),
     now: () => clock ?? new Date().toISOString(),
-    renderImage: options.renderImage,
   });
   await seedBench(
     gateway,

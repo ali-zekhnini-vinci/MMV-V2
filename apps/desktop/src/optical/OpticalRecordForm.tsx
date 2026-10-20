@@ -2,13 +2,14 @@
 // (GAP-04-02), un seul gabarit, provenance PROPRE à chaque type (D-04-01). Le type est choisi AVANT la saisie et ne
 // change jamais. Mise en page de la maquette Lot 3 (D-04-15 APPROVED) : en-tête avec Annuler / Enregistrer, carte
 // « Informations générales » avec le client concerné, cartes OD / OG côte à côte avec boutons ±, carte Notes.
+// Aucun « état de l'œil » ni pièce source (D-04-16 APPROVED : parcours simplifié, révisions conservées).
 // Aucune règle locale : champs facultatifs à l'écran ; seules les erreurs renvoyées par le service
 // s'affichent sous les champs (aria-describedby) ; critère de confirmation décidé par le service (422 affiché tel quel).
 // Version lue à l'ouverture figée (409 sans écrasement, saisie conservée, GAP-04-09). Garde de sortie et Ctrl+S
 // comme ClientFormView.
-import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Command, Glasses, Info, NotebookPen, Paperclip, RefreshCw, Ruler, Shield, User, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Command, Glasses, Info, NotebookPen, RefreshCw, Ruler, Shield, User, X } from "lucide-react";
 import { type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import type { ApiError } from "../api/client.ts";
 import { ConfirmDialog } from "../components/ui/alert-dialog.tsx";
@@ -19,11 +20,10 @@ import { useClientsUi } from "../clients/clientsUi.ts";
 import { cn } from "../lib/utils.ts";
 import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { EyeGrid } from "./EyeGrid.tsx";
-import { useOpticalAccess } from "./opticalAccess.ts";
 import { KindBadge, ProposedTag } from "./OpticalBadges.tsx";
 import { emptyContent, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
 import { ConfirmTranscriptionDialog } from "./OpticalDialogs.tsx";
-import { KIND_LABEL, LIST_PENDING_NOTE, MEDIA_LABEL, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
+import { KIND_LABEL, LIST_PENDING_NOTE, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
 import { useConfirmDraft, useCreateRecord, useMeasurers, useOpticalGateway, useSaveDraft } from "./opticalQueries.ts";
 import { OpticalStepContext, stepLabel } from "./opticalStep.ts";
 import { describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
@@ -45,7 +45,6 @@ function toFieldMessages(error: ApiError): Record<string, string> {
 export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const navigate = useNavigate();
   const gateway = useOpticalGateway();
-  const access = useOpticalAccess();
   const { setNotice } = useClientsUi();
   const create = useCreateRecord();
   const save = useSaveDraft();
@@ -67,7 +66,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
     handleSubmit,
     reset,
     getValues,
-    setValue,
     formState: { isDirty },
   } = useForm<RecordContent>({ defaultValues: initial });
 
@@ -202,9 +200,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         ? `Rectification de la révision ${draft.baseRevisionNo}`
         : `Brouillon — ${KIND_LABEL[kind].toLocaleLowerCase("fr")}`;
   const hasFieldErrors = Object.keys(fieldErrors).length > 0;
-  const documents = record?.documents?.filter((document) => document.invalidation === null) ?? [];
-  const linkedWatch = useWatch({ control, name: "linkedDocumentIds" as never }) as unknown as string[] | undefined;
-  const linked = kind === "prescription" ? (linkedWatch ?? []) : [];
 
   return (
     <section className="clients-view optical-formpage" aria-labelledby="optical-form-title">
@@ -319,41 +314,8 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
               </>
             }
           >
-            <EyeGrid kind={kind} control={control} register={register} errors={fieldErrors} />
+            <EyeGrid control={control} errors={fieldErrors} />
           </FormSection>
-
-          {kind === "prescription" && record && (
-            <FormSection card icon={<Paperclip size={16} />} title="Pièces liées à cette révision" refs="D-04-10">
-              {!access.canReadDocuments ? (
-                <p className="clients-muted">{record.documentCount} pièce(s) — accès non autorisé.</p>
-              ) : documents.length === 0 ? (
-                <p className="clients-muted">Aucune pièce disponible. Les pièces se joignent depuis le détail de l&apos;enregistrement.</p>
-              ) : (
-                <ul className="optical-links">
-                  {documents.map((document) => (
-                    <li key={document.id}>
-                      <label className="optical-check">
-                        <input
-                          type="checkbox"
-                          checked={linked.includes(document.id)}
-                          onChange={(event) =>
-                            setValue(
-                              "linkedDocumentIds" as never,
-                              (event.target.checked ? [...linked, document.id] : linked.filter((id) => id !== document.id)) as never,
-                              { shouldDirty: true },
-                            )
-                          }
-                        />
-                        <span>
-                          {document.originalName} · {MEDIA_LABEL[document.mediaType]}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </FormSection>
-          )}
 
           <FormSection card icon={<NotebookPen size={16} />} title="Notes">
             <NotesField register={register} error={fieldErrors.notes} />

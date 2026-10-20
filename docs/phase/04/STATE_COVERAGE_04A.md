@@ -1,6 +1,7 @@
 # 04-A — Couverture des états (36 du Lot 3 + 12 complémentaires 04-00 + 2 issus des études)
 
-*Amendement 20/10/2026 : refonte UX des formulaires selon la maquette Lot 3 (D-04-15 APPROVED) — voir la dernière section ; les tableaux ci-dessous sont conservés tels qu'au 19/10/2026.*
+*Amendement 20/10/2026 : refonte UX des formulaires selon la maquette Lot 3 (D-04-15 APPROVED) — voir l'avant-dernière section ; les tableaux ci-dessous sont conservés tels qu'au 19/10/2026.*
+*Amendement 20/10/2026 (D-04-16 APPROVED) : état de l'œil supprimé, pièces sources reportées (BL-04-01) — voir la dernière section, qui donne la synthèse courante.*
 
 **Date : 19/10/2026.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) (G04-A APPROVED — UI ONLY). Prototype exécuté **uniquement dans le banc isolé** `apps/desktop/optical-bench.html` (O-04-16 APPROVED), sur données fictives, droits simulés, sans serveur ni base. Correspondance d'origine : [`STATE_MAP_36.md`](STATE_MAP_36.md) ; composition des états complémentaires : [`PREPARATION_04A.md`](PREPARATION_04A.md) § 4 ; rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md).
 
@@ -104,3 +105,32 @@ Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE0
 | GAP-04-02 | formulaire mesure magasin | RÉALISÉ (PROTO) | même gabarit et mêmes composants OD / OG que l'ordonnance, provenance propre, mention « pas une prescription délivrée par un médecin » | `apres-mesure-*`, `P04A_UX_compare_04_…`, `…_05_…` | Q-04-176 |
 
 **Synthèse inchangée : 50 états tracés — 24 RÉALISÉ, 20 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 4 EN ATTENTE.** Statut visuel : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED` (refonte à valider par le propriétaire).
+
+## Amendement daté — 20/10/2026 (simplification, D-04-16 APPROVED)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Les tableaux précédents sont conservés comme historique ; seules les lignes ci-dessous changent.
+
+| # / Réf. | État | Avant | Après le 20/10/2026 | Capture | Test |
+|---|---|---|---|---|---|
+| 10, 11 | newClientLight / Dark | ADAPTÉ / RÉALISÉ | inchangés, cartes OD / OG **sans** rangée « État de l'œil » | `P04A_SIMPL_navigateur_apres-ordonnance-1920x1080-z100-clair`, `…-sombre` | Q-04-180 |
+| 16 | partialValid | EN ATTENTE (D-04-02.b/c) | **EN ATTENTE (D-04-02.b)** : brouillon incomplet sans état par œil ; un œil peut rester vide ; refus `422` du double sur la provenance seulement | `P04A_SIMPL_navigateur_25-etats16-21-brouillon-partiel`, `…_27-confirmation-refusee-422` | Q-04-183 |
+| 19 | detailLight | ADAPTÉ | inchangé **sans** panneau de pièces ; révisions, comparaison, journal | `P04A_SIMPL_navigateur_20-etat19-detail-rx-revision2`, `…_23-gap07-revisions-comparaison` | Q-04-181 |
+| 21 | detailPartial | EN ATTENTE (D-04-02.c) | **ADAPTÉ (D-04-16)** : absence écrite « — » avec le nom accessible « Non renseigné », jamais « 0,00 » ; plus de libellé d'état à ratifier | `P04A_SIMPL_navigateur_25-etats16-21-brouillon-partiel` | Q-04-180 |
+| 22 | detailReadOnly | ADAPTÉ | inchangé (capture renommée `35-etat22-lecture-seule`) | `P04A_SIMPL_navigateur_35-etat22-lecture-seule` | Q-04-188 |
+| 33 | tabOrder | ADAPTÉ partiel | ordre Sphère → Acuité, OD puis **directement** OG | — | Q-04-182 |
+| GAP-04-05 | accès refusé | ADAPTÉ (O-04-16) | inchangé ; mention « N pièce(s) — accès non autorisé » sans objet | — | — |
+| GAP-04-06 | pièces source | RÉALISÉ (PROTO) | **REPORTÉ (BL-04-01)** — retiré du prototype | — | Q-04-181 |
+| GAP-04-07 | révisions et comparaison | RÉALISÉ (PROTO) | inchangé, sans lignes « état » ni « Pièces liées » | `P04A_SIMPL_navigateur_23-gap07-revisions-comparaison` | Q-04-185 |
+| GAP-04-10 | confirmation | RÉALISÉ (PROTO) | récapitulatif « Correction » (résumé OD / OG) au lieu des états par œil | `P04A_SIMPL_navigateur_26-gap10-confirmation` | J-04-04 |
+| GAP-04-14 | pièce invalidée citée | RÉALISÉ (PROTO) | **REPORTÉ (BL-04-01)** — retiré du prototype | — | — |
+
+| Catégorie | Lot 3 (36) | Complémentaires (14) | Total (50) |
+|---|---|---|---|
+| RÉALISÉ | 11 — états 2, 6, 8, 9, 11, 14, 20, 26, 32, 34, 35 | 11 — GAP-04-01 à 04, 07 à 13 (dont 4 PROTO : 02, 07, 10, 13) | 22 |
+| ADAPTÉ | 20 — états 1, 3, 4, 5, 7, 10, 12, 15, 18, 19, **21**, 22, 23, 24, 25, 27, 28, 29, 30, 31 | 1 — GAP-04-05 | 21 |
+| AUTRE COMPOSANT | 1 — état 13 | — | 1 |
+| ADAPTÉ partiel | 1 — état 33 | — | 1 |
+| EN ATTENTE d'avis métier | 3 — états 16, 17 (mécanique seule), 36 (non implémenté) | — | 3 |
+| REPORTÉ (BL-04-01) | — | 2 — GAP-04-06, GAP-04-14 | 2 |
+
+**Synthèse courante : 50 états tracés — 22 RÉALISÉ, 21 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 3 EN ATTENTE, 2 REPORTÉ.** Statut visuel : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED`.

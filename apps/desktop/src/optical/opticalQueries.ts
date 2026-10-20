@@ -5,17 +5,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { createContext, useContext } from "react";
 import { apiError, type ApiResult } from "../api/client.ts";
 import { unwrap } from "../api/queryClient.ts";
-import type {
-  DocumentInvalidationReason,
-  InvalidationRequest,
-  OpticalGateway,
-  OpticalKind,
-  OpticalListParams,
-  OpticalRecord,
-  RecordContent,
-  RectificationRequest,
-  SyntheticDocumentChoice,
-} from "./opticalContract.ts";
+import type { InvalidationRequest, OpticalGateway, OpticalKind, OpticalListParams, OpticalRecord, RecordContent, RectificationRequest } from "./opticalContract.ts";
 
 const notActivated = <T>(): Promise<ApiResult<T>> => Promise.resolve({ ok: false, error: apiError("not-configured") });
 
@@ -31,17 +21,11 @@ export const DISABLED_OPTICAL_GATEWAY: OpticalGateway = {
   startRectification: notActivated,
   discardRectification: notActivated,
   invalidateRecord: notActivated,
-  attachDocument: notActivated,
-  invalidateDocument: notActivated,
-  fetchDocumentContent: notActivated,
 };
 
 export const OpticalGatewayContext = createContext<OpticalGateway>(DISABLED_OPTICAL_GATEWAY);
 
 export const useOpticalGateway = (): OpticalGateway => useContext(OpticalGatewayContext);
-
-/** Pièces proposées à « Joindre une pièce » par l'hôte ; `null` : aucun sélecteur disponible (fichier réel en 04-C). */
-export const DocumentSourceContext = createContext<readonly SyntheticDocumentChoice[] | null>(null);
 
 const KEY = ["optical"] as const;
 
@@ -111,21 +95,3 @@ export const useDiscardRectification = () =>
 
 export const useInvalidateRecord = () =>
   useRecordWrite((gateway, input: { kind: OpticalKind; id: string; request: InvalidationRequest }) => gateway.invalidateRecord(input.kind, input.id, input.request));
-
-export const useAttachDocument = () => useRecordWrite((gateway, input: { id: string; choice: SyntheticDocumentChoice }) => gateway.attachDocument(input.id, input.choice));
-
-export const useInvalidateDocument = () =>
-  useRecordWrite((gateway, input: { id: string; documentId: string; reasonCode: DocumentInvalidationReason }) =>
-    gateway.invalidateDocument(input.id, input.documentId, input.reasonCode),
-  );
-
-/** Contenu d'une pièce : jamais mis en cache ni préchargé (D-04-12.b) — chaque affichage refait la demande. */
-export function useDocumentContent() {
-  const gateway = useOpticalGateway();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (documentId: string) => unwrap(await gateway.fetchDocumentContent(documentId)),
-    // L'événement de transmission apparaît dans le journal du détail.
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: [...KEY, "record"] }),
-  });
-}

@@ -187,3 +187,48 @@ Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE0
 | Q-04-155 | **NOT_TESTED** (natif) ; navigateur : 2 thèmes × 1920×1080 / 1024×700 × 100 / 125 / 150 % | Q-04-178 |
 | Q-04-158 | PASS (banc), **amendé par D-04-15** : saisie au clavier restituée à l'identique, aucune borne, aucun champ désactivé, aucune normalisation ; un pas de **démonstration** paramétrable n'existe que pour les boutons ± et ↑ / ↓, sans arrondi ni alignement | Q-04-171, Q-04-177 |
 | Q-04-160 | PASS | Q-04-037 |
+
+## 04-A — simplification (D-04-16) — contrôles exécutés le 20/10/2026
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Preuves sur le **banc** et le **double en mémoire** seulement. Statut ajouté : `REPORTÉ (BL-04-01)` — test prévu sorti du périmètre de la Phase 04 avec la gestion documentaire, à reprendre avec le backlog permanent.
+
+| ID | Contrôle | Commande / méthode | Statut |
+|---|---|---|---|
+| Q-04-045 | préflight Git | `git log`, `git status --short` | PASS — HEAD `9be2fda`, aucune modification suivie, non suivis du propriétaire intacts |
+| Q-04-046 | typage strict | `npm run check` | PASS |
+| Q-04-047 | lint | `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Q-04-048 | tests frontend | `vitest run` | **PASS 279 / 279** (25 fichiers) — [`evidence/P04A_SIMPL_frontend_20261020.log`](evidence/P04A_SIMPL_frontend_20261020.log) |
+| Q-04-049 | build | `vite build` (sortie `apps/desktop/dist`, ignorée par Git) | PASS (avertissement connu de taille de bloc) |
+| Q-04-050 | banc, pièces et état de l'œil absents du bundle | recherche des chaînes de Q-04-039 + `Pièces source`, `Joindre une pièce`, `attachDocument`, `fetchDocumentContent`, `optical.documents`, `État de l`, `not_transcribed` | PASS — aucune occurrence ; « Dossier optique » seul présent (O-04-24) — [`evidence/P04A_SIMPL_bundle_20261020.log`](evidence/P04A_SIMPL_bundle_20261020.log) |
+| Q-04-051 | application réelle inchangée | `src/optical/realAppIsolation.test.tsx` | PASS — 4 tests (inclus dans Q-04-048) |
+| Q-04-052 | aucun SQL, migration `0006`, backend, route ou permission optique ; aucune table ni API de pièces | `git diff --stat` : `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/plan.mjs`, `docs/`, `prompts/`, `README.md` seulement ; aucune commande `psql` / `dotnet` | PASS |
+| Q-04-053 | tests .NET et PostgreSQL réel | — | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+| Q-04-054 | interface Tauri native | — | **NOT_TESTED** (banc hors application, O-04-16) |
+| Q-04-055 | liens internes et statuts cohérents des documents modifiés | résolution de chaque chemin relatif Markdown ; recherche des statuts courants | PASS (voir [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Journal) |
+
+### Tests de la simplification (banc, jsdom, garde réseau active)
+
+| ID | Exigence du mandat | Test | Statut |
+|---|---|---|---|
+| Q-04-180 | 1, 2, 4 — formulaire sans « État de l'œil » ni pièces ; chaque champ peut rester vide (« — », jamais 0) ; prescripteur et date de prescription conservés | `OpticalBench.test.tsx` « formulaire : aucun état de l'œil ni pièce… » | PASS |
+| Q-04-181 | 2, 3 — détail sans pièce source ; révisions, motif, auteurs et comparaison des valeurs conservés | « détail : aucune pièce source ; révisions, motif… » | PASS |
+| Q-04-182 | 1, 5 — ordre de Tab : Acuité OD → Sphère OG (aucun état intercalé) ; boutons ± inchangés | « ordre de Tab : OD puis directement OG… » ; « clavier : Tab / Maj+Tab… » | PASS |
+| Q-04-183 | 1, 8 — `422 incomplete` sans critère sur les yeux : OG vide accepté, seule la provenance (démonstration) est exigée | « confirmation refusée par le service (422 incomplete, provenance)… » ; `inMemoryOpticalGateway.test.ts` « brouillon → 422 incomplete… OG laissé vide » | PASS |
+| Q-04-184 | 1, 6 — double : contenu = provenance + OD / OG + notes, aucun champ « état », aucune opération ni donnée de pièce | `inMemoryOpticalGateway.test.ts` « ni état d'œil ni pièce source… » | PASS |
+| Q-04-185 | 3 — révisions : base, motif, commentaire, auteurs de saisie et de confirmation ; comparaison limitée aux valeurs changées | « révisions conservées : comparaison des valeurs… » | PASS |
+| Q-04-186 | 6 — aucun droit simulé sur des pièces ; écriture par type conservée | « droit d'écriture par TYPE ; aucun droit sur des pièces sources » | PASS |
+| Q-04-187 | 1 — résumé OD / OG : œil vide « non renseigné », `0` restitué `0` | `opticalUi.test.ts` « résumé OD/OG… » | PASS |
+| Q-04-188 | non-régression : au changement de profil, première lecture avec les droits du nouveau profil (lecture seule) | « changement de profil : la première lecture… » | PASS |
+| Q-04-189 | 5 — design Lot 3 et autres écrans optiques sans régression | `plan-lot3.mjs` (34 captures) et `plan.mjs` (51 captures) + `shoot.mjs` (Edge sans interface) | PASS (navigateur) — 0 erreur console, 0 défilement horizontal — [`evidence/P04A_SIMPL_captures_rapport_20261020.json`](evidence/P04A_SIMPL_captures_rapport_20261020.json) ; natif NOT_TESTED |
+
+### Statut des tests prévus — mise à jour du 20/10/2026 (D-04-16)
+
+| ID | Statut au 20/10/2026 |
+|---|---|
+| Q-04-105, Q-04-118, Q-04-119, Q-04-121, Q-04-132, Q-04-133, Q-04-143, Q-04-144 | **REPORTÉ (BL-04-01)** — pièces sources hors Phase 04 |
+| Q-04-140 | NOT_TESTED (04-B) ; volet « aucun contenu de pièce » sans objet en 04 |
+| Q-04-141 | NOT_TESTED (04-B) ; `no-store` maintenu, volet `nosniff` des pièces **REPORTÉ (BL-04-01)** |
+| Q-04-145 | **REPORTÉ (BL-04-01)** pour les pièces ; restauration sans pièces toujours exigée avant pilote (O-04-09) |
+| Q-04-026 | PASS — 13 tests (double : cycle, simplification, droits, valeurs) |
+| Q-04-027 | PASS — 24 tests (parcours du banc) |
+| Q-04-178, Q-04-179 | rejoués après la simplification : voir Q-04-189 (`plan.mjs` : 51 captures, les 3 captures de pièces retirées) |

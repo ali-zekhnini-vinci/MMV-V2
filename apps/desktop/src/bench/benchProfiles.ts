@@ -20,11 +20,11 @@ export const BENCH_PROFILES: readonly BenchProfile[] = [
     id: "optician",
     label: "Opticien habilité à mesurer (indicatif)",
     actor: BENCH_MEASURERS[1],
-    permissions: [CR, P.read, P.prescriptionsWrite, P.measurementsWrite, P.documentsRead, P.documentsWrite],
+    permissions: [CR, P.read, P.prescriptionsWrite, P.measurementsWrite],
   },
-  { id: "transcriber", label: "Collaborateur chargé de la transcription (indicatif)", actor: { id: "usr-fictif-3", displayName: "Fictif-Transcription" }, permissions: [CR, P.read, P.prescriptionsWrite, P.documentsRead, P.documentsWrite] },
-  { id: "manager", label: "Responsable du magasin (indicatif, sans écriture)", actor: { id: "usr-fictif-4", displayName: "Fictif-Responsable" }, permissions: [CR, P.read, P.invalidate, P.documentsRead] },
-  { id: "reader", label: "Lecture seule, sans les pièces (technicien atelier, indicatif)", actor: { id: "usr-fictif-5", displayName: "Fictif-Atelier" }, permissions: [CR, P.read] },
+  { id: "transcriber", label: "Collaborateur chargé de la transcription (indicatif)", actor: { id: "usr-fictif-3", displayName: "Fictif-Transcription" }, permissions: [CR, P.read, P.prescriptionsWrite] },
+  { id: "manager", label: "Responsable du magasin (indicatif, sans écriture)", actor: { id: "usr-fictif-4", displayName: "Fictif-Responsable" }, permissions: [CR, P.read, P.invalidate] },
+  { id: "reader", label: "Lecture seule (technicien atelier, indicatif)", actor: { id: "usr-fictif-5", displayName: "Fictif-Atelier" }, permissions: [CR, P.read] },
   { id: "none", label: "Sans droit optique (accueil, indicatif)", actor: { id: "usr-fictif-6", displayName: "Fictif-Accueil" }, permissions: [CR] },
 ];
 

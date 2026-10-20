@@ -2,7 +2,7 @@
 // réception, comme appointmentLaunch.ts), messages d'échec bornés (jamais le texte du serveur), résumé OD/OG restitué
 // tel que saisi. Module pur.
 import type { ApiError } from "../api/client.ts";
-import type { EyeEntry, OpticalKind } from "./opticalContract.ts";
+import { EYE_FIELDS, type EyeValues, type OpticalKind } from "./opticalContract.ts";
 import { FIELD_LABEL, FIELD_UNIT_SHORT, KIND_SEGMENT, SIDE_SHORT } from "./opticalLabels.ts";
 
 export const OPTICAL_ROOT = "/optique";
@@ -43,14 +43,17 @@ export const returnToCardState = () => ({ clientTab: OPTICAL_TAB });
 
 const SUMMARY_ABBR = { sphere: "Sph", cylinder: "Cyl", axis: "Axe", addition: "Add" } as const;
 
-/** Résumé d'un œil, valeurs restituées EXACTEMENT telles que saisies (aucun formatage, aucun calcul). */
-export function eyeSummary(side: "od" | "og", entry: EyeEntry, absentLabel: string): string {
-  if (entry.state !== "filled") return `${SIDE_SHORT[side]} : ${absentLabel}`;
+/**
+ * Résumé d'un œil, valeurs restituées EXACTEMENT telles que saisies (aucun formatage, aucun calcul). Sans état d'œil
+ * (D-04-16) : un œil dont aucun champ n'est rempli est écrit « non renseigné », jamais « 0 ».
+ */
+export function eyeSummary(side: "od" | "og", values: EyeValues): string {
+  if (EYE_FIELDS.every((field) => values[field] === "")) return `${SIDE_SHORT[side]} : non renseigné`;
   // Unité affichée à côté de la valeur (°), jamais intégrée à la valeur enregistrée.
   const parts = (["sphere", "cylinder", "axis", "addition"] as const)
-    .filter((field) => entry.values[field] !== "")
-    .map((field) => `${SUMMARY_ABBR[field]} ${entry.values[field]}${field === "axis" ? FIELD_UNIT_SHORT.axis : ""}`);
-  return `${SIDE_SHORT[side]} : ${parts.length > 0 ? parts.join(" · ") : "renseigné (aucune valeur principale)"}`;
+    .filter((field) => values[field] !== "")
+    .map((field) => `${SUMMARY_ABBR[field]} ${values[field]}${field === "axis" ? FIELD_UNIT_SHORT.axis : ""}`);
+  return `${SIDE_SHORT[side]} : ${parts.length > 0 ? parts.join(" · ") : "aucune valeur principale"}`;
 }
 
 export interface FailureView {
@@ -83,14 +86,6 @@ export function describeOpticalFailure(error: ApiError): FailureView {
     case "not_draft":
     case "not_rectification":
       return { tone: "warning", title: "Aucun brouillon ouvert", text: "Il n'y a plus de brouillon à modifier sur cet enregistrement.", reload: true };
-    case "too_large":
-      return { tone: "error", title: "Pièce trop volumineuse", text: "La pièce dépasse la taille maximale proposée (10 Mo, D-04-14.b). Elle n'a pas été jointe." };
-    case "unsupported_media_type":
-      return { tone: "error", title: "Format refusé", text: "Seuls les PDF, JPEG et PNG reconnus par leur contenu sont acceptés (proposition D-04-14.a). La pièce n'a pas été jointe." };
-    case "duplicate_document":
-      return { tone: "warning", title: "Pièce déjà jointe", text: "Une pièce identique est déjà jointe à cet enregistrement. Elle n'a pas été ajoutée une seconde fois." };
-    case "too_many_documents":
-      return { tone: "warning", title: "Nombre maximal de pièces atteint", text: "Au plus 10 pièces actives par ordonnance (proposition D-04-14.b). Invalidez une pièce jointe par erreur avant d'en ajouter." };
     case "incomplete":
       return { tone: "warning", title: "Confirmation refusée", text: "Le double de test a refusé la confirmation : des éléments manquent (voir ci-dessous). Le brouillon est conservé." };
     default:
@@ -112,8 +107,6 @@ const FIELD_ERROR: Record<string, string> = {
   number_expected: "Nombre attendu, tel qu'il figure sur la source (ex. +1,25).",
   too_long: "Valeur trop longue.",
   required_to_confirm: "Requis pour confirmer (règle de démonstration du double, D-04-03 proposée).",
-  not_transcribed: "Œil non transcrit : indiquez « Renseigné » ou « Non prescrit / non mesuré » avant de confirmer.",
-  invalid_document: "Une pièce liée n'est plus disponible.",
   required: "Précisez le motif.",
 };
 
@@ -122,7 +115,7 @@ export const fieldErrorMessage = (code: string): string => FIELD_ERROR[code] ?? 
 /** Libellé lisible d'un chemin de champ renvoyé par le double (`od.sphere`, `provenance.prescribedOn`…). */
 export function fieldPathLabel(path: string): string {
   const [head, tail] = path.split(".");
-  if (head === "od" || head === "og") return `${SIDE_SHORT[head]} — ${tail === "state" ? "état" : (FIELD_LABEL[tail as keyof typeof FIELD_LABEL] ?? tail)}`;
+  if (head === "od" || head === "og") return `${SIDE_SHORT[head]} — ${FIELD_LABEL[tail as keyof typeof FIELD_LABEL] ?? tail}`;
   const labels: Record<string, string> = {
     prescriberName: "Prescripteur — nom",
     prescriberIdentifier: "Prescripteur — identifiant",
@@ -130,7 +123,6 @@ export function fieldPathLabel(path: string): string {
     measuredOn: "Date de la mesure",
     measuredByUserId: "Collaborateur ayant mesuré",
     notes: "Notes",
-    linkedDocumentIds: "Pièces liées",
     comment: "Commentaire",
   };
   return labels[tail ?? head] ?? path;

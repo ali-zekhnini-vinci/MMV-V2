@@ -116,3 +116,18 @@ Les §§ 1 à 6 ci-dessus sont conservés tels qu'écrits en 04-00. Les études 
 | § 2.4 `content` en `bytea` séparé | inchangé ; précisé : contenu déjà compressé (stockage sans recompression à spécifier dans le SQL de 04-B), lecture en flux, aucun fichier temporaire serveur, seuil d'alerte de volume | E-05 |
 | § 4 `document.viewed` | remplacé par `document.content_served` (« contenu transmis », jamais « vu ») ; nouveaux codes `prescription.rectification_started`, `prescription.rectification_discarded` (et `measurement.*`) ; aucune valeur optique | E-02, E-03 |
 | § 2.3 mesures magasin | mêmes règles de cycle et de révision que l'ordonnance ; aucune pièce en 04 | E-02 |
+
+## Amendement daté — 20/10/2026 (D-04-16 APPROVED : simplification)
+
+Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Les sections précédentes sont conservées comme historique. Le modèle proposé pour la migration future `0006` (toujours **non écrite**, aucun SQL) devient :
+
+| Élément | Changement | Décision |
+|---|---|---|
+| § 1 principe 4 « état explicite par œil » | **retiré** ; reste : colonnes de valeurs **nullables une à une** — une valeur absente est `NULL`, jamais `0` ; aucune colonne d'état d'œil | D-04-16 (retire l'état de D-04-02.c) |
+| § 2.2 `od_state`, `og_state` | **supprimés** du modèle proposé | D-04-16 |
+| § 2.2 révision (provenance, valeurs, notes, motif, auteurs, dates de saisie et de confirmation) | **inchangée** : `prescriber_name`, `prescriber_qualification_code`, `prescriber_identifier`, `prescribed_on`, `received_on`, valeurs par œil, `notes`, motif (`revision_reason_code`, commentaire), `recorded_*` / `confirmed_*` ; cycle E-02 (`draft` / `confirmed` / `discarded`, `base_revision_no`, numéro à la confirmation) | D-04-04, D-04-11 (PROPOSED) |
+| § 2.3 mesures magasin | inchangé (aucune pièce, aucun état d'œil) | D-04-01, D-04-03.b |
+| § 2.4 `SourceDocument` et table de liens révision ↔ pièce (amendement du 19/10/2026) | **retirés du périmètre de `0006`** : aucune table de pièces, aucun `bytea`, aucun lien — reportés au backlog permanent BL-04-01 | D-04-16 (reporte D-04-03.c, D-04-10, D-04-14) |
+| § 4 audit : `document.attached`, `document.invalidated`, `document.viewed` / `document.content_served` | **retirés** ; codes conservés : `prescription.*` / `measurement.*` (`created`, `draft_updated`, `confirmed`, `rectification_started`, `rectification_discarded`, `invalidated`) ; aucune valeur optique | D-04-16 |
+| § 5 non modélisé en 04 | **ajouté** : pièces sources et gestion documentaire (BL-04-01) ; état par œil | D-04-16 |
+| § 6 migration `0006` | contenu attendu réduit : schéma `optical`, en-têtes et révisions des deux types, contrainte de permissions (4 droits, [`PERMISSIONS_04_PROPOSED.md`](PERMISSIONS_04_PROPOSED.md)) ; **aucune** table de pièces. Toujours soumise à G04-METIER puis G04-SQL ; **aucune migration écrite ni appliquée** le 20/10/2026 | — |

@@ -1,6 +1,6 @@
 // PROTOTYPE 04-A — détail d'une ordonnance médicale (états 19–22, 27–31) ou d'une mesure magasin (GAP-04-03) :
-// badges de type et de statut dérivé (GAP-04-11), provenance propre au type, OD / OG tels que saisis, notes, pièces
-// (ordonnances seulement), révisions et comparaison (GAP-04-07). La DERNIÈRE RÉVISION CONFIRMÉE reste affichée par
+// badges de type et de statut dérivé (GAP-04-11), provenance propre au type, OD / OG tels que saisis, notes,
+// révisions et comparaison (GAP-04-07). Aucune pièce source (D-04-16 : gestion documentaire reportée au backlog). La DERNIÈRE RÉVISION CONFIRMÉE reste affichée par
 // défaut même si un brouillon de rectification plus récent existe (GAP-04-13, E-02) ; le brouillon se consulte
 // séparément, libellé « non confirmé ». Invalidation au menu secondaire, jamais de suppression (GAP-04-08).
 // Lecture seule déduite des droits simulés (état 22), jamais d'un rôle visuel. Cycle de vie : décisions PROPOSED.
@@ -24,7 +24,6 @@ import { eventLabel, formatDateTime, INVALIDATION_REASON_LABEL, KIND_LABEL, RECT
 import { useConfirmDraft, useDiscardRectification, useInvalidateRecord, useMeasurers, useStartRectification } from "./opticalQueries.ts";
 import { revisionLabel } from "./opticalRevisions.ts";
 import { RevisionsPanel } from "./RevisionsPanel.tsx";
-import { SourceDocumentsPanel } from "./SourceDocumentsPanel.tsx";
 import { describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDraftPath, opticalListPath, type OpticalLaunchState, returnToCardState } from "./opticalUi.ts";
 
 export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord; launch: OpticalLaunchState | null }) {
@@ -286,12 +285,11 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
               : `Modifié le ${formatDateTime(shown.updatedAtUtc)} par ${shown.updatedBy.displayName} · non confirmé`}
           </p>
           <ProvenanceList revision={shown} measurers={measurers.data ?? []} />
-          <EyeTable kind={record.kind} od={shown.content.od} og={shown.content.og} caption={`Correction optique — ${revisionLabel(shown)}`} />
-          <h3 className="optical-docs__subtitle">Notes</h3>
+          <EyeTable od={shown.content.od} og={shown.content.og} caption={`Correction optique — ${revisionLabel(shown)}`} />
+          <h3 className="optical-detail__subtitle">Notes</h3>
           <p className="client-info__notes">{shown.content.notes || <span className="clients-muted">Aucune note.</span>}</p>
         </section>
 
-        {record.kind === "prescription" && <SourceDocumentsPanel record={record} revision={shown} />}
         <RevisionsPanel key={`${record.id}-${record.version}`} record={record} measurers={measurers.data ?? []} />
         <EventsPanel record={record} />
       </div>
@@ -416,17 +414,16 @@ function EventsPanel({ record }: { record: OpticalRecord }) {
       <h2 className="clients-card__title" id="optical-events-title">
         Journal de gestion <ProposedTag refs="D-04-12" />
       </h2>
-      <p className="clients-field__hint">Libellés prototypes servis par le double ; aucune valeur optique, aucun nom de fichier, aucun « consulté ».</p>
+      <p className="clients-field__hint">Libellés prototypes servis par le double ; aucune valeur optique.</p>
       <ol className="optical-events">
         {[...record.events].reverse().map((event) => (
           <li key={event.id}>
             <span className="tnum clients-muted">{formatDateTime(event.atUtc)}</span>
             <span>
               {eventLabel(event.code)}
-              {event.code === "document.content_served" && <> au poste de {event.actor.displayName}</>}
               {event.revisionNo !== undefined && ` — révision ${event.revisionNo}`}
             </span>
-            {event.code !== "document.content_served" && <span className="clients-muted">{event.actor.displayName}</span>}
+            <span className="clients-muted">{event.actor.displayName}</span>
           </li>
         ))}
       </ol>

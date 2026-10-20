@@ -20,11 +20,11 @@ describe("prototype optique — outils d'écran", () => {
   });
 
   test("résumé OD/OG : valeurs restituées EXACTEMENT, unité ° seulement affichée, absence écrite en toutes lettres", () => {
-    assert.equal(
-      eyeSummary("od", { state: "filled", values: { ...EMPTY_EYE_VALUES, sphere: "+1,25", cylinder: "-0.5", axis: "0" } }, "—"),
-      "OD : Sph +1,25 · Cyl -0.5 · Axe 0°",
-    );
-    assert.equal(eyeSummary("og", { state: "not_prescribed", values: { ...EMPTY_EYE_VALUES } }, "Non prescrit sur le document"), "OG : Non prescrit sur le document");
+    assert.equal(eyeSummary("od", { ...EMPTY_EYE_VALUES, sphere: "+1,25", cylinder: "-0.5", axis: "0" }), "OD : Sph +1,25 · Cyl -0.5 · Axe 0°");
+    // Sans état d'œil (D-04-16) : un œil vide est « non renseigné », jamais « 0 ».
+    assert.equal(eyeSummary("og", { ...EMPTY_EYE_VALUES }), "OG : non renseigné");
+    assert.equal(eyeSummary("og", { ...EMPTY_EYE_VALUES, sphere: "0" }), "OG : Sph 0");
+    assert.equal(eyeSummary("og", { ...EMPTY_EYE_VALUES, acuity: "8/10" }), "OG : aucune valeur principale");
   });
 
   test("statut dérivé (E-02) : invalidé > rectification en cours > confirmé > brouillon", () => {

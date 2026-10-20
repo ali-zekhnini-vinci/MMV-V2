@@ -15,7 +15,8 @@ import {
   type RectificationReason,
   type RecordContent,
 } from "./opticalContract.ts";
-import { eyeStateLabel, INVALIDATION_REASON_LABEL, KIND_LABEL, RECTIFICATION_REASON_LABEL, SIDE_SHORT } from "./opticalLabels.ts";
+import { INVALIDATION_REASON_LABEL, KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
+import { eyeSummary } from "./opticalUi.ts";
 import { ProposedTag } from "./OpticalBadges.tsx";
 
 const COMMENT_MAX = 500;
@@ -70,9 +71,9 @@ export function ConfirmTranscriptionDialog({
         <dd>{clientLabel}</dd>
         <dt>Provenance</dt>
         <dd>{provenance}</dd>
-        <dt>États par œil</dt>
-        <dd>
-          {SIDE_SHORT.od} : {eyeStateLabel(kind, content.od.state)} · {SIDE_SHORT.og} : {eyeStateLabel(kind, content.og.state)}
+        <dt>Correction</dt>
+        <dd className="tnum">
+          {eyeSummary("od", content.od)} · {eyeSummary("og", content.og)}
         </dd>
       </dl>
       <p className="optical-dialog__note">

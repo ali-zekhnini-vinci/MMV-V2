@@ -1,9 +1,10 @@
 // PROTOTYPE 04-A — contrat PROVISOIRE du dossier optique (docs/phase/04/API_OPTICAL_PROPOSED.md et amendements
 // E-01 / E-02, tous PROPOSED). Aucun appel HTTP : MMV.Api n'expose aucune route /api/optical (04-B non commencé).
 // Ces types ne servent qu'au banc de démonstration isolé (src/bench/) et aux tests ; ils seront remplacés par le
-// contrat OpenAPI généré par le serveur en 04-B. Seule D-04-01 (deux types distincts) est une décision acquise.
+// contrat OpenAPI généré par le serveur en 04-B. Décisions acquises : D-04-01 (deux types distincts), D-04-15 (UX
+// Lot 3) et D-04-16 (simplification : aucun « état de l'œil », pièces sources reportées au backlog permanent).
 // Valeurs optiques : chaînes conservées EXACTEMENT telles que saisies (aucune normalisation, aucun arrondi, aucune
-// conversion) ; chaîne vide = non renseigné, jamais confondu avec la valeur « 0 ».
+// conversion) ; chaque champ peut rester vide, chaîne vide = non renseigné, jamais confondu avec la valeur « 0 ».
 import type { ApiResult } from "../api/client.ts";
 
 /** D-04-01 (APPROVED) : ordonnance médicale reçue ≠ mesure réalisée au magasin. Aucune conversion. */
@@ -13,19 +14,11 @@ export const OPTICAL_KINDS: readonly OpticalKind[] = ["prescription", "measureme
 export type EyeSide = "od" | "og";
 export const EYE_SIDES: readonly EyeSide[] = ["od", "og"];
 
-/** D-04-02.c (PROPOSED) : état explicite par œil ; `not_transcribed` n'existe qu'au brouillon. */
-export type EyeState = "filled" | "not_prescribed" | "not_transcribed";
-export const EYE_STATES: readonly EyeState[] = ["filled", "not_prescribed", "not_transcribed"];
-
 /** Colonnes du Lot 3 (Sphère, Cylindre, Axe, Addition, Prisme, Base) + acuité (D-04-06, PROTO). */
 export const EYE_FIELDS = ["sphere", "cylinder", "axis", "addition", "prism", "base", "acuity"] as const;
 export type EyeField = (typeof EYE_FIELDS)[number];
+/** Valeurs d'un œil (D-04-16 : aucun état d'œil séparé ; un œil sans valeur est simplement non renseigné). */
 export type EyeValues = Record<EyeField, string>;
-
-export interface EyeEntry {
-  state: EyeState;
-  values: EyeValues;
-}
 
 /** D-04-03.a (PROPOSED) : provenance d'une ordonnance ; la liste des qualités est à fournir (BLOQUÉ). */
 export interface PrescriptionProvenance {
@@ -47,16 +40,14 @@ export interface MeasurementProvenance {
 }
 
 interface ContentBase {
-  od: EyeEntry;
-  og: EyeEntry;
+  od: EyeValues;
+  og: EyeValues;
   notes: string;
 }
 
 export interface PrescriptionContent extends ContentBase {
   kind: "prescription";
   provenance: PrescriptionProvenance;
-  /** E-01 / D-04-10 (PROPOSED) : pièces de l'enregistrement liées à CETTE révision. */
-  linkedDocumentIds: string[];
 }
 
 export interface MeasurementContent extends ContentBase {
@@ -81,9 +72,6 @@ export const RECTIFICATION_REASONS: readonly RectificationReason[] = ["transcrip
 /** D-04-04.c (PROPOSED) : motifs d'invalidation (aucune suppression physique). */
 export type InvalidationReason = "entry_error" | "duplicate" | "unacceptable_document" | "other";
 export const INVALIDATION_REASONS: readonly InvalidationReason[] = ["entry_error", "duplicate", "unacceptable_document", "other"];
-
-export type DocumentInvalidationReason = "attached_by_mistake" | "illegible" | "other";
-export const DOCUMENT_INVALIDATION_REASONS: readonly DocumentInvalidationReason[] = ["attached_by_mistake", "illegible", "other"];
 
 export interface OpticalRevision {
   id: string;
@@ -112,20 +100,6 @@ export interface OpticalInvalidation {
   comment: string;
   /** Un brouillon ouvert a été abandonné dans la même opération (D-04-11.e). */
   discardedDraft: boolean;
-}
-
-/** Types acceptés (D-04-03.c / D-04-14.a, PROPOSED). */
-export type DocumentMediaType = "application/pdf" | "image/jpeg" | "image/png";
-
-export interface SourceDocument {
-  id: string;
-  mediaType: DocumentMediaType;
-  sizeBytes: number;
-  uploadedAtUtc: string;
-  uploadedBy: OpticalActor;
-  /** Nom d'origine : servi seulement avec `optical.documents.read` (D-04-05). */
-  originalName: string;
-  invalidation: { atUtc: string; by: OpticalActor; reasonCode: DocumentInvalidationReason } | null;
 }
 
 export interface OpticalClientRef {
@@ -159,9 +133,6 @@ export interface OpticalRecord {
   openDraft: OpticalRevision | null;
   /** Toutes les révisions (confirmées, brouillon, abandonnées), dans l'ordre chronologique. */
   revisions: OpticalRevision[];
-  /** `null` sans `optical.documents.read` : seul le nombre est connu (`documentCount`). */
-  documents: SourceDocument[] | null;
-  documentCount: number;
   events: OpticalEvent[];
   createdAtUtc: string;
   createdBy: OpticalActor;
@@ -180,8 +151,8 @@ export interface OpticalRecordSummary {
   date: string;
   /** Prescripteur (RX) ou collaborateur ayant mesuré (MES), tel qu'enregistré. */
   source: string;
-  od: EyeEntry;
-  og: EyeEntry;
+  od: EyeValues;
+  og: EyeValues;
   recordedAtUtc: string;
 }
 
@@ -208,25 +179,6 @@ export interface OpticalPage {
 
 export const OPTICAL_PAGE_SIZE = 8;
 
-/** Pièce synthétique du banc (aucun fichier du poste n'est lu en 04-A). */
-export interface SyntheticDocumentChoice {
-  id: string;
-  label: string;
-  /** Type annoncé par le « fichier » ; le double vérifie la « signature » simulée. */
-  declaredType: string;
-  detectedType: DocumentMediaType | "image/svg+xml" | "text/html";
-  sizeBytes: number;
-  name: string;
-  /** Empreinte simulée (détection des doublons, D-04-10.d). */
-  digest: string;
-}
-
-export interface DocumentContent {
-  mediaType: DocumentMediaType;
-  /** Image synthétique générée localement ; `null` pour un PDF (aperçu PDF reporté en 04-C, O-04-01). */
-  imageDataUrl: string | null;
-}
-
 export interface RectificationRequest {
   expectedRevisionNo: number;
   reasonCode: RectificationReason;
@@ -243,7 +195,8 @@ export interface InvalidationRequest {
 /**
  * Accès aux données du dossier optique. En 04-A, seule une implémentation EN MÉMOIRE existe (banc isolé, tests) ;
  * le serveur réel (04-B) reprendra les mêmes refus : 403, 404, 409 (`version_conflict`, `draft_exists`,
- * `revision_conflict`, `client_archived`, `invalidated`, `duplicate_document`, `too_many_documents`), 413, 415, 422.
+ * `revision_conflict`, `client_archived`, `invalidated`), 422. Aucune opération sur des pièces sources (D-04-16 :
+ * gestion documentaire reportée au backlog permanent).
  */
 export interface OpticalGateway {
   listRecords(params: OpticalListParams): Promise<ApiResult<OpticalPage>>;
@@ -256,14 +209,11 @@ export interface OpticalGateway {
   startRectification(kind: OpticalKind, id: string, request: RectificationRequest): Promise<ApiResult<OpticalRecord>>;
   discardRectification(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>>;
   invalidateRecord(kind: OpticalKind, id: string, request: InvalidationRequest): Promise<ApiResult<OpticalRecord>>;
-  attachDocument(id: string, choice: SyntheticDocumentChoice): Promise<ApiResult<OpticalRecord>>;
-  invalidateDocument(id: string, documentId: string, reasonCode: DocumentInvalidationReason): Promise<ApiResult<OpticalRecord>>;
-  fetchDocumentContent(documentId: string): Promise<ApiResult<DocumentContent>>;
 }
 
 export const EMPTY_EYE_VALUES: EyeValues = { sphere: "", cylinder: "", axis: "", addition: "", prism: "", base: "", acuity: "" };
 
-export const emptyEye = (): EyeEntry => ({ state: "not_transcribed", values: { ...EMPTY_EYE_VALUES } });
+export const emptyEye = (): EyeValues => ({ ...EMPTY_EYE_VALUES });
 
 export function emptyContent(kind: OpticalKind, measuredByUserId = ""): RecordContent {
   return kind === "prescription"
@@ -273,7 +223,6 @@ export function emptyContent(kind: OpticalKind, measuredByUserId = ""): RecordCo
         od: emptyEye(),
         og: emptyEye(),
         notes: "",
-        linkedDocumentIds: [],
       }
     : { kind, provenance: { measuredOn: "", measuredByUserId, category: "unspecified" }, od: emptyEye(), og: emptyEye(), notes: "" };
 }
