@@ -157,7 +157,7 @@ export function RectifyDialog({
   const [localError, setLocalError] = useState<string | null>(null);
   const submit = () => {
     // Présence du motif : contrôle de forme du formulaire, le service revalide (422).
-    if (reason === "") return setLocalError("Choisissez un motif de rectification.");
+    if (reason === "") return setLocalError("Choisissez un motif de modification.");
     if (reason === "other" && comment.trim() === "") return setLocalError("Précisez le motif dans le commentaire.");
     setLocalError(null);
     onSubmit(reason, comment.trim());
@@ -176,15 +176,15 @@ export function RectifyDialog({
       }}
       tone="info"
       icon={<PencilLine size={28} />}
-      title="Rectifier cet enregistrement ?"
+      title="Modifier cet enregistrement ?"
       description={
         <>
-          Un brouillon de rectification est ouvert à partir de la révision {revisionNo}. La révision {revisionNo} reste affichée et inchangée tant que la
-          rectification n&apos;est pas confirmée.
+          La modification part de la révision {revisionNo}. La dernière révision confirmée (révision {revisionNo}) reste affichée et inchangée jusqu&apos;à
+          l&apos;enregistrement de la nouvelle version.
         </>
       }
       cancelLabel="Annuler"
-      confirmLabel={pending ? "Ouverture…" : "Ouvrir la rectification"}
+      confirmLabel={pending ? "Ouverture…" : "Modifier"}
       confirmIcon={<PencilLine size={16} aria-hidden="true" />}
       onConfirm={submit}
       pending={pending}

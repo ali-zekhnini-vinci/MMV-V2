@@ -135,3 +135,8 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - **D-04-16 APPROVED** (propriétaire, 20/10/2026, `prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`) : suppression du champ « État de l'œil » (formulaires, prototype, modèle proposé ; chaque champ optique peut rester vide, jamais assimilé à zéro) ; gestion documentaire des pièces sources reportée au **backlog permanent BL-04-01** (`docs/PERIMETRE_ET_SEQUENCE.md`), aucune table ni API de pièces en Phase 04 ; révisions, comparaison, motif de rectification, traçabilité des auteurs et provenance conservés. D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14 **reportées** ; la partie « état par œil » de D-04-02.c **retirée** ; règles cliniques ouvertes (D-04-02.b, D-04-03.a/b, D-04-06) **inchangées**.
 - Aucun ADR modifié. **ADR-008** (`PROPOSED`) : la note du 19/10/2026 sur le volume des pièces dans les sauvegardes ne s'applique pas à la Phase 04 (reprise avec BL-04-01) ; la restauration complète reste exigée avant tout pilote (O-04-09).
+
+## Note datée — 20/10/2026 (Phase 04-A, enregistrement simplifié et clôture technique)
+
+- **D-04-17 APPROVED** (propriétaire, 20/10/2026, `prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`) : enregistrement optique simplifié — action principale « Enregistrer », option secondaire discrète « Enregistrer comme brouillon », sans suppression du cycle de révisions. Décision d'interface ; aucun critère clinique fixé (D-04-02 à D-04-14 restent PROPOSED). Lot 04-A : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` (`docs/phase/04/LIVRAISON_04A.md` § 13), pas un GO pour 04-B.
+- Aucun ADR modifié.

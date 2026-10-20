@@ -4,9 +4,10 @@
 // aucune décision. Aucune pièce source (gestion documentaire reportée au backlog permanent, D-04-16).
 // - Erreurs de champ : seulement des erreurs de FORME (nombre attendu, longueur). Aucune borne, aucun pas, aucune
 //   dépendance entre champs (D-04-06 ouverte, avis opticien requis).
-// - Critère de confirmation (`422 incomplete`) : RÈGLE DE DÉMONSTRATION tirée de la recommandation PROPOSED D-04-03.a/b
-//   (provenance minimale) ; le poste ne la code pas. Aucun critère sur les valeurs OD / OG : sans état d'œil
-//   (D-04-16), chaque champ peut rester vide, et le critère clinique de complétude reste ouvert (D-04-02.b).
+// - Critère de confirmation (`422 incomplete`) : RÈGLE MINIMALE DE DÉMONSTRATION du banc (D-04-17) — un enregistrement
+//   dont TOUTES les données optiques (OD et OG) sont absentes ne peut pas être confirmé. Ce n'est pas une validation
+//   médicale ; le poste ne la code pas. Un seul œil suffit, aucune valeur n'est imposée aux deux yeux, un vide n'est
+//   jamais un 0 ; les autres critères de complétude (D-04-02.b, D-04-03.a/b) restent ouverts pour 04-B.
 // - Valeurs conservées EXACTEMENT telles que reçues (aucune normalisation, aucun arrondi).
 import { type ApiError, apiError, type ApiResult } from "../api/client.ts";
 import { findFolded } from "../clients/searchText.ts";
@@ -50,6 +51,9 @@ export interface BenchFaults {
   failedListReads: number;
   /** Échec technique simulé de la prochaine écriture (états 24, 31). */
   failNextWrite: boolean;
+  /** Refus simulé de la prochaine CONFIRMATION seulement (brouillon enregistré, confirmation en échec) : erreur de
+   * communication ou conflit de version (409). */
+  nextConfirmFault: "network" | "conflict" | null;
 }
 
 interface StoredRecord {
@@ -74,7 +78,7 @@ export interface InMemoryOpticalGatewayOptions {
   now?: () => string;
 }
 
-const NO_FAULTS: BenchFaults = { latencyMs: 0, failedListReads: 0, failNextWrite: false };
+const NO_FAULTS: BenchFaults = { latencyMs: 0, failedListReads: 0, failNextWrite: false, nextConfirmFault: null };
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -104,17 +108,10 @@ export function shapeErrors(content: RecordContent): Record<string, string[]> {
   return errors;
 }
 
-/** Règle de DÉMONSTRATION du double (recommandations PROPOSED), jamais reprise par le poste. */
+/** Règle minimale de DÉMONSTRATION du banc (D-04-17), jamais reprise par le poste ni par 04-B sans décision. */
 export function incompleteErrors(content: RecordContent): Record<string, string[]> {
-  const errors: Record<string, string[]> = {};
-  if (content.kind === "prescription") {
-    if (content.provenance.prescriberName.trim() === "") errors["provenance.prescriberName"] = ["required_to_confirm"];
-    if (content.provenance.prescribedOn === "") errors["provenance.prescribedOn"] = ["required_to_confirm"];
-  } else {
-    if (content.provenance.measuredOn === "") errors["provenance.measuredOn"] = ["required_to_confirm"];
-    if (content.provenance.measuredByUserId === "") errors["provenance.measuredByUserId"] = ["required_to_confirm"];
-  }
-  return errors;
+  const empty = EYE_SIDES.every((side) => EYE_FIELDS.every((field) => content[side][field].trim() === ""));
+  return empty ? { correction: ["optical_values_missing"] } : {};
 }
 
 export class InMemoryOpticalGateway implements OpticalGateway {
@@ -397,6 +394,11 @@ export class InMemoryOpticalGateway implements OpticalGateway {
         if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
         const last = this.lastConfirmedOf(record);
         if ((last?.revisionNo ?? null) !== draft.baseRevisionNo) return fail("conflict", 409, "revision_conflict");
+        const faults = this.options.faults?.() ?? NO_FAULTS;
+        const fault = faults.nextConfirmFault;
+        faults.nextConfirmFault = null;
+        if (fault === "network") return fail("network", 0);
+        if (fault === "conflict") return fail("conflict", 409, "version_conflict");
         const errors = incompleteErrors(draft.content);
         if (Object.keys(errors).length > 0) return fail("validation", 422, "incomplete", errors);
         const at = this.now();

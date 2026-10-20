@@ -1,6 +1,6 @@
 # 04 — IMPLEMENTATION_SPEC (cadrage 04-00, aucune implémentation)
 
-**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé) ; *20/10/2026 :* **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 10, refonte UX des formulaires, D-04-15) ; *20/10/2026 (simplification) :* **`PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 11, D-04-16). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
+**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé) ; *20/10/2026 :* **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 10, refonte UX des formulaires, D-04-15) ; *20/10/2026 (simplification) :* **`PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 11, D-04-16) ; *20/10/2026 (clôture 04-A) :* **`PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`** (§ 12, D-04-17 ; pas un GO pour 04-B). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
 
 ## 1. Base de départ vérifiée
 
@@ -124,3 +124,15 @@ Les §§ 1 à 10 sont conservés. **D-04-16 APPROVED** ([`prompts/PHASE04_A_SIMP
 | § 5 sécurité | ligne « Pièces sécurisées, aucun lien public » sans objet en 04 (reprise avec BL-04-01) ; `no-store`, 403 / 404 indiscernables et absence de valeur optique dans l'audit maintenus |
 
 Prototype : contrat `apps/desktop/src/optical/opticalContract.ts` (`EyeValues` sans état, `OpticalGateway` sans opération documentaire) ; double `apps/desktop/src/bench/inMemoryOpticalGateway.ts`. Rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 12.
+
+## 12. Amendement daté — 20/10/2026 (enregistrement simplifié, D-04-17 APPROVED — clôture 04-A)
+
+Les §§ 1 à 11 sont conservés. **D-04-17 APPROVED** ([`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md)) : action principale « Enregistrer », option secondaire discrète « Enregistrer comme brouillon », cycle de révisions conservé. Effets sur la spécification :
+
+| § | Changement |
+|---|---|
+| § 3 composants | en-tête du formulaire : « Annuler » (secondaire), « Enregistrer comme brouillon » (tertiaire), « Enregistrer » (principal, Ctrl+S, Entrée) ; récapitulatif de confirmation réservé au détail (confirmation d'un brouillon existant) ; bandeau d'échec partiel avec « Laisser en brouillon » / « Recharger » |
+| § 4 sous-lots | 04-B : le poste enchaîne `PUT …/draft` puis `POST …/confirm` ; décider à la conception de l'API définitive s'il faut une opération atomique (O-04-34) ; le critère de confirmation reste **serveur** et sera fixé par G04-METIER (la règle du banc n'est pas reprise sans décision, O-04-36) |
+| § 6 tests | tests à reprendre en 04-B contre le vrai service : échec de la confirmation après brouillon enregistré (409, 422, communication), doubles déclenchements, absence de doublon à la reprise |
+
+Prototype : `apps/desktop/src/optical/OpticalRecordForm.tsx`, `opticalUi.ts` (`describeConfirmFailure`) ; double `apps/desktop/src/bench/inMemoryOpticalGateway.ts` (règle minimale de démonstration, panne `nextConfirmFault`). Aucun fichier .NET ni SQL modifié ; migration `0006` non générée ; application réelle inchangée.

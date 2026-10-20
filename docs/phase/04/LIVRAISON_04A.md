@@ -1,6 +1,8 @@
 # 04-A — Livraison : interfaces du dossier optique (prototype sur banc isolé)
 
-**Statut (20/10/2026, simplification) : `PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md) — **D-04-16 APPROVED** : champ « État de l'œil » supprimé, gestion des pièces sources reportée au backlog permanent (BL-04-01), révisions, comparaison, motif et auteurs conservés. Toujours **uniquement** dans le banc isolé ; aucune règle clinique ouverte modifiée. Détail : **§ 12**.
+**Statut (20/10/2026, clôture technique) : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md) — **D-04-17 APPROVED** (enregistrement optique simplifié : « Enregistrer » principal, « Enregistrer comme brouillon » discret, cycle de révisions conservé). Clôture technique du lot frontend 04-A ; **ne vaut pas GO pour 04-B**. Rapport : § 13.
+
+*Historique —* **Statut (20/10/2026, simplification) : `PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md) — **D-04-16 APPROVED** : champ « État de l'œil » supprimé, gestion des pièces sources reportée au backlog permanent (BL-04-01), révisions, comparaison, motif et auteurs conservés. Toujours **uniquement** dans le banc isolé ; aucune règle clinique ouverte modifiée. Détail : **§ 12**.
 
 *Historique —* **Statut (20/10/2026, refonte UX Lot 3) : `PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md) — **D-04-15 APPROVED** (référence UX officielle des formulaires optiques : maquette Claude Design Lot 3, contrôles rapides ± et saisie clavier complémentaire). Formulaires « Ordonnance médicale » et « Mesure magasin » refondus selon la maquette, toujours **uniquement** dans le banc isolé ; D-04-02 à D-04-14 restent `PROPOSED` (le pas des boutons est un paramètre de démonstration, D-04-06 ouverte). Détail : **§ 11**.
 
@@ -284,3 +286,95 @@ Détail : [`QA_MATRIX.md`](QA_MATRIX.md), section « 04-A — simplification (D-
 5. Validation visuelle de la simplification par le propriétaire (`OWNER_VISUAL_REVIEW_REQUIRED`).
 
 Reporté au **backlog permanent BL-04-01** (gestion documentaire) : D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14, droits `optical.documents.*`, O-04-01 / 02 / 03 / 13 / 17 / 18 / 23, volet « pièces » d'O-04-19 ; études E-01, E-03 (pièces) et E-05 conservées pour la reprise.
+
+## 13. Enregistrement simplifié et clôture technique — 20/10/2026 (D-04-17 APPROVED)
+
+Décision **D-04-17 — APPROVED (propriétaire, 20/10/2026)** : *« Enregistrement optique simplifié : action principale Enregistrer, option secondaire discrète Enregistrer comme brouillon, sans suppression du cycle de révisions. »* Identifiant vérifié libre avant inscription (D-04-16 dernier utilisé). Dernier mandat de développement de 04-A. Les §§ 1 à 12 sont conservés comme historique.
+
+**État : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`** — clôture technique du lot frontend ; ne constitue **pas** un GO pour 04-B (G04-METIER et G04-SQL restent requis).
+
+### 13.1 Préflight
+
+| Contrôle | Résultat |
+|---|---|
+| HEAD au départ | `64cedc4` sur `feat/phase-04-00-cadrage` ; aucune modification suivie ; non suivis du propriétaire intacts |
+| lecture | `OpticalRecordForm.tsx`, double en mémoire, tests du banc, plans de captures et documents de `docs/phase/04/` concernés, avant modification |
+| PostgreSQL, ancien MMV, API | **non consultés** ; aucune migration `0006`, aucun backend optique, aucune activation réelle, aucun compte modifié |
+
+### 13.2 Comportement livré (prototype, banc isolé)
+
+| Point du mandat | Réalisation |
+|---|---|
+| action principale | bouton bleu **« Enregistrer »** (variante `primary`, `aria-keyshortcuts="Control+S"`) sur « Nouvelle ordonnance médicale », « Nouvelle mesure magasin », brouillons et modifications : enregistre le brouillon puis le confirme, **sans récapitulatif intermédiaire** ; succès → notification « Ordonnance médicale enregistrée » / « Mesure magasin enregistrée » (« RX-… : révision N confirmée. ») et retour au détail (puis « Retour à la fiche » selon le parcours) |
+| action secondaire | **« Enregistrer comme brouillon »** : bouton tertiaire (texte accent, sans fond) entre « Annuler » et « Enregistrer » — visible, atteignable au Tab, utilisable à Entrée ; choisi plutôt qu'un menu (aucun menu d'actions dans l'en-tête du formulaire Lot 3, une action de moins à découvrir) |
+| Ctrl+S, Entrée | = « Enregistrer » (jamais le brouillon) |
+| règle de démonstration | double en mémoire : un enregistrement dont **toutes** les données optiques (OD et OG, sept champs chacun, espaces ignorés) sont absentes ne peut pas être confirmé (`422 incomplete`, chemin `correction`, message « … règle de démonstration du banc, pas une validation médicale ») ; un seul œil suffit ; `0` est une valeur ; aucune règle sur la provenance (O-04-36) ; le poste ne code aucune règle |
+| échec partiel (brouillon enregistré, confirmation refusée) | formulaire **resynchronisé** sur le brouillon enregistré (plus de faux avertissement « Quitter sans enregistrer ? ») ; bandeau **« Brouillon enregistré — confirmation refusée »** (409, 422, 403…) ou **« … confirmation non aboutie »** (erreur de communication), qui ne dit jamais que rien n'a été enregistré ; actions « Laisser en brouillon » (aucune nouvelle écriture) et, si une version plus récente existe, « Recharger » ; nouvelle tentative sur le **même** enregistrement (aucun doublon) ; dernière révision confirmée inchangée |
+| doubles déclenchements | garde unique (référence + état) : double clic, Ctrl+S répété, Entrée pendant l'enregistrement ignorés, y compris entre l'enregistrement du brouillon et la confirmation ; boutons désactivés et libellé « Enregistrement… » |
+| libellés | « Modifier » (au lieu de « Rectifier », « Poursuivre », « Poursuivre le brouillon »), « Modifier cet enregistrement ? », « Modification en cours », « Confirmer la modification », « Abandonner la modification », **« Historique des modifications »** (au lieu de « Révisions »), **« Dernière révision confirmée — révision N »** ; « en vigueur » **retiré** de toute l'interface du prototype ; termes internes (révision, rectification, brouillon) conservés dans le modèle et le journal de gestion |
+| banc | commandes « Échec de la prochaine confirmation » et « Conflit à la prochaine confirmation » (la confirmation seule échoue, l'enregistrement du brouillon qui la précède aboutit) ; scénarios de l'accueil mis à jour |
+| inchangé | design Lot 3 (D-04-15), contrôles ± et pas de démonstration, absence d'état de l'œil et de pièces (D-04-16), provenance propre à chaque type (D-04-01), révisions, comparaison, motif, auteurs, invalidation, « Préparer une vente » désactivé |
+
+### 13.3 Fichiers modifiés
+
+| Fichier | Changement |
+|---|---|
+| `apps/desktop/src/optical/OpticalRecordForm.tsx` | actions « Enregistrer » / « Enregistrer comme brouillon », Ctrl+S et Entrée = « Enregistrer », garde `busyRef`, échec partiel resynchronisé, « Laisser en brouillon », récapitulatif retiré du formulaire, titre « Modifier — … », mention « dernière révision confirmée » |
+| `apps/desktop/src/optical/opticalUi.ts` | `describeConfirmFailure` (messages d'échec après brouillon enregistré) ; code `optical_values_missing` et libellé « Correction optique » ; `required_to_confirm` retiré |
+| `apps/desktop/src/optical/OpticalRecordDetail.tsx`, `OpticalDialogs.tsx`, `RevisionsPanel.tsx` | libellés simplifiés (§ 13.2) ; plus aucun « en vigueur » |
+| `apps/desktop/src/bench/inMemoryOpticalGateway.ts`, `benchSeed.ts`, `OpticalBench.tsx` | règle minimale de démonstration ; panne simulée `nextConfirmFault` (`network` / `conflict`) ; commandes du banc ; commentaires du jeu fictif |
+| tests | `OpticalBench.test.tsx` : 10 tests adaptés aux nouveaux libellés (le test « 422 provenance » devient « un seul œil suffit »), 7 tests « enregistrement simplifié (D-04-17) » ajoutés ; `inMemoryOpticalGateway.test.ts` : test de la règle remplacé, 2 tests ajoutés (espaces, panne de la confirmation seule) — aucun test désactivé |
+| `apps/desktop/e2e/bench-04a/plan.mjs`, `plan-lot3.mjs` | libellés mis à jour ; capture 27 refaite sur la nouvelle règle ; 7 captures `70`–`76` (D-04-17) |
+
+Aucune dépendance ajoutée ; aucun fichier .NET, SQL ni de configuration serveur modifié ; **application réelle inchangée** (aucun fichier hors `src/optical/`, `src/bench/` et `e2e/bench-04a/` ; bundle de production sans le banc).
+
+### 13.4 Vérification des critères de clôture (§ 7 du mandat)
+
+| # | Parcours | Preuve | Résultat |
+|---|---|---|---|
+| 1–4 | fiche fictive → nouvelle ordonnance → ± sur OD et OG → « Enregistrer » → retrouvée (détail, liste, onglet de la fiche) | test « une action principale « Enregistrer »… », J-04-01 ; captures `70`, `72` | PASS |
+| 5 | modifier les valeurs, ancienne révision retrouvée | J-04-04 « modifier → brouillon… révision 2 », test 409 D-04-17 (révision 1 visible dans l'historique) ; captures `23`, `42`, `75` | PASS |
+| 6–7 | brouillon incomplet (aucune valeur) au clavier, repris puis confirmé | test « brouillon incomplet enregistré au clavier… » | PASS |
+| 8 | erreurs et conflits : 422 (aucune valeur), 409 à l'enregistrement (autre poste), 409 et erreur de communication à la confirmation, double clic, Ctrl+S | 4 tests D-04-17, J-04-06, états 9 / 31 ; captures `27`, `40`, `73`, `74` | PASS |
+| 9–10 | mesure magasin, même design, provenance distincte | test « Ctrl+S = « Enregistrer »… mesure magasin », contrôles ± (pas paramétrable) ; captures `71`, matrice Lot 3 « mesure » | PASS |
+| 11 | ni « État de l'œil » ni « Pièces sources » | suite « simplification (D-04-16) », bundle | PASS |
+| 12 | listes, recherche, détails, droits simulés, invalidation | J-04-02, J-04-07, suite « accès refusé », changement de profil | PASS |
+| 13 | retours vers la fiche, avertissements de sortie (vrais et absence de faux) | J-04-01, test « conservation » (garde), test 409 D-04-17 (pas de faux avertissement) | PASS |
+| 14 | « Préparer une vente » désactivé | J-04-04 | PASS |
+| — | contrôles ± : sphère, cylindre, addition, prisme, axe, base, acuité, saisie manuelle, clavier, valeurs négatives / positives / nulles / absentes, sans arrondi | suite « contrôles rapides ± » (5 tests, inchangés), « grille OD / OG neutre » ; captures saisie rapide | PASS |
+| — | thèmes clair / sombre, zoom 100 / 125 / 150 %, 1920×1080 et 1024×700 | `plan-lot3.mjs` (34 captures) + `plan.mjs` (58) : **0 erreur console, 0 défilement horizontal** | PASS (navigateur) |
+| — | clavier, ordre de Tab, noms accessibles | tests « ordre de Tab », « clavier », « brouillon… au clavier » ; ordre de l'en-tête : Annuler → Enregistrer comme brouillon → Enregistrer | PASS |
+
+### 13.5 Qualité et preuves (20/10/2026, après le dernier changement de code)
+
+| Contrôle | Statut |
+|---|---|
+| typage strict `npm run check` | PASS |
+| lint `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Vitest (suite frontend complète, composants communs inclus) | **PASS 288 / 288** (25 fichiers) — [`evidence/P04A_CLOT_frontend_20261020.log`](evidence/P04A_CLOT_frontend_20261020.log) |
+| build `vite build` | PASS ; banc, double, jeu fictif et chaînes D-04-17 absents du bundle ; seule occurrence « Dossier optique » : libellé de l'onglet réservé au banc dans `ClientDetailView` (inchangé, non affiché par l'application réelle qui garde « Ordonnances — phase ultérieure ») — [`evidence/P04A_CLOT_bundle_20261020.log`](evidence/P04A_CLOT_bundle_20261020.log) |
+| isolement du prototype | PASS — `realAppIsolation.test.tsx`, garde réseau du banc (0 appel émis dans chaque test) |
+| captures navigateur | PASS — 58 + 34, 0 erreur console, 0 défilement horizontal — [`evidence/P04A_CLOT_captures_rapport_20261020.json`](evidence/P04A_CLOT_captures_rapport_20261020.json) ; sélection versionnée : `evidence/P04A_CLOT_navigateur_*.jpg` (18) |
+| interface Tauri native | **NOT_TESTED** (banc hors application, O-04-16 ; aucune déclaration de réussite) |
+| tests .NET, PostgreSQL | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+
+Captures finales des deux formulaires : `P04A_CLOT_navigateur_70-d0417-formulaire-ordonnance-actions.jpg`, `P04A_CLOT_navigateur_71-d0417-formulaire-mesure-actions.jpg`, `P04A_CLOT_navigateur_apres-ordonnance-1920x1080-z100-clair.jpg` / `-sombre.jpg`, `P04A_CLOT_navigateur_apres-mesure-1920x1080-z100-clair.jpg`, `P04A_CLOT_navigateur_apres-ordonnance-1024x700-z100-clair.jpg`, `P04A_CLOT_navigateur_apres-mesure-1024x700-z150-sombre.jpg`. Captures prises sur le serveur de banc déjà actif du poste (O-04-37).
+
+### 13.6 Réserves (non bloquantes pour 04-A)
+
+1. Tauri natif **NOT_TESTED** (le prototype n'est pas monté dans l'application, O-04-16).
+2. O-04-34 : enchaînement brouillon → confirmation (deux appels) ; atomicité à décider avec l'API de 04-B.
+3. O-04-35 : récapitulatif de confirmation retiré du parcours principal du formulaire (conservé sur le détail).
+4. O-04-36 : la règle de démonstration ne couvre plus la provenance ; critères définitifs à G04-METIER.
+
+### 13.7 Décisions métier restantes pour préparer 04-B (G04-METIER)
+
+1. **D-04-02 [AVIS OPTICIEN]** — statuts, **critère minimal de confirmation** (b, à reformuler sans état d'œil, O-04-30 — la règle du banc n'en tient pas lieu), un seul œil, qui confirme (d).
+2. **D-04-03.a / b** — champs de provenance requis et listes fermées (qualité du prescripteur, catégorie de mesure).
+3. **D-04-04** — motifs de rectification et d'invalidation (dont « Document non recevable », O-04-32).
+4. **D-04-05** — permissions (`optical.read`, `.prescriptions.write`, `.measurements.write`, `.invalidate`) et profils.
+5. **D-04-06 [AVIS OPTICIEN]** — pas, bornes, règles croisées, liste des bases (le pas 0,25 du banc reste un réglage de démonstration).
+6. **D-04-07 à D-04-09** — client archivé, navigation et « Préparer une vente » inerte, pays, confidentialité et conservation.
+7. **D-04-11, D-04-12.c, D-04-13** (révisions, volet encore applicable des événements, granularité de lecture) ; puis G04-SQL (revue de la migration `0006`, non générée ni appliquée) et G04-LEGAL avant toute donnée réelle.
+
+Toujours au **backlog permanent BL-04-01** : gestion documentaire des pièces sources (D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14, `optical.documents.*`).

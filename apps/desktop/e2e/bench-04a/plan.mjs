@@ -44,25 +44,26 @@ add("13-etat06-aucun-resultat", u("route=/optique"), [typeIn("Rechercher par cli
 add("14-etat08-chargement", u("route=/optique&latency=3000"), [], W, { waitMs: 900 });
 add("15-etat09-erreur", u(""), [click("Échec de la prochaine liste", 300), click("Dossiers optiques", 900)]);
 add("16-etats12-13-selection-client", u("route=/optique"), [click("Nouveau…", 800), click("Ordonnance médicale", 800), typeIn("Rechercher un client actif", "Fictif"), pause(1000)]);
-add("23-gap07-revisions-comparaison", u(""), [click("RX-FICTIF-0001", 1000), scrollTo("Révisions")]);
+add("23-gap07-revisions-comparaison", u(""), [click("RX-FICTIF-0001", 1000), scrollTo("Historique des modifications")]);
 add("24-gap08-etat30-invalide", u(""), [click("RX-FICTIF-0003", 1000)]);
 add("25-etats16-21-brouillon-partiel", u(""), [click("RX-FICTIF-0004", 1000)]);
 add("26-gap10-confirmation", u(""), [click("RX-FICTIF-0004", 1000), click("Confirmer la transcription", 800)]);
-add("27-confirmation-refusee-422", u(""), [click("RX-FICTIF-0004", 1000), click("Confirmer la transcription", 800), click("Confirmer", 1000)]);
+// D-04-17 : règle minimale de démonstration (aucune valeur optique) ; RX-FICTIF-0004 (un œil renseigné) est désormais confirmable.
+add("27-confirmation-refusee-422", card("cli-fictif-3"), [...newRx, typeIn("Prescripteur — nom (tel que sur le document)", "Dr Fictif-Test"), click("Enregistrer", 1200)]);
 add("28-gap03-detail-mesure", u(""), [click("MES-FICTIF-0001", 1000)]);
-add("29-etat23-rectifier-motif", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Rectifier", 800)]);
+add("29-etat23-rectifier-motif", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Modifier", 800)]);
 add("32-etats28-29-invalider", u(""), [click("RX-FICTIF-0001", 1000), click("Plus d'actions", 600), click("Invalider…", 900)]);
 add("32b-etat31-erreur-invalidation", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Échec de la prochaine écriture", 300), click("Plus d'actions", 600), click("Invalider…", 900), setSelect("Motif", "entry_error"), click("Invalider", 1000)]);
 // 22, 33, 34 (pièces sources) retirées le 20/10/2026 : gestion documentaire reportée au backlog permanent (D-04-16).
 add("35-etat22-lecture-seule", u("profile=reader"), [click("RX-FICTIF-0002", 1000)]);
 add("36-gap05-sans-droit-optique-fiche", card("cli-fictif-1") + "&profile=none", [click("Ordonnances", 700)]);
 add("37-gap05-acces-direct-refuse", u("route=/optique&profile=none"));
-add("38-etats17-35-erreurs-sous-champ", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "abc"), typeIn("Prescripteur — nom (tel que sur le document)", "Dr Fictif-Test"), click("Enregistrer le brouillon", 1000)]);
-add("38b-etat17-bandeau-erreurs", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "abc"), click("Enregistrer le brouillon", 1000), scrollTo("Veuillez corriger")]);
-add("39-etat14-enregistrement-en-cours", card("cli-fictif-3") + "&latency=3000", [click("Dossier optique", 3500), click("Ajouter…", 600), click("Ordonnance médicale", 900), click("Enregistrer le brouillon", 400)], W, { waitMs: 1500 });
-add("40-gap09-conflit-deux-postes", u(""), [click("RX-FICTIF-0004", 1000), click("Poursuivre le brouillon", 900), click("Autre poste : modifier l'enregistrement ouvert", 300), typeIn("Remarques complémentaires (facultatif)", "Saisie du poste A (fictive)"), click("Enregistrer le brouillon", 1000)]);
+add("38-etats17-35-erreurs-sous-champ", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "abc"), typeIn("Prescripteur — nom (tel que sur le document)", "Dr Fictif-Test"), click("Enregistrer", 1000)]);
+add("38b-etat17-bandeau-erreurs", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "abc"), click("Enregistrer", 1000), scrollTo("Veuillez corriger")]);
+add("39-etat14-enregistrement-en-cours", card("cli-fictif-3") + "&latency=3000", [click("Dossier optique", 3500), click("Ajouter…", 600), click("Ordonnance médicale", 900), typeIn("Sphère OD", "+1,00"), click("Enregistrer", 400)], W, { waitMs: 1500 });
+add("40-gap09-conflit-deux-postes", u(""), [click("RX-FICTIF-0004", 1000), click("Modifier", 900), click("Autre poste : modifier l'enregistrement ouvert", 300), typeIn("Remarques complémentaires (facultatif)", "Saisie du poste A (fictive)"), click("Enregistrer", 1000)]);
 add("41-etat26-garde-de-sortie", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "+0,50"), click("Dossiers optiques", 800)]);
-add("42-etat27-revision-enregistree", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Rectifier", 700), setSelect("Motif", "transcription_error"), click("Ouvrir la rectification", 1000), typeIn("Sphère OD", "-1,10"), click("Enregistrer et confirmer…", 800), click("Confirmer", 1200)]);
+add("42-etat27-revision-enregistree", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Modifier", 700), setSelect("Motif", "transcription_error"), click("Modifier", 1000), typeIn("Sphère OD", "-1,10"), click("Enregistrer", 1200)]);
 add("43-etat34-focus-visible", card("cli-fictif-3"), [
   ...newRx,
   { eval: "(() => { const l=[...document.querySelectorAll('label')].find((x)=>x.textContent.replace(/\\s+/g,' ').trim()==='Sphère OD'); const el=document.getElementById(l.htmlFor); el.scrollIntoView({block:'center'}); const all=[...document.querySelectorAll('input,select,textarea,button')]; all[all.indexOf(el)-1].focus(); return 'ok'; })()" },
@@ -79,5 +80,14 @@ for (const scale of [1.25, 1.5]) {
   add(`60-zoom${z}-formulaire`, card("cli-fictif-3"), [...newRx, scrollTo("Correction optique")], W, { scale });
   add(`61-zoom${z}-liste-sombre`, u("route=/optique&theme=dark"), [], W, { scale });
 }
+// D-04-17 (APPROVED) : « Enregistrer » principal, brouillon secondaire, échecs partiels de la confirmation.
+const F = { width: 1920, height: 1080 };
+add("70-d0417-formulaire-ordonnance-actions", card("cli-fictif-3"), [...newRx, click("Augmenter Sphère OD de 0,25", 150), click("Diminuer Sphère OG de 0,25", 150)], F);
+add("71-d0417-formulaire-mesure-actions", card("cli-fictif-3"), [click("Dossier optique"), click("Ajouter…"), click("Mesure magasin", 900), click("Augmenter Sphère OD de 0,25", 150)], F);
+add("72-d0417-enregistree-revision1", card("cli-fictif-3"), [...newRx, click("Augmenter Sphère OD de 0,25", 150), click("Diminuer Sphère OG de 0,25", 150), click("Enregistrer", 1200)], F);
+add("73-d0417-confirmation-non-aboutie", card("cli-fictif-3"), [...newRx, typeIn("Sphère OD", "+1,00"), click("Échec de la prochaine confirmation", 300), click("Enregistrer", 1200)], F);
+add("74-d0417-modification-conflit-confirmation", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Modifier", 700), setSelect("Motif", "transcription_error"), click("Modifier", 1000), typeIn("Sphère OD", "-1,00"), click("Conflit à la prochaine confirmation", 300), click("Enregistrer", 1200)], F);
+add("75-d0417-modification-formulaire", u("route=/optique"), [...openList("RX-FICTIF-0006"), click("Modifier", 700), setSelect("Motif", "transcription_error"), click("Modifier", 1000)], F);
+add("76-d0417-formulaire-1024-sombre", card("cli-fictif-3", "dark"), [...newRx], R);
 writeFileSync(process.argv[2], JSON.stringify(plan, null, 1));
 console.log(plan.length, "captures");

@@ -53,7 +53,7 @@ class BenchControl {
   readonly faults: BenchFaults;
 
   constructor(latencyMs: number) {
-    this.faults = { latencyMs, failedListReads: 0, failNextWrite: false };
+    this.faults = { latencyMs, failedListReads: 0, failNextWrite: false, nextConfirmFault: null };
   }
 
   setLatency(ms: number) {
@@ -66,6 +66,10 @@ class BenchControl {
 
   armWriteFailure() {
     this.faults.failNextWrite = true;
+  }
+
+  armConfirmFault(fault: "network" | "conflict") {
+    this.faults.nextConfirmFault = fault;
   }
 }
 
@@ -338,6 +342,24 @@ function BenchLayout({ gateway, clients, profile, onProfile, theme, onTheme, con
           >
             Échec de la prochaine écriture
           </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              control.armConfirmFault("network");
+              setMessage("La prochaine confirmation échouera (erreur de communication simulée) ; l'enregistrement du brouillon qui la précède aboutira.");
+            }}
+          >
+            Échec de la prochaine confirmation
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              control.armConfirmFault("conflict");
+              setMessage("La prochaine confirmation sera refusée (conflit 409 simulé) ; l'enregistrement du brouillon qui la précède aboutira.");
+            }}
+          >
+            Conflit à la prochaine confirmation
+          </Button>
           <Button size="sm" disabled={!current?.kind} onClick={otherWorkstation} title="Disponible sur le détail ou le brouillon d'un enregistrement">
             Autre poste : modifier l&apos;enregistrement ouvert
           </Button>
@@ -391,9 +413,9 @@ function BenchHome({ gateway, clients }: { gateway: InMemoryOpticalGateway; clie
     { label: `Fiche ${name("cli-fictif-4")} (client archivé)`, detail: "État 18 : consultation seule, ajout et rectification refusés", run: () => card("cli-fictif-4") },
     { label: "Liste globale", detail: "J-04-02, états 1–4, 6, 8, 9 ; « Nouveau… » → type → client actif", run: () => navigate("/optique") },
     { label: "RX-FICTIF-0001 — révisions 1 et 2", detail: "GAP-04-07 : comparaison des valeurs, motif et auteurs", run: () => openRef("RX-FICTIF-0001") },
-    { label: "RX-FICTIF-0002 — rectification en cours", detail: "GAP-04-13 : révision 1 en vigueur malgré le brouillon", run: () => openRef("RX-FICTIF-0002") },
+    { label: "RX-FICTIF-0002 — rectification en cours", detail: "GAP-04-13 : dernière révision confirmée (1) affichée malgré le brouillon", run: () => openRef("RX-FICTIF-0002") },
     { label: "RX-FICTIF-0003 — invalidée (doublon)", detail: "GAP-04-08, état 30", run: () => openRef("RX-FICTIF-0003") },
-    { label: "RX-FICTIF-0004 — brouillon partiel", detail: "États 16, 21 : OG laissé vide ; confirmation refusée par le double (422, provenance)", run: () => openRef("RX-FICTIF-0004") },
+    { label: "RX-FICTIF-0004 — brouillon partiel", detail: "États 16, 21 : OG laissé vide ; confirmable (un œil suffit pour la règle de démonstration D-04-17)", run: () => openRef("RX-FICTIF-0004") },
     { label: "MES-FICTIF-0001 — mesure magasin confirmée", detail: "GAP-04-03 : provenance propre, jamais une ordonnance", run: () => openRef("MES-FICTIF-0001") },
     {
       label: `Saisie forcée pour ${name("cli-fictif-4")} (archivé)`,

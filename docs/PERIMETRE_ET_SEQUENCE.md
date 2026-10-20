@@ -101,6 +101,8 @@ Sauvegarde & audit = transversal dès le socle
 
 > Note datée 20/10/2026 (Phase 04-A, simplification) : **D-04-16 APPROVED** (propriétaire, `prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`) — « État de l'œil » supprimé ; gestion des pièces sources reportée ; révisions, comparaison, motif et auteurs conservés. Prototype simplifié dans le banc isolé ; application réelle inchangée ; aucune migration `0006`, aucun backend optique. État : `PHASE04_A_SIMPLIFICATION_READY — OWNER_VISUAL_REVIEW_REQUIRED` (`docs/phase/04/LIVRAISON_04A.md` § 12). Le point de backlog « couplage éventuel état de l'œil / valeurs (O-04-29) » de la note précédente est **clos, sans objet**. **Backlog permanent ajouté :** BL-04-01 ci-dessous. Inchangé : 04-B soumis à G04-METIER ; `FOUNDATION_MUST` préalables à un pilote.
 
+> Note datée 20/10/2026 (Phase 04-A, clôture) : **D-04-17 APPROVED** (`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`) — « Enregistrer » principal, « Enregistrer comme brouillon » discret, révisions conservées. Lot frontend 04-A : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` ; prochaine étape : G04-METIER (D-04-02 à D-04-14), puis 04-B et G04-SQL. Aucun ajout au backlog ; BL-04-01 inchangé.
+
 ## Backlog permanent
 
 Éléments reportés **hors de la phase en cours** par décision du propriétaire ; ils ne sont pas abandonnés et seront rouverts par un GO explicite, avec leurs décisions remises à l'état `PROPOSED`.

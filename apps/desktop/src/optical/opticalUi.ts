@@ -87,7 +87,7 @@ export function describeOpticalFailure(error: ApiError): FailureView {
     case "not_rectification":
       return { tone: "warning", title: "Aucun brouillon ouvert", text: "Il n'y a plus de brouillon à modifier sur cet enregistrement.", reload: true };
     case "incomplete":
-      return { tone: "warning", title: "Confirmation refusée", text: "Le double de test a refusé la confirmation : des éléments manquent (voir ci-dessous). Le brouillon est conservé." };
+      return { tone: "warning", title: "Confirmation refusée", text: "Le double de test a refusé la confirmation (règle de démonstration du banc, pas une validation médicale). Le brouillon est conservé." };
     default:
       break;
   }
@@ -103,10 +103,37 @@ export function describeOpticalFailure(error: ApiError): FailureView {
   }
 }
 
+/**
+ * « Enregistrer » en deux temps (D-04-17) : le brouillon A ÉTÉ enregistré, puis la confirmation a échoué. Le message ne
+ * dit jamais que rien n'a été enregistré ; la dernière révision confirmée reste inchangée.
+ */
+export function describeConfirmFailure(error: ApiError): FailureView {
+  const saved = "Vos valeurs sont enregistrées en brouillon, non confirmé ; la dernière révision confirmée éventuelle est inchangée.";
+  if (error.code === "incomplete")
+    return {
+      tone: "warning",
+      title: "Brouillon enregistré — confirmation refusée",
+      text: `${saved} Complétez la saisie puis cliquez de nouveau sur « Enregistrer », ou laissez l'enregistrement en brouillon.`,
+    };
+  if (error.kind === "network" || error.kind === "timeout" || error.kind === "http" || error.kind === "invalid-response")
+    return {
+      tone: "error",
+      title: "Brouillon enregistré — confirmation non aboutie",
+      text: `${saved} La confirmation n'a pas abouti : ${error.message} Cliquez de nouveau sur « Enregistrer » pour confirmer, ou laissez le brouillon.`,
+    };
+  const reason = describeOpticalFailure(error);
+  return {
+    tone: reason.tone,
+    title: "Brouillon enregistré — confirmation refusée",
+    text: `${saved} Motif : ${reason.title.toLocaleLowerCase("fr")}.${reason.reload ? " Rechargez la version actuelle avant de réessayer." : ""}`,
+    reload: reason.reload,
+  };
+}
+
 const FIELD_ERROR: Record<string, string> = {
   number_expected: "Nombre attendu, tel qu'il figure sur la source (ex. +1,25).",
   too_long: "Valeur trop longue.",
-  required_to_confirm: "Requis pour confirmer (règle de démonstration du double, D-04-03 proposée).",
+  optical_values_missing: "Aucune valeur n'est renseignée, ni pour OD ni pour OG (règle de démonstration du banc, pas une validation médicale).",
   required: "Précisez le motif.",
 };
 
@@ -122,6 +149,7 @@ export function fieldPathLabel(path: string): string {
     prescribedOn: "Date de prescription",
     measuredOn: "Date de la mesure",
     measuredByUserId: "Collaborateur ayant mesuré",
+    correction: "Correction optique",
     notes: "Notes",
     comment: "Commentaire",
   };

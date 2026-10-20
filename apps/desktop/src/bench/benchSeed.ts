@@ -129,7 +129,7 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
   tick(6);
   await must(gateway.confirmDraft("measurement", record.id, record.version));
 
-  // 3. Bravo — ordonnance confirmée, rectification en cours (GAP-04-13 : la révision 1 reste en vigueur).
+  // 3. Bravo — ordonnance confirmée, rectification en cours (GAP-04-13 : la révision 1 reste la dernière révision confirmée).
   tick(7);
   record = await must(gateway.createRecord("cli-fictif-2", rx("Dr Fictif-Prescripteur B", "2026-10-01", eye({ sphere: "-2,25", cylinder: "-0,75", axis: "0" }), eye({ sphere: "-2,00" }))));
   tick(7);
@@ -157,7 +157,7 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
   tick(11);
   await must(gateway.createRecord("cli-fictif-2", mes("2026-10-11", "usr-fictif-1", eye({ sphere: "-2,00", cylinder: "-0,50", axis: "180" }), eye({}))));
 
-  // 6. Echo — brouillon partiel d'ordonnance (OG vide, provenance incomplète) : refus 422 à la confirmation.
+  // 6. Echo — brouillon partiel d'ordonnance (OG vide, provenance incomplète) : confirmable (un œil suffit, D-04-17).
   tick(12);
   await must(gateway.createRecord("cli-fictif-5", rx("", "", eye({ sphere: "0,00", acuity: "8/10" }), eye({}))));
 
@@ -182,7 +182,7 @@ export async function seedBench(gateway: InMemoryOpticalGateway, setSession: (se
   }
 }
 
-const SEED_FAULTS: BenchFaults = { latencyMs: 0, failedListReads: 0, failNextWrite: false };
+const SEED_FAULTS: BenchFaults = { latencyMs: 0, failedListReads: 0, failNextWrite: false, nextConfirmFault: null };
 
 /**
  * Double neuf rempli du jeu fictif. Pendant la préparation : session de préparation, horloge de démonstration, aucune

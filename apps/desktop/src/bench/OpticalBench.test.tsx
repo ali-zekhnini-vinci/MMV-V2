@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // Parcours 04-A sur le BANC ISOLÉ (prototype, données fictives, droits simulés) : J-04-01, J-04-02, J-04-04, J-04-06,
-// J-04-07, J-04-09 (clavier), simplification D-04-16, états du Lot 3 et états complémentaires (J-04-08, pièces
-// sources, reporté au backlog permanent par D-04-16). La garde réseau du banc est installée :
+// J-04-07, J-04-09 (clavier), simplification D-04-16, enregistrement simplifié D-04-17, états du Lot 3 et états
+// complémentaires (J-04-08, pièces sources, reporté au backlog permanent par D-04-16). La garde réseau du banc est installée :
 // aucune requête ne sort (preuve en fin de chaque test). Ce ne sont PAS des preuves serveur ni natives.
 import assert from "node:assert/strict";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
@@ -84,7 +84,7 @@ describe("J-04-01 — depuis la fiche client", () => {
     assertFormClient("FICTIF-CHARLIE Noa", "CLI-FICTIF-003");
     await user.type(screen.getByLabelText("Sphère OD"), "+1,25");
     await user.type(screen.getByLabelText("Axe OD"), "0");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer comme brouillon" }));
 
     await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
     screen.getByText("Brouillon enregistré");
@@ -109,7 +109,7 @@ describe("J-04-01 — depuis la fiche client", () => {
     await user.click(screen.getByRole("button", { name: "Accueil du banc" }));
     await user.click(await screen.findByRole("button", { name: /^Saisie forcée pour FICTIF-DELTA Alix/ }));
     await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     const alert = await screen.findByRole("alert");
     within(alert).getByText("Client archivé");
     assertNoNetwork();
@@ -188,7 +188,7 @@ describe("grille OD / OG neutre (Q-04-158)", () => {
     assert.equal(document.activeElement, screen.getByLabelText("Sphère OG"), "après l'acuité OD : la sphère OG");
 
     await user.type(screen.getByLabelText("Sphère OD"), "abc");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     const message = await screen.findByText("Nombre attendu, tel qu'il figure sur la source (ex. +1,25).", { selector: ".clients-field__error" });
     assert.ok((screen.getByLabelText("Sphère OD").getAttribute("aria-describedby") ?? "").includes(message.id));
     assert.equal((screen.getByLabelText("Sphère OD") as HTMLInputElement).value, "abc", "saisie conservée");
@@ -350,8 +350,9 @@ describe("contrôles rapides ± (D-04-15, Q-04-170 à Q-04-176)", () => {
     await user.click(within(dialog).getByRole("button", { name: "Continuer la saisie" }));
     assert.equal(value("Sphère OD"), "-2,25");
     assert.equal(value("Sphère OG"), "-2,13");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
+    screen.getByText("Ordonnance médicale enregistrée");
     const table = screen.getByRole("table", { name: /Correction optique/ });
     within(table).getByText("-2,25");
     within(table).getByText("-2,13");
@@ -372,55 +373,55 @@ describe("contrôles rapides ± (D-04-15, Q-04-170 à Q-04-176)", () => {
 });
 
 describe("J-04-04 — rectification, révision confirmée toujours affichée, comparaison", () => {
-  test("rectifier → brouillon ; la révision 1 reste en vigueur ; comparer ; confirmer → révision 2", async () => {
+  test("modifier → brouillon ; la dernière révision confirmée reste affichée ; comparer ; confirmer → révision 2", async () => {
     const { user } = await openBench("/optique");
     await user.click(await screen.findByRole("button", { name: "Consulter Ordonnance médicale RX-FICTIF-0006" }));
     await screen.findByRole("heading", { level: 1, name: "Ordonnance médicale RX-FICTIF-0006" });
     screen.getByText("Préparer une vente · Phase ultérieure");
     assert.equal((screen.getByRole("button", { name: /Préparer une vente/ }) as HTMLButtonElement).disabled, true);
-    await user.click(screen.getByRole("button", { name: "Rectifier" }));
-    const dialog = await screen.findByRole("alertdialog", { name: "Rectifier cet enregistrement ?" });
-    await user.click(within(dialog).getByRole("button", { name: "Ouvrir la rectification" }));
-    within(dialog).getByText("Choisissez un motif de rectification.");
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Modifier cet enregistrement ?" });
+    await user.click(within(dialog).getByRole("button", { name: "Modifier" }));
+    within(dialog).getByText("Choisissez un motif de modification.");
     await user.selectOptions(within(dialog).getByLabelText("Motif"), "transcription_error");
-    await user.click(within(dialog).getByRole("button", { name: "Ouvrir la rectification" }));
+    await user.click(within(dialog).getByRole("button", { name: "Modifier" }));
 
-    await screen.findByRole("heading", { level: 1, name: "Rectification de la révision 1" });
+    await screen.findByRole("heading", { level: 1, name: "Modifier — ordonnance médicale" });
+    screen.getByText(/La dernière révision confirmée \(révision 1\) reste affichée/);
+    assert.equal(screen.queryByText(/en vigueur/), null, "jamais « en vigueur » (aucune validité suggérée)");
     const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
     assert.equal(sphere.value, "-0,75", "brouillon prérempli de la révision de base");
     await user.clear(sphere);
     await user.type(sphere, "-1,10");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer comme brouillon" }));
 
-    await screen.findByText(/^Rectification en cours — ouverte le/);
-    screen.getByRole("heading", { name: "Révision 1 — en vigueur" });
+    await screen.findByText(/^Modification en cours — ouverte le/);
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
     within(screen.getByRole("table", { name: /Correction optique — Révision 1/ })).getByText("-0,75");
     const compare = screen.getByRole("table", { name: /Comparaison/ });
     within(compare).getByText("OD — Sphère");
     within(compare).getByText("Différent");
     await user.click(screen.getByRole("button", { name: "Voir le brouillon" }));
     within(screen.getByRole("table", { name: /Correction optique — Brouillon de rectification/ })).getByText("-1,10");
-    await user.click(screen.getByRole("button", { name: "Confirmer la rectification" }));
+    await user.click(screen.getByRole("button", { name: "Confirmer la modification" }));
     const confirm = await screen.findByRole("alertdialog", { name: "Confirmer la transcription ?" });
     within(confirm).getByText(/Cela ne signifie pas « validé médicalement »/);
     within(confirm).getByText(/OD : Sph -1,10/);
     await user.click(within(confirm).getByRole("button", { name: "Confirmer" }));
     await screen.findByText("Révision 2 enregistrée");
-    screen.getByRole("heading", { name: "Révision 2 — en vigueur" });
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 2" });
+    assert.equal(screen.queryByText(/en vigueur/), null);
     assertNoNetwork();
   });
 
-  test("confirmation refusée par le service (422 incomplete, provenance) : motifs listés, OG vide accepté, brouillon conservé", async () => {
+  test("brouillon confirmé depuis le détail : un seul œil suffit à la règle de démonstration (OG et provenance vides acceptés)", async () => {
     const { user } = await openBench("/");
     await openRecord(user, "RX-FICTIF-0004");
     await user.click(screen.getByRole("button", { name: "Confirmer la transcription" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Confirmer" }));
-    const alert = await screen.findByRole("alert");
-    within(alert).getByText("Confirmation refusée");
-    within(alert).getByText("Prescripteur — nom");
-    within(alert).getByText("Date de prescription");
-    assert.equal(within(alert).queryByText(/^O[DG] — /), null, "aucun refus sur un œil laissé vide (D-04-16)");
-    screen.getByText("Brouillon non confirmé");
+    await screen.findByText("Révision 1 enregistrée");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
+    within(screen.getByRole("table", { name: /Correction optique/ })).getByText("0,00");
     assertNoNetwork();
   });
 });
@@ -429,14 +430,16 @@ describe("J-04-06 — deux postes (GAP-04-09)", () => {
   test("écriture d'un autre poste : 409, saisie conservée, rechargement proposé", async () => {
     const { user } = await openBench("/");
     await openRecord(user, "RX-FICTIF-0004");
-    await user.click(screen.getByRole("button", { name: "Poursuivre le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
     await screen.findByRole("heading", { level: 1, name: /^Brouillon/ });
     await user.click(screen.getByRole("button", { name: "Autre poste : modifier l'enregistrement ouvert" }));
     const notes = screen.getByLabelText("Remarques complémentaires (facultatif)") as HTMLTextAreaElement;
     await user.type(notes, " poste A");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     const alert = await screen.findByRole("alert");
     within(alert).getByText("Modifié depuis un autre poste");
+    within(alert).getByText(/rien n'a été enregistré/);
+    assert.equal(within(alert).queryByRole("button", { name: "Laisser en brouillon" }), null, "l'enregistrement lui-même a échoué");
     assert.match(notes.value, /poste A$/, "saisie conservée à l'écran");
     within(alert).getByRole("button", { name: "Recharger" });
     assertNoNetwork();
@@ -475,7 +478,7 @@ describe("simplification du dossier optique (D-04-16)", () => {
     screen.getByLabelText("Prescripteur — nom (tel que sur le document)");
     screen.getByText("Date de prescription");
     await user.type(screen.getByLabelText("Sphère OD"), "+0,50");
-    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer comme brouillon" }));
     await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
     const values = screen.getByRole("table", { name: /Correction optique/ });
     assert.equal(within(values).queryByRole("columnheader", { name: "État" }), null);
@@ -491,7 +494,7 @@ describe("simplification du dossier optique (D-04-16)", () => {
     assert.equal(screen.queryByRole("button", { name: "Joindre une pièce" }), null);
     screen.getByText("Dr Fictif-Prescripteur A");
     screen.getByText("28/09/2026");
-    const revisions = screen.getByRole("region", { name: /Révisions/ });
+    const revisions = screen.getByRole("region", { name: /Historique des modifications/ });
     within(revisions).getByText(/motif : Complément d'information — Addition figurant au verso/);
     assert.ok(within(revisions).getAllByText(/confirmée le .* par Fictif-Opticien Un/).length === 2);
     const compare = within(revisions).getByRole("table", { name: /Comparaison/ });
@@ -505,12 +508,177 @@ describe("simplification du dossier optique (D-04-16)", () => {
   test("changement de profil : la première lecture utilise les droits du NOUVEAU profil (lecture seule)", async () => {
     const { user } = await openBench("/");
     await openRecord(user, "RX-FICTIF-0001");
-    screen.getByRole("button", { name: "Rectifier" });
+    screen.getByRole("button", { name: "Modifier" });
     await user.selectOptions(screen.getByLabelText("Profil simulé (affichage seulement)"), "reader");
     await user.click(screen.getByRole("button", { name: "Accueil du banc" }));
     await openRecord(user, "RX-FICTIF-0001");
-    assert.equal(screen.queryByRole("button", { name: "Rectifier" }), null, "lecture seule déduite des droits");
+    assert.equal(screen.queryByRole("button", { name: "Modifier" }), null, "lecture seule déduite des droits");
     screen.getByText(/Consultation seule : ce profil ne permet pas de modifier/);
+    assertNoNetwork();
+  });
+});
+
+// D-04-17 (APPROVED) : « Enregistrer » principal (enregistre le brouillon puis le confirme), « Enregistrer comme
+// brouillon » discret ; règle minimale de démonstration du banc : aucune valeur optique → confirmation refusée.
+describe("enregistrement simplifié (D-04-17)", () => {
+  type User = ReturnType<typeof userEvent.setup>;
+  const value = (label: string) => (screen.getByLabelText(label) as HTMLInputElement).value;
+  const bannerOf = async (title: string) => {
+    const banner = (await screen.findByText(title)).closest<HTMLElement>('[role="alert"]');
+    assert.ok(banner, `bandeau « ${title} »`);
+    return banner;
+  };
+  /** Référence attribuée au premier enregistrement, affichée dans le sous-titre du formulaire. */
+  const formReference = () => /(?:RX|MES)-FICTIF-\d+/u.exec(document.querySelector(".optical-formhead .clients-head__sub")?.textContent ?? "")?.[0];
+  async function newRecord(chooser = "Transcrire une ordonnance médicale") {
+    const opened = await openBench("/clients/cli-fictif-3");
+    await opened.user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
+    await opened.user.click(await screen.findByRole("button", { name: chooser }));
+    await screen.findByRole("heading", { level: 1, name: /^Nouvelle/ });
+    return opened;
+  }
+  async function openModification(user: User, reference: string) {
+    await user.click(await screen.findByRole("button", { name: `Consulter Ordonnance médicale ${reference}` }));
+    await screen.findByRole("heading", { level: 1, name: `Ordonnance médicale ${reference}` });
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Modifier cet enregistrement ?" });
+    await user.selectOptions(within(dialog).getByLabelText("Motif"), "transcription_error");
+    await user.click(within(dialog).getByRole("button", { name: "Modifier" }));
+    await screen.findByRole("heading", { level: 1, name: "Modifier — ordonnance médicale" });
+  }
+
+  test("une action principale « Enregistrer », brouillon secondaire ; ± sur OD et OG puis Enregistrer → révision 1 confirmée sans étape intermédiaire", async () => {
+    const { user } = await newRecord();
+    const primary = screen.getByRole("button", { name: "Enregistrer" });
+    assert.ok(primary.classList.contains("bg-accent"), "action principale bleue (variante primary)");
+    assert.equal(primary.getAttribute("aria-keyshortcuts"), "Control+S");
+    const secondary = screen.getByRole("button", { name: "Enregistrer comme brouillon" });
+    assert.ok(!secondary.classList.contains("bg-accent"), "brouillon : importance visuelle inférieure");
+    assert.equal(screen.queryByRole("button", { name: /Enregistrer et confirmer|Enregistrer le brouillon/ }), null);
+    await user.click(screen.getByRole("button", { name: "Augmenter Sphère OD de 0,25" }));
+    await user.click(screen.getByRole("button", { name: "Diminuer Sphère OG de 0,25" }));
+    await user.click(primary);
+    await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
+    assert.equal(screen.queryByRole("alertdialog"), null, "aucun récapitulatif à valider");
+    screen.getByText("Ordonnance médicale enregistrée");
+    screen.getByText(/: révision 1 confirmée\.$/);
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
+    const values = screen.getByRole("table", { name: /Correction optique/ });
+    within(values).getByText("+0,25");
+    within(values).getByText("-0,25");
+    assertNoNetwork();
+  });
+
+  test("Ctrl+S = « Enregistrer » (confirmation), jamais le brouillon ; mesure magasin, provenance propre conservée", async () => {
+    const { user } = await newRecord("Saisir une mesure magasin");
+    await user.type(screen.getByLabelText("Sphère OD"), "-1,00");
+    await user.keyboard("{Control>}s{/Control}");
+    await screen.findByRole("heading", { level: 1, name: /Mesure magasin MES-FICTIF-/ });
+    screen.getByText("Mesure magasin enregistrée");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
+    screen.getByText("Collaborateur ayant mesuré");
+    assert.equal(screen.queryByText("Prescripteur"), null, "jamais une prescription (D-04-01)");
+    assertNoNetwork();
+  });
+
+  test("confirmation refusée (422, aucune valeur optique) : « Brouillon enregistré — confirmation refusée », saisie conservée, reprise sans doublon ; 0 est une valeur", async () => {
+    const { user } = await newRecord();
+    await user.type(screen.getByLabelText("Prescripteur — nom (tel que sur le document)"), "Dr Fictif-Test");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const banner = await bannerOf("Brouillon enregistré — confirmation refusée");
+    within(banner).getByText("Correction optique");
+    within(banner).getByText(/pas une validation médicale/);
+    assert.equal(within(banner).queryByText(/rien n'a été enregistré|Aucune modification n'a été enregistrée/), null);
+    within(banner).getByRole("button", { name: "Laisser en brouillon" });
+    screen.getByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
+    assert.equal(value("Prescripteur — nom (tel que sur le document)"), "Dr Fictif-Test", "saisie conservée");
+    const reference = formReference();
+    assert.ok(reference, "le brouillon enregistré porte une référence");
+
+    await user.type(screen.getByLabelText("Sphère OD"), "0");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await screen.findByRole("heading", { level: 1, name: `Ordonnance médicale ${reference}` });
+    screen.getByText("Ordonnance médicale enregistrée");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
+    assertNoNetwork();
+  });
+
+  test("erreur de communication à la confirmation : brouillon annoncé comme enregistré, « Laisser en brouillon » sans nouvelle écriture", async () => {
+    const { user } = await newRecord();
+    await user.type(screen.getByLabelText("Sphère OD"), "+1,00");
+    await user.click(screen.getByRole("button", { name: "Échec de la prochaine confirmation" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const banner = await bannerOf("Brouillon enregistré — confirmation non aboutie");
+    within(banner).getByText(/Vos valeurs sont enregistrées en brouillon/);
+    assert.equal(within(banner).queryByText(/rien n'a été enregistré|Aucune modification n'a été enregistrée/), null);
+    const reference = formReference();
+    await user.click(within(banner).getByRole("button", { name: "Laisser en brouillon" }));
+    await screen.findByRole("heading", { level: 1, name: `Ordonnance médicale ${reference}` });
+    screen.getByText("Brouillon enregistré");
+    screen.getByText("Brouillon non confirmé");
+    assertNoNetwork();
+  });
+
+  test("modification d'un enregistrement confirmé, conflit 409 à la confirmation : révision confirmée préservée, aucun faux avertissement, reprise sans doublon", async () => {
+    const { user } = await openBench("/optique");
+    await openModification(user, "RX-FICTIF-0006");
+    const sphere = screen.getByLabelText("Sphère OD");
+    await user.clear(sphere);
+    await user.type(sphere, "-1,00");
+    await user.click(screen.getByRole("button", { name: "Conflit à la prochaine confirmation" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    const banner = await bannerOf("Brouillon enregistré — confirmation refusée");
+    within(banner).getByText(/modifié depuis un autre poste/);
+    within(banner).getByRole("button", { name: "Recharger" });
+    assert.equal(value("Sphère OD"), "-1,00", "état réellement enregistré affiché");
+
+    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    await screen.findByRole("heading", { level: 1, name: "Ordonnance médicale RX-FICTIF-0006" });
+    assert.equal(screen.queryByRole("alertdialog", { name: "Quitter sans enregistrer ?" }), null, "aucun faux avertissement de perte de saisie");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
+    within(screen.getByRole("table", { name: /Correction optique — Révision 1/ })).getByText("-0,75");
+    screen.getByText(/^Modification en cours — ouverte le/);
+
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    await screen.findByRole("heading", { level: 1, name: "Modifier — ordonnance médicale" });
+    assert.equal(value("Sphère OD"), "-1,00", "même brouillon repris");
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await screen.findByText("Ordonnance médicale enregistrée");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 2" });
+    const history = screen.getByRole("region", { name: /Historique des modifications/ });
+    assert.ok(within(history).getAllByText(/^Révision 2$/).length >= 1);
+    assert.equal(within(history).queryAllByText(/Brouillon de rectification/).length, 0, "aucun brouillon en double");
+    assertNoNetwork();
+  });
+
+  test("double clic et Ctrl+S répété pendant l'enregistrement (latence simulée) : un seul enregistrement créé", async () => {
+    const { user } = await newRecord();
+    await user.selectOptions(screen.getByLabelText("Latence simulée"), "800");
+    await user.type(screen.getByLabelText("Sphère OD"), "+0,75");
+    await user.dblClick(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.keyboard("{Control>}s{/Control}");
+    assert.equal((screen.getByRole("button", { name: "Enregistrement…" }) as HTMLButtonElement).disabled, true);
+    assert.equal((screen.getByRole("button", { name: "Enregistrer comme brouillon" }) as HTMLButtonElement).disabled, true);
+    await screen.findByText("Ordonnance médicale enregistrée", undefined, { timeout: 4000 });
+    await user.selectOptions(screen.getByLabelText("Latence simulée"), "0");
+    await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
+    await screen.findByText(/^11 enregistrements · tous types · invalidés exclus/);
+    assertNoNetwork();
+  });
+
+  test("brouillon incomplet enregistré au clavier, repris puis confirmé par « Enregistrer »", async () => {
+    const { user } = await newRecord();
+    screen.getByRole("button", { name: "Enregistrer comme brouillon" }).focus();
+    await user.keyboard("{Enter}");
+    await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
+    screen.getByText("Brouillon enregistré");
+    screen.getByText("Brouillon non confirmé");
+    await user.click(screen.getByRole("button", { name: "Modifier" }));
+    await screen.findByRole("heading", { level: 1, name: "Brouillon — ordonnance médicale" });
+    await user.click(screen.getByRole("button", { name: "Augmenter Sphère OG de 0,25" }));
+    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await screen.findByText("Ordonnance médicale enregistrée");
+    screen.getByRole("heading", { name: "Dernière révision confirmée — révision 1" });
     assertNoNetwork();
   });
 });

@@ -29,7 +29,7 @@ export function RevisionsPanel({ record, measurers }: { record: OpticalRecord; m
   return (
     <section className="clients-card optical-revisions" aria-labelledby={`${id}-title`}>
       <h2 className="clients-card__title" id={`${id}-title`}>
-        Révisions <ProposedTag refs="D-04-04 · D-04-11" />
+        Historique des modifications <ProposedTag refs="D-04-04 · D-04-11" />
       </h2>
       <ol className="optical-revisions__list">
         {record.revisions

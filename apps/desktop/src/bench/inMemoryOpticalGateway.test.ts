@@ -58,25 +58,50 @@ describe("double optique du banc — valeurs et forme", () => {
 });
 
 describe("double optique du banc — cycle de vie proposé (E-02)", () => {
-  test("brouillon → 422 incomplete (provenance, règle de démonstration) → confirmé révision 1 avec OG laissé vide", async () => {
+  test("brouillon sans aucune valeur optique → 422 incomplete (règle minimale de démonstration, D-04-17) → un seul œil suffit, OG laissé vide", async () => {
     const { gateway } = await setup();
-    const draft = must(await gateway.createRecord("cli-fictif-3", rxContent({ sphere: "+1,00" })));
+    const draft = must(await gateway.createRecord("cli-fictif-3", rxContent()));
     const refused = await gateway.confirmDraft("prescription", draft.id, draft.version);
     assert.equal(refused.ok, false);
     if (!refused.ok) {
       assert.equal(refused.error.code, "incomplete");
-      // Aucun critère sur les valeurs OD / OG (D-04-16 ; complétude clinique ouverte, D-04-02.b).
-      assert.deepEqual(Object.keys(refused.error.fieldErrors ?? {}).sort(), ["provenance.prescribedOn", "provenance.prescriberName"]);
+      // Ni provenance exigée ni valeur imposée aux deux yeux (D-04-02.b et D-04-03.a/b ouvertes).
+      assert.deepEqual(refused.error.fieldErrors, { correction: ["optical_values_missing"] });
     }
-    const complete: PrescriptionContent = {
-      ...(draft.openDraft?.content as PrescriptionContent),
-      provenance: { ...(draft.openDraft?.content as PrescriptionContent).provenance, prescriberName: "Dr Fictif-Test", prescribedOn: "2026-10-01" },
-    };
-    const saved = must(await gateway.saveDraft("prescription", draft.id, complete, draft.version));
+    // « 0 » est une valeur renseignée (absence ≠ 0) ; provenance laissée vide.
+    const withZero: PrescriptionContent = { ...(draft.openDraft?.content as PrescriptionContent), od: { ...EMPTY_EYE_VALUES, sphere: "0" } };
+    const saved = must(await gateway.saveDraft("prescription", draft.id, withZero, draft.version));
     const confirmed = must(await gateway.confirmDraft("prescription", saved.id, saved.version));
     assert.equal(confirmed.lastConfirmed?.revisionNo, 1);
     assert.equal(confirmed.openDraft, null);
+    assert.equal(confirmed.lastConfirmed?.content.od.sphere, "0");
     assert.deepEqual(confirmed.lastConfirmed?.content.og, EMPTY_EYE_VALUES, "OG vide conservé vide, jamais assimilé à 0");
+  });
+
+  test("valeurs composées d'espaces : toujours absentes pour la règle de démonstration", async () => {
+    const { gateway } = await setup();
+    const draft = must(await gateway.createRecord("cli-fictif-3", rxContent({ base: "  ", acuity: " " })));
+    const refused = await gateway.confirmDraft("prescription", draft.id, draft.version);
+    assert.equal(refused.ok, false);
+    if (!refused.ok) assert.equal(refused.error.code, "incomplete");
+  });
+
+  test("échec simulé de la confirmation seule : le brouillon enregistré reste intact, la tentative suivante confirme le même enregistrement", async () => {
+    const faults = { latencyMs: 0, failedListReads: 0, failNextWrite: false, nextConfirmFault: null as "network" | "conflict" | null };
+    const gateway = await createSeededGateway({ clients: createBenchClients(), session: () => ({ actor, permissions: ALL_OPTICAL_PERMISSIONS }), faults: () => faults });
+    const draft = must(await gateway.createRecord("cli-fictif-3", rxContent({ sphere: "+1,00" })));
+    for (const fault of ["network", "conflict"] as const) {
+      faults.nextConfirmFault = fault;
+      const refused = await gateway.confirmDraft("prescription", draft.id, draft.version);
+      assert.equal(refused.ok, false);
+      if (!refused.ok) assert.equal(refused.error.kind, fault);
+      const unchanged = must(await gateway.getRecord("prescription", draft.id));
+      assert.equal(unchanged.version, draft.version, "aucune écriture partielle");
+      assert.equal(unchanged.openDraft?.content.od.sphere, "+1,00");
+    }
+    const confirmed = must(await gateway.confirmDraft("prescription", draft.id, draft.version));
+    assert.equal(confirmed.id, draft.id);
+    assert.equal(confirmed.lastConfirmed?.revisionNo, 1);
   });
 
   test("rectification : révision 1 intacte, un seul brouillon (409 draft_exists), numéro attribué à la confirmation", async () => {

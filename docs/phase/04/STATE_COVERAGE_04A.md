@@ -1,7 +1,8 @@
 # 04-A — Couverture des états (36 du Lot 3 + 12 complémentaires 04-00 + 2 issus des études)
 
 *Amendement 20/10/2026 : refonte UX des formulaires selon la maquette Lot 3 (D-04-15 APPROVED) — voir l'avant-dernière section ; les tableaux ci-dessous sont conservés tels qu'au 19/10/2026.*
-*Amendement 20/10/2026 (D-04-16 APPROVED) : état de l'œil supprimé, pièces sources reportées (BL-04-01) — voir la dernière section, qui donne la synthèse courante.*
+*Amendement 20/10/2026 (D-04-16 APPROVED) : état de l'œil supprimé, pièces sources reportées (BL-04-01) — voir l'avant-dernière section.*
+*Amendement 20/10/2026 (D-04-17 APPROVED, clôture 04-A) : enregistrement simplifié — voir la dernière section, qui donne la synthèse courante.*
 
 **Date : 19/10/2026.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) (G04-A APPROVED — UI ONLY). Prototype exécuté **uniquement dans le banc isolé** `apps/desktop/optical-bench.html` (O-04-16 APPROVED), sur données fictives, droits simulés, sans serveur ni base. Correspondance d'origine : [`STATE_MAP_36.md`](STATE_MAP_36.md) ; composition des états complémentaires : [`PREPARATION_04A.md`](PREPARATION_04A.md) § 4 ; rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md).
 
@@ -134,3 +135,23 @@ Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts
 | REPORTÉ (BL-04-01) | — | 2 — GAP-04-06, GAP-04-14 | 2 |
 
 **Synthèse courante : 50 états tracés — 22 RÉALISÉ, 21 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 3 EN ATTENTE, 2 REPORTÉ.** Statut visuel : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED`.
+
+## Amendement daté — 20/10/2026 (enregistrement simplifié, D-04-17 APPROVED — clôture 04-A)
+
+Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md). Les tableaux précédents sont conservés comme historique ; seules les lignes ci-dessous changent. Aucun état n'est ajouté ni retiré.
+
+| # / Réf. | État | Avant | Après le 20/10/2026 (D-04-17) | Capture | Test |
+|---|---|---|---|---|---|
+| 10, 11 | newClientLight / Dark | RÉALISÉ / ADAPTÉ | inchangés ; en-tête : « Annuler », « Enregistrer comme brouillon » (tertiaire), « Enregistrer » (principal bleu) | `P04A_CLOT_navigateur_70-d0417-formulaire-ordonnance-actions`, `P04A_CLOT_navigateur_apres-ordonnance-1920x1080-z100-clair`, `…-sombre` | Q-04-190 |
+| 14 | saving | RÉALISÉ | « Enregistrement… » sur le bouton principal, les deux actions désactivées, doubles déclenchements ignorés | `P04A_CLOT_navigateur_39-etat14-enregistrement-en-cours` | Q-04-195 |
+| 16 | partialValid | EN ATTENTE (D-04-02.b) | **EN ATTENTE (D-04-02.b)** inchangé sur le fond ; refus du double désormais limité à la **règle minimale de démonstration** (aucune valeur optique) ; bandeau « Brouillon enregistré — confirmation refusée » | `P04A_CLOT_navigateur_27-confirmation-refusee-422` | Q-04-192 |
+| 23 | editForm | ADAPTÉ | libellés « Modifier », « Modifier cet enregistrement ? », « Modifier — ordonnance médicale » ; « Dernière révision confirmée (révision N) reste affichée » | `P04A_CLOT_navigateur_75-d0417-modification-formulaire` | Q-04-198 |
+| 26 | confirmClose | RÉALISÉ | inchangé pour une saisie non enregistrée ; **aucun** avertissement après un brouillon enregistré dont la confirmation a échoué | — | Q-04-194 |
+| 27 | editSuccess | ADAPTÉ | « Ordonnance médicale enregistrée — RX-… : révision N confirmée » ; détail « Dernière révision confirmée — révision N » | `P04A_CLOT_navigateur_72-d0417-enregistree-revision1`, `…_42-etat27-revision-enregistree` | Q-04-190, Q-04-194 |
+| GAP-04-07 | révisions et comparaison | RÉALISÉ (PROTO) | titre « Historique des modifications » | `P04A_CLOT_navigateur_23-gap07-revisions-comparaison` | Q-04-198 |
+| GAP-04-09 | conflit de version | RÉALISÉ | 409 à l'enregistrement : inchangé ; 409 à la confirmation : brouillon annoncé enregistré, « Recharger » et « Laisser en brouillon » | `P04A_CLOT_navigateur_40-gap09-conflit-deux-postes`, `…_74-d0417-modification-conflit-confirmation` | Q-04-194, Q-04-199 |
+| GAP-04-10 | confirmation | RÉALISÉ (PROTO) | récapitulatif retiré du parcours principal du formulaire (O-04-35) ; conservé sur le détail pour confirmer un brouillon existant | — | Q-04-190 |
+| GAP-04-13 | rectification en cours (E-02) | RÉALISÉ (PROTO) | « Modification en cours » ; « en vigueur » retiré | `P04A_CLOT_navigateur_21-gap13-rectification-en-cours` | Q-04-198 |
+
+**Synthèse courante : inchangée — 50 états tracés, 22 RÉALISÉ, 21 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 3 EN ATTENTE (avis métier, G04-METIER), 2 REPORTÉ (BL-04-01).** Statut : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` (revue finale du propriétaire).
+

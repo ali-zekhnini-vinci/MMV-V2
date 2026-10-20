@@ -232,3 +232,47 @@ Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts
 | Q-04-026 | PASS — 13 tests (double : cycle, simplification, droits, valeurs) |
 | Q-04-027 | PASS — 24 tests (parcours du banc) |
 | Q-04-178, Q-04-179 | rejoués après la simplification : voir Q-04-189 (`plan.mjs` : 51 captures, les 3 captures de pièces retirées) |
+
+## 04-A — enregistrement simplifié et clôture (D-04-17) — contrôles exécutés le 20/10/2026
+
+Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md). Preuves sur le **banc** et le **double en mémoire** seulement ; exécution finale après le dernier changement de code. Les sections précédentes sont conservées comme historique.
+
+| ID | Contrôle | Commande / méthode | Statut |
+|---|---|---|---|
+| Q-04-056 | préflight Git | `git log`, `git status --short` | PASS — HEAD `64cedc4`, aucune modification suivie, non suivis du propriétaire intacts |
+| Q-04-057 | typage strict | `npm run check` | PASS |
+| Q-04-058 | lint | `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Q-04-059 | tests frontend (suite complète, composants communs inclus) | `vitest run` | **PASS 288 / 288** (25 fichiers) — [`evidence/P04A_CLOT_frontend_20261020.log`](evidence/P04A_CLOT_frontend_20261020.log) |
+| Q-04-060 | build | `vite build` | PASS |
+| Q-04-061 | banc absent du bundle | chaînes de Q-04-050 + `Enregistrer comme brouillon`, `Laisser en brouillon`, `confirmation refusée`, `optical_values_missing`, `nextConfirmFault`, `Échec de la prochaine confirmation` | PASS — aucune occurrence ; « Dossier optique » : 1 fichier (onglet réservé au banc dans `ClientDetailView`, inchangé) — [`evidence/P04A_CLOT_bundle_20261020.log`](evidence/P04A_CLOT_bundle_20261020.log) |
+| Q-04-062 | application réelle inchangée, prototype isolé | `realAppIsolation.test.tsx` (4 tests, inclus dans Q-04-059) ; `git diff --stat` limité à `src/optical/`, `src/bench/`, `e2e/bench-04a/`, `docs/`, `prompts/`, `README.md` | PASS |
+| Q-04-063 | aucun SQL, migration `0006`, backend, route, permission ni compte | `git diff --stat` | PASS |
+| Q-04-064 | tests .NET et PostgreSQL réel | — | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+| Q-04-065 | interface Tauri native | — | **NOT_TESTED** (banc hors application, O-04-16) |
+| Q-04-066 | captures : 1920×1080 et 1024×700, zoom 100 / 125 / 150 %, clair / sombre, deux formulaires, états D-04-17 | `plan-lot3.mjs` (34) + `plan.mjs` (58) + `shoot.mjs` (Edge sans interface) | PASS (navigateur) — 0 erreur console, 0 défilement horizontal — [`evidence/P04A_CLOT_captures_rapport_20261020.json`](evidence/P04A_CLOT_captures_rapport_20261020.json) |
+| Q-04-067 | liens internes et statuts cohérents des documents modifiés ; absence de secrets dans le diff | résolution de chaque chemin relatif Markdown ; recherche des statuts courants ; recherche de motifs de secrets dans `git diff` | PASS (voir [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Journal) |
+
+### Tests de l'enregistrement simplifié (banc, jsdom, garde réseau active)
+
+| ID | Exigence du mandat | Test | Statut |
+|---|---|---|---|
+| Q-04-190 | 2 — un seul bouton principal bleu « Enregistrer » (`Control+S`), brouillon en action secondaire moins visible ; ± sur OD et OG puis « Enregistrer » → révision 1 confirmée, sans récapitulatif | `OpticalBench.test.tsx` « une action principale « Enregistrer »… » | PASS |
+| Q-04-191 | 4 — Ctrl+S = « Enregistrer » ; mesure magasin, provenance distincte | « Ctrl+S = « Enregistrer »… » | PASS |
+| Q-04-192 | 2, 4 — 422 (aucune valeur optique) : « Brouillon enregistré — confirmation refusée », saisie conservée, « Laisser en brouillon » proposé, reprise sur le même enregistrement ; `0` est une valeur | « confirmation refusée (422, aucune valeur optique)… » | PASS |
+| Q-04-193 | 4 — erreur de communication à la confirmation : brouillon annoncé enregistré, jamais « rien n'a été enregistré » | « erreur de communication à la confirmation… » | PASS |
+| Q-04-194 | 2, 4 — modification d'un enregistrement confirmé, 409 à la confirmation : dernière révision confirmée préservée, aucun faux avertissement de sortie, reprise sans doublon → révision 2 | « modification d'un enregistrement confirmé, conflit 409… » | PASS |
+| Q-04-195 | 4 — double clic et Ctrl+S répété pendant l'enregistrement : un seul enregistrement | « double clic et Ctrl+S répété… » | PASS |
+| Q-04-196 | 2, 7 (6–7) — brouillon incomplet enregistré au clavier, repris (« Modifier ») puis confirmé | « brouillon incomplet enregistré au clavier… » | PASS |
+| Q-04-197 | 2 — règle minimale de démonstration du double (aucune valeur → 422 `optical_values_missing` ; un œil suffit ; `0` présent ; espaces = absence) ; panne de la confirmation seule sans écriture partielle | `inMemoryOpticalGateway.test.ts` (3 tests) | PASS |
+| Q-04-198 | 3 — libellés « Modifier », « Historique des modifications », « Dernière révision confirmée » ; aucun « en vigueur » | J-04-04 « modifier → brouillon… », « détail : aucune pièce source… » | PASS |
+| Q-04-199 | 4 — 409 à l'enregistrement lui-même (autre poste) : « rien n'a été enregistré », pas de « Laisser en brouillon » | J-04-06 | PASS |
+
+### Statut des tests prévus — mise à jour du 20/10/2026 (D-04-17)
+
+| ID | Statut au 20/10/2026 |
+|---|---|
+| Q-04-183 | **remplacé** : la règle de démonstration sur la provenance n'existe plus (O-04-36) ; voir Q-04-192, Q-04-197 et le test J-04-04 « un seul œil suffit… » |
+| Q-04-026 | PASS — 15 tests (double) |
+| Q-04-027 | PASS — 31 tests (parcours du banc) |
+| Q-04-178, Q-04-179, Q-04-189 | rejoués : voir Q-04-066 (`plan.mjs` : 58 captures, dont 7 nouvelles `70`–`76`) |
+

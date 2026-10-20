@@ -57,7 +57,7 @@ if (mode === "avant") {
   add("apres-ordonnance-saisie-rapide-1024", card("cli-fictif-3", "light"), [...quick, scrollTo("Correction optique")], 1024, 700);
   add("apres-etat34-focus-stepper", card("cli-fictif-3", "light"), [...open("ordonnance"), type("Sphère OD", "-2,25"), focus("Cylindre OD")], 1920, 1080);
   add("apres-valeur-manuelle-hors-pas", card("cli-fictif-3", "light"), [...open("ordonnance"), type("Sphère OD", "-2,13"), ...press("Augmenter Sphère OD de 0,25", 1), type("Cylindre OD", "abc"), scrollTo("Correction optique")], 1920, 1080);
-  add("apres-etat35-erreur-sous-champ", card("cli-fictif-3", "light"), [...open("ordonnance"), type("Cylindre OD", "abc"), click("Enregistrer le brouillon", 1200)], 1920, 1080);
+  add("apres-etat35-erreur-sous-champ", card("cli-fictif-3", "light"), [...open("ordonnance"), type("Cylindre OD", "abc"), click("Enregistrer", 1200)], 1920, 1080);
   add("apres-pas-configurable-0125", `${card("cli-fictif-3", "light")}&step=0.125`, [...open("ordonnance"), ...press("Augmenter Sphère OD de 0,125", 3), scrollTo("Correction optique")], 1920, 1080);
   add("apres-base-liste-proposee", card("cli-fictif-3", "light"), [...open("ordonnance"), ...press("Augmenter Prisme OD de 0,25", 4), click("Choisir une base proposée pour OD", 600)], 1920, 1080);
 }

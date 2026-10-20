@@ -101,7 +101,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
         onSuccess: () => {
           setDialog(null);
           setView("current");
-          notify("Rectification abandonnée", `La révision ${record.lastConfirmed?.revisionNo ?? ""} reste en vigueur. Le brouillon abandonné est conservé dans l'historique des révisions.`);
+          notify("Modification abandonnée", `La dernière révision confirmée (révision ${record.lastConfirmed?.revisionNo ?? ""}) est inchangée. Le brouillon abandonné reste visible dans l'historique des modifications.`);
         },
         onError: (error) => {
           setDialog(null);
@@ -154,12 +154,12 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
         <Banner
           tone="info"
           icon={<PencilLine size={20} />}
-          title={`Rectification en cours — ouverte le ${formatDateTime(rectification.startedAtUtc)} par ${rectification.startedBy.displayName}`}
+          title={`Modification en cours — ouverte le ${formatDateTime(rectification.startedAtUtc)} par ${rectification.startedBy.displayName}`}
           action={
             <div className="clients-actions clients-actions--wrap">
               {canWrite && !archived && (
                 <Button size="sm" variant="primary" onClick={() => navigate(opticalDraftPath(record.kind, record.id), { state: launch ?? undefined })}>
-                  Poursuivre
+                  Modifier
                 </Button>
               )}
               <Button size="sm" onClick={() => setView(view === "draft" ? "current" : "draft")}>
@@ -176,7 +176,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
           }
         >
           Motif : {rectification.reasonCode ? RECTIFICATION_REASON_LABEL[rectification.reasonCode] : "—"}
-          {rectification.reasonComment && ` — ${rectification.reasonComment}`}. La révision {record.lastConfirmed?.revisionNo} confirmée reste en vigueur et affichée par défaut.
+          {rectification.reasonComment && ` — ${rectification.reasonComment}`}. La dernière révision confirmée (révision {record.lastConfirmed?.revisionNo}) reste affichée par défaut.
           {archived && " Client archivé : le brouillon est gelé (abandon possible)."}
         </Banner>
       )}
@@ -219,7 +219,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
             <>
               <Button onClick={() => navigate(opticalDraftPath(record.kind, record.id), { state: launch ?? undefined })} disabled={archived}>
                 <PencilLine size={16} aria-hidden="true" />
-                Poursuivre le brouillon
+                Modifier
               </Button>
               <Button variant="primary" onClick={() => openDialog("confirm")} disabled={archived}>
                 <ClipboardCheck size={16} aria-hidden="true" />
@@ -230,7 +230,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
           {active && rectification && canWrite && view === "draft" && (
             <Button variant="primary" onClick={() => openDialog("confirm")} disabled={archived}>
               <ClipboardCheck size={16} aria-hidden="true" />
-              Confirmer la rectification
+              Confirmer la modification
             </Button>
           )}
           {active && record.lastConfirmed && !draft && canWrite && (
@@ -238,10 +238,10 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
               variant="primary"
               onClick={() => openDialog("rectify")}
               disabled={archived}
-              title={archived ? "Client archivé : réactivez le client avant de rectifier (D-04-07, proposé)" : undefined}
+              title={archived ? "Client archivé : réactivez le client avant de modifier (D-04-07, proposé)" : undefined}
             >
               <PencilLine size={16} aria-hidden="true" />
-              Rectifier
+              Modifier
             </Button>
           )}
           {record.lastConfirmed && (
@@ -277,7 +277,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
       <div className="optical-detail">
         <section className="clients-card" aria-labelledby="optical-shown-title">
           <h2 className="clients-card__title" id="optical-shown-title">
-            {shown.status === "confirmed" ? `${revisionLabel(shown)} — en vigueur` : revisionLabel(shown)}
+            {shown.status === "confirmed" ? `Dernière révision confirmée — ${revisionLabel(shown).toLocaleLowerCase("fr")}` : revisionLabel(shown)}
           </h2>
           <p className="clients-muted">
             {shown.status === "confirmed" && shown.confirmedAtUtc
@@ -327,10 +327,10 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
         onOpenChange={(open) => !open && !discard.isPending && setDialog(null)}
         tone="warning"
         icon={<Trash2 size={28} />}
-        title="Abandonner la rectification ?"
-        description={`Le brouillon est conservé comme « rectification abandonnée » (rien n'est supprimé). La révision ${record.lastConfirmed?.revisionNo ?? ""} reste en vigueur.`}
+        title="Abandonner la modification ?"
+        description={`Le brouillon est conservé comme « rectification abandonnée » (rien n'est supprimé). La dernière révision confirmée (révision ${record.lastConfirmed?.revisionNo ?? ""}) est inchangée.`}
         cancelLabel="Conserver le brouillon"
-        confirmLabel={discard.isPending ? "Abandon…" : "Abandonner la rectification"}
+        confirmLabel={discard.isPending ? "Abandon…" : "Abandonner la modification"}
         pending={discard.isPending}
         onConfirm={onDiscard}
       />

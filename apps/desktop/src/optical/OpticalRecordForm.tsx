@@ -3,11 +3,14 @@
 // change jamais. Mise en page de la maquette Lot 3 (D-04-15 APPROVED) : en-tête avec Annuler / Enregistrer, carte
 // « Informations générales » avec le client concerné, cartes OD / OG côte à côte avec boutons ±, carte Notes.
 // Aucun « état de l'œil » ni pièce source (D-04-16 APPROVED : parcours simplifié, révisions conservées).
+// Enregistrement simplifié (D-04-17 APPROVED) : « Enregistrer » (principal, Ctrl+S, Entrée) enregistre le brouillon PUIS
+// le confirme ; « Enregistrer comme brouillon » (discret) enregistre sans confirmer. Si la confirmation échoue après un
+// brouillon enregistré, le formulaire est resynchronisé sur ce brouillon et l'échec est annoncé comme tel.
 // Aucune règle locale : champs facultatifs à l'écran ; seules les erreurs renvoyées par le service
 // s'affichent sous les champs (aria-describedby) ; critère de confirmation décidé par le service (422 affiché tel quel).
 // Version lue à l'ouverture figée (409 sans écrasement, saisie conservée, GAP-04-09). Garde de sortie et Ctrl+S
 // comme ClientFormView.
-import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Command, Glasses, Info, NotebookPen, RefreshCw, Ruler, Shield, User, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Check, Command, FilePen, Glasses, Info, NotebookPen, RefreshCw, Ruler, Shield, User, X } from "lucide-react";
 import { type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
@@ -22,11 +25,10 @@ import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { EyeGrid } from "./EyeGrid.tsx";
 import { KindBadge, ProposedTag } from "./OpticalBadges.tsx";
 import { emptyContent, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
-import { ConfirmTranscriptionDialog } from "./OpticalDialogs.tsx";
 import { KIND_LABEL, LIST_PENDING_NOTE, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
 import { useConfirmDraft, useCreateRecord, useMeasurers, useOpticalGateway, useSaveDraft } from "./opticalQueries.ts";
 import { OpticalStepContext, stepLabel } from "./opticalStep.ts";
-import { describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
+import { describeConfirmFailure, describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
 
 type OpticalRecordFormProps =
   | { mode: "create"; kind: OpticalKind; client: { id: string; label: string }; launch: OpticalLaunchState | null }
@@ -54,7 +56,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   // Enregistrement et version lus à l'ouverture, figés jusqu'à un rechargement explicite (GAP-04-09).
   const [record, setRecord] = useState<OpticalRecord | null>(props.mode === "draft" ? props.record : null);
   const draft = record?.openDraft ?? null;
-  const clientLabel = props.mode === "create" ? props.client.label : `${props.record.client.displayName} · ${props.record.client.reference}`;
   const [clientName, clientReference = ""] = props.mode === "create" ? props.client.label.split(" · ") : [props.record.client.displayName, props.record.client.reference];
   const step = useContext(OpticalStepContext);
   const formId = useId();
@@ -71,11 +72,16 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<FailureView | null>(null);
-  const [confirming, setConfirming] = useState<RecordContent | null>(null);
+  // Brouillon enregistré mais confirmation en échec : proposer de le laisser tel quel (aucune nouvelle écriture).
+  const [keptDraft, setKeptDraft] = useState<OpticalRecord | null>(null);
   const [leaveRequest, setLeaveRequest] = useState<(() => void) | null>(null);
   const [reloadAsk, setReloadAsk] = useState(false);
   const [done, setDone] = useState(false);
-  const saving = create.isPending || save.isPending || confirm.isPending;
+  // Une seule opération à la fois : double clic, Ctrl+S répété ou Entrée pendant l'enregistrement sont ignorés, y compris
+  // entre l'enregistrement du brouillon et sa confirmation (aucun doublon créé).
+  const busyRef = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const saving = busy || create.isPending || save.isPending || confirm.isPending;
   const back = props.launch?.returnTo ?? (record ? opticalDetailPath(record.kind, record.id) : "/optique");
 
   // Après un refus : focus sur le premier champ en erreur (convention 03-A), sinon bandeau ramené à l'écran.
@@ -104,10 +110,10 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
     else go();
   };
 
-  const showFailure = (error: ApiError) => {
+  const showFailure = (error: ApiError, view: FailureView = describeOpticalFailure(error)) => {
     const fields = toFieldMessages(error);
     setFieldErrors(fields);
-    setFailure(describeOpticalFailure(error));
+    setFailure(view);
   };
 
   const finish = (saved: OpticalRecord, title: string, message: string) => {
@@ -122,6 +128,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const persist = async (values: RecordContent): Promise<OpticalRecord | null> => {
     setFailure(null);
     setFieldErrors({});
+    setKeptDraft(null);
     try {
       if (record === null) {
         if (props.mode !== "create") return null;
@@ -138,31 +145,50 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
     }
   };
 
-  const onSaveDraft = handleSubmit(async (values) => {
-    const saved = await persist(values);
-    if (saved) finish(saved, "Brouillon enregistré", `${KIND_LABEL[saved.kind]} ${saved.reference} : brouillon non confirmé, consultable et modifiable.`);
-  });
-
-  const onConfirmRequest = handleSubmit((values) => setConfirming(values));
-
-  const onConfirm = async () => {
-    if (confirming === null) return;
-    const saved = await persist(confirming);
-    if (!saved) {
-      setConfirming(null);
-      return;
-    }
+  const exclusive = async (run: () => Promise<void>) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
     try {
-      const confirmed = await confirm.mutateAsync({ kind: saved.kind, id: saved.id, version: saved.version });
-      setConfirming(null);
-      const revisionNo = confirmed.lastConfirmed?.revisionNo ?? 1;
-      finish(confirmed, `Révision ${revisionNo} enregistrée`, `${KIND_LABEL[confirmed.kind]} ${confirmed.reference} confirmée (révision ${revisionNo}).`);
-    } catch (error) {
-      setConfirming(null);
-      // Brouillon enregistré mais confirmation refusée (422 incomplete) : erreurs sous les champs, saisie conservée.
-      showFailure((error as { error: ApiError }).error);
+      await run();
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
   };
+
+  const draftSaved = (saved: OpticalRecord) =>
+    finish(saved, "Brouillon enregistré", `${KIND_LABEL[saved.kind]} ${saved.reference} : brouillon non confirmé, consultable et modifiable.`);
+
+  // `handleSubmit` appelé au clic seulement (la garde `busyRef` n'est jamais lue pendant le rendu).
+  const onSaveDraft = () =>
+    handleSubmit((values) =>
+      exclusive(async () => {
+        const saved = await persist(values);
+        if (saved) draftSaved(saved);
+      }),
+    )();
+
+  // Action principale : enregistrer le brouillon, puis le confirmer (critère décidé par le service).
+  const onSave = () =>
+    handleSubmit((values) =>
+      exclusive(async () => {
+        const saved = await persist(values);
+        if (!saved) return;
+        try {
+          const confirmed = await confirm.mutateAsync({ kind: saved.kind, id: saved.id, version: saved.version });
+          const revisionNo = confirmed.lastConfirmed?.revisionNo ?? 1;
+          finish(confirmed, `${KIND_LABEL[confirmed.kind]} enregistrée`, `${confirmed.reference} : révision ${revisionNo} confirmée.`);
+        } catch (error) {
+          // Le brouillon EST enregistré : formulaire resynchronisé sur lui (aucun faux avertissement de perte de saisie),
+          // prochaine tentative sur ce même brouillon (aucun doublon), dernière révision confirmée inchangée.
+          reset(saved.openDraft?.content ?? values);
+          setKeptDraft(saved);
+          const refused = (error as { error: ApiError }).error;
+          showFailure(refused, describeConfirmFailure(refused));
+        }
+      }),
+    )();
 
   // Rechargement explicite après un conflit : la saisie locale est remplacée seulement après confirmation.
   const reload = async () => {
@@ -174,11 +200,13 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
     reset(latest.data.openDraft?.content ?? getValues());
     setFailure(null);
     setFieldErrors({});
+    setKeptDraft(null);
   };
 
-  const submitRef = useRef(onSaveDraft);
+  // Ctrl+S = action principale « Enregistrer » (jamais le brouillon).
+  const submitRef = useRef(onSave);
   useEffect(() => {
-    submitRef.current = onSaveDraft;
+    submitRef.current = onSave;
   });
   const onKeyDown = useCallback((event: KeyboardEvent) => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -197,7 +225,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         ? "Nouvelle ordonnance médicale"
         : "Nouvelle mesure magasin"
       : draft?.baseRevisionNo
-        ? `Rectification de la révision ${draft.baseRevisionNo}`
+        ? `Modifier — ${KIND_LABEL[kind].toLocaleLowerCase("fr")}`
         : `Brouillon — ${KIND_LABEL[kind].toLocaleLowerCase("fr")}`;
   const hasFieldErrors = Object.keys(fieldErrors).length > 0;
 
@@ -221,7 +249,8 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
           {draft?.baseRevisionNo && draft.reasonCode && (
             <p className="clients-head__hint" role="note">
               Motif : {RECTIFICATION_REASON_LABEL[draft.reasonCode]}
-              {draft.reasonComment && ` — ${draft.reasonComment}`}. La révision {draft.baseRevisionNo} reste en vigueur jusqu&apos;à la confirmation.
+              {draft.reasonComment && ` — ${draft.reasonComment}`}. La dernière révision confirmée (révision {draft.baseRevisionNo}) reste affichée jusqu&apos;à
+              l&apos;enregistrement.
             </p>
           )}
         </div>
@@ -230,13 +259,13 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
             <X size={16} aria-hidden="true" />
             Annuler
           </Button>
-          <Button onClick={() => void onConfirmRequest()} disabled={saving}>
-            <ClipboardCheck size={16} aria-hidden="true" />
-            Enregistrer et confirmer…
+          <Button variant="tertiary" onClick={() => void onSaveDraft()} disabled={saving}>
+            <FilePen size={16} aria-hidden="true" />
+            Enregistrer comme brouillon
           </Button>
-          <Button variant="primary" type="submit" form={formId} disabled={saving}>
+          <Button variant="primary" type="submit" form={formId} disabled={saving} aria-keyshortcuts="Control+S">
             <Check size={16} aria-hidden="true" />
-            {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
+            {saving ? "Enregistrement…" : "Enregistrer"}
           </Button>
         </div>
       </header>
@@ -259,11 +288,21 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
               </ul>
             )}
           </div>
-          {failure.reload && record && (
-            <Button onClick={() => setReloadAsk(true)}>
-              <RefreshCw size={16} aria-hidden="true" />
-              Recharger
-            </Button>
+          {(keptDraft || (failure.reload && record)) && (
+            <div className="clients-actions clients-actions--wrap">
+              {keptDraft && (
+                <Button onClick={() => draftSaved(keptDraft)}>
+                  <FilePen size={16} aria-hidden="true" />
+                  Laisser en brouillon
+                </Button>
+              )}
+              {failure.reload && record && (
+                <Button onClick={() => setReloadAsk(true)}>
+                  <RefreshCw size={16} aria-hidden="true" />
+                  Recharger
+                </Button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -274,7 +313,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         className="optical-form"
         onSubmit={(event) => {
           event.preventDefault();
-          void onSaveDraft();
+          void onSave();
         }}
         noValidate
       >
@@ -323,15 +362,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         </fieldset>
       </form>
 
-      <ConfirmTranscriptionDialog
-        open={confirming !== null}
-        onOpenChange={(open) => !open && setConfirming(null)}
-        content={confirming}
-        clientLabel={clientLabel}
-        measurers={measurers.data ?? []}
-        pending={saving}
-        onConfirm={() => void onConfirm()}
-      />
       <ConfirmDialog
         open={leaveRequest !== null}
         onOpenChange={(open) => !open && setLeaveRequest(null)}

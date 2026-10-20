@@ -222,3 +222,18 @@ Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts
 | D-04-01, D-04-15 | inchangées : deux types distincts ; maquette Lot 3 avec boutons ± | APPROVED |
 
 **Formulaire de réponse.** Les lignes D-04-03.c, D-04-10, D-04-12.a/b/d et D-04-14 des formulaires ci-dessus **n'appellent plus de réponse en Phase 04** (elles seront reposées à la reprise de BL-04-01). Les autres lignes restent attendues ; D-04-02.a–d se lit désormais sans état par œil.
+
+## Décision datée — 20/10/2026 : D-04-17 APPROVED (enregistrement optique simplifié, clôture 04-A)
+
+Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md). **D-04-17 — APPROVED (propriétaire, 20/10/2026)** : *« Enregistrement optique simplifié : action principale Enregistrer, option secondaire discrète Enregistrer comme brouillon, sans suppression du cycle de révisions. »* Décision d'**interface** : aucune décision métier ci-dessus n'est tranchée.
+
+| Réf. | Effet de D-04-17 | État après le 20/10/2026 |
+|---|---|---|
+| D-04-02.b | **non modifiée** ; le banc applique seulement une règle minimale de démonstration (« un enregistrement dont toutes les données optiques sont absentes ne peut pas être confirmé »), qui n'est pas une validation médicale et ne sera pas reprise en 04-B sans décision | PROPOSED [AVIS OPTICIEN] |
+| D-04-02.d | inchangée ; le récapitulatif avant confirmation n'est plus affiché sur le parcours principal du formulaire (O-04-35) — à revoir seulement si la réponse l'exige | PROPOSED |
+| D-04-03.a, b | inchangées ; le double du banc n'exige plus la provenance pour confirmer (O-04-36) | PROPOSED [AVIS OPTICIEN] |
+| D-04-04, D-04-11 | inchangées : révisions, motif, invalidation ; seuls les libellés d'écran changent (« Modifier », « Historique des modifications », « Dernière révision confirmée ») | PROPOSED |
+| D-04-06 | inchangée (pas 0,25 = réglage de démonstration) | PROPOSED [AVIS OPTICIEN] |
+| D-04-01, D-04-15, D-04-16 | inchangées | APPROVED |
+
+Les formulaires de réponse ci-dessus restent valables tels quels pour G04-METIER.

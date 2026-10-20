@@ -91,3 +91,13 @@ Toujours aucune lecture de l'ancien dépôt ni de l'ancien code MMV, aucune conn
 | code du prototype `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/` (HEAD `9be2fda`) | état de départ modifié (§ 12 de [`LIVRAISON_04A.md`](LIVRAISON_04A.md)) ; `SourceDocumentsPanel.tsx` et `src/bench/benchImages.ts` supprimés |
 
 Maquette Lot 3 non modifiée et non rouverte (D-04-15 inchangée : les cartes OD / OG de la maquette ne comportent pas d'état de l'œil). Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée.
+
+## Complément daté — 20/10/2026 (04-A, enregistrement simplifié et clôture, D-04-17)
+
+| Source | Usage |
+|---|---|
+| `prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md` | mandat de clôture de 04-A (message de session du propriétaire, reproduit à l'identique) ; **D-04-17 APPROVED** |
+| code du prototype `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/` (HEAD `64cedc4`) | état de départ modifié (§ 13 de [`LIVRAISON_04A.md`](LIVRAISON_04A.md)) |
+| `apps/desktop/src/components/ui/button.tsx` (lecture seule) | variantes du Design System : `primary` pour « Enregistrer », `tertiary` pour « Enregistrer comme brouillon » |
+
+Maquette Lot 3 non modifiée et non rouverte (l'en-tête « Annuler / Enregistrer » de la maquette est conservé ; seule l'action discrète « Enregistrer comme brouillon » s'y ajoute). Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée ; données du banc fictives et synthétiques.
