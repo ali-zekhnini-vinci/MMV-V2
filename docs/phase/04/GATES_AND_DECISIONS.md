@@ -5,6 +5,7 @@
 - **GO 04-00** (propriétaire, 19/10/2026) : préflight et cadrage documentaire — [`prompts/PHASE04_00_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_GO_CLAUDE_CODE.md).
 - **Suite de 04-00** (propriétaire, 19/10/2026, après revue indépendante) : études préalables au modèle et préparation de 04-A — [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md). Mêmes interdits ; en outre aucune écriture de données de santé et aucune activation réelle du service.
 - **GO G04-A** (propriétaire, 19/10/2026) : **G04-A APPROVED — UI ONLY**, O-04-16 APPROVED — [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md). N'approuve pas D-04-02 à D-04-14 ; aucune migration, aucune API optique, aucune permission `optical.*` attribuée, aucune donnée de santé réelle.
+- **GO refonte UX Lot 3** (propriétaire, 20/10/2026, après son essai du banc) : **D-04-15 APPROVED** — [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md). Reste dans 04-A (banc isolé) ; mêmes interdits : aucune migration `0006`, aucun schéma, aucune API optique, aucune donnée réelle, aucune base, aucun droit sur un compte réel, aucune activation en production (O-04-16).
 - Interdits respectés en 04-00 : aucun code applicatif, aucune migration, aucun SQL, aucune connexion à `mmv_v2_dev` / `mmv_v2_test` / PostgreSQL 17, aucun accès à l'ancien dépôt, aucun push / PR / merge, aucun fichier non suivi du propriétaire modifié, aucun processus du propriétaire interrompu.
 
 ## Gates Phase 04
@@ -17,7 +18,7 @@
 | G04-SQL | migration `0006` | revue du SQL exact par le propriétaire, empreinte imposée | NOT_STARTED (04-B non commencé) |
 | G04-LEGAL | Maroc / Belgique : données de santé | avis juridique, formalités (CNDP, registre RGPD / APD), durées | **OPEN** — bloque tout pilote sur données réelles, pas 04-A / 04-B |
 | G04-FINAL | PR Phase 04 | 04-D, revue complète, GO propriétaire | NOT_STARTED |
-| G04-A *(ajoutée 19/10/2026)* | démarrage de 04-A (interface sur double de test) | GO explicite du propriétaire sur le périmètre de [`PREPARATION_04A.md`](PREPARATION_04A.md) § 3, et O-04-16 | **OPEN** — 04-A non commencé ; *19/10/2026 (GO) :* **APPROVED — UI ONLY** (mandat [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md)) ; livré : **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** ([`LIVRAISON_04A.md`](LIVRAISON_04A.md)) |
+| G04-A *(ajoutée 19/10/2026)* | démarrage de 04-A (interface sur double de test) | GO explicite du propriétaire sur le périmètre de [`PREPARATION_04A.md`](PREPARATION_04A.md) § 3, et O-04-16 | **OPEN** — 04-A non commencé ; *19/10/2026 (GO) :* **APPROVED — UI ONLY** (mandat [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md)) ; livré : **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** ([`LIVRAISON_04A.md`](LIVRAISON_04A.md)) ; *20/10/2026 :* revue du propriétaire — structure acceptée, ergonomie des formulaires refusée → D-04-15 ; refonte livrée : **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** ([`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 11) |
 
 ## Décisions métier
 
@@ -37,6 +38,7 @@
 | D-04-12 *(19/10/2026)* | événements d'accès aux pièces (« transmis », jamais « vu ») | PROPOSED (E-03) ; c [CONSEIL JURIDIQUE] avant pilote |
 | D-04-13 *(19/10/2026)* | granularité d'`optical.read`, profils indicatifs | PROPOSED (E-04) |
 | D-04-14 *(19/10/2026)* | contrôles des fichiers, limites de stockage, sauvegardes | PROPOSED (E-05) |
+| D-04-15 *(20/10/2026)* | **référence UX officielle des formulaires optiques** : maquette HTML Claude Design Lot 3, avec contrôles rapides ± et saisie clavier complémentaire | **APPROVED — propriétaire, 20/10/2026**. Décision d'interface **seulement** : n'approuve ni pas, ni bornes, ni format, ni règle croisée, ni liste de bases (le pas 0,25 est un paramètre de démonstration) — **D-04-06 reste PROPOSED** ; n'importe aucune règle ni aucun code de l'ancien MMV. Identifiant vérifié libre avant inscription |
 
 ## Conflits maquette ↔ propositions (Lot 3 DRAFT)
 
@@ -48,6 +50,7 @@
 | C-04-04 | lecture seule liée au rôle « technicien atelier » | lecture seule dérivée des permissions serveur | D-04-05.e |
 | C-04-05 | un seul type « ordonnance » | deux types distincts | D-04-01 (APPROVED) |
 | C-04-06 | plages numériques et règles croisées issues de l'ancien validateur | ignorées ; à définir avec un opticien | D-04-06, D-000 |
+| C-04-07 *(20/10/2026)* | boutons ± au pas de 0,25, signe « + » explicite (non repris le 19/10/2026) | repris comme **contrôles rapides** au pas de démonstration paramétrable ; aucun arrondi ni alignement ; la saisie au clavier n'est jamais reformatée ; « + » produit seulement par un clic | D-04-15 (APPROVED, interface) ; pas et format : D-04-06 |
 
 ## Points techniques ouverts
 
@@ -84,6 +87,7 @@
 | 19/10/2026 | Revue indépendante du dossier 04-00 : **G04-00 « cadrage techniquement acceptable »** ; D-04-01 APPROVED définitive ; D-04-02 à D-04-09 maintenues `PROPOSED`. Mandat de suite : [`prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_00_SUITE_GO_CLAUDE_CODE.md). G04-DESIGN : composition à partir des composants V2 accordée, validation visuelle du propriétaire requise. |
 | 19/10/2026 | Complément livré (documentation seulement) : [`ETUDES_PRE_MODELE_04.md`](ETUDES_PRE_MODELE_04.md) (E-01 à E-05 → D-04-10 à D-04-14 `PROPOSED`), [`PREPARATION_04A.md`](PREPARATION_04A.md) (périmètre IND / PROTO / BLOQUÉ, 14 états composés, grille neutre, points bloquants) ; amendements datés du modèle, de l'API, des permissions (matrice par profil), des états, des parcours, de la spécification, de la QA et des sources. Aucun SQL, aucune migration, aucune base, aucun code. État : **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`**. |
 | 19/10/2026 | **GO G04-A — UI ONLY** ; O-04-16 APPROVED. Préflight : HEAD `1d18b81`, `origin/main` (`6924860`) ancêtre, aucune modification suivie, non suivis du propriétaire intacts. Réalisé : module prototype `apps/desktop/src/optical/` et banc isolé `apps/desktop/src/bench/` + `optical-bench.html` (servi par Vite en développement seulement), seule modification du code existant : emplacement facultatif `opticalTab` / `initialTab` de `clients/ClientDetailView.tsx` (non utilisé par l'application). 50 états tracés ([`STATE_COVERAGE_04A.md`](STATE_COVERAGE_04A.md)) ; captures navigateur ; tests ([`QA_MATRIX.md`](QA_MATRIX.md) Q-04-019 à Q-04-030). Aucun SQL, aucune migration, aucune base, aucune route ni permission optique. D-04-02 à D-04-14 restent `PROPOSED`. État : **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** ([`LIVRAISON_04A.md`](LIVRAISON_04A.md)). |
+| 20/10/2026 | Essai du banc par le propriétaire : structure acceptée, ergonomie des formulaires de saisie refusée. **D-04-15 APPROVED** (référence UX : maquette Lot 3, boutons ±). Préflight : HEAD `26e515f`, aucune modification suivie, maquette revérifiée (`c103df9e…c06c213`). Réalisé dans le banc seulement : `opticalStep.ts` (pas de démonstration paramétrable), `EyeGrid.tsx` (cartes OD / OG, saisie ±), `OpticalRecordForm.tsx` (mise en page de la maquette), `Optical.css`, commande « Pas des boutons ± » du banc, plan de captures `plan-lot3.mjs`, tests (Q-04-170 à Q-04-179). Vitest 279 / 279, typage, lint, build PASS ; 34 + 54 captures navigateur ; natif NOT_TESTED ; .NET / PostgreSQL NOT_RERUN. D-04-02 à D-04-14 restent `PROPOSED`. État : **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** ([`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 11). |
 
 ## Points ouverts ajoutés — 19/10/2026 (04-A)
 
@@ -94,4 +98,12 @@
 | O-04-23 | sélecteur de fichier réel, lecture en flux, aperçu PDF, ouverture de la CSP | non construits (banc : pièces synthétiques seulement) ; 04-B (envoi multipart sans fichier temporaire) et 04-C (CSP, visionneuse, preuve native), avec O-04-01, O-04-18 |
 | O-04-24 | libellé « Dossier optique » présent dans le bundle de production (branche facultative de `ClientDetailView`, jamais rendue sans `opticalTab`) | sans effet visible ; retiré ou activé en 04-C |
 | O-04-25 | revue visuelle du propriétaire des 50 états capturés et examen métier consolidé avec un opticien (D-04-02, D-04-06, listes D-04-03) sur le banc | préalable à G04-METIER / 04-B ([`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 9) |
-| O-04-26 | test Phase 03 `ClientsModule.test.tsx` « O-03-43 » : 1 échec intermittent sous charge (délai de `findByRole`), PASS à chaque rejeu | surveiller ; si récurrent, allonger le délai d'attente de ce test (aucune modification faite en 04-A) |
+| O-04-26 | test Phase 03 `ClientsModule.test.tsx` « O-03-43 » : 1 échec intermittent sous charge (délai de `findByRole`), PASS à chaque rejeu | surveiller ; si récurrent, allonger le délai d'attente de ce test (aucune modification faite en 04-A) ; *20/10/2026 :* non reproduit (suite complète 279 / 279), toujours non modifié |
+
+## Points ouverts ajoutés — 20/10/2026 (refonte UX Lot 3, D-04-15)
+
+| Réf. | Sujet | Proposition / échéance |
+|---|---|---|
+| O-04-27 | test 04-A « erreurs techniques bornées (états 9, 31) » intermittent : **reproduit sur le code d'origine `26e515f`** (2 échecs sur 4 exécutions isolées) ; cause : la panne de liste est réessayée une fois après 1 s (`shouldRetry`), l'attente par défaut de Testing Library est de 1 s | **corrigé** dans le test seul (attente de 4 s pour ce titre) ; 4 / 4 PASS ensuite ; aucun code applicatif modifié |
+| O-04-28 | en-tête collant du formulaire : son recouvrement suppose le rembourrage de la zone défilante (`--space-6`, `--space-4` sous 1 100 px) ; le Shell réel a d'autres paliers | à revérifier à l'activation 04-C (intégration au Shell réel) |
+| O-04-29 | état de l'œil (D-04-02.c) : une valeur saisie par ± ou au clavier ne fait **pas** passer l'œil à « Renseigné » (aucun couplage automatique inventé) | à trancher avec D-04-02.c lors de l'examen métier |

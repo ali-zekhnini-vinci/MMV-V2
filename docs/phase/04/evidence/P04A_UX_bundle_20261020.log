@@ -1,0 +1,43 @@
+# Bundle de production (apps/desktop/dist, npm run build final, 20/10/2026) — recherche des chaînes du banc et de la refonte
+dist/index.html                                                      0.41 kB │ gzip:   0.28 kB
+dist/assets/source-sans-3-greek-ext-wght-normal-BXZfsJY4.woff2       9.74 kB
+dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2             10.25 kB
+dist/assets/source-sans-3-vietnamese-wght-normal-BDs68eHQ.woff2     10.36 kB
+dist/assets/source-sans-3-cyrillic-ext-wght-normal-c-5QAGAI.woff2   10.73 kB
+dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2              11.23 kB
+dist/assets/source-sans-3-greek-wght-normal-Cc-u-6OI.woff2          14.52 kB
+dist/assets/source-sans-3-cyrillic-wght-normal-BMDVbyM7.woff2       18.49 kB
+dist/assets/logo-monogram-BPIp4hY8.png                              18.60 kB
+dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2               18.74 kB
+dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2                  18.99 kB
+dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2           25.96 kB
+dist/assets/source-sans-3-latin-wght-normal-Bo_j9asI.woff2          28.87 kB
+dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2                  48.25 kB
+dist/assets/source-sans-3-latin-ext-wght-normal-C8iNium2.woff2      60.08 kB
+dist/assets/logo-login-CsjuZy2a.png                                 66.34 kB
+dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2              85.06 kB
+dist/assets/logo-horizontal-dark-sidebar-DK4O83AH.png              102.34 kB
+dist/assets/logo-horizontal-CX8f7qe7.png                           104.99 kB
+dist/assets/AppointmentsModule-COPiTKmt.css                         22.27 kB │ gzip:   4.73 kB
+dist/assets/appointmentLaunch-s4z4g4pi.css                          23.17 kB │ gzip:   4.24 kB
+dist/assets/index-wWex1AN9.css                                      32.03 kB │ gzip:   7.70 kB
+dist/assets/appointmentLaunch-Bdk9e0-Q.js                          102.12 kB │ gzip:  33.77 kB
+dist/assets/ClientsModule-LwP0jPba.js                              107.48 kB │ gzip:  30.34 kB
+dist/assets/AppointmentsModule-Bts16uKO.js                         394.88 kB │ gzip: 111.25 kB
+dist/assets/index-DP_s3KGL.js                                      554.10 kB │ gzip: 175.79 kB
+(!) Some chunks are larger than 500 kB after minification. Consider:
+✓ built in 903ms
+BANC DE D => 0 fichier(s)
+optical-bench => 0 fichier(s)
+RX-FICTIF => 0 fichier(s)
+MES-FICTIF => 0 fichier(s)
+Fictif- => 0 fichier(s)
+InMemoryOpticalGateway => 0 fichier(s)
+banc-04a => 0 fichier(s)
+OpticalModule => 0 fichier(s)
+/optique => 0 fichier(s)
+optical-stepper => 0 fichier(s)
+OpticalStepContext => 0 fichier(s)
+Diminuer  => 0 fichier(s)
+pas de démonstration => 0 fichier(s)
+Dossier optique => 1 fichier(s)

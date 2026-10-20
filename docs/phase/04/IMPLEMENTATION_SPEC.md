@@ -1,6 +1,6 @@
 # 04 — IMPLEMENTATION_SPEC (cadrage 04-00, aucune implémentation)
 
-**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
+**État : `PHASE04_00_READY — OWNER_METIER_REVIEW_REQUIRED`** (19/10/2026) ; *suite du 19/10/2026 :* **`PHASE04_04A_PREPARED — OWNER_GO_REQUIRED`** (§ 8) ; *04-A, 19/10/2026 :* **`PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 9, prototype sur banc isolé) ; *20/10/2026 :* **`PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`** (§ 10, refonte UX des formulaires, D-04-15). Aucune ligne de `src/` ni d'`apps/desktop/src/` modifiée en 04-00 ; aucun SQL ; aucune base touchée. Ce document fixe **comment** la Phase 04 sera construite une fois les décisions prises ; le **quoi** métier reste soumis à [`DECISIONS_04_METIER_PROPOSED.md`](DECISIONS_04_METIER_PROPOSED.md).
 
 ## 1. Base de départ vérifiée
 
@@ -97,3 +97,17 @@ Les §§ 1 à 8 sont conservés. **G04-A APPROVED — UI ONLY**, O-04-16 APPROVE
 | Outils | `apps/desktop/e2e/bench-04a/` | serveur Vite isolé (port 1520, cache hors dépôt), plan et prise des captures (Edge sans interface, CDP) |
 
 Réutilisés sans duplication : `ClientDetailView`, `ClientPicker`, `StateBlock` / `LoadingBlock`, `ClientNoticeBanner`, `Highlight`, `ConfirmDialog`, `Tabs`, `DropdownMenu`, `DatePicker`, `useLeaveGuard`, `createMmvQueryClient`, `ForbiddenView`, styles `Clients.css` / `overlays.css`. Aucune dépendance ajoutée (ADR-014). Activation réelle (04-C) : monter `OpticalModule` dans le Shell derrière `optical.read`, fournir une passerelle HTTP générée depuis l'OpenAPI de 04-B, extraire le socle CSS (O-04-11). Rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md).
+
+## 10. Amendement daté — 20/10/2026 (refonte UX Lot 3, D-04-15 APPROVED)
+
+Les §§ 1 à 9 sont conservés. **D-04-15 APPROVED** : la maquette Claude Design du Lot 3 est la référence UX des formulaires optiques (contrôles rapides ± et saisie clavier complémentaire). Toujours dans le banc isolé ; aucun SQL, aucune migration, aucune base, aucune route ni permission optique ; aucune dépendance ajoutée (ADR-014).
+
+| Couche | Emplacement | Contenu |
+|---|---|---|
+| Logique ± (pure, testée) | `apps/desktop/src/optical/opticalStep.ts` | `stepValue` (calcul décimal exact en entiers, aucun arrondi ni alignement, signe et séparateur conservés, `null` pour une valeur non numérique), `isSteppable`, `stepLabel`, `DEMO_STEP` (0,25, démonstration), `OpticalStepContext` (pas paramétrable), `STEPPER_FIELDS` |
+| Grille OD / OG partagée | `apps/desktop/src/optical/EyeGrid.tsx` | `EyeGrid` → `EyeCard` (fieldset, légende en en-tête de carte) → `EyeRow` (libellé 118 px) → `StepperInput` (Sphère, Cylindre, Addition, Prisme) / `TextInput` (Axe « degrés », Acuité) / `BaseInput` (saisie libre + `DropdownMenu` de libellés proposés) ; contrôlé par react-hook-form (`Controller`) ; annonce `aria-live` ; boutons ± et « Effacer » hors de l'ordre de Tab, ↑ / ↓ et Alt+↓ au clavier |
+| Formulaire | `apps/desktop/src/optical/OpticalRecordForm.tsx` | mise en page de la maquette : en-tête et actions (soumission par l'attribut `form`), `FormSection` en carte ou à nu, client concerné, `ReferenceField`, provenances **distinctes** par type (D-04-01) réutilisant les mêmes composants OD / OG |
+| Styles | `apps/desktop/src/optical/Optical.css` | cotes de la maquette en jetons MMV ; requêtes de conteneur (`optical-form`, `optical-eye`) plutôt que de fenêtre : le formulaire s'adapte à la largeur que lui laisse le Shell ou le banc |
+| Banc | `apps/desktop/src/bench/OpticalBench.tsx`, `main.tsx` | fournisseur `OpticalStepContext`, commande « Pas des boutons ± (démonstration) », paramètre `step` |
+
+À l'activation (04-C) : le pas, les bornes, le format et les règles croisées viendront de D-04-06 (aucune valeur codée en dur ailleurs que `DEMO_STEP`) ; revérifier l'en-tête collant dans le Shell réel (O-04-28). Rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 11.

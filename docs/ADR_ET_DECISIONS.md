@@ -126,3 +126,7 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - **G04-A APPROVED — UI ONLY** et **O-04-16 APPROVED** (propriétaire) : prototypes des écrans du dossier optique **uniquement** dans un banc de démonstration isolé (`apps/desktop/optical-bench.html`, hors `vite build`) ; comptes réels inchangés (« Ordonnances — phase ultérieure »). D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (illustrées par le prototype, non tranchées).
 - Aucun ADR modifié. **ADR-014** respecté : aucune dépendance ajoutée (React Hook Form, TanStack Query, Radix, react-day-picker, Lucide existants). **ADR-003** : aucune base touchée, aucune migration. Bilan : `docs/phase/04/LIVRAISON_04A.md`.
+
+## Note datée — 20/10/2026 (Phase 04-A, refonte UX Lot 3)
+
+- **D-04-15 APPROVED** (propriétaire, 20/10/2026) : référence UX officielle des formulaires optiques = maquette HTML Claude Design du Lot 3, avec contrôles rapides ± et saisie clavier complémentaire. Décision d'interface seulement : le pas 0,25 reste un paramètre de **démonstration** ; pas, bornes, format et règles croisées relèvent de **D-04-06 (PROPOSED, avis opticien)** ; aucune règle ni aucun code de l'ancien MMV importés. Réalisation dans le banc isolé seulement (O-04-16) : `docs/phase/04/LIVRAISON_04A.md` § 11.

@@ -1,0 +1,14 @@
+# 04-A refonte UX Lot 3 (D-04-15) — frontend, 20/10/2026, apps/desktop (exécution finale, après le dernier changement de code)
+## npm run check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+exit=0
+## eslint .
+  153:17  warning  Compilation Skipped: Use of incompatible library
+✖ 1 problem (0 errors, 1 warning)
+## vitest run
+ Test Files  25 passed (25)
+      Tests  279 passed (279)
+   Duration  53.29s (tests 77%, environment 10%, import 8%, transform 5%)
+## npm run build
+✓ built in 903ms

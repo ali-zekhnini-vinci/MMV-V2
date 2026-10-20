@@ -25,6 +25,7 @@ import { ClientOpticalTab } from "../optical/ClientOpticalTab.tsx";
 import { OpticalAccessContext, opticalAccess, useOpticalAccess } from "../optical/opticalAccess.ts";
 import { OpticalModule } from "../optical/OpticalModule.tsx";
 import { DocumentSourceContext, OpticalGatewayContext } from "../optical/opticalQueries.ts";
+import { DEMO_STEP, OpticalStepContext, stepLabel } from "../optical/opticalStep.ts";
 import { kindFromSegment } from "../optical/opticalLabels.ts";
 import { opticalDetailPath, readClientTab } from "../optical/opticalUi.ts";
 import { INITIAL_OPTICAL_LIST, type OpticalListState, OpticalUiContext } from "../optical/opticalUiState.ts";
@@ -44,6 +45,8 @@ export interface OpticalBenchProps {
   profileId?: string;
   theme?: "light" | "dark";
   latencyMs?: number;
+  /** Pas de démonstration des boutons ± (D-04-15 ; aucune valeur approuvée, D-04-06). */
+  step?: number;
 }
 
 /** Pannes et latence simulées, modifiées par les commandes du banc et lues par le double à chaque réponse. */
@@ -96,7 +99,7 @@ function useBenchGateway(clients: readonly ClientDetail[], profileRef: { current
   return { state, failure, reset: () => setGeneration((value) => value + 1) };
 }
 
-export function OpticalBench({ clients, network, initialRoute = "/", profileId = "all", theme: initialTheme = "light", latencyMs = 0 }: OpticalBenchProps) {
+export function OpticalBench({ clients, network, initialRoute = "/", profileId = "all", theme: initialTheme = "light", latencyMs = 0, step: initialStep = DEMO_STEP }: OpticalBenchProps) {
   const [profile, setProfile] = useState<BenchProfile>(() => findProfile(profileId));
   const profileRef = useRef(profile);
   // Mise à jour AVANT le rendu des écrans du nouveau profil (dans le gestionnaire, pas dans un effet) : sinon leurs
@@ -107,6 +110,7 @@ export function OpticalBench({ clients, network, initialRoute = "/", profileId =
   }, []);
   const [control] = useState(() => new BenchControl(latencyMs));
   const [theme, setTheme] = useState(initialTheme);
+  const [step, setStep] = useState(initialStep);
   const bench = useBenchGateway(clients, profileRef, control);
 
   useEffect(() => {
@@ -122,19 +126,23 @@ export function OpticalBench({ clients, network, initialRoute = "/", profileId =
 
   return (
     <MemoryRouter initialEntries={[initialRoute]}>
-      <BenchProviders key={`${profile.id}-${bench.state.generation}`} gateway={bench.state.gateway} profile={profile}>
-        <BenchLayout
-          gateway={bench.state.gateway}
-          clients={clients}
-          profile={profile}
-          onProfile={changeProfile}
-          theme={theme}
-          onTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
-          control={control}
-          network={network}
-          onReset={bench.reset}
-        />
-      </BenchProviders>
+      <OpticalStepContext.Provider value={step}>
+        <BenchProviders key={`${profile.id}-${bench.state.generation}`} gateway={bench.state.gateway} profile={profile}>
+          <BenchLayout
+            gateway={bench.state.gateway}
+            clients={clients}
+            profile={profile}
+            onProfile={changeProfile}
+            theme={theme}
+            onTheme={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
+            control={control}
+            network={network}
+            onReset={bench.reset}
+            step={step}
+            onStep={setStep}
+          />
+        </BenchProviders>
+      </OpticalStepContext.Provider>
     </MemoryRouter>
   );
 }
@@ -207,11 +215,13 @@ interface BenchLayoutProps {
   control: BenchControl;
   network: BenchNetwork | null;
   onReset: () => void;
+  step: number;
+  onStep: (step: number) => void;
 }
 
 const DETAIL_PATH = /^\/optique\/(ordonnance|mesure)\/([^/]+)/;
 
-function BenchLayout({ gateway, clients, profile, onProfile, theme, onTheme, control, network, onReset }: BenchLayoutProps) {
+function BenchLayout({ gateway, clients, profile, onProfile, theme, onTheme, control, network, onReset, step, onStep }: BenchLayoutProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [message, setMessage] = useState<string | null>(null);
@@ -301,6 +311,19 @@ function BenchLayout({ gateway, clients, profile, onProfile, theme, onTheme, con
               <option value={3000}>3 s</option>
             </select>
           </div>
+          <label className="clients-field__label" htmlFor="bench-step">
+            Pas des boutons ± (démonstration)
+          </label>
+          <div className="clients-input">
+            <select id="bench-step" className="optical-select" value={step} onChange={(event) => onStep(Number(event.target.value))}>
+              {[...new Set([0.125, 0.25, 0.5, step])].sort((a, b) => a - b).map((value) => (
+                <option key={value} value={value}>
+                  {stepLabel(value)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="bench__hint">D-04-15 : référence UX Lot 3 (APPROVED). Le pas reste un paramètre de démonstration : D-04-06 ouverte.</p>
           <Button
             size="sm"
             onClick={() => {

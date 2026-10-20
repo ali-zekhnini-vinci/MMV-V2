@@ -61,6 +61,9 @@ export const FIELD_UNIT: Record<EyeField, string> = {
 };
 export const FIELD_UNIT_SHORT: Record<EyeField, string> = { sphere: "D", cylinder: "D", axis: "°", addition: "D", prism: "Δ", base: "", acuity: "" };
 
+/** Libellés de base proposés par la maquette Lot 3 (aide à la saisie seulement ; liste non approuvée, D-04-06). */
+export const BASE_SUGGESTIONS: readonly string[] = ["Nasal", "Temporal", "Supérieur", "Inférieur"];
+
 export function eyeStateLabel(kind: OpticalKind, state: EyeState): string {
   if (state === "filled") return "Renseigné";
   if (state === "not_prescribed") return kind === "prescription" ? "Non prescrit sur le document" : "Non mesuré";

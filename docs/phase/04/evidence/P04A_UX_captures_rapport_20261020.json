@@ -1,0 +1,666 @@
+[
+  {
+    "name": "apres-ordonnance-1920x1080-z100-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1920x1080-z125-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1920x1080-z150-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z100-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z125-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z150-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1920x1080-z100-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1920x1080-z125-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1920x1080-z150-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z100-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z125-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-1024x700-z150-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z100-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z125-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z150-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z100-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z125-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z150-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z100-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z125-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1920x1080-z150-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z100-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z125-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-1024x700-z150-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-saisie-rapide-1920-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-saisie-rapide-1920-clair",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-saisie-rapide-1920-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-mesure-saisie-rapide-1920-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-ordonnance-saisie-rapide-1024",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-etat34-focus-stepper",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-valeur-manuelle-hors-pas",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-etat35-erreur-sous-champ",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-pas-configurable-0125",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "apres-base-liste-proposee",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  }
+]

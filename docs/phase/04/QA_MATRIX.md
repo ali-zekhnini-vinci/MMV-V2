@@ -144,3 +144,46 @@ Prototype sur banc isolé ([`LIVRAISON_04A.md`](LIVRAISON_04A.md)). Toutes les p
 | Q-04-160 | PASS (au rejeu) | Q-04-023 |
 | Q-04-100 à Q-04-145 | **NOT_TESTED** (serveur, PostgreSQL, journal, fichiers réels : 04-B / 04-C) ; le double en illustre les refus attendus sans les prouver | — |
 
+## 04-A — refonte UX Lot 3 (D-04-15) — contrôles exécutés le 20/10/2026
+
+Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md). Les résultats du 19/10/2026 ci-dessus sont conservés tels quels ; les lignes suivantes les complètent après le dernier changement de code.
+
+| ID | Contrôle | Commande / méthode | Statut |
+|---|---|---|---|
+| Q-04-033 | préflight Git | `git log`, `git status --short` | PASS — HEAD `26e515f`, aucune modification suivie, non suivis du propriétaire intacts |
+| Q-04-034 | maquette Lot 3 authentique | `sha256sum references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` ; même empreinte pour la copie du dossier de conception servie en lecture seule | PASS — `c103df9e…c06c213`, 93 625 octets |
+| Q-04-035 | typage strict | `npm run check` | PASS |
+| Q-04-036 | lint | `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Q-04-037 | tests frontend | `vitest run` | **PASS 279 / 279** (25 fichiers) — [`evidence/P04A_UX_frontend_20261020.log`](evidence/P04A_UX_frontend_20261020.log) |
+| Q-04-038 | build | `npm run build` (sortie `apps/desktop/dist`, ignorée par Git) | PASS (avertissement connu de taille de bloc) |
+| Q-04-039 | banc et composants ± absents du bundle | recherche de `BANC DE D`, `optical-bench`, `RX-FICTIF`, `MES-FICTIF`, `Fictif-`, `InMemoryOpticalGateway`, `banc-04a`, `OpticalModule`, `/optique`, `optical-stepper`, `OpticalStepContext`, `Diminuer `, `pas de démonstration` | PASS — aucune occurrence ; « Dossier optique » seul présent (O-04-24) — [`evidence/P04A_UX_bundle_20261020.log`](evidence/P04A_UX_bundle_20261020.log) |
+| Q-04-040 | application réelle inchangée | `src/optical/realAppIsolation.test.tsx` | PASS — 4 tests (inclus dans Q-04-037) |
+| Q-04-041 | test intermittent « erreurs techniques bornées » (O-04-27) | 4 exécutions isolées sur `26e515f` (2 échecs), puis 4 après correction du délai d'attente | PASS — 4 / 4 après correction |
+| Q-04-042 | aucun SQL, migration, base, route ou permission optique | `git diff --stat` : `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/`, `docs/`, `prompts/`, `README.md` seulement ; aucune commande `psql` / `dotnet` | PASS |
+| Q-04-043 | tests .NET et PostgreSQL réel | — | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+| Q-04-044 | interface Tauri native | — | **NOT_TESTED** (banc hors application, O-04-16) |
+
+### Tests de la refonte (banc, jsdom, garde réseau active)
+
+| ID | Exigence du mandat (§ 8) | Test | Statut |
+|---|---|---|---|
+| Q-04-170 | 1, 5, 9 — chaque champ ± de OD et OG (− à gauche, + à droite), mise à jour immédiate, annonce, yeux indépendants ; Axe / Base / Acuité sans ± | `OpticalBench.test.tsx` « chaque champ ± de OD et OG… » | PASS |
+| Q-04-171 | 2, 3, 4 — valeurs positives, négatives, nulles, absentes ; alternance clavier / clics ; valeur hors pas conservée, aucun arrondi ; aucune transposition ; axe non normalisé | « valeurs positives, négatives, nulles et absentes… » | PASS |
+| Q-04-172 | valeur non numérique jamais modifiée, boutons inactifs, aide | « valeur non numérique… » | PASS |
+| Q-04-173 | 7 — réinitialisation explicite d'un champ | « réinitialisation explicite d'un champ… » | PASS |
+| Q-04-174 | 8 — Tab / Maj+Tab sur les seuls champs, ↑ / ↓, Alt+↓ (liste de bases), saisie libre de la base | « clavier : Tab / Maj+Tab… » | PASS |
+| Q-04-175 | 6 — conservation : garde de sortie après un clic, valeurs enregistrées telles qu'affichées | « conservation : un clic ± rend le formulaire modifié… » | PASS |
+| Q-04-176 | pas paramétrable ; mesure magasin : mêmes composants, provenance propre, jamais une prescription | « pas de démonstration paramétrable… » | PASS |
+| Q-04-177 | calcul ± (vide, signes, hors pas, séparateur, pas paramétrable, non numérique) | `src/optical/opticalStep.test.ts` (7) | PASS |
+| Q-04-178 | captures 2 types × 2 thèmes × 1920×1080 / 1024×700 × 100 / 125 / 150 % + états ± ; comparaison avec la maquette | `e2e/bench-04a/plan-lot3.mjs` + `shoot.mjs` (Edge sans interface) ; maquette rendue en lecture seule | PASS (navigateur) — 34 captures, 0 erreur console, 0 défilement horizontal ; planches `P04A_UX_compare_*`, `P04A_UX_avant_apres_*` — [`evidence/P04A_UX_captures_rapport_20261020.json`](evidence/P04A_UX_captures_rapport_20261020.json) ; natif NOT_TESTED |
+| Q-04-179 | 10 — absence de régression des autres écrans optiques | suites `OpticalBench.test.tsx` (16 parcours d'origine) et `inMemoryOpticalGateway.test.ts` ; plan de captures d'origine `plan.mjs` rejoué | PASS — 54 captures, 0 erreur, 0 défilement horizontal — [`evidence/P04A_UX_regression_captures_rapport_20261020.json`](evidence/P04A_UX_regression_captures_rapport_20261020.json) |
+
+### Statut des tests prévus de l'interface — mise à jour du 20/10/2026
+
+| ID | Statut au 20/10/2026 | Preuve |
+|---|---|---|
+| Q-04-153 | PASS partiel (banc, jsdom) : Tab / Maj+Tab sur les champs de la grille, ↑ / ↓, Alt+↓, focus conservé lors d'un clic ± ; ordre exact après D-04-03 / D-04-06 | Q-04-174 ; capture `P04A_UX_navigateur_apres-etat34-focus-stepper` |
+| Q-04-154 | PASS (navigateur) : OD sur OG selon la largeur du formulaire (< 940 px : 1024 px × 125 / 150 %), aucun défilement horizontal | Q-04-178 |
+| Q-04-155 | **NOT_TESTED** (natif) ; navigateur : 2 thèmes × 1920×1080 / 1024×700 × 100 / 125 / 150 % | Q-04-178 |
+| Q-04-158 | PASS (banc), **amendé par D-04-15** : saisie au clavier restituée à l'identique, aucune borne, aucun champ désactivé, aucune normalisation ; un pas de **démonstration** paramétrable n'existe que pour les boutons ± et ↑ / ↓, sans arrondi ni alignement | Q-04-171, Q-04-177 |
+| Q-04-160 | PASS | Q-04-037 |

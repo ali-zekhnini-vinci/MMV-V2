@@ -1,11 +1,13 @@
 // PROTOTYPE 04-A — formulaire « Ordonnance médicale » (états 10–11, 14, 16–17, 23–24, 26, 32–35) et « Mesure magasin »
 // (GAP-04-02), un seul gabarit, provenance PROPRE à chaque type (D-04-01). Le type est choisi AVANT la saisie et ne
-// change jamais. Aucune règle locale : champs facultatifs à l'écran ; seules les erreurs renvoyées par le service
+// change jamais. Mise en page de la maquette Lot 3 (D-04-15 APPROVED) : en-tête avec Annuler / Enregistrer, carte
+// « Informations générales » avec le client concerné, cartes OD / OG côte à côte avec boutons ±, carte Notes.
+// Aucune règle locale : champs facultatifs à l'écran ; seules les erreurs renvoyées par le service
 // s'affichent sous les champs (aria-describedby) ; critère de confirmation décidé par le service (422 affiché tel quel).
 // Version lue à l'ouverture figée (409 sans écrasement, saisie conservée, GAP-04-09). Garde de sortie et Ctrl+S
 // comme ClientFormView.
-import { AlertTriangle, ArrowLeft, ClipboardCheck, Command, FileText, Info, LogOut, RefreshCw, Ruler, Save, Shield } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
+import { AlertTriangle, ArrowLeft, Check, ClipboardCheck, Command, Glasses, Info, NotebookPen, Paperclip, RefreshCw, Ruler, Shield, User, X } from "lucide-react";
+import { type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
 import type { ApiError } from "../api/client.ts";
@@ -23,6 +25,7 @@ import { emptyContent, type OpticalKind, type OpticalRecord, type RecordContent 
 import { ConfirmTranscriptionDialog } from "./OpticalDialogs.tsx";
 import { KIND_LABEL, LIST_PENDING_NOTE, MEDIA_LABEL, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
 import { useConfirmDraft, useCreateRecord, useMeasurers, useOpticalGateway, useSaveDraft } from "./opticalQueries.ts";
+import { OpticalStepContext, stepLabel } from "./opticalStep.ts";
 import { describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
 
 type OpticalRecordFormProps =
@@ -53,6 +56,9 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const [record, setRecord] = useState<OpticalRecord | null>(props.mode === "draft" ? props.record : null);
   const draft = record?.openDraft ?? null;
   const clientLabel = props.mode === "create" ? props.client.label : `${props.record.client.displayName} · ${props.record.client.reference}`;
+  const [clientName, clientReference = ""] = props.mode === "create" ? props.client.label.split(" · ") : [props.record.client.displayName, props.record.client.reference];
+  const step = useContext(OpticalStepContext);
+  const formId = useId();
   const initial: RecordContent = draft?.content ?? emptyContent(kind);
 
   const {
@@ -201,23 +207,20 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const linked = kind === "prescription" ? (linkedWatch ?? []) : [];
 
   return (
-    <section className="clients-view" aria-labelledby="optical-form-title">
-      <div>
-        <Button variant="tertiary" size="sm" className="clients-back" onClick={leave}>
-          <ArrowLeft size={16} aria-hidden="true" />
-          {props.launch ? `Retour — ${props.launch.returnLabel}` : "Retour"}
-        </Button>
-      </div>
-      <header className="clients-head">
+    <section className="clients-view optical-formpage" aria-labelledby="optical-form-title">
+      <header className="clients-head optical-formhead">
         <div>
           <div className="optical-title-line">
             <h1 id="optical-form-title" className="clients-head__title">
               {title}
             </h1>
             <KindBadge kind={kind} />
+            <span className="clients-badge optical-kbd" aria-hidden="true">
+              <Command size={12} /> Ctrl + S
+            </span>
           </div>
           <p className="clients-head__sub">
-            Client : {clientLabel} · rattaché à un client existant
+            {kind === "prescription" ? "Rattachée à un client existant" : "Rattachée à un client existant · mesure réalisée au magasin, distincte d'une ordonnance"}
             {record && <> · {record.reference}</>}
           </p>
           {draft?.baseRevisionNo && draft.reasonCode && (
@@ -227,8 +230,19 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
             </p>
           )}
         </div>
-        <div className="clients-head__kbd" aria-hidden="true">
-          <Command size={14} /> Ctrl + S
+        <div className="clients-actions clients-actions--wrap">
+          <Button onClick={leave} disabled={saving}>
+            <X size={16} aria-hidden="true" />
+            Annuler
+          </Button>
+          <Button onClick={() => void onConfirmRequest()} disabled={saving}>
+            <ClipboardCheck size={16} aria-hidden="true" />
+            Enregistrer et confirmer…
+          </Button>
+          <Button variant="primary" type="submit" form={formId} disabled={saving}>
+            <Check size={16} aria-hidden="true" />
+            {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
+          </Button>
         </div>
       </header>
 
@@ -260,8 +274,9 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
       )}
 
       <form
+        id={formId}
         ref={formRef}
-        className="clients-card optical-form"
+        className="optical-form"
         onSubmit={(event) => {
           event.preventDefault();
           void onSaveDraft();
@@ -269,20 +284,46 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         noValidate
       >
         <fieldset className="optical-form__body" disabled={saving}>
-          <FormSection icon={kind === "prescription" ? <FileText size={18} /> : <Ruler size={18} />} title="Informations générales" refs={kind === "prescription" ? "D-04-03.a" : "D-04-03.b"}>
+          <FormSection card icon={<User size={16} />} title="Informations générales" refs={kind === "prescription" ? "D-04-03.a" : "D-04-03.b"}>
+            <div className="optical-client" role="group" aria-label="Client concerné">
+              <span className="optical-client__avatar" aria-hidden="true">
+                {initials(clientName)}
+              </span>
+              <div className="optical-client__main">
+                <div className="optical-client__name">{clientName}</div>
+                <div className="optical-client__sub">
+                  {clientReference && <>{clientReference} · </>}
+                  {kind === "prescription" ? "Client de l'ordonnance" : "Client mesuré"}
+                </div>
+              </div>
+              <Button variant="tertiary" size="sm" onClick={leave}>
+                <ArrowLeft size={14} aria-hidden="true" />
+                {props.launch?.returnTo.startsWith("/clients/") ? "Fiche client" : props.launch ? `Retour — ${props.launch.returnLabel}` : "Retour"}
+              </Button>
+            </div>
             {kind === "prescription" ? (
-              <PrescriptionProvenanceFields register={register} control={control} errors={fieldErrors} />
+              <PrescriptionProvenanceFields register={register} control={control} errors={fieldErrors} reference={record?.reference} />
             ) : (
-              <MeasurementProvenanceFields register={register} control={control} errors={fieldErrors} measurers={measurers.data ?? []} />
+              <MeasurementProvenanceFields register={register} control={control} errors={fieldErrors} measurers={measurers.data ?? []} reference={record?.reference} />
             )}
           </FormSection>
 
-          <FormSection icon={<Info size={18} />} title="Correction optique" refs="D-04-06" note="Saisie conservée telle quelle : aucune borne, aucun pas, aucune conversion, aucun champ dépendant (règles en attente d'avis opticien).">
-            <EyeGrid kind={kind} register={register} errors={fieldErrors} />
+          <FormSection
+            icon={<Glasses size={16} />}
+            title="Correction optique"
+            refs="D-04-06"
+            aside={
+              <>
+                <Info size={14} aria-hidden="true" />
+                Boutons ± : pas de démonstration {stepLabel(step)} (paramétrable, D-04-06 ouverte) · ↑ / ↓ au clavier · saisie libre conservée telle quelle
+              </>
+            }
+          >
+            <EyeGrid kind={kind} control={control} register={register} errors={fieldErrors} />
           </FormSection>
 
           {kind === "prescription" && record && (
-            <FormSection icon={<FileText size={18} />} title="Pièces liées à cette révision" refs="D-04-10">
+            <FormSection card icon={<Paperclip size={16} />} title="Pièces liées à cette révision" refs="D-04-10">
               {!access.canReadDocuments ? (
                 <p className="clients-muted">{record.documentCount} pièce(s) — accès non autorisé.</p>
               ) : documents.length === 0 ? (
@@ -314,26 +355,10 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
             </FormSection>
           )}
 
-          <FormSection icon={<Info size={18} />} title="Notes">
+          <FormSection card icon={<NotebookPen size={16} />} title="Notes">
             <NotesField register={register} error={fieldErrors.notes} />
           </FormSection>
         </fieldset>
-
-        <div className="optical-form__actions">
-          <Button onClick={leave} disabled={saving}>
-            <LogOut size={16} aria-hidden="true" />
-            Annuler
-          </Button>
-          <span className="clients-toolbar__spacer" />
-          <Button onClick={() => void onConfirmRequest()} disabled={saving}>
-            <ClipboardCheck size={16} aria-hidden="true" />
-            Enregistrer et confirmer…
-          </Button>
-          <Button variant="primary" type="submit" disabled={saving}>
-            <Save size={16} aria-hidden="true" />
-            {saving ? "Enregistrement…" : "Enregistrer le brouillon"}
-          </Button>
-        </div>
       </form>
 
       <ConfirmTranscriptionDialog
@@ -377,18 +402,45 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   );
 }
 
-function FormSection({ icon, title, refs, note, children }: { icon: ReactNode; title: string; refs?: string; note?: string; children: ReactNode }) {
+/** Section de la maquette : titre à pastille d'icône (30 px, accent atténué), dans une carte ou à nu (Correction optique). */
+function FormSection({ icon, title, refs, aside, card = false, children }: { icon: ReactNode; title: string; refs?: string; aside?: ReactNode; card?: boolean; children: ReactNode }) {
   const id = useId();
   return (
-    <section className="optical-form__section" aria-labelledby={id}>
-      <h2 className="clients-form__section" id={id}>
-        <span aria-hidden="true">{icon}</span>
-        {title}
+    <section className={cn("optical-form__section", card && "optical-form__card")} aria-labelledby={id}>
+      <div className="optical-form__title">
+        <span className="optical-form__icon" aria-hidden="true">
+          {icon}
+        </span>
+        <h2 id={id}>{title}</h2>
         {refs && <ProposedTag refs={refs} />}
-      </h2>
-      {note && <p className="clients-field__hint">{note}</p>}
+        {aside && <p className="optical-form__aside">{aside}</p>}
+      </div>
       {children}
     </section>
+  );
+}
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0])
+    .join("")
+    .toLocaleUpperCase("fr");
+
+/** Référence en lecture seule (maquette : « Attribuée à l'enregistrement »). */
+function ReferenceField({ reference }: { reference?: string }) {
+  const id = useId();
+  return (
+    <div className="clients-field">
+      <span className="clients-field__label" id={id}>
+        Référence
+      </span>
+      <div className="clients-input optical-readonly" role="group" aria-labelledby={id}>
+        {reference ?? "Attribuée à l'enregistrement"}
+      </div>
+    </div>
   );
 }
 
@@ -494,10 +546,14 @@ function PendingListField({ label, name, register }: { label: string; name: stri
   );
 }
 
-function PrescriptionProvenanceFields({ register, control, errors }: FieldProps) {
+// Grille de la maquette (genInfo) : trois colonnes, Date · Prescripteur · Référence en première ligne. Aucun champ
+// marqué obligatoire (la maquette marquait la date ; D-04-03.a non ratifiée).
+function PrescriptionProvenanceFields({ register, control, errors, reference }: FieldProps & { reference?: string }) {
   return (
-    <div className="clients-form__grid">
+    <div className="optical-geninfo">
+      <DateField label="Date de prescription" name="provenance.prescribedOn" control={control} error={errors["provenance.prescribedOn"]} hint="Date portée sur le document. Aucune validité n'est calculée." />
       <TextField label="Prescripteur — nom (tel que sur le document)" name="provenance.prescriberName" register={register} error={errors["provenance.prescriberName"]} />
+      <ReferenceField reference={reference} />
       <PendingListField label="Prescripteur — qualité" name="provenance.prescriberQualification" register={register} />
       <TextField
         label="Prescripteur — identifiant professionnel"
@@ -506,18 +562,16 @@ function PrescriptionProvenanceFields({ register, control, errors }: FieldProps)
         error={errors["provenance.prescriberIdentifier"]}
         hint="Tel qu'il figure sur le document ; aucun contrôle de format ni de registre."
       />
-      <span />
-      <DateField label="Date de prescription" name="provenance.prescribedOn" control={control} error={errors["provenance.prescribedOn"]} hint="Date portée sur le document. Aucune validité n'est calculée." />
       <DateField label="Date de réception au magasin" name="provenance.receivedOn" control={control} error={errors["provenance.receivedOn"]} hint="Distincte de la date de prescription (facultative)." />
     </div>
   );
 }
 
-function MeasurementProvenanceFields({ register, control, errors, measurers }: FieldProps & { measurers: readonly { id: string; displayName: string }[] }) {
+function MeasurementProvenanceFields({ register, control, errors, measurers, reference }: FieldProps & { measurers: readonly { id: string; displayName: string }[]; reference?: string }) {
   const id = useId();
   const error = errors["provenance.measuredByUserId"];
   return (
-    <div className="clients-form__grid">
+    <div className="optical-geninfo">
       <DateField label="Date de la mesure" name="provenance.measuredOn" control={control} error={errors["provenance.measuredOn"]} />
       <div className="clients-field">
         <label className="clients-field__label" htmlFor={id}>
@@ -542,7 +596,12 @@ function MeasurementProvenanceFields({ register, control, errors, measurers }: F
           </span>
         )}
       </div>
+      <ReferenceField reference={reference} />
       <PendingListField label="Catégorie de mesure" name="provenance.category" register={register} />
+      <p className="optical-geninfo__note">
+        <Ruler size={14} aria-hidden="true" />
+        Mesure réalisée au magasin par un collaborateur : ce n&apos;est pas une prescription délivrée par un médecin (D-04-01).
+      </p>
     </div>
   );
 }

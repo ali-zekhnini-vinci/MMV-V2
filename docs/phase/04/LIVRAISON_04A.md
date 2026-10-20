@@ -1,6 +1,8 @@
 # 04-A — Livraison : interfaces du dossier optique (prototype sur banc isolé)
 
-**Statut (19/10/2026) : `PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) — **G04-A APPROVED — UI ONLY**, **O-04-16 APPROVED**. D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (aucune n'est tranchée par ce lot). Branche locale `feat/phase-04-00-cadrage` ; commits locaux seulement (aucun push, PR ni merge).
+**Statut (20/10/2026, refonte UX Lot 3) : `PHASE04_A_UX_LOT3_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md) — **D-04-15 APPROVED** (référence UX officielle des formulaires optiques : maquette Claude Design Lot 3, contrôles rapides ± et saisie clavier complémentaire). Formulaires « Ordonnance médicale » et « Mesure magasin » refondus selon la maquette, toujours **uniquement** dans le banc isolé ; D-04-02 à D-04-14 restent `PROPOSED` (le pas des boutons est un paramètre de démonstration, D-04-06 ouverte). Détail : **§ 11**.
+
+*Historique —* **Statut (19/10/2026) : `PHASE04_A_UI_READY — OWNER_VISUAL_REVIEW_REQUIRED`.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) — **G04-A APPROVED — UI ONLY**, **O-04-16 APPROVED**. D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (aucune n'est tranchée par ce lot). Branche locale `feat/phase-04-00-cadrage` ; commits locaux seulement (aucun push, PR ni merge).
 
 ## 1. Préflight
 
@@ -46,6 +48,7 @@
 ## 5. Ce que le prototype montre — et ne décide pas
 
 - **Deux types distincts** partout (badge sur chaque ligne, détail, formulaire ; sections séparées ; provenance propre : prescripteur et dates de prescription / réception pour l'ordonnance ; date, collaborateur, catégorie pour la mesure) ; aucune conversion, le double refuse un contenu d'un autre type.
+- *Amendement 20/10/2026 (D-04-15) : la grille est désormais présentée selon la maquette (cartes OD / OG, boutons ±) ; les garanties ci-dessous restent vraies pour la saisie au clavier ; seul un clic ± (ou ↑ / ↓) produit une valeur, avec un pas de démonstration paramétrable — voir § 11.*
 - **Grille OD / OG neutre** : valeurs conservées à l'identique (signe, virgule ou point, décimales, `0` et `180`), aucun pas (flèches sans effet), aucune borne, aucun champ désactivé ni requis, unités affichées à côté ; vide = « non renseigné », jamais `0,00` ; état par œil explicite (proposition D-04-02.c) ; seules des erreurs de **forme** (nombre attendu, longueur) renvoyées par le double.
 - **Cycle E-02 (PROPOSED)** : brouillon → confirmation (critère décidé par le service : refus `422 incomplete` affiché tel quel, la règle de démonstration du double reprend les recommandations D-04-02.b / D-04-03, jamais codée dans le poste) → rectification motivée en brouillon, **la dernière révision confirmée reste affichée** ; un seul brouillon (`409 draft_exists`) ; numéro attribué à la confirmation ; abandon conservé ; invalidation motivée (brouillon abandonné dans la même opération), jamais de suppression.
 - **Pièces (E-01, E-03, E-05 — PROPOSED)** : stockées une fois, citées par révision ; pièce invalidée barrée et libellée, avertissement avant transmission ; « Afficher la pièce » = action explicite, annoncée « contenu transmis au poste — cela n'atteste pas qu'une personne l'a vu » ; refus 413 / 415 / doublon ; sans `optical.documents.read` : nombre seulement.
@@ -104,3 +107,113 @@ Ne bloquent pas 04-B : la validation visuelle des 50 états (O-04-25), le socle 
 - Constat O-04-26 : un test existant de la Phase 03 (O-03-43) a échoué une fois sous charge (délai d'attente par défaut de Testing Library) puis passé à chaque rejeu ; aucun lien établi avec 04-A (la fiche réelle est rendue sans `opticalTab`) — à surveiller.
 - Dans le banc, une panne simulée affiche le message technique générique du poste (« Serveur MMV injoignable… ») : c'est le message que verrait l'application réelle, la panne reste simulée.
 - Défaut trouvé et corrigé pendant les tests : au changement de profil simulé, la première lecture partait encore avec les droits de l'ancien profil (noms de pièces visibles un instant pour un profil sans `optical.documents.read`) ; la référence du profil est désormais mise à jour avant le rendu ; test de régression ajouté.
+
+## 11. Refonte UX selon la maquette Lot 3 — 20/10/2026 (D-04-15 APPROVED)
+
+Le propriétaire a testé le banc : structure fonctionnelle satisfaisante, **ergonomie des formulaires de saisie non validée**. Décision **D-04-15 — APPROVED (propriétaire, 20/10/2026)** : la maquette HTML Claude Design du Lot 3 est la référence visuelle et ergonomique des formulaires optiques, avec contrôles rapides ± et saisie au clavier complémentaire. D-04-15 est une décision d'**interface** : elle n'approuve ni pas, ni bornes, ni format, ni règle croisée — **D-04-06 reste `PROPOSED` [AVIS OPTICIEN]**. Identifiant vérifié libre avant inscription (D-04-01 à D-04-14 déjà utilisés, aucun D-04-15 antérieur).
+
+### 11.1 Préflight et référence
+
+| Contrôle | Résultat |
+|---|---|
+| HEAD au départ | `26e515f` sur `feat/phase-04-00-cadrage` ; aucune modification suivie ; non suivis du propriétaire intacts |
+| maquette | `references/phase04/lot3/MMV-Lot3-Ordonnances.dc.html` : SHA-256 `c103df9e434245cdcba5b6246c5ec3032301e323c6ec1797826deaf8fd06c213`, 93 625 octets = registre ([`SOURCE_MAP.md`](SOURCE_MAP.md)) ; code de rendu analysé (`stepField`, `axisField`, `baseField`, `avField`, `eyeCardForm`, `genInfo`, `formPage`, `reducedWindow`, `tabOrderScreen`, `fieldStateScreen`) |
+| rendu de la maquette | servie en **lecture seule** depuis le dossier de conception du propriétaire `Downloads/MMV initialisation projet V1/` (même empreinte, `support.js` et `_ds/` présents), serveur local 127.0.0.1:1530, Edge sans interface ; 6 cadres capturés (`newClientLight`, `newClientDark`, `tabOrder`, `focusField`, `formErrors`, `reducedWindow`) ; rien n'est copié dans le dépôt hors captures |
+| ancien MMV, PostgreSQL, bases | **non consultés** ; aucune règle de l'ancien validateur reprise (§ 11.4) |
+
+### 11.2 Composants créés ou modifiés (prototype, banc isolé)
+
+| Fichier | Changement |
+|---|---|
+| `apps/desktop/src/optical/opticalStep.ts` *(nouveau)* | logique pure des boutons ± : `stepValue(valeur, ±1, pas)` (calcul décimal exact en entiers), `isSteppable`, `stepLabel`, `DEMO_STEP = 0.25`, contexte `OpticalStepContext` (pas **paramétrable**), `STEPPER_FIELDS` (Sphère, Cylindre, Addition, Prisme) |
+| `apps/desktop/src/optical/EyeGrid.tsx` | grille de la maquette, partagée par les deux types : carte par œil (pastille 40 px, « Œil droit » / « Oculus dexter »), rangées libellé 118 px + contrôle ; composant de saisie ± `StepperInput` (− à gauche, valeur éditable au centre, + à droite, « Effacer »), `TextInput` (Axe avec suffixe « degrés », Acuité), `BaseInput` (saisie libre + liste **proposée**), annonce `aria-live` ; `EyeTable` (lecture seule) inchangé |
+| `apps/desktop/src/optical/OpticalRecordForm.tsx` | mise en page de la maquette (`formPage`) : en-tête (titre, badge de type, « Ctrl + S », sous-titre, actions Annuler / Enregistrer et confirmer… / Enregistrer le brouillon, collé en haut si la hauteur ≥ 720 px) ; carte « Informations générales » avec le **client concerné** (avatar, nom, référence, retour « Fiche client ») et grille 3 colonnes (Date · Prescripteur · Référence en lecture seule) ; section « Correction optique » ; cartes « Pièces liées » et « Notes ». Provenance **propre à chaque type** inchangée (D-04-01) ; mesure magasin : mention « ce n'est pas une prescription délivrée par un médecin » |
+| `apps/desktop/src/optical/Optical.css` | cotes de la maquette (`.card`, `.clictx`, `.eyes`, `.eye-h`, `.eye-tag`, `.orow`, `.stepper`, `.stepbtn`, `.stepval`, `.oinp`) en jetons MMV (clair / sombre) ; requêtes de conteneur : OD au-dessus d'OG sous 940 px de formulaire, grille générale 3 → 2 → 1 colonnes, libellé au-dessus du contrôle dans une carte de moins de 400 px |
+| `apps/desktop/src/optical/opticalLabels.ts` | `BASE_SUGGESTIONS` (Nasal, Temporal, Supérieur, Inférieur — libellés de la maquette, **liste non approuvée**) |
+| `apps/desktop/src/bench/OpticalBench.tsx`, `main.tsx` | commande « Pas des boutons ± (démonstration) » (0,125 / 0,25 / 0,5) et paramètre d'URL `step` |
+| `apps/desktop/e2e/bench-04a/plan-lot3.mjs` *(nouveau)* | plan de captures de la refonte (matrice et états ±), exécuté par `shoot.mjs` |
+| tests | `src/optical/opticalStep.test.ts` *(nouveau, 7)* ; `src/bench/OpticalBench.test.tsx` (+7 parcours ±, 3 tests adaptés au nouvel en-tête / à la grille, attente allongée d'un test intermittent, O-04-27) |
+
+Aucune dépendance ajoutée ; aucun fichier hors `apps/desktop/src/optical/`, `apps/desktop/src/bench/`, `apps/desktop/e2e/bench-04a/`, `docs/`, `prompts/`, `README.md` modifié. Application réelle inchangée (aucun import de `optical/` ni de `bench/` ; test d'isolement et recherche dans le bundle).
+
+### 11.3 Comportement retenu des boutons ± (prototype, réversible)
+
+| Cas | Comportement | Test |
+|---|---|---|
+| pas | **0,25 par défaut (démonstration)**, paramétrable (contexte `OpticalStepContext`, commande du banc, `?step=`) ; aucune valeur approuvée (D-04-06) | Q-04-176 |
+| champ vide + clic | nouvelle saisie **explicite** partant de 0 : `+` → `+0,25`, `−` → `-0,25` ; le vide reste affiché « — », jamais « 0,00 » | Q-04-171 |
+| valeur numérique + clic | calcul décimal exact : **aucun arrondi, aucun alignement sur le pas** (`-2,13` + 0,25 = `-1,88`) ; décimales = max(saisie, pas) ; séparateur `,` / `.` et signe `−` typographique conservés ; signe `+` explicite sur un résultat positif, `0,00` sans signe | Q-04-171, `opticalStep.test.ts` |
+| valeur saisie au clavier | **jamais modifiée** sans clic ni flèche (aucune normalisation à la sortie du champ) ; la saisie au clavier reprend la main à tout moment | Q-04-171, Q-04-158 |
+| valeur non numérique (« abc ») | boutons inactifs (`aria-disabled`), valeur inchangée, aide sous le champ | Q-04-172 |
+| bornes, transposition, axe | aucune borne ; aucune conversion de signe du cylindre (`+0,75` − 4 × 0,25 = `-0,25` par simple calcul) ; Axe, Base, Acuité : **aucun pas**, axe non normalisé (`0` reste `0`) | Q-04-171 |
+| effacer | bouton « Effacer » (×) par champ → non renseigné ; au clavier : effacer le texte | Q-04-173 |
+| clavier | Tab / Maj+Tab parcourent les **seuls champs** (Sphère → Acuité, OD puis OG ; boutons ±, « Effacer » et liste des bases hors de l'ordre) ; ↑ / ↓ dans un champ ± = ± pas, le focus reste ; Alt+↓ ouvre la liste des bases ; Ctrl+S inchangé | Q-04-174 |
+| information affichée | mise à jour immédiate, annonce polie « Sphère OD : +0,75 » ; noms accessibles « Augmenter Sphère OD de 0,25 » | Q-04-170 |
+| conservation | un clic rend le formulaire « modifié » (garde de sortie) ; valeurs enregistrées telles qu'affichées | Q-04-175 |
+| yeux | OD et OG indépendants | Q-04-170 |
+
+### 11.4 Écarts avec la maquette et justification
+
+| Élément de la maquette | Traitement | Raison |
+|---|---|---|
+| Shell (barre latérale 260 px, barre supérieure, barre d'état) | non repris dans le banc | le banc a son propre cadre (bannière permanente, commandes) ; l'application réelle n'affiche aucun écran optique (O-04-16) ; intégration au Shell à l'activation 04-C (O-04-28) |
+| titre « Nouvelle ordonnance », action « Enregistrer l'ordonnance » | « Nouvelle ordonnance médicale » / « Nouvelle mesure magasin » + badge de type ; « Annuler », « Enregistrer et confirmer… », « Enregistrer le brouillon » | D-04-01 (deux types) ; cycle brouillon / confirmation du prototype (E-02, proposé) |
+| « Date d'émission * » | « Date de prescription », **sans** astérisque | aucune obligation inventée (D-04-03.a proposée) |
+| « Médecin prescripteur » (+ « Facultatif ») | nom, qualité, identifiant du prescripteur, date de réception | cadrage D-04-03.a ; rien n'est obligatoire, la mention « Facultatif » devient inutile |
+| écran « mesure » | absent de la maquette : même gabarit, provenance propre (date, collaborateur, catégorie), mention « pas une prescription » | D-04-01 |
+| valeur du stepper (affichage seul) | champ **éditable** + bouton « Effacer » | exigences du propriétaire (saisie clavier, effacement) |
+| repère « 0,00 » d'un champ vide ; « 0–180 » (Axe) ; « 10/10 » (Acuité) ; « Choisir… » (Base) | « — » | une absence n'est pas un zéro ; aucune borne ni aucun format imposés (D-04-06) |
+| note « Pas de 0,25 dpt · signe + explicite » | « Boutons ± : pas de démonstration 0,25 (paramétrable, D-04-06 ouverte) · ↑ / ↓ au clavier · saisie libre conservée telle quelle » | le pas n'est pas une règle ; le signe `+` n'est produit que par un clic |
+| Axe désactivé / requis selon le cylindre ; Base désactivée / requise selon le prisme ; messages correspondants ; normalisation 0° → 180° (états 25, 36) | **non repris** | règles croisées de l'ancien validateur (C-04-01, C-04-06) ; D-04-06 ouverte ; seules des erreurs de **forme** renvoyées par le service s'affichent |
+| Base = liste fermée (Nasal / Temporal / Supérieur / Inférieur) | saisie libre + liste **proposée** (chevron ou Alt+↓) | notation et choix définitifs à fixer (D-04-06) |
+| — | rangée « État de l'œil » **ajoutée** en tête de chaque carte | D-04-02.c (proposée, déjà présente en 04-A) |
+| — | étiquettes « Prototype · D-04-xx PROPOSED » **ajoutées** | aucune fonction fictive présentée comme opérationnelle |
+| — | carte « Pièces liées à cette révision » **ajoutée** (brouillon d'ordonnance) | D-04-10 (proposée, déjà présente en 04-A) |
+| fenêtre réduite : OD au-dessus d'OG à ≈ 900 px de fenêtre | empilement selon la **largeur réelle du formulaire** (< 940 px) | dans le banc à 1024 px, les commandes passent au-dessus et le formulaire garde ≈ 960 px : OD / OG restent côte à côte et lisibles ; empilés à 1024 px × 125 / 150 % ; aucun défilement horizontal |
+| « Créer une vente », « Supprimer » | non repris (inchangé) | C-04-02, C-04-03 |
+
+### 11.5 Qualité et preuves (20/10/2026)
+
+| Contrôle | Statut |
+|---|---|
+| typage `npm run check` | PASS |
+| lint `eslint .` | PASS — 0 erreur, 1 avertissement connu (O-03-02) |
+| Vitest (toutes suites) | **PASS 279 / 279** (25 fichiers ; 265 précédents + 14 nouveaux) — [`evidence/P04A_UX_frontend_20261020.log`](evidence/P04A_UX_frontend_20261020.log) |
+| build `npm run build` | PASS (avertissement connu de taille de bloc) ; banc et composants ± absents du bundle — [`evidence/P04A_UX_bundle_20261020.log`](evidence/P04A_UX_bundle_20261020.log) |
+| non-intégration en production | PASS — `realAppIsolation.test.tsx` (4) + recherche dans le bundle (seul « Dossier optique », O-04-24) |
+| captures de la refonte (navigateur) | PASS — **34 captures** : 2 types × 2 thèmes × 1920×1080 / 1024×700 × zooms 100 / 125 / 150 %, + états ± ; 0 erreur console, 0 défilement horizontal — [`evidence/P04A_UX_captures_rapport_20261020.json`](evidence/P04A_UX_captures_rapport_20261020.json) |
+| non-régression visuelle 04-A | PASS — plan d'origine rejoué (**54 captures**, 0 erreur, 0 défilement horizontal) — [`evidence/P04A_UX_regression_captures_rapport_20261020.json`](evidence/P04A_UX_regression_captures_rapport_20261020.json) |
+| interface Tauri native | **NOT_TESTED** (banc hors application, O-04-16) |
+| tests .NET, PostgreSQL | **NOT_RERUN** (aucun fichier .NET, SQL ni configuration serveur modifié) |
+
+Rejeu après le dernier changement de code : voir [`QA_MATRIX.md`](QA_MATRIX.md), section « 04-A — refonte UX Lot 3 ».
+
+### 11.6 Captures comparatives
+
+Planches côte à côte (gauche : maquette rendue ; droite : banc) dans [`evidence/`](evidence/) :
+
+| Planche | Objet |
+|---|---|
+| `P04A_UX_compare_01_ordonnance_clair.jpg`, `P04A_UX_compare_02_ordonnance_sombre.jpg` | hiérarchie, en-tête, carte « Informations générales », cartes OD / OG (1920×1080) |
+| `P04A_UX_compare_03_correction_optique.jpg` | OD / OG renseignés : maquette (état 33) ↔ saisie par boutons ± |
+| `P04A_UX_compare_04_mesure_clair.jpg`, `P04A_UX_compare_05_mesure_sombre.jpg` | mesure magasin (gabarit de la maquette ; aucun écran mesure dans le Lot 3) |
+| `P04A_UX_compare_06_fenetre_reduite.jpg` | fenêtre réduite (maquette ≈ 900 px ↔ banc 1024×700) |
+| `P04A_UX_compare_07_focus.jpg`, `P04A_UX_compare_08_erreurs.jpg` | focus visible ; erreurs (maquette : règles de l'ancien validateur ↔ banc : erreur de forme seulement) |
+| `P04A_UX_avant_apres_01_ordonnance.jpg` à `P04A_UX_avant_apres_04_1024.jpg` | avant (04-A du 19/10/2026) ↔ après |
+
+Captures brutes : `P04A_UX_navigateur_apres-*.jpg` (34), `P04A_UX_navigateur_avant-*.jpg` (9), `P04A_UX_maquette_lot3_*.jpg` (6). Les cadres de la maquette montrent ses propres identités de démonstration (conception du propriétaire) ; le banc n'utilise que des identités `Fictif-…`.
+
+### 11.7 Lancement du banc
+
+1. `cd apps/desktop && node e2e/bench-04a/serve.mjs` (port 1520, cache hors dépôt ; ne pas utiliser `npx vite --port …`, O-04-21).
+2. Ouvrir **http://127.0.0.1:1520/optical-bench.html** → scénario « Fiche FICTIF-… → Dossier optique » → « Ajouter… » → type ; ou directement `?route=/clients/cli-fictif-3`, onglet « Dossier optique ».
+3. Paramètres : `theme=dark`, `step=0.125` (pas de démonstration), `profile=…`, `latency=800` ; commande latérale « Pas des boutons ± (démonstration) ».
+4. Captures : `node e2e/bench-04a/plan-lot3.mjs plan.json apres && node e2e/bench-04a/shoot.mjs plan.json <sortie> <profil-edge-jetable>`.
+
+### 11.8 Points encore dépendants d'une validation métier
+
+1. **D-04-06 [AVIS OPTICIEN]** — pas réel par grandeur (0,25 partout ? prisme ?), bornes, format d'affichage (signe `+` explicite, deux décimales), axe (bornes, 0 ou 180), règles Cylindre ⇄ Axe et Prisme ⇄ Base (désactivation, obligation), notation de la base (libellés de la maquette, BI / BO / BU / BD, degrés, une ou deux composantes), format de l'acuité.
+2. **D-04-02.c** — l'état de l'œil doit-il passer à « Renseigné » lorsqu'une valeur est saisie ? Aucun couplage automatique dans le prototype (O-04-29).
+3. **D-04-03.a / b** — date de prescription obligatoire (astérisque de la maquette) ; listes fermées des qualités du prescripteur et des catégories de mesure.
+4. Ordre de Tab exact (état 33) après D-04-03 / D-04-06.
+5. Validation visuelle de la refonte par le propriétaire (`OWNER_VISUAL_REVIEW_REQUIRED`).

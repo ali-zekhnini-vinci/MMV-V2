@@ -1,5 +1,7 @@
 # 04-A — Couverture des états (36 du Lot 3 + 12 complémentaires 04-00 + 2 issus des études)
 
+*Amendement 20/10/2026 : refonte UX des formulaires selon la maquette Lot 3 (D-04-15 APPROVED) — voir la dernière section ; les tableaux ci-dessous sont conservés tels qu'au 19/10/2026.*
+
 **Date : 19/10/2026.** Mandat : [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md) (G04-A APPROVED — UI ONLY). Prototype exécuté **uniquement dans le banc isolé** `apps/desktop/optical-bench.html` (O-04-16 APPROVED), sur données fictives, droits simulés, sans serveur ni base. Correspondance d'origine : [`STATE_MAP_36.md`](STATE_MAP_36.md) ; composition des états complémentaires : [`PREPARATION_04A.md`](PREPARATION_04A.md) § 4 ; rapport : [`LIVRAISON_04A.md`](LIVRAISON_04A.md).
 
 ## Légende
@@ -82,3 +84,23 @@
 | EN ATTENTE d'avis métier | 4 — états 16, 17, 21 (mécanique seule), 36 (non implémenté) | — | 4 |
 
 **50 états tracés : 24 RÉALISÉ, 20 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 4 EN ATTENTE.** Aucun état n'est `APPROVED` : validation visuelle du propriétaire requise ; les comportements de cycle de vie, de révision, de pièces et de droits reposent sur des décisions `PROPOSED`. **Rien de clinique n'est codé** : bornes, pas, dépendances OD / OG, normalisation d'axe, base du prisme, critère de complétude, listes de qualités et de catégories restent ouverts (D-04-06 [AVIS OPTICIEN]). La couverture n'est pas artificiellement portée à 100 % : les quatre états EN ATTENTE le restent jusqu'à l'examen métier.
+
+## Amendement daté — 20/10/2026 (refonte UX Lot 3, D-04-15 APPROVED)
+
+Mandat : [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md). Les formulaires « Ordonnance médicale » et « Mesure magasin » reprennent la mise en page de la maquette (en-tête avec actions, carte « Informations générales » avec le client concerné, cartes OD / OG côte à côte, boutons ±) ; détail et écarts : [`LIVRAISON_04A.md`](LIVRAISON_04A.md) § 11. **Aucune catégorie ne change** : la refonte est visuelle et ergonomique ; les règles cliniques restent ouvertes (D-04-06). Captures : `docs/phase/04/evidence/P04A_UX_navigateur_apres-<nom>.jpg` ; comparaisons : `P04A_UX_compare_*.jpg`.
+
+| # / Réf. | État | Traitement (inchangé) | Ce qui change le 20/10/2026 | Capture | Test |
+|---|---|---|---|---|---|
+| 10 | newClientLight | ADAPTÉ | gabarit `formPage` de la maquette ; client concerné dans la carte (`.clictx`), grille 3 colonnes, référence en lecture seule ; date **sans** astérisque | `apres-ordonnance-1920x1080-z100-clair`, `P04A_UX_compare_01_…` | J-04-01 |
+| 11 | newClientDark | RÉALISÉ | idem, thème sombre | `apres-ordonnance-1920x1080-z100-sombre`, `P04A_UX_compare_02_…` | — |
+| 14 | saving | RÉALISÉ | actions déplacées dans l'en-tête (verrouillées pendant l'enregistrement) | `P04A_navigateur_39-…` (plan d'origine, rejoué) | — |
+| 17 | formErrors | EN ATTENTE (D-04-06) | bandeau inchangé ; erreur sous le champ ± (bordure d'erreur de la valeur) ; aucune règle croisée de la maquette | `apres-etat35-erreur-sous-champ`, `P04A_UX_compare_08_…` | Q-04-170 à Q-04-176 |
+| 25 | axisNormalized | ADAPTÉ (`REPLACE`) | inchangé : axe sans pas ni normalisation, suffixe « degrés » de la maquette | `apres-ordonnance-saisie-rapide-*` | Q-04-171 |
+| 32 | reducedWindow | RÉALISÉ | empilement OD / OG selon la largeur du formulaire (< 940 px) ; grille générale 3 → 2 → 1 colonnes | `apres-*-1024x700-*`, `P04A_UX_compare_06_…` | Q-04-178 |
+| 33 | tabOrder | ADAPTÉ partiel / EN ATTENTE | ordre de la maquette dans chaque carte (Sphère → Acuité), OD puis OG ; boutons ± hors de l'ordre de Tab ; ↑ / ↓ et Alt+↓ | `apres-etat34-focus-stepper` | Q-04-174 |
+| 34 | focusField | RÉALISÉ | anneau de focus de la maquette sur la valeur ± (`--shadow-focus`) | `apres-etat34-focus-stepper`, `P04A_UX_compare_07_…` | — |
+| 35 | fieldError | RÉALISÉ | message sous le contrôle de la rangée, `aria-describedby` | `apres-etat35-erreur-sous-champ` | ordre de Tab / erreurs |
+| 36 | disabledFields | EN ATTENTE — **non implémenté** | toujours aucun champ désactivé (Axe / Base de la maquette non repris) | — | Q-04-170 |
+| GAP-04-02 | formulaire mesure magasin | RÉALISÉ (PROTO) | même gabarit et mêmes composants OD / OG que l'ordonnance, provenance propre, mention « pas une prescription délivrée par un médecin » | `apres-mesure-*`, `P04A_UX_compare_04_…`, `…_05_…` | Q-04-176 |
+
+**Synthèse inchangée : 50 états tracés — 24 RÉALISÉ, 20 ADAPTÉ, 1 AUTRE COMPOSANT, 1 ADAPTÉ partiel, 4 EN ATTENTE.** Statut visuel : `COMPOSED — OWNER_VISUAL_VALIDATION_REQUIRED` (refonte à valider par le propriétaire).

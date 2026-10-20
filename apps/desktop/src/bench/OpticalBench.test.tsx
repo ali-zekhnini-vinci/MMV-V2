@@ -18,12 +18,12 @@ afterEach(() => {
   network = null;
 });
 
-async function openBench(route: string, profileId = "all") {
+async function openBench(route: string, profileId = "all", step?: number) {
   window.innerWidth = 1440;
   const clients = createBenchClients();
   network = installBenchNetwork(() => clients);
   const user = userEvent.setup();
-  render(<OpticalBench clients={clients} network={network} initialRoute={route} profileId={profileId} />);
+  render(<OpticalBench clients={clients} network={network} initialRoute={route} profileId={profileId} step={step} />);
   await screen.findByRole("note", { name: "Banc de démonstration" });
   return { user, network };
 }
@@ -33,6 +33,13 @@ const tab = (name: string) => screen.getByRole("tab", { name });
 async function openRecord(user: ReturnType<typeof userEvent.setup>, reference: string) {
   await user.click(await screen.findByRole("button", { name: new RegExp(`^${reference}`) }));
   return screen.findByRole("heading", { level: 1, name: new RegExp(reference) });
+}
+
+/** Client concerné affiché dans la carte « Informations générales » du formulaire (maquette Lot 3, .clictx). */
+function assertFormClient(name: string, reference: string) {
+  const group = screen.getByRole("group", { name: "Client concerné" });
+  within(group).getByText(name);
+  within(group).getByText(new RegExp(reference));
 }
 
 function assertNoNetwork() {
@@ -73,7 +80,7 @@ describe("J-04-01 — depuis la fiche client", () => {
     await user.click(screen.getByRole("button", { name: "Ajouter…" }));
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: /^Ordonnance médicale/ }));
     await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
-    screen.getByText(/Client : FICTIF-CHARLIE Noa · CLI-FICTIF-003/);
+    assertFormClient("FICTIF-CHARLIE Noa", "CLI-FICTIF-003");
     await user.type(screen.getByLabelText("Sphère OD"), "+1,25");
     await user.type(screen.getByLabelText("Axe OD"), "0");
     await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
@@ -141,7 +148,7 @@ describe("J-04-02 — depuis la liste globale", () => {
     assert.equal(within(listbox).queryByText("FICTIF-DELTA Alix"), null, "client archivé exclu");
     await user.click(within(listbox).getByText("FICTIF-ALPHA Camille"));
     await screen.findByRole("heading", { level: 1, name: "Nouvelle mesure magasin" });
-    screen.getByText(/Client : FICTIF-ALPHA Camille · CLI-FICTIF-001/);
+    assertFormClient("FICTIF-ALPHA Camille", "CLI-FICTIF-001");
     screen.getByLabelText("Collaborateur ayant mesuré");
     assert.equal(screen.queryByLabelText("Prescripteur — nom (tel que sur le document)"), null, "aucun prescripteur sur une mesure magasin");
     assert.ok(network.served.length > 0);
@@ -150,14 +157,15 @@ describe("J-04-02 — depuis la liste globale", () => {
 });
 
 describe("grille OD / OG neutre (Q-04-158)", () => {
-  test("saisie conservée, flèches sans effet, aucun champ désactivé ni requis, absence ≠ 0", async () => {
+  test("saisie au clavier conservée telle quelle, aucun champ désactivé ni requis, absence ≠ 0", async () => {
     const { user } = await openBench("/clients/cli-fictif-3");
     await user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
     await user.click(await screen.findByRole("button", { name: "Transcrire une ordonnance médicale" }));
     await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
     const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
-    await user.type(sphere, "-0.5{ArrowUp}{ArrowUp}");
-    assert.equal(sphere.value, "-0.5", "aucun pas au clavier, aucune normalisation");
+    await user.type(sphere, "-0.5");
+    await user.tab();
+    assert.equal(sphere.value, "-0.5", "aucune normalisation, aucun pas imposé à la saisie au clavier");
     const grid = [...document.querySelectorAll<HTMLElement>("fieldset.optical-eye")];
     assert.equal(grid.length, 2);
     for (const input of grid.flatMap((group) => within(group).getAllByRole("textbox"))) {
@@ -185,6 +193,180 @@ describe("grille OD / OG neutre (Q-04-158)", () => {
     assert.ok((screen.getByLabelText("Sphère OD").getAttribute("aria-describedby") ?? "").includes(message.id));
     assert.equal((screen.getByLabelText("Sphère OD") as HTMLInputElement).value, "abc", "saisie conservée");
     assert.equal(document.activeElement, screen.getByLabelText("Sphère OD"), "focus sur le premier champ en erreur");
+    assertNoNetwork();
+  });
+});
+
+// D-04-15 (APPROVED) : maquette Lot 3, contrôles rapides ± ; le pas reste un paramètre de démonstration (D-04-06).
+describe("contrôles rapides ± (D-04-15, Q-04-170 à Q-04-176)", () => {
+  type User = ReturnType<typeof userEvent.setup>;
+  const value = (label: string) => (screen.getByLabelText(label) as HTMLInputElement).value;
+  const press = async (user: User, name: string, times = 1) => {
+    for (let index = 0; index < times; index += 1) await user.click(screen.getByRole("button", { name }));
+  };
+  async function openForm(chooser = "Transcrire une ordonnance médicale", step?: number) {
+    const opened = await openBench("/clients/cli-fictif-3", "all", step);
+    await opened.user.click(await screen.findByRole("tab", { name: "Dossier optique" }));
+    await opened.user.click(await screen.findByRole("button", { name: chooser }));
+    await screen.findByRole("heading", { level: 1, name: /^Nouvelle/ });
+    return opened;
+  }
+
+  test("chaque champ ± de OD et OG : − à gauche, valeur, + à droite ; mise à jour immédiate et annoncée ; yeux indépendants", async () => {
+    const { user } = await openForm();
+    for (const side of ["OD", "OG"]) {
+      for (const field of ["Sphère", "Cylindre", "Addition", "Prisme"]) {
+        const input = screen.getByLabelText(`${field} ${side}`);
+        const row = input.closest(".optical-stepper") as HTMLElement;
+        const buttons = within(row).getAllByRole("button", { hidden: true }).filter((button) => /^(Diminuer|Augmenter)/.test(button.getAttribute("aria-label") ?? ""));
+        assert.deepEqual(
+          buttons.map((button) => button.getAttribute("aria-label")),
+          [`Diminuer ${field} ${side} de 0,25`, `Augmenter ${field} ${side} de 0,25`],
+          "− avant la valeur, + après",
+        );
+        assert.equal(buttons[0].textContent, "−0,25");
+        assert.equal(buttons[1].textContent, "+0,25");
+      }
+    }
+    await press(user, "Augmenter Sphère OD de 0,25", 3);
+    assert.equal(value("Sphère OD"), "+0,75");
+    await screen.findByText("Sphère OD : +0,75");
+    assert.equal(value("Sphère OG"), "", "OG inchangé");
+    await press(user, "Diminuer Cylindre OG de 0,25", 2);
+    assert.equal(value("Cylindre OG"), "-0,50");
+    assert.equal(value("Cylindre OD"), "", "OD inchangé");
+    await press(user, "Augmenter Addition OD de 0,25", 7);
+    await press(user, "Augmenter Prisme OG de 0,25", 4);
+    assert.equal(value("Addition OD"), "+1,75");
+    assert.equal(value("Prisme OG"), "+1,00");
+    assert.equal(value("Addition OG"), "");
+    assert.equal(value("Prisme OD"), "");
+    // Axe, Base et Acuité : aucun pas imposé (pas de boutons ±).
+    for (const label of ["Axe OD", "Base OD", "Acuité visuelle OD"]) {
+      const input = screen.getByLabelText(label);
+      assert.equal(input.closest(".optical-stepper"), null, `${label} sans boutons ±`);
+    }
+    assertNoNetwork();
+  });
+
+  test("valeurs positives, négatives, nulles et absentes ; alternance clavier / clics sans arrondi ni alignement sur le pas", async () => {
+    const { user } = await openForm();
+    const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
+    assert.equal(sphere.value, "", "absent : vide, jamais 0");
+    assert.equal(sphere.placeholder, "—");
+    await press(user, "Diminuer Sphère OD de 0,25");
+    assert.equal(sphere.value, "-0,25", "clic depuis le vide = nouvelle saisie explicite");
+    await press(user, "Augmenter Sphère OD de 0,25");
+    assert.equal(sphere.value, "0,00", "zéro explicite, distinct de l'absence");
+
+    await user.clear(sphere);
+    await user.type(sphere, "-2,13");
+    await user.tab();
+    assert.equal(sphere.value, "-2,13", "valeur manuelle hors pas conservée");
+    await press(user, "Augmenter Sphère OD de 0,25");
+    assert.equal(sphere.value, "-1,88", "aucun arrondi au pas de démonstration");
+    await user.type(sphere, "5");
+    assert.equal(sphere.value, "-1,885", "la saisie au clavier reprend la main");
+    await press(user, "Diminuer Sphère OD de 0,25");
+    assert.equal(sphere.value, "-2,135");
+
+    const cylinder = screen.getByLabelText("Cylindre OD") as HTMLInputElement;
+    await user.type(cylinder, "+0,75");
+    await press(user, "Diminuer Cylindre OD de 0,25", 4);
+    assert.equal(cylinder.value, "-0,25", "aucune transposition : le signe suit le calcul, rien n'est converti");
+
+    const axis = screen.getByLabelText("Axe OD") as HTMLInputElement;
+    await user.type(axis, "0");
+    await user.tab();
+    assert.equal(axis.value, "0", "axe non normalisé");
+    assertNoNetwork();
+  });
+
+  test("valeur non numérique : boutons ± inactifs, valeur jamais modifiée, aide sous le champ", async () => {
+    const { user } = await openForm();
+    const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
+    await user.type(sphere, "abc");
+    const plus = screen.getByRole("button", { name: "Augmenter Sphère OD de 0,25" });
+    assert.equal(plus.getAttribute("aria-disabled"), "true");
+    await user.click(plus);
+    assert.equal(sphere.value, "abc");
+    const hint = screen.getByText(/Valeur non numérique conservée telle quelle/);
+    assert.ok((sphere.getAttribute("aria-describedby") ?? "").includes(hint.id));
+    assertNoNetwork();
+  });
+
+  test("réinitialisation explicite d'un champ : « Effacer » remet le champ à non renseigné", async () => {
+    const { user } = await openForm();
+    await press(user, "Augmenter Prisme OD de 0,25", 2);
+    assert.equal(value("Prisme OD"), "+0,50");
+    await user.click(screen.getByRole("button", { name: "Effacer Prisme OD" }));
+    assert.equal(value("Prisme OD"), "");
+    assert.equal(screen.queryByRole("button", { name: "Effacer Prisme OD" }), null);
+    await user.type(screen.getByLabelText("Axe OG"), "90");
+    await user.click(screen.getByRole("button", { name: "Effacer Axe OG" }));
+    assert.equal(value("Axe OG"), "");
+    assertNoNetwork();
+  });
+
+  test("clavier : Tab / Maj+Tab sur les seuls champs (boutons ± hors de l'ordre), ↑ / ↓ = ± pas, Alt+↓ ouvre la liste de bases proposées", async () => {
+    const { user } = await openForm();
+    const order = ["Sphère OD", "Cylindre OD", "Axe OD", "Addition OD", "Prisme OD", "Base OD", "Acuité visuelle OD"];
+    screen.getByLabelText(order[0]).focus();
+    for (const label of order.slice(1)) {
+      await user.tab();
+      assert.equal(document.activeElement, screen.getByLabelText(label), `Tab → ${label}`);
+    }
+    await user.tab();
+    assert.match(document.activeElement?.closest("fieldset")?.textContent ?? "", /Œil gauche/, "après OD : OG");
+    for (const label of [...order].reverse()) {
+      await user.tab({ shift: true });
+      assert.equal(document.activeElement, screen.getByLabelText(label), `Maj+Tab → ${label}`);
+    }
+
+    const sphere = screen.getByLabelText("Sphère OD") as HTMLInputElement;
+    sphere.focus();
+    await user.keyboard("{ArrowUp}{ArrowUp}{ArrowDown}");
+    assert.equal(sphere.value, "+0,25");
+    assert.equal(document.activeElement, sphere, "le focus reste sur le champ");
+
+    const base = screen.getByLabelText("Base OD") as HTMLInputElement;
+    base.focus();
+    await user.keyboard("{Alt>}{ArrowDown}{/Alt}");
+    const menu = await screen.findByRole("menu");
+    await user.click(within(menu).getByRole("menuitem", { name: "Nasal" }));
+    assert.equal(base.value, "Nasal");
+    await user.clear(base);
+    await user.type(base, "BN (telle que sur la source)");
+    assert.equal(base.value, "BN (telle que sur la source)", "saisie libre conservée");
+    assertNoNetwork();
+  });
+
+  test("conservation : un clic ± rend le formulaire modifié (garde de sortie) ; valeurs enregistrées telles qu'affichées", async () => {
+    const { user } = await openForm();
+    await press(user, "Diminuer Sphère OD de 0,25", 9);
+    await user.type(screen.getByLabelText("Sphère OG"), "-2,13");
+    await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Quitter sans enregistrer ?" });
+    await user.click(within(dialog).getByRole("button", { name: "Continuer la saisie" }));
+    assert.equal(value("Sphère OD"), "-2,25");
+    assert.equal(value("Sphère OG"), "-2,13");
+    await user.click(screen.getByRole("button", { name: "Enregistrer le brouillon" }));
+    await screen.findByRole("heading", { level: 1, name: /Ordonnance médicale RX-FICTIF-/ });
+    const table = screen.getByRole("table", { name: /Correction optique/ });
+    within(table).getByText("-2,25");
+    within(table).getByText("-2,13");
+    assertNoNetwork();
+  });
+
+  test("pas de démonstration paramétrable (banc) ; mesure magasin : mêmes contrôles, provenance propre, jamais une prescription", async () => {
+    const { user } = await openForm("Saisir une mesure magasin", 0.125);
+    await screen.findByRole("heading", { level: 1, name: "Nouvelle mesure magasin" });
+    await press(user, "Augmenter Sphère OD de 0,125", 3);
+    assert.equal(value("Sphère OD"), "+0,375");
+    screen.getByText(/ce n.est pas une prescription délivrée par un médecin/);
+    assert.equal(screen.queryByLabelText("Prescripteur — nom (tel que sur le document)"), null);
+    screen.getByLabelText("Collaborateur ayant mesuré");
+    assertFormClient("FICTIF-CHARLIE Noa", "CLI-FICTIF-003");
     assertNoNetwork();
   });
 });
@@ -323,7 +505,8 @@ describe("erreurs techniques bornées (états 9, 31)", () => {
     const { user } = await openBench("/");
     await user.click(screen.getByRole("button", { name: "Échec de la prochaine liste" }));
     await user.click(screen.getByRole("button", { name: "Dossiers optiques" }));
-    await screen.findByRole("heading", { name: "Impossible de charger les dossiers optiques" });
+    // Échec réseau réessayé une fois après 1 s (shouldRetry) : l'attente par défaut de 1 s rendait le test aléatoire (O-04-27).
+    await screen.findByRole("heading", { name: "Impossible de charger les dossiers optiques" }, { timeout: 4000 });
     await user.click(screen.getByRole("button", { name: "Réessayer" }));
     await screen.findByRole("table", { name: /Dossiers optiques/ });
 
