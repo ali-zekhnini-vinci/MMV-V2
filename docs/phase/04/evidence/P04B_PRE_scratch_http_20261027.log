@@ -1,0 +1,53 @@
+# P04B PRE-ESSAI (27/10/2026) — HORS BASES DU PROPRIETAIRE : cluster PostgreSQL 18.6 jetable (initdb agent, localhost:55433, base fictive mmv_scratch, supprime en fin de session)
+# API : .agent-artifacts/bin/MMV.Api/debug/MMV.Api.dll, ASPNETCORE_ENVIRONMENT=Scratch (aucun user-secret charge), https://localhost:7567
+# Harnais : docs/phase/04/evidence/P04B_PRE_opticalhttp_harness.cs.txt (dotnet run fichier unique), donnees fictives
+# CE N'EST PAS une preuve d'application sur mmv_v2_dev / mmv_v2_test (G04-SQL non franchie).
+
+## Sortie du harnais (3e execution, apres verrou d'en-tete FOR UPDATE)
+PASS create+confirm 201 201
+PASS revision 1 confirmed 
+PASS value kept exactly (U+2212, comma, 3 decimals) 
+PASS axis 0 kept as entered (no 0->180) 
+PASS OG stays null (never 0) 
+PASS Cache-Control no-store 
+PASS replay same request 200 same id 200
+PASS concurrent duplicate create -> one record 200,201
+PASS sphere zero only -> 422 incomplete 
+PASS cylinder without axis -> 422 axis_required 
+PASS prescription acuity only -> 422 
+PASS measurement acuity only -> 201 201
+PASS rectification 201 201
+PASS unchanged draft -> same version 200
+PASS two stations confirm same version -> one 200 + one 409 200,409
+PASS revision 2 confirmed, revision 1 intact 
+PASS history hidden without audit.read 
+PASS history with audit.read+optical.read 
+PASS audit.read only: no optical events 
+PASS audit.read+optical.read: optical events 
+PASS optical audit has no secret 
+PASS system.admin alone -> 403 
+PASS audit.read without optical.read -> 403 
+PASS read-only cannot write -> 403 
+PASS archived client: write -> 409 client_archived 
+PASS archived client: invalidation allowed 200
+PASS invalidated excluded by default, listed on demand 
+TOTAL 27/27 PASS ; suffixe 4a3b69 ; client 01a17db1-56fe-7040-83b9-b83e8e736563
+
+## Journal de l'API pendant l'execution (analyse)
+lignes : 38
+lignes 'fail:' : 0
+occurrences de valeurs/noms/notes fictifs secrets (SECRET, 2,125, 2,50, 2,25, NOTE-SECRETE) : 0
+journaux metier optiques (identifiants remplaces par <id>) :
+      1       Dossier optique measurement created : <id> par <id>
+      1       Dossier optique prescription confirmed : <id> par <id>
+      2       Dossier optique prescription created : <id> par <id>
+      1       Dossier optique prescription draft_saved : <id> par <id>
+      1       Dossier optique prescription invalidated : <id> par <id>
+      1       Dossier optique prescription rectification_started : <id> par <id>
+      1       Dossier optique prescription refusé (client_archived) : <id> par <id>
+      1       Dossier optique prescription refusé (version_conflict) : <id> par <id>
+      2       Dossier optique prescription replayed : <id> par <id>
+
+## Executions precedentes (historique, non effacees)
+- execution 1 : 27/27 PASS ; journal API : 2 lignes 'fail:' (second poste detecte par le declencheur 42501 d'une revision deja confirmee, mappe en 409) -> correction : verrou FOR UPDATE de l'en-tete et reverification de version avant ecriture (OpticalRecordStore)
+- execution 2 : 26/27 (rectification 500 : lecture de xmin en Int64 non supportee) -> correction : xmin::text::bigint

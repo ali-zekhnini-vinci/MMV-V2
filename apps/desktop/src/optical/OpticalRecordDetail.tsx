@@ -20,7 +20,7 @@ import { canWriteKind, useOpticalAccess } from "./opticalAccess.ts";
 import { KindBadge, OpticalStatusBadge, ProposedTag } from "./OpticalBadges.tsx";
 import { displayStatus, type OpticalActor, type OpticalRecord, type OpticalRevision } from "./opticalContract.ts";
 import { ConfirmTranscriptionDialog, InvalidateDialog, RectifyDialog } from "./OpticalDialogs.tsx";
-import { eventLabel, formatDateTime, INVALIDATION_REASON_LABEL, KIND_LABEL, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
+import { eventLabel, formatDateTime, INVALIDATION_REASON_LABEL, KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
 import { useConfirmDraft, useDiscardRectification, useInvalidateRecord, useMeasurers, useStartRectification } from "./opticalQueries.ts";
 import { revisionLabel } from "./opticalRevisions.ts";
 import { RevisionsPanel } from "./RevisionsPanel.tsx";
@@ -52,7 +52,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
 
   const fail = (error: ApiError) => {
     const view = describeOpticalFailure(error);
-    setFailure({ ...view, fields: Object.entries(error.fieldErrors ?? {}).map(([path, codes]) => [path, fieldErrorMessage(codes[0])]) });
+    setFailure({ ...view, fields: Object.entries(error.fieldErrors ?? {}).map(([path, codes]) => [path, fieldErrorMessage(codes[0], path)]) });
   };
   const goBack = () => {
     if (launch?.returnTo.startsWith("/clients/")) navigate(launch.returnTo, { state: returnToCardState() });
@@ -86,7 +86,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
           navigate(opticalDraftPath(saved.kind, saved.id), { state: launch ?? undefined });
         },
         onError: (error) => {
-          if (error.error.kind === "validation") return setDialogError(fieldErrorMessage(error.error.fieldErrors?.comment?.[0] ?? "required"));
+          if (error.error.kind === "validation") return setDialogError(fieldErrorMessage(error.error.fieldErrors?.comment?.[0] ?? "required", "comment"));
           setDialog(null);
           fail(error.error);
         },
@@ -119,7 +119,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
           notify("Enregistrement invalidé", `${title} est conservé et signalé « Invalidé ». Il n'apparaît plus par défaut dans les listes.`);
         },
         onError: (error) => {
-          if (error.error.kind === "validation") return setDialogError(fieldErrorMessage(error.error.fieldErrors?.comment?.[0] ?? "required"));
+          if (error.error.kind === "validation") return setDialogError(fieldErrorMessage(error.error.fieldErrors?.comment?.[0] ?? "required", "comment"));
           setDialog(null);
           fail(error.error);
         },
@@ -290,8 +290,22 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
           <p className="client-info__notes">{shown.content.notes || <span className="clients-muted">Aucune note.</span>}</p>
         </section>
 
-        <RevisionsPanel key={`${record.id}-${record.version}`} record={record} measurers={measurers.data ?? []} />
-        <EventsPanel record={record} />
+        {record.historyAvailable ? (
+          <>
+            <RevisionsPanel key={`${record.id}-${record.version}`} record={record} measurers={measurers.data ?? []} />
+            <EventsPanel record={record} />
+          </>
+        ) : (
+          <section className="clients-card" aria-labelledby="optical-history-title">
+            <h2 className="clients-card__title" id="optical-history-title">
+              Historique des modifications
+            </h2>
+            <p className="clients-field__hint" role="note">
+              L&apos;historique (révisions antérieures, auteurs, motifs) exige le droit de consultation de l&apos;historique en plus de
+              l&apos;accès au dossier optique. Seules la dernière révision confirmée et la modification en cours sont affichées.
+            </p>
+          </section>
+        )}
       </div>
 
       <ConfirmTranscriptionDialog
@@ -377,7 +391,7 @@ function ProvenanceList({ revision, measurers }: { revision: OpticalRevision; me
         <dt>Prescripteur</dt>
         <dd>{p.prescriberName || missing}</dd>
         <dt>Qualité</dt>
-        <dd>{UNSPECIFIED_LABEL}</dd>
+        <dd>{p.prescriberQualification || missing}</dd>
         <dt>Identifiant professionnel</dt>
         <dd>{p.prescriberIdentifier || missing}</dd>
         <dt>Date de prescription</dt>
@@ -399,7 +413,7 @@ function ProvenanceList({ revision, measurers }: { revision: OpticalRevision; me
       <dt>Collaborateur ayant mesuré</dt>
       <dd>{measurers.find((actor) => actor.id === p.measuredByUserId)?.displayName || missing}</dd>
       <dt>Catégorie</dt>
-      <dd>{UNSPECIFIED_LABEL}</dd>
+      <dd>{p.category || missing}</dd>
       <dt>Saisie</dt>
       <dd>
         {formatDateTime(revision.startedAtUtc)} par {revision.startedBy.displayName}
@@ -414,7 +428,7 @@ function EventsPanel({ record }: { record: OpticalRecord }) {
       <h2 className="clients-card__title" id="optical-events-title">
         Journal de gestion <ProposedTag refs="D-04-12" />
       </h2>
-      <p className="clients-field__hint">Libellés prototypes servis par le double ; aucune valeur optique.</p>
+      <p className="clients-field__hint">Actions enregistrées par le serveur ; aucune valeur optique.</p>
       <ol className="optical-events">
         {[...record.events].reverse().map((event) => (
           <li key={event.id}>

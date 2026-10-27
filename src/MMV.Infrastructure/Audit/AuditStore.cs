@@ -62,6 +62,12 @@ internal sealed class AuditStore(MmvDbContext context) : IAuditStore
             events = events.Where(e => e.Module == module);
         }
 
+        if (query.ExcludedModules.Count > 0)
+        {
+            var excluded = query.ExcludedModules.ToList();
+            events = events.Where(e => !excluded.Contains(e.Module));
+        }
+
         if (query.FromUtc is { } from)
         {
             events = events.Where(e => e.OccurredAtUtc >= from);

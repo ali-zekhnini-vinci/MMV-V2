@@ -87,7 +87,13 @@ export function describeOpticalFailure(error: ApiError): FailureView {
     case "not_rectification":
       return { tone: "warning", title: "Aucun brouillon ouvert", text: "Il n'y a plus de brouillon à modifier sur cet enregistrement.", reload: true };
     case "incomplete":
-      return { tone: "warning", title: "Confirmation refusée", text: "Le double de test a refusé la confirmation (règle de démonstration du banc, pas une validation médicale). Le brouillon est conservé." };
+      return {
+        tone: "warning",
+        title: "Confirmation refusée",
+        text: "Le service a refusé la confirmation : la saisie est incomplète (critères produit, sous réserve de validation par un opticien). Le brouillon est conservé, inchangé.",
+      };
+    case "request_id_reused":
+      return { tone: "error", title: "Demande refusée", text: "Cette demande a déjà servi pour un autre enregistrement. Rien n'a été enregistré ; réessayez." };
     default:
       break;
   }
@@ -104,40 +110,44 @@ export function describeOpticalFailure(error: ApiError): FailureView {
 }
 
 /**
- * « Enregistrer » en deux temps (D-04-17) : le brouillon A ÉTÉ enregistré, puis la confirmation a échoué. Le message ne
- * dit jamais que rien n'a été enregistré ; la dernière révision confirmée reste inchangée.
+ * Échec de « Enregistrer » (D-04-17), opération ATOMIQUE depuis 04-B : un refus n'a RIEN enregistré (ni brouillon, ni
+ * confirmation ; la dernière révision confirmée éventuelle est inchangée) ; une réponse incertaine (réseau, délai) peut
+ * avoir abouti — la nouvelle tentative reprend la même demande et le serveur ne crée jamais de doublon.
  */
-export function describeConfirmFailure(error: ApiError): FailureView {
-  const saved = "Vos valeurs sont enregistrées en brouillon, non confirmé ; la dernière révision confirmée éventuelle est inchangée.";
+export function describeSaveFailure(error: ApiError): FailureView {
   if (error.code === "incomplete")
     return {
       tone: "warning",
-      title: "Brouillon enregistré — confirmation refusée",
-      text: `${saved} Complétez la saisie puis cliquez de nouveau sur « Enregistrer », ou laissez l'enregistrement en brouillon.`,
+      title: "Confirmation refusée — rien n'a été enregistré",
+      text: "Complétez la saisie selon les messages ci-dessous puis cliquez de nouveau sur « Enregistrer », ou utilisez « Enregistrer comme brouillon ». Votre saisie est conservée à l'écran.",
     };
   if (error.kind === "network" || error.kind === "timeout" || error.kind === "http" || error.kind === "invalid-response")
     return {
       tone: "error",
-      title: "Brouillon enregistré — confirmation non aboutie",
-      text: `${saved} La confirmation n'a pas abouti : ${error.message} Cliquez de nouveau sur « Enregistrer » pour confirmer, ou laissez le brouillon.`,
+      title: "Enregistrement non confirmé",
+      text: `${error.message} Il n'est pas certain que l'enregistrement ait abouti ; votre saisie est conservée. Une nouvelle tentative reprend la même demande sans créer de doublon.`,
     };
-  const reason = describeOpticalFailure(error);
-  return {
-    tone: reason.tone,
-    title: "Brouillon enregistré — confirmation refusée",
-    text: `${saved} Motif : ${reason.title.toLocaleLowerCase("fr")}.${reason.reload ? " Rechargez la version actuelle avant de réessayer." : ""}`,
-    reload: reason.reload,
-  };
+  return describeOpticalFailure(error);
 }
 
+// Codes du service (04-B). Critères de confirmation : orientations produit approuvées, validation professionnelle ouverte.
 const FIELD_ERROR: Record<string, string> = {
   number_expected: "Nombre attendu, tel qu'il figure sur la source (ex. +1,25).",
   too_long: "Valeur trop longue.",
-  optical_values_missing: "Aucune valeur n'est renseignée, ni pour OD ni pour OG (règle de démonstration du banc, pas une validation médicale).",
-  required: "Précisez le motif.",
+  invalid_format: "Format non reconnu.",
+  out_of_range: "Date hors limites.",
+  required: "Information requise pour confirmer.",
+  not_eligible: "Ce compte n'est pas habilité à mesurer.",
+  optical_values_missing: "Aucune valeur n'est renseignée, ni pour OD ni pour OG.",
+  sphere_zero_only: "Une Sphère à 0 seule ne suffit pas : complétez la correction (la valeur 0,00 reste conservée).",
+  acuity_only: "L'acuité seule ne suffit pas pour une ordonnance médicale.",
+  axis_required: "Cylindre non nul : précisez l'axe tel qu'il figure sur la source.",
+  base_required: "Prisme non nul : précisez la base.",
 };
 
-export const fieldErrorMessage = (code: string): string => FIELD_ERROR[code] ?? "Valeur refusée.";
+/** Message d'un code de champ ; le commentaire d'un motif « Autre » a son propre libellé. */
+export const fieldErrorMessage = (code: string, path?: string): string =>
+  path === "comment" && code === "required" ? "Précisez le motif." : (FIELD_ERROR[code] ?? "Valeur refusée.");
 
 /** Libellé lisible d'un chemin de champ renvoyé par le double (`od.sphere`, `provenance.prescribedOn`…). */
 export function fieldPathLabel(path: string): string {
@@ -145,6 +155,10 @@ export function fieldPathLabel(path: string): string {
   if (head === "od" || head === "og") return `${SIDE_SHORT[head]} — ${FIELD_LABEL[tail as keyof typeof FIELD_LABEL] ?? tail}`;
   const labels: Record<string, string> = {
     prescriberName: "Prescripteur — nom",
+    prescriberQualification: "Prescripteur — qualité",
+    receivedOn: "Date de réception",
+    category: "Catégorie de mesure",
+    reasonCode: "Motif",
     prescriberIdentifier: "Prescripteur — identifiant",
     prescribedOn: "Date de prescription",
     measuredOn: "Date de la mesure",

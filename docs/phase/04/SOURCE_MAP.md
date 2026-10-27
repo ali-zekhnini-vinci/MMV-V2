@@ -101,3 +101,17 @@ Maquette Lot 3 non modifiée et non rouverte (D-04-15 inchangée : les cartes OD
 | `apps/desktop/src/components/ui/button.tsx` (lecture seule) | variantes du Design System : `primary` pour « Enregistrer », `tertiary` pour « Enregistrer comme brouillon » |
 
 Maquette Lot 3 non modifiée et non rouverte (l'en-tête « Annuler / Enregistrer » de la maquette est conservé ; seule l'action discrète « Enregistrer comme brouillon » s'y ajoute). Toujours aucune lecture de l'ancien dépôt, aucune connexion PostgreSQL, aucune dépendance ajoutée ; données du banc fictives et synthétiques.
+
+## Complément daté — 27/10/2026 (04-B, GO d'implémentation)
+
+| Source | Usage |
+|---|---|
+| [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md) | mandat officiel d'implémentation 04-B / 04-C (copie du propriétaire, suivie dans Git avec cette livraison) |
+| code 04-A (HEAD `3bb25a6`) : `apps/desktop/src/optical/`, `apps/desktop/src/bench/` | écrans réutilisés sans refonte ; contrat TypeScript étendu (`createAndConfirm`, `saveAndConfirm`, `historyAvailable`, provenance libre) |
+| conventions Phase 03 : `src/MMV.*/Clients/`, `Appointments/`, `Audit/` ; `tests/MMV.PostgreSql.Tests/` | modèles de couches, stores, tests, nettoyage des données validées |
+| [`sql/0006_OpticalModule.idempotent.sql`](sql/0006_OpticalModule.idempotent.sql) | `927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013` |
+| [`sql/0006_OpticalModule.sql`](sql/0006_OpticalModule.sql) | `7c5aba78035c39bf834311cc089c4eabc71e1f69363b685a41c3c9fb78aa221b` |
+| [`sql/0006_MANIFEST.sha256`](sql/0006_MANIFEST.sha256) | empreintes de tous les fichiers du dossier G04-SQL |
+| PostgreSQL 18.6 local (`C:\Program Files\PostgreSQL\18\bin` : `initdb`, `pg_ctl`, `psql`, `pg_dump`) | cluster **jetable** de pré-essai (port 55433, répertoire temporaire de l'agent) — le serveur du propriétaire (5433) et PostgreSQL 17 n'ont pas été touchés |
+
+Toujours aucune lecture de l'ancien dépôt, aucune dépendance ajoutée (ADR-014), maquette Lot 3 non modifiée.

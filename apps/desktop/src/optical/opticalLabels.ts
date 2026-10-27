@@ -75,8 +75,6 @@ export const INVALIDATION_REASON_LABEL: Record<InvalidationReason, string> = {
   other: "Autre (préciser)",
 };
 
-export const UNSPECIFIED_LABEL = "Non précisée";
-export const LIST_PENDING_NOTE = "liste à fournir (avis opticien, D-04-03)";
 
 /** Libellés des événements de gestion (D-04-12 ; aucune valeur optique). */
 const EVENT_LABEL: Record<string, string> = {

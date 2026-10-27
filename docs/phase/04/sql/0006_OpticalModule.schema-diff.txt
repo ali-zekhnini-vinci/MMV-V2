@@ -1,0 +1,724 @@
+# 0006_OpticalModule — diff de schéma (PRÉ-ESSAI hors bases du propriétaire, 27/10/2026)
+# Cluster PostgreSQL 18.6 JETABLE (initdb dans le répertoire temporaire de l'agent, port 55433, supprimé ensuite) ;
+# bases fictives : mmv_scratch_0005 (0001→0005 idempotents) et mmv_scratch_direct (0001→0005 + 0006_OpticalModule.sql).
+# Commande : pg_dump --schema-only --no-owner --no-privileges, lignes \restrict/\unrestrict retirées ; diff unifié.
+# Lignes retirées : 1 (ancienne contrainte ck_user_permissions_permission, recréée avec 4 droits optiques) ;
+# lignes ajoutées : 689. Aucune table, colonne, contrainte ou donnée existante n'est supprimée ni modifiée.
+# Ce document n'est PAS une preuve d'application sur mmv_v2_dev / mmv_v2_test (G04-SQL non franchie).
+
+--- schema après 0005 (pg_dump --schema-only)
++++ schema après 0006 (pg_dump --schema-only)
+@@ -47,2 +47,9 @@
+ --
++-- Name: optical; Type: SCHEMA; Schema: -; Owner: -
++--
++
++CREATE SCHEMA optical;
++
++
++--
+ -- Name: reject_event_mutation(); Type: FUNCTION; Schema: audit; Owner: -
+@@ -57,2 +64,38 @@
+     $$;
++
++
++--
++-- Name: reject_frozen_record_change(); Type: FUNCTION; Schema: optical; Owner: -
++--
++
++CREATE FUNCTION optical.reject_frozen_record_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++BEGIN
++    IF TG_OP = 'UPDATE' THEN
++        IF OLD.invalidated_at_utc IS NULL THEN
++            RETURN NEW;
++        END IF;
++    END IF;
++    RAISE EXCEPTION 'optical : enregistrement invalide fige ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++END;
++$$;
++
++
++--
++-- Name: reject_frozen_revision_change(); Type: FUNCTION; Schema: optical; Owner: -
++--
++
++CREATE FUNCTION optical.reject_frozen_revision_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++BEGIN
++    IF TG_OP = 'UPDATE' THEN
++        IF OLD.status = 'draft' THEN
++            RETURN NEW;
++        END IF;
++    END IF;
++    RAISE EXCEPTION 'optical : revision figee ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++END;
++$$;
+ 
+@@ -166,3 +209,3 @@
+     permission character varying(64) NOT NULL,
+-    CONSTRAINT ck_user_permissions_permission CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying])::text[])))
++    CONSTRAINT ck_user_permissions_permission CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying, 'optical.read'::character varying, 'optical.prescriptions.write'::character varying, 'optical.measurements.write'::character varying, 'optical.invalidate'::character varying])::text[])))
+ );
+@@ -232,2 +275,218 @@
+ --
++-- Name: measurement_reference_seq; Type: SEQUENCE; Schema: optical; Owner: -
++--
++
++CREATE SEQUENCE optical.measurement_reference_seq
++    START WITH 1
++    INCREMENT BY 1
++    NO MINVALUE
++    MAXVALUE 999999999999999999
++    CACHE 1;
++
++
++--
++-- Name: measurement_revisions; Type: TABLE; Schema: optical; Owner: -
++--
++
++CREATE TABLE optical.measurement_revisions (
++    id uuid NOT NULL,
++    measured_on date,
++    measured_by_user_id uuid,
++    category character varying(120),
++    od_addition_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_addition)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_axis_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_axis)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_cylinder_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_cylinder)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_prism_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_prism)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_sphere_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_sphere)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_addition_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_addition)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_axis_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_axis)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_cylinder_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_cylinder)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_prism_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_prism)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_sphere_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_sphere)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    measurement_id uuid NOT NULL,
++    status character varying(16) NOT NULL,
++    revision_no integer,
++    base_revision_no integer,
++    reason_code character varying(32),
++    reason_comment character varying(500),
++    od_sphere character varying(16),
++    od_cylinder character varying(16),
++    od_axis character varying(16),
++    od_addition character varying(16),
++    od_prism character varying(16),
++    od_base character varying(16),
++    od_acuity character varying(16),
++    og_sphere character varying(16),
++    og_cylinder character varying(16),
++    og_axis character varying(16),
++    og_addition character varying(16),
++    og_prism character varying(16),
++    og_base character varying(16),
++    og_acuity character varying(16),
++    notes character varying(2000),
++    started_at_utc timestamp with time zone NOT NULL,
++    started_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    confirmed_at_utc timestamp with time zone,
++    confirmed_by_user_id uuid,
++    discarded_at_utc timestamp with time zone,
++    discarded_by_user_id uuid,
++    CONSTRAINT ck_measurement_revisions_confirmation CHECK (((((status)::text = 'confirmed'::text) = (revision_no IS NOT NULL)) AND ((revision_no IS NULL) = (confirmed_at_utc IS NULL)) AND ((confirmed_at_utc IS NULL) = (confirmed_by_user_id IS NULL)))),
++    CONSTRAINT ck_measurement_revisions_confirmed_provenance CHECK ((((status)::text <> 'confirmed'::text) OR ((measured_on IS NOT NULL) AND (measured_by_user_id IS NOT NULL)))),
++    CONSTRAINT ck_measurement_revisions_dates CHECK (((measured_on IS NULL) OR (measured_on >= '1900-01-01'::date))),
++    CONSTRAINT ck_measurement_revisions_discard CHECK (((((status)::text = 'discarded'::text) = (discarded_at_utc IS NOT NULL)) AND ((discarded_at_utc IS NULL) = (discarded_by_user_id IS NULL)) AND (((status)::text <> 'discarded'::text) OR (base_revision_no IS NOT NULL)))),
++    CONSTRAINT ck_measurement_revisions_numbers CHECK ((((revision_no IS NULL) OR (revision_no >= 1)) AND ((base_revision_no IS NULL) OR (base_revision_no >= 1)) AND ((revision_no IS NULL) OR (base_revision_no IS NULL) OR (revision_no > base_revision_no)))),
++    CONSTRAINT ck_measurement_revisions_od_addition_number CHECK (((od_addition IS NULL) OR ((od_addition)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_od_axis_number CHECK (((od_axis IS NULL) OR ((od_axis)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_od_cylinder_number CHECK (((od_cylinder IS NULL) OR ((od_cylinder)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_od_prism_number CHECK (((od_prism IS NULL) OR ((od_prism)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_od_sphere_number CHECK (((od_sphere IS NULL) OR ((od_sphere)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_og_addition_number CHECK (((og_addition IS NULL) OR ((og_addition)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_og_axis_number CHECK (((og_axis IS NULL) OR ((og_axis)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_og_cylinder_number CHECK (((og_cylinder IS NULL) OR ((og_cylinder)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_og_prism_number CHECK (((og_prism IS NULL) OR ((og_prism)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_og_sphere_number CHECK (((og_sphere IS NULL) OR ((og_sphere)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_measurement_revisions_reason CHECK ((((base_revision_no IS NULL) = (reason_code IS NULL)) AND ((reason_comment IS NULL) OR (reason_code IS NOT NULL)) AND ((reason_code IS NULL) OR ((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)))),
++    CONSTRAINT ck_measurement_revisions_status CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'confirmed'::character varying, 'discarded'::character varying])::text[]))),
++    CONSTRAINT ck_measurement_revisions_updated_after_started CHECK ((updated_at_utc >= started_at_utc))
++);
++
++
++--
++-- Name: measurements; Type: TABLE; Schema: optical; Owner: -
++--
++
++CREATE TABLE optical.measurements (
++    id uuid NOT NULL,
++    reference character varying(24) DEFAULT ('MES-'::text || to_char(nextval('optical.measurement_reference_seq'::regclass), 'FM999999999999000000'::text)) NOT NULL,
++    client_id uuid NOT NULL,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    invalidated_at_utc timestamp with time zone,
++    invalidated_by_user_id uuid,
++    invalidation_reason_code character varying(32),
++    invalidation_comment character varying(500),
++    creation_request_id uuid NOT NULL,
++    last_request_id uuid NOT NULL,
++    CONSTRAINT ck_measurements_invalidated_after_created CHECK (((invalidated_at_utc IS NULL) OR (invalidated_at_utc >= created_at_utc))),
++    CONSTRAINT ck_measurements_invalidation_complete CHECK ((((invalidated_at_utc IS NULL) = (invalidated_by_user_id IS NULL)) AND ((invalidated_at_utc IS NULL) = (invalidation_reason_code IS NULL)) AND ((invalidation_comment IS NULL) OR (invalidated_at_utc IS NOT NULL)))),
++    CONSTRAINT ck_measurements_invalidation_reason_format CHECK (((invalidation_reason_code IS NULL) OR ((invalidation_reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text))),
++    CONSTRAINT ck_measurements_reference_format CHECK (((reference)::text ~ '^MES-[0-9]{6,18}$'::text)),
++    CONSTRAINT ck_measurements_updated_after_created CHECK ((updated_at_utc >= created_at_utc))
++);
++
++
++--
++-- Name: prescription_reference_seq; Type: SEQUENCE; Schema: optical; Owner: -
++--
++
++CREATE SEQUENCE optical.prescription_reference_seq
++    START WITH 1
++    INCREMENT BY 1
++    NO MINVALUE
++    MAXVALUE 999999999999999999
++    CACHE 1;
++
++
++--
++-- Name: prescription_revisions; Type: TABLE; Schema: optical; Owner: -
++--
++
++CREATE TABLE optical.prescription_revisions (
++    id uuid NOT NULL,
++    prescriber_name character varying(120),
++    prescriber_qualification character varying(120),
++    prescriber_identifier character varying(120),
++    prescribed_on date,
++    received_on date,
++    od_addition_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_addition)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_axis_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_axis)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_cylinder_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_cylinder)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_prism_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_prism)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    od_sphere_value numeric GENERATED ALWAYS AS ((replace(replace(replace((od_sphere)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_addition_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_addition)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_axis_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_axis)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_cylinder_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_cylinder)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_prism_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_prism)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    og_sphere_value numeric GENERATED ALWAYS AS ((replace(replace(replace((og_sphere)::text, ','::text, '.'::text), '−'::text, '-'::text), ' '::text, ''::text))::numeric) STORED,
++    prescription_id uuid NOT NULL,
++    status character varying(16) NOT NULL,
++    revision_no integer,
++    base_revision_no integer,
++    reason_code character varying(32),
++    reason_comment character varying(500),
++    od_sphere character varying(16),
++    od_cylinder character varying(16),
++    od_axis character varying(16),
++    od_addition character varying(16),
++    od_prism character varying(16),
++    od_base character varying(16),
++    od_acuity character varying(16),
++    og_sphere character varying(16),
++    og_cylinder character varying(16),
++    og_axis character varying(16),
++    og_addition character varying(16),
++    og_prism character varying(16),
++    og_base character varying(16),
++    og_acuity character varying(16),
++    notes character varying(2000),
++    started_at_utc timestamp with time zone NOT NULL,
++    started_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    confirmed_at_utc timestamp with time zone,
++    confirmed_by_user_id uuid,
++    discarded_at_utc timestamp with time zone,
++    discarded_by_user_id uuid,
++    CONSTRAINT ck_prescription_revisions_confirmation CHECK (((((status)::text = 'confirmed'::text) = (revision_no IS NOT NULL)) AND ((revision_no IS NULL) = (confirmed_at_utc IS NULL)) AND ((confirmed_at_utc IS NULL) = (confirmed_by_user_id IS NULL)))),
++    CONSTRAINT ck_prescription_revisions_confirmed_provenance CHECK ((((status)::text <> 'confirmed'::text) OR ((prescribed_on IS NOT NULL) AND (prescriber_name IS NOT NULL)))),
++    CONSTRAINT ck_prescription_revisions_dates CHECK ((((prescribed_on IS NULL) OR (prescribed_on >= '1900-01-01'::date)) AND ((received_on IS NULL) OR (received_on >= '1900-01-01'::date)))),
++    CONSTRAINT ck_prescription_revisions_discard CHECK (((((status)::text = 'discarded'::text) = (discarded_at_utc IS NOT NULL)) AND ((discarded_at_utc IS NULL) = (discarded_by_user_id IS NULL)) AND (((status)::text <> 'discarded'::text) OR (base_revision_no IS NOT NULL)))),
++    CONSTRAINT ck_prescription_revisions_numbers CHECK ((((revision_no IS NULL) OR (revision_no >= 1)) AND ((base_revision_no IS NULL) OR (base_revision_no >= 1)) AND ((revision_no IS NULL) OR (base_revision_no IS NULL) OR (revision_no > base_revision_no)))),
++    CONSTRAINT ck_prescription_revisions_od_addition_number CHECK (((od_addition IS NULL) OR ((od_addition)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_od_axis_number CHECK (((od_axis IS NULL) OR ((od_axis)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_od_cylinder_number CHECK (((od_cylinder IS NULL) OR ((od_cylinder)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_od_prism_number CHECK (((od_prism IS NULL) OR ((od_prism)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_od_sphere_number CHECK (((od_sphere IS NULL) OR ((od_sphere)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_og_addition_number CHECK (((og_addition IS NULL) OR ((og_addition)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_og_axis_number CHECK (((og_axis IS NULL) OR ((og_axis)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_og_cylinder_number CHECK (((og_cylinder IS NULL) OR ((og_cylinder)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_og_prism_number CHECK (((og_prism IS NULL) OR ((og_prism)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_og_sphere_number CHECK (((og_sphere IS NULL) OR ((og_sphere)::text ~ (('^[-+'::text || '−'::text) || ']? ?[0-9]+([.,][0-9]+)?$'::text)))),
++    CONSTRAINT ck_prescription_revisions_reason CHECK ((((base_revision_no IS NULL) = (reason_code IS NULL)) AND ((reason_comment IS NULL) OR (reason_code IS NOT NULL)) AND ((reason_code IS NULL) OR ((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)))),
++    CONSTRAINT ck_prescription_revisions_status CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'confirmed'::character varying, 'discarded'::character varying])::text[]))),
++    CONSTRAINT ck_prescription_revisions_updated_after_started CHECK ((updated_at_utc >= started_at_utc))
++);
++
++
++--
++-- Name: prescriptions; Type: TABLE; Schema: optical; Owner: -
++--
++
++CREATE TABLE optical.prescriptions (
++    id uuid NOT NULL,
++    reference character varying(24) DEFAULT ('RX-'::text || to_char(nextval('optical.prescription_reference_seq'::regclass), 'FM999999999999000000'::text)) NOT NULL,
++    client_id uuid NOT NULL,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    invalidated_at_utc timestamp with time zone,
++    invalidated_by_user_id uuid,
++    invalidation_reason_code character varying(32),
++    invalidation_comment character varying(500),
++    creation_request_id uuid NOT NULL,
++    last_request_id uuid NOT NULL,
++    CONSTRAINT ck_prescriptions_invalidated_after_created CHECK (((invalidated_at_utc IS NULL) OR (invalidated_at_utc >= created_at_utc))),
++    CONSTRAINT ck_prescriptions_invalidation_complete CHECK ((((invalidated_at_utc IS NULL) = (invalidated_by_user_id IS NULL)) AND ((invalidated_at_utc IS NULL) = (invalidation_reason_code IS NULL)) AND ((invalidation_comment IS NULL) OR (invalidated_at_utc IS NOT NULL)))),
++    CONSTRAINT ck_prescriptions_invalidation_reason_format CHECK (((invalidation_reason_code IS NULL) OR ((invalidation_reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text))),
++    CONSTRAINT ck_prescriptions_reference_format CHECK (((reference)::text ~ '^RX-[0-9]{6,18}$'::text)),
++    CONSTRAINT ck_prescriptions_updated_after_created CHECK ((updated_at_utc >= created_at_utc))
++);
++
++
++--
+ -- Name: __EFMigrationsHistory; Type: TABLE; Schema: public; Owner: -
+@@ -306,2 +565,34 @@
+ --
++-- Name: measurement_revisions pk_measurement_revisions; Type: CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT pk_measurement_revisions PRIMARY KEY (id);
++
++
++--
++-- Name: measurements pk_measurements; Type: CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurements
++    ADD CONSTRAINT pk_measurements PRIMARY KEY (id);
++
++
++--
++-- Name: prescription_revisions pk_prescription_revisions; Type: CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT pk_prescription_revisions PRIMARY KEY (id);
++
++
++--
++-- Name: prescriptions pk_prescriptions; Type: CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescriptions
++    ADD CONSTRAINT pk_prescriptions PRIMARY KEY (id);
++
++
++--
+ -- Name: __EFMigrationsHistory PK___EFMigrationsHistory; Type: CONSTRAINT; Schema: public; Owner: -
+@@ -440,2 +731,191 @@
+ --
++-- Name: ix_measurement_revisions_confirmed_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_confirmed_by_user_id ON optical.measurement_revisions USING btree (confirmed_by_user_id);
++
++
++--
++-- Name: ix_measurement_revisions_discarded_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_discarded_by_user_id ON optical.measurement_revisions USING btree (discarded_by_user_id);
++
++
++--
++-- Name: ix_measurement_revisions_measured_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_measured_by_user_id ON optical.measurement_revisions USING btree (measured_by_user_id);
++
++
++--
++-- Name: ix_measurement_revisions_measurement_started; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_measurement_started ON optical.measurement_revisions USING btree (measurement_id, started_at_utc, id);
++
++
++--
++-- Name: ix_measurement_revisions_started_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_started_by_user_id ON optical.measurement_revisions USING btree (started_by_user_id);
++
++
++--
++-- Name: ix_measurement_revisions_updated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurement_revisions_updated_by_user_id ON optical.measurement_revisions USING btree (updated_by_user_id);
++
++
++--
++-- Name: ix_measurements_client_created; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurements_client_created ON optical.measurements USING btree (client_id, created_at_utc DESC, id DESC);
++
++
++--
++-- Name: ix_measurements_created_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurements_created_by_user_id ON optical.measurements USING btree (created_by_user_id);
++
++
++--
++-- Name: ix_measurements_invalidated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurements_invalidated_by_user_id ON optical.measurements USING btree (invalidated_by_user_id);
++
++
++--
++-- Name: ix_measurements_updated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_measurements_updated_by_user_id ON optical.measurements USING btree (updated_by_user_id);
++
++
++--
++-- Name: ix_prescription_revisions_confirmed_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescription_revisions_confirmed_by_user_id ON optical.prescription_revisions USING btree (confirmed_by_user_id);
++
++
++--
++-- Name: ix_prescription_revisions_discarded_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescription_revisions_discarded_by_user_id ON optical.prescription_revisions USING btree (discarded_by_user_id);
++
++
++--
++-- Name: ix_prescription_revisions_prescription_started; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescription_revisions_prescription_started ON optical.prescription_revisions USING btree (prescription_id, started_at_utc, id);
++
++
++--
++-- Name: ix_prescription_revisions_started_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescription_revisions_started_by_user_id ON optical.prescription_revisions USING btree (started_by_user_id);
++
++
++--
++-- Name: ix_prescription_revisions_updated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescription_revisions_updated_by_user_id ON optical.prescription_revisions USING btree (updated_by_user_id);
++
++
++--
++-- Name: ix_prescriptions_client_created; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescriptions_client_created ON optical.prescriptions USING btree (client_id, created_at_utc DESC, id DESC);
++
++
++--
++-- Name: ix_prescriptions_created_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescriptions_created_by_user_id ON optical.prescriptions USING btree (created_by_user_id);
++
++
++--
++-- Name: ix_prescriptions_invalidated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescriptions_invalidated_by_user_id ON optical.prescriptions USING btree (invalidated_by_user_id);
++
++
++--
++-- Name: ix_prescriptions_updated_by_user_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE INDEX ix_prescriptions_updated_by_user_id ON optical.prescriptions USING btree (updated_by_user_id);
++
++
++--
++-- Name: ux_measurement_revisions_number; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_measurement_revisions_number ON optical.measurement_revisions USING btree (measurement_id, revision_no) WHERE (revision_no IS NOT NULL);
++
++
++--
++-- Name: ux_measurement_revisions_open_draft; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_measurement_revisions_open_draft ON optical.measurement_revisions USING btree (measurement_id) WHERE ((status)::text = 'draft'::text);
++
++
++--
++-- Name: ux_measurements_creation_request_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_measurements_creation_request_id ON optical.measurements USING btree (creation_request_id);
++
++
++--
++-- Name: ux_measurements_reference; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_measurements_reference ON optical.measurements USING btree (reference);
++
++
++--
++-- Name: ux_prescription_revisions_number; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_prescription_revisions_number ON optical.prescription_revisions USING btree (prescription_id, revision_no) WHERE (revision_no IS NOT NULL);
++
++
++--
++-- Name: ux_prescription_revisions_open_draft; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_prescription_revisions_open_draft ON optical.prescription_revisions USING btree (prescription_id) WHERE ((status)::text = 'draft'::text);
++
++
++--
++-- Name: ux_prescriptions_creation_request_id; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_prescriptions_creation_request_id ON optical.prescriptions USING btree (creation_request_id);
++
++
++--
++-- Name: ux_prescriptions_reference; Type: INDEX; Schema: optical; Owner: -
++--
++
++CREATE UNIQUE INDEX ux_prescriptions_reference ON optical.prescriptions USING btree (reference);
++
++
++--
+ -- Name: events trg_events_append_only; Type: TRIGGER; Schema: audit; Owner: -
+@@ -451,2 +931,58 @@
+ CREATE TRIGGER trg_events_no_truncate BEFORE TRUNCATE ON audit.events FOR EACH STATEMENT EXECUTE FUNCTION audit.reject_event_mutation();
++
++
++--
++-- Name: measurement_revisions trg_measurement_revisions_frozen; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_measurement_revisions_frozen BEFORE DELETE OR UPDATE ON optical.measurement_revisions FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_revision_change();
++
++
++--
++-- Name: measurement_revisions trg_measurement_revisions_no_truncate; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_measurement_revisions_no_truncate BEFORE TRUNCATE ON optical.measurement_revisions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_revision_change();
++
++
++--
++-- Name: measurements trg_measurements_frozen; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_measurements_frozen BEFORE DELETE OR UPDATE ON optical.measurements FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_record_change();
++
++
++--
++-- Name: measurements trg_measurements_no_truncate; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_measurements_no_truncate BEFORE TRUNCATE ON optical.measurements FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_record_change();
++
++
++--
++-- Name: prescription_revisions trg_prescription_revisions_frozen; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_prescription_revisions_frozen BEFORE DELETE OR UPDATE ON optical.prescription_revisions FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_revision_change();
++
++
++--
++-- Name: prescription_revisions trg_prescription_revisions_no_truncate; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_prescription_revisions_no_truncate BEFORE TRUNCATE ON optical.prescription_revisions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_revision_change();
++
++
++--
++-- Name: prescriptions trg_prescriptions_frozen; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_prescriptions_frozen BEFORE DELETE OR UPDATE ON optical.prescriptions FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_record_change();
++
++
++--
++-- Name: prescriptions trg_prescriptions_no_truncate; Type: TRIGGER; Schema: optical; Owner: -
++--
++
++CREATE TRIGGER trg_prescriptions_no_truncate BEFORE TRUNCATE ON optical.prescriptions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_record_change();
+ 
+@@ -550,2 +1086,154 @@
+ --
++-- Name: measurement_revisions fk_measurement_revisions_confirmed_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_confirmed_by_users FOREIGN KEY (confirmed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurement_revisions fk_measurement_revisions_discarded_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_discarded_by_users FOREIGN KEY (discarded_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurement_revisions fk_measurement_revisions_measured_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_measured_by_users FOREIGN KEY (measured_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurement_revisions fk_measurement_revisions_measurements; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_measurements FOREIGN KEY (measurement_id) REFERENCES optical.measurements(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurement_revisions fk_measurement_revisions_started_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_started_by_users FOREIGN KEY (started_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurement_revisions fk_measurement_revisions_updated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurement_revisions
++    ADD CONSTRAINT fk_measurement_revisions_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurements fk_measurements_clients; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurements
++    ADD CONSTRAINT fk_measurements_clients FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurements fk_measurements_created_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurements
++    ADD CONSTRAINT fk_measurements_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurements fk_measurements_invalidated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurements
++    ADD CONSTRAINT fk_measurements_invalidated_by_users FOREIGN KEY (invalidated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: measurements fk_measurements_updated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.measurements
++    ADD CONSTRAINT fk_measurements_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescription_revisions fk_prescription_revisions_confirmed_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT fk_prescription_revisions_confirmed_by_users FOREIGN KEY (confirmed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescription_revisions fk_prescription_revisions_discarded_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT fk_prescription_revisions_discarded_by_users FOREIGN KEY (discarded_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescription_revisions fk_prescription_revisions_prescriptions; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT fk_prescription_revisions_prescriptions FOREIGN KEY (prescription_id) REFERENCES optical.prescriptions(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescription_revisions fk_prescription_revisions_started_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT fk_prescription_revisions_started_by_users FOREIGN KEY (started_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescription_revisions fk_prescription_revisions_updated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescription_revisions
++    ADD CONSTRAINT fk_prescription_revisions_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescriptions fk_prescriptions_clients; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescriptions
++    ADD CONSTRAINT fk_prescriptions_clients FOREIGN KEY (client_id) REFERENCES clients.clients(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescriptions fk_prescriptions_created_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescriptions
++    ADD CONSTRAINT fk_prescriptions_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescriptions fk_prescriptions_invalidated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescriptions
++    ADD CONSTRAINT fk_prescriptions_invalidated_by_users FOREIGN KEY (invalidated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
++-- Name: prescriptions fk_prescriptions_updated_by_users; Type: FK CONSTRAINT; Schema: optical; Owner: -
++--
++
++ALTER TABLE ONLY optical.prescriptions
++    ADD CONSTRAINT fk_prescriptions_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++
++
++--
+ -- PostgreSQL database dump complete

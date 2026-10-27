@@ -9,6 +9,7 @@ using MMV.Application.Appointments;
 using MMV.Application.Audit;
 using MMV.Domain.Appointments;
 using MMV.Domain.Audit;
+using MMV.Domain.Identity;
 
 namespace MMV.Api.Audit;
 
@@ -30,6 +31,9 @@ internal sealed class HttpAuditContext(IHttpContextAccessor accessor) : IAuditCo
 /// d'écriture : le journal n'est alimenté que par les services métier, dans leurs transactions. Valeurs : seules
 /// celles que la politique de conservation garde (créneau, durée, motif, responsable) sont servies, avec leur
 /// libellé calculé par le serveur (heure murale du magasin, nom affiché actuel du collaborateur, libellé du motif).
+/// 04-B : les événements du module <c>optical</c> ne sont servis qu'à une session détenant AUSSI <c>optical.read</c>
+/// (sinon ils sont exclus par le serveur, et le filtre <c>module=optical</c> est refusé par 403) ; ils ne contiennent
+/// que des données de gestion (numéros de révision, motifs codifiés), jamais une valeur optique.
 /// </summary>
 internal static class AuditEndpoints
 {
@@ -52,9 +56,10 @@ internal static class AuditEndpoints
         return audit;
     }
 
-    private static async Task<Results<Ok<AuditEventPageResponse>, BadRequest<ErrorResponse>>> ListForClientAsync(
+    private static async Task<Results<Ok<AuditEventPageResponse>, BadRequest<ErrorResponse>, ForbidHttpResult>> ListForClientAsync(
         Guid clientId,
         HttpRequest request,
+        ClaimsPrincipal principal,
         AuditService service,
         AppointmentSettings settings,
         CancellationToken cancellationToken,
@@ -69,6 +74,15 @@ internal static class AuditEndpoints
         {
             return TypedResults.BadRequest(new ErrorResponse("invalid_query"));
         }
+
+        var optical = principal.HasClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.OpticalRead)
+            && principal.HasClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.ClientsRead);
+        if (query.Module == AuditActions.OpticalModule && !optical)
+        {
+            return TypedResults.Forbid();
+        }
+
+        query = query with { ExcludedModules = optical ? [] : [AuditActions.OpticalModule] };
 
         var result = await service.ListForClientAsync(query, cancellationToken);
         var parsed = result.Items.Select(item => (item, Changes: AuditChanges.Deserialize(item.Event.Changes))).ToList();
@@ -90,7 +104,7 @@ internal static class AuditEndpoints
     /// <summary>Module en liste blanche, période [from, to[ en instants UTC, page et taille bornées ; sinon <c>null</c>.</summary>
     internal static AuditQuery? ParseQuery(Guid clientId, string? module, string? from, string? to, string? page, string? pageSize)
     {
-        if (module is not (null or AuditActions.ClientsModule or AuditActions.AppointmentsModule))
+        if (module is not (null or AuditActions.ClientsModule or AuditActions.AppointmentsModule or AuditActions.OpticalModule))
         {
             return null;
         }
@@ -131,7 +145,7 @@ internal static class AuditEndpoints
     {
         var e = view.Event;
         // 03-D3 : une création n'a pas de valeur précédente — aucun libellé « avant » (pas de « Non attribué → … »).
-        var created = e.Action is AuditActions.ClientCreated or AuditActions.AppointmentCreated;
+        var created = e.Action is AuditActions.ClientCreated or AuditActions.AppointmentCreated || e.Action.EndsWith(".created", StringComparison.Ordinal);
         return new AuditEventResponse(
             e.Id, e.OccurredAtUtc, e.ActorUserId, view.ActorDisplayName, e.Module, e.Action, e.EntityType, e.EntityId,
             [.. changes.Select(c => new AuditChangeResponse(
@@ -174,7 +188,7 @@ internal static class AuditEndpoints
                 "module" => new OpenApiSchema
                 {
                     Type = JsonSchemaType.String,
-                    Enum = [JsonValue.Create(AuditActions.ClientsModule), JsonValue.Create(AuditActions.AppointmentsModule)],
+                    Enum = [JsonValue.Create(AuditActions.ClientsModule), JsonValue.Create(AuditActions.AppointmentsModule), JsonValue.Create(AuditActions.OpticalModule)],
                 },
                 "from" or "to" => new OpenApiSchema { Type = JsonSchemaType.String, Format = "date-time" },
                 "page" => new OpenApiSchema

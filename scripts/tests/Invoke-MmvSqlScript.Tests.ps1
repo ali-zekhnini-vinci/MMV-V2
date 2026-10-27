@@ -30,7 +30,7 @@ public static class FakePsql {
         string log = Environment.GetEnvironmentVariable("FAKE_PSQL_LOG");
         int c = Array.IndexOf(args, "-c"), f = Array.IndexOf(args, "-f");
         string sql = c >= 0 ? args[c + 1] : (f >= 0 ? null : Console.In.ReadToEnd());
-        File.AppendAllText(log, "ARGS " + string.Join(" | ", args) + "\n" + (sql == null ? "" : "SQL " + sql.Trim() + "\n"), new UTF8Encoding(false));
+        File.AppendAllText(log, "ARGS " + string.Join(" | ", args) + "\n" + "PGOPTIONS " + Environment.GetEnvironmentVariable("PGOPTIONS") + "\n" + (sql == null ? "" : "SQL " + sql.Trim() + "\n"), new UTF8Encoding(false));
         if (f >= 0) { Console.WriteLine("START TRANSACTION"); Console.WriteLine("COMMIT"); return 0; }
         if (sql.Contains("current_database()")) { Console.WriteLine(Environment.GetEnvironmentVariable("FAKE_PSQL_IDENTITY")); return 0; }
         if (Environment.GetEnvironmentVariable("FAKE_PSQL_FAIL_READ") == "1" || !sql.Contains("\"__EFMigrationsHistory\"") || !sql.Contains("\"MigrationId\"")) {
@@ -95,6 +95,7 @@ try {
     Assert ($r.Calls -contains $expectedRead) 'O-03-16 : requête de lecture reçue avec ses guillemets doubles' ($r.Calls -join "`n")
     Assert ($r.Output -match 'MIGRATIONS : 0001_Initial, 0002_AuthIdentity') 'O-03-16 : liste des migrations affichée' $r.Output
     Assert ($r.Output -notmatch 'ERREUR|n''existe pas|AVERTISSEMENT') 'O-03-16 : aucune erreur après COMMIT' $r.Output
+    Assert (($r.Calls -contains 'PGOPTIONS -c lock_timeout=5s') -and ($r.Output -match 'LOCK_TIMEOUT : 5s')) '04-B : délai de verrou transmis à psql (défaut 5s)' (($r.Calls -join "`n") + "`n" + $r.Output)
 
     # 2. Lecture de contrôle en échec après COMMIT : avertissement explicite, application non présentée comme annulée.
     $r = Invoke-Target @{ FAKE_PSQL_FAIL_READ = '1' }

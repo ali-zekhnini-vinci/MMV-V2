@@ -1,8 +1,8 @@
-// PROTOTYPE 04-A — contrat PROVISOIRE du dossier optique (docs/phase/04/API_OPTICAL_PROPOSED.md et amendements
-// E-01 / E-02, tous PROPOSED). Aucun appel HTTP : MMV.Api n'expose aucune route /api/optical (04-B non commencé).
-// Ces types ne servent qu'au banc de démonstration isolé (src/bench/) et aux tests ; ils seront remplacés par le
-// contrat OpenAPI généré par le serveur en 04-B. Décisions acquises : D-04-01 (deux types distincts), D-04-15 (UX
-// Lot 3) et D-04-16 (simplification : aucun « état de l'œil », pièces sources reportées au backlog permanent).
+// Contrat du dossier optique côté poste. 04-A : types du prototype (banc isolé). 04-B (mandat GO du 27/10/2026) : ces
+// types sont la vue d'écran du contrat RÉEL /api/optical (docs/phase/04/API_OPTICAL.md, extrait OpenAPI
+// src/api/contract/optical.openapi.json) ; la passerelle HTTP (src/api/optical.ts) convertit `null` ↔ `""` et le banc
+// garde son double en mémoire. Décisions acquises : D-04-01 (deux types distincts), D-04-15 (UX Lot 3), D-04-16
+// (aucun « état de l'œil », pièces sources reportées au backlog permanent) et D-04-17 (« Enregistrer » atomique).
 // Valeurs optiques : chaînes conservées EXACTEMENT telles que saisies (aucune normalisation, aucun arrondi, aucune
 // conversion) ; chaque champ peut rester vide, chaîne vide = non renseigné, jamais confondu avec la valeur « 0 ».
 import type { ApiResult } from "../api/client.ts";
@@ -20,10 +20,11 @@ export type EyeField = (typeof EYE_FIELDS)[number];
 /** Valeurs d'un œil (D-04-16 : aucun état d'œil séparé ; un œil sans valeur est simplement non renseigné). */
 export type EyeValues = Record<EyeField, string>;
 
-/** D-04-03.a (PROPOSED) : provenance d'une ordonnance ; la liste des qualités est à fournir (BLOQUÉ). */
+/** Provenance d'une ordonnance (mandat 04-B) : nom et date exigés pour CONFIRMER ; qualité facultative et LIBRE. */
 export interface PrescriptionProvenance {
   prescriberName: string;
-  prescriberQualification: "unspecified";
+  /** Texte libre facultatif (aucune liste fermée imposée). */
+  prescriberQualification: string;
   prescriberIdentifier: string;
   /** Date portée sur le document (`AAAA-MM-JJ` ou `""`) ; aucune validité calculée. */
   prescribedOn: string;
@@ -31,12 +32,13 @@ export interface PrescriptionProvenance {
   receivedOn: string;
 }
 
-/** D-04-03.b (PROPOSED) : provenance d'une mesure magasin ; la liste des catégories est à fournir (BLOQUÉ). */
+/** Provenance d'une mesure magasin (mandat 04-B) : date et collaborateur exigés pour CONFIRMER ; catégorie LIBRE. */
 export interface MeasurementProvenance {
   measuredOn: string;
-  /** Collaborateur ayant mesuré (compte fictif du banc), distinct de l'auteur de la saisie. */
+  /** Collaborateur ayant mesuré (compte détenant optical.measurements.write), distinct de l'auteur de la saisie. */
   measuredByUserId: string;
-  category: "unspecified";
+  /** Texte libre facultatif (aucune liste fermée imposée). */
+  category: string;
 }
 
 interface ContentBase {
@@ -133,6 +135,9 @@ export interface OpticalRecord {
   openDraft: OpticalRevision | null;
   /** Toutes les révisions (confirmées, brouillon, abandonnées), dans l'ordre chronologique. */
   revisions: OpticalRevision[];
+  /** 04-B : historique complet (révisions abandonnées ou antérieures, journal) servi avec `audit.read` ET `optical.read`
+   * seulement ; sinon `revisions` se limite à la dernière révision confirmée et au brouillon ouvert, `events` est vide. */
+  historyAvailable: boolean;
   events: OpticalEvent[];
   createdAtUtc: string;
   createdBy: OpticalActor;
@@ -193,8 +198,8 @@ export interface InvalidationRequest {
 }
 
 /**
- * Accès aux données du dossier optique. En 04-A, seule une implémentation EN MÉMOIRE existe (banc isolé, tests) ;
- * le serveur réel (04-B) reprendra les mêmes refus : 403, 404, 409 (`version_conflict`, `draft_exists`,
+ * Accès aux données du dossier optique : passerelle HTTP réelle (src/api/optical.ts, 04-B) ou double EN MÉMOIRE du
+ * banc isolé (src/bench/). Mêmes refus : 403, 404, 409 (`version_conflict`, `draft_exists`,
  * `revision_conflict`, `client_archived`, `invalidated`), 422. Aucune opération sur des pièces sources (D-04-16 :
  * gestion documentaire reportée au backlog permanent).
  */
@@ -206,6 +211,12 @@ export interface OpticalGateway {
   createRecord(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>>;
   saveDraft(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>>;
   confirmDraft(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>>;
+  /** « Enregistrer » d'une NOUVELLE saisie (D-04-17, 04-B) : création ET confirmation en une transaction ; un refus
+   * n'enregistre rien (aucun brouillon orphelin). */
+  createAndConfirm(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>>;
+  /** « Enregistrer » d'un brouillon existant : modification ET confirmation en une transaction ; un refus laisse le
+   * brouillon inchangé. */
+  saveAndConfirm(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>>;
   startRectification(kind: OpticalKind, id: string, request: RectificationRequest): Promise<ApiResult<OpticalRecord>>;
   discardRectification(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>>;
   invalidateRecord(kind: OpticalKind, id: string, request: InvalidationRequest): Promise<ApiResult<OpticalRecord>>;
@@ -219,12 +230,12 @@ export function emptyContent(kind: OpticalKind, measuredByUserId = ""): RecordCo
   return kind === "prescription"
     ? {
         kind,
-        provenance: { prescriberName: "", prescriberQualification: "unspecified", prescriberIdentifier: "", prescribedOn: "", receivedOn: "" },
+        provenance: { prescriberName: "", prescriberQualification: "", prescriberIdentifier: "", prescribedOn: "", receivedOn: "" },
         od: emptyEye(),
         og: emptyEye(),
         notes: "",
       }
-    : { kind, provenance: { measuredOn: "", measuredByUserId, category: "unspecified" }, od: emptyEye(), og: emptyEye(), notes: "" };
+    : { kind, provenance: { measuredOn: "", measuredByUserId, category: "" }, od: emptyEye(), og: emptyEye(), notes: "" };
 }
 
 /** Statut affiché dérivé (E-02) : invalidé > rectification en cours > confirmé > brouillon. */

@@ -1,14 +1,17 @@
-// PROTOTYPE 04-A — contrôles rapides ± de la grille OD / OG (D-04-15 APPROVED : référence UX Lot 3). Le PAS est un
-// paramètre de DÉMONSTRATION (0,25 par défaut, comme la maquette) : D-04-06 reste ouverte, aucun pas n'est une règle
-// métier. Calcul exact en entiers décimaux : aucun arrondi, aucun alignement sur le pas (−2,13 + 0,25 = −1,88), aucune
+// Contrôles rapides ± de la grille OD / OG (D-04-15 APPROVED : référence UX Lot 3). Mandat 04-B (27/10/2026) : pas de
+// 0,25 dioptrie APPROUVÉ pour Sphère, Cylindre et Addition ; pas des prismes NON ARRÊTÉ (le Prisme reste en saisie
+// libre, sans boutons ±, comme l'Axe, la Base et l'Acuité) ; aucune borne ni règle clinique n'en découle. Calcul exact en entiers décimaux : aucun arrondi, aucun alignement sur le pas (−2,13 + 0,25 = −1,88), aucune
 // borne, aucune conversion de signe. Un clic depuis un champ vide est une nouvelle saisie explicite qui part de 0
 // (+ → +0,25 ; − → −0,25) ; le vide n'est jamais affiché ni enregistré comme 0. Une valeur non numérique n'est
 // jamais modifiée par un clic (null). Seule la valeur produite par un clic est mise en forme ; une saisie au clavier
 // est conservée telle quelle.
 import { createContext } from "react";
 
-/** Pas de démonstration des boutons ± (dioptries). Paramétrable ; aucune valeur n'est approuvée (D-04-06). */
-export const DEMO_STEP = 0.25;
+/** Pas des boutons ± (dioptries) de Sphère, Cylindre et Addition : 0,25, approuvé par le mandat 04-B. */
+export const OPTICAL_STEP = 0.25;
+
+/** Pas par défaut du banc isolé (paramètre `?step=` de démonstration, jamais exposé par l'application). */
+export const DEMO_STEP = OPTICAL_STEP;
 
 /** Même forme que celle acceptée par le double du banc (inMemoryOpticalGateway, NUMBER_SHAPE). */
 const NUMBER = /^([+\-−]?)\s?(\d+)(?:([.,])(\d+))?$/u;
@@ -48,6 +51,13 @@ export function isSteppable(value: string): boolean {
   return value.trim() === "" || parse(value) !== null;
 }
 
+/** Valeur absente ou numériquement nulle (« 0 », « 0,00 », « −0 ») ; une saisie non numérique n'est ni l'un ni l'autre. */
+export function isEmptyOrZero(value: string): boolean {
+  if (value.trim() === "") return true;
+  const parsed = parse(value);
+  return parsed !== null && parsed.scaled === 0n;
+}
+
 /** Applique `direction × step` à la valeur saisie ; `null` si la valeur n'est pas numérique (inchangée). */
 export function stepValue(value: string, direction: 1 | -1, step: number = DEMO_STEP): string | null {
   if (!(step > 0) || !Number.isFinite(step)) return null;
@@ -76,8 +86,8 @@ export function stepLabel(step: number): string {
   return String(step).replace(".", ",");
 }
 
-/** Pas de démonstration en vigueur dans le prototype (le banc peut le changer : `?step=0.125`). */
-export const OpticalStepContext = createContext<number>(DEMO_STEP);
+/** Pas en vigueur (le banc peut le changer : `?step=0.125`, démonstration seulement). */
+export const OpticalStepContext = createContext<number>(OPTICAL_STEP);
 
-/** Champs proposés aux boutons ± (dioptries) ; Axe, Base et Acuité restent en saisie libre (aucun pas imposé). */
-export const STEPPER_FIELDS: ReadonlySet<string> = new Set(["sphere", "cylinder", "addition", "prism"]);
+/** Champs proposés aux boutons ± ; Prisme (pas non arrêté), Axe, Base et Acuité restent en saisie libre. */
+export const STEPPER_FIELDS: ReadonlySet<string> = new Set(["sphere", "cylinder", "addition"]);

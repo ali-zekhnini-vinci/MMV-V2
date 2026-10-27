@@ -237,3 +237,7 @@ Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE0
 | D-04-01, D-04-15, D-04-16 | inchangées | APPROVED |
 
 Les formulaires de réponse ci-dessus restent valables tels quels pour G04-METIER.
+
+## Amendement daté — 27/10/2026 (décisions du propriétaire, mandat de GO 04-B / 04-C)
+
+Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md). Le propriétaire approuve les orientations produit et UX du dossier optique **sans nouvelle boucle de conception** ; la demande consolidée ci-dessus est conservée comme historique. État des décisions : [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md), amendement du 27/10/2026. Règles appliquées et **réserves professionnelles encore ouvertes** (opticien) : [`LIVRAISON_04B.md`](LIVRAISON_04B.md) § 2. Restent soumis à un opticien : sphère à zéro sur les deux yeux sans autre valeur, acuité seule d'une ordonnance, traitement d'un axe sans cylindre, valeurs / conventions / pas / composantes multiples du prisme, toute borne clinique (aucune n'est codée). Ces orientations valent pour la recette locale sur données fictives seulement.

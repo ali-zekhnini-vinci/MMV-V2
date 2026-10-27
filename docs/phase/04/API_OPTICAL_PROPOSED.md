@@ -95,3 +95,7 @@ Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts
 | permissions exigées | 4 droits optiques ([`PERMISSIONS_04_PROPOSED.md`](PERMISSIONS_04_PROPOSED.md), amendement du 20/10/2026) |
 
 Le prototype reflète ce contrat réduit : `apps/desktop/src/optical/opticalContract.ts` (`EyeValues` sans état, `OpticalGateway` sans opération documentaire) et le double `apps/desktop/src/bench/inMemoryOpticalGateway.ts`.
+
+## Amendement daté — 27/10/2026 (04-B : contrat implémenté)
+
+Contrat **implémenté** : [`API_OPTICAL.md`](API_OPTICAL.md) (ce document reste l'historique de la proposition). Écarts principaux : liste globale croisée `GET /api/optical/records` (au lieu d'une liste par type) ; `requestId` obligatoire sur toute écriture (idempotence, ADR / O-04-40) ; « Enregistrer » atomique — `POST /api/optical/{type}` avec `confirm: true` et `POST …/{id}/draft/confirm` avec contenu (O-04-34 résolu) ; abandon `POST …/{id}/draft/discard` ; `historyAvailable` et historique restreint sans `audit.read` ; codes ajoutés `request_id_reused`, `client_not_found`, `request_id_required` ; codes de complétude `optical_values_missing`, `sphere_zero_only`, `acuity_only`, `axis_required`, `base_required`, `required`, `not_eligible`. Toujours **aucune** route `DELETE`, de conversion ni documentaire.

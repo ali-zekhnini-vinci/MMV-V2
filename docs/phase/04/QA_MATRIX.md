@@ -276,3 +276,28 @@ Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE0
 | Q-04-027 | PASS — 31 tests (parcours du banc) |
 | Q-04-178, Q-04-179, Q-04-189 | rejoués : voir Q-04-066 (`plan.mjs` : 58 captures, dont 7 nouvelles `70`–`76`) |
 
+## 04-B — contrôles exécutés le 27/10/2026 (GO d'implémentation)
+
+| ID | Contrôle | Commande / preuve | Statut | Détail |
+|---|---|---|---|---|
+| Q-04-200 | Build .NET | `dotnet build MMV.slnx --artifacts-path .agent-artifacts` | PASS | 0 avertissement, 0 erreur (avertissements = erreurs) |
+| Q-04-201 | Tests serveur | `dotnet test tests/MMV.Api.Tests` | PASS | 452 / 452 (dont `Optical/` : règles, service, HTTP, contrat OpenAPI) |
+| Q-04-202 | Maintenance | `dotnet test tests/MMV.Maintenance.Tests` | PASS | 50 / 50 |
+| Q-04-203 | Forme des valeurs | `OpticalRulesTests` | PASS | `+1,25`, `-0.50`, `−2,00`, `- 3,75`, `0,00`, `1.250` conservés exactement ; `1e3`, `1,2,3`, `.5`, `1 000`, chiffres non ASCII refusés (`number_expected`, valeur jamais renvoyée) ; vide = absent ; dates civiles |
+| Q-04-204 | Critères de confirmation | `OpticalRulesTests` | PASS | un œil suffit ; aucune valeur ; sphère seule à zéro (4 écritures) ; zéro + autre valeur accepté ; acuité seule selon le type ; cylindre / axe (axe jamais effacé, 0 et 180 conservés) ; prisme / base ; provenance par type |
+| Q-04-205 | Cas d'usage | `OpticalServiceTests` (16) | PASS | création + confirmation atomiques (refus = rien), réémission sans doublon ni double confirmation, identifiant réutilisé refusé, client archivé / inconnu, brouillon inchangé sans écriture, confirmation refusée sans modification, conflit sans événement, rectification immuable, abandon, invalidation (client archivé, rectification abandonnée), habilitation du collaborateur |
+| Q-04-206 | HTTP | `OpticalEndpointsTests` | PASS | 401 sur 17 routes ; 403 pour chaque compte sans la combinaison exacte (dont `system.admin`, `audit.read` seul, droits optiques sans `clients.read`) ; 403 identique existant / inconnu ; `no-store` ; corps stricts ; 422 sans valeur ; 409 ; historique selon `audit.read` ; journaux sans valeur, nom ni note ; historique client filtré |
+| Q-04-207 | Contrat OpenAPI | `OpticalOpenApiContractTests`, `AuditOpenApiContractTests` | PASS | instantanés `optical.openapi.json` (nouveau) et `audit.openapi.json` (`module` + `optical`) ; deux familles, aucune route `DELETE` / documentaire |
+| Q-04-208 | Migration et SQL | `dotnet ef migrations add OpticalModule` ; `migrations script` ×2 (direct, idempotent) ; régénération ; `has-pending-model-changes` ; `migrations list --no-connect` | PASS | régénération **octet pour octet identique** ; aucun changement de modèle en attente ; 6 migrations ; une seule instruction `DROP` (contrainte des permissions) ; script ASCII |
+| Q-04-209 | Pré-essai SQL (cluster jetable) | 0001→0005 puis 0006 direct / idempotent ×2 ; `SchemaState.OpticalModuleDifferences` ; `0006_OpticalModule.verify.sql` | PASS | 0 différence (direct ≡ idempotent ≡ attendu) ; ré-exécution sans effet ; contrôle 17 / 18 (seul écart : port 55433) — **pas une application sur les bases du propriétaire** |
+| Q-04-210 | Pré-essai HTTP réel (cluster jetable) | `evidence/P04B_PRE_opticalhttp_harness.cs.txt` | PASS | 27 / 27 ; deux postes → 200 + 409 ; double création simultanée → un enregistrement ; journal API : 0 `fail`, 0 valeur sensible — [`evidence/P04B_PRE_scratch_http_20261027.log`](evidence/P04B_PRE_scratch_http_20261027.log) (2 exécutions antérieures conservées : constat déclencheur → verrou d'en-tête ; lecture `xmin`) |
+| Q-04-211 | Frontend | `npm run check`, `npx eslint .`, `npx vitest run`, `npx vite build` | PASS | 300 / 300 ; lint 1 avertissement préexistant ; build OK |
+| Q-04-212 | Passerelle HTTP du poste | `src/api/optical.test.ts` | PASS | contrat ↔ OpenAPI ; `null` ↔ `""` sans réécriture ; rejeu unique même identifiant ; issue incertaine → même identifiant ; création incertaine retrouvée puis confirmée (aucun doublon) ; saisie modifiée → nouvel identifiant (409) ; refus net sans rejeu |
+| Q-04-213 | Activation contrôlée | `src/optical/realAppIsolation.test.tsx` | PASS | sans interrupteur : onglet reporté et menu `later`, 0 requête optique (même avec les droits) ; interrupteur sans `optical.read` : inchangé ; interrupteur + droits : onglet et menu interrogent `/api/optical` avec jeton ; banc jamais importé |
+| Q-04-214 | Banc (enregistrement atomique) | `src/bench/OpticalBench.test.tsx` | PASS | refus = rien d'enregistré (aucune référence, saisie conservée), issue incertaine sans doublon, conflit → rien d'écrit et brouillon inchangé ; Prisme sans ± |
+| Q-04-215 | Script d'application | `scripts/tests/Invoke-MmvSqlScript.Tests.ps1` (psql simulé) | PASS | 16 / 16 (+ `lock_timeout` 5s transmis) |
+| Q-04-216 | Secrets | analyse du diff | PASS | aucun mot de passe, jeton ni chaîne de connexion réelle ; données fictives seulement |
+| Q-04-217 | PostgreSQL réel (`mmv_v2_test`) | `dotnet test tests/MMV.PostgreSql.Tests` | NOT_TESTED | exige 0006 appliquée (G04-SQL) ; tests `OpticalWrite` écrits (transaction annulée, concurrence réelle à deux connexions, nettoyage démontré) |
+| Q-04-218 | Matrice HTTP HTTPS réelle | API de test sur `mmv_v2_test` | NOT_TESTED | étape B |
+| Q-04-219 | Parcours Tauri natif | fiche → dossier → nouveau → ± → Enregistrer → historique → rectifier → conflit deux postes → invalider ; thèmes, zooms | NOT_TESTED | étape B |
+| Q-04-220 | Captures navigateur du banc | `plan.mjs` / `plan-lot3.mjs` | NOT_RERUN | banc modifié (Prisme sans ±, champs libres, contrôle d'axe) — à rejouer en 04-C |

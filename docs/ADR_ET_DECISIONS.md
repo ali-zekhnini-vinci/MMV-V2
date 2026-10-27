@@ -140,3 +140,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - **D-04-17 APPROVED** (propriétaire, 20/10/2026, `prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`) : enregistrement optique simplifié — action principale « Enregistrer », option secondaire discrète « Enregistrer comme brouillon », sans suppression du cycle de révisions. Décision d'interface ; aucun critère clinique fixé (D-04-02 à D-04-14 restent PROPOSED). Lot 04-A : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` (`docs/phase/04/LIVRAISON_04A.md` § 13), pas un GO pour 04-B.
 - Aucun ADR modifié.
+
+## Note datée — 27/10/2026 (Phase 04-B, GO d'implémentation)
+
+- Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md). Dossier optique réalisé dans le monolithe MMV.Api (ADR-003 : PostgreSQL 18 seul, aucune extension ; aucun microservice) ; migration `0006_OpticalModule` **préparée, non appliquée** (G04-SQL).
+- **Idempotence des écritures** (proposée en 04-00 comme « ADR-011 à confirmer ») : identifiant de requête obligatoire, reconnu par le serveur (`creation_request_id` unique, `last_request_id`) ; réémission = état courant, aucune réécriture. Décision technique réversible, sans nouvel ADR.
+- **Valeurs optiques** : texte exact + valeur `numeric` générée sans échelle (aucun arrondi silencieux, aucune borne clinique cachée) — [`docs/phase/04/G04_SQL_DOSSIER.md`](phase/04/G04_SQL_DOSSIER.md) § 2.
+- **ADR-014** : aucune dépendance ajoutée (serveur et poste). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION`. Rôle SQL applicatif distinct (O-B04) toujours prérequis d'un pilote.

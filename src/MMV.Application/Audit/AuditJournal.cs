@@ -46,6 +46,9 @@ public interface IAuditRecorder
 
 public sealed record AuditQuery(Guid ClientId, string? Module, DateTimeOffset? FromUtc, DateTimeOffset? ToUtc, int Page, int PageSize)
 {
+    /// <summary>Modules exclus par le serveur selon les droits de la session (04-B : <c>optical</c> sans <c>optical.read</c>).</summary>
+    public IReadOnlyList<string> ExcludedModules { get; init; } = [];
+
     public const int DefaultPageSize = 20;
     public const int MaxPageSize = 100;
     public const int MaxPage = 100_000;

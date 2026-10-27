@@ -198,6 +198,8 @@ export class InMemoryOpticalGateway implements OpticalGateway {
       createdAtUtc: record.createdAtUtc,
       createdBy: record.createdBy,
       version: record.version,
+      // Banc : historique toujours servi (démonstration) ; le serveur réel l'exige avec audit.read ET optical.read.
+      historyAvailable: true,
     });
   }
 
@@ -294,38 +296,36 @@ export class InMemoryOpticalGateway implements OpticalGateway {
   // ---------- écriture ----------
 
   createRecord(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>> {
-    return this.respond(
-      "createRecord",
-      () => {
-        if (!this.canWrite(content.kind)) return fail("forbidden", 403);
-        const client = this.client(clientId);
-        if (!client) return fail("not-found", 404, "not_found");
-        if (client.status === "archived") return fail("conflict", 409, "client_archived");
-        const errors = shapeErrors(content);
-        if (Object.keys(errors).length > 0) return fail("validation", 422, "validation_failed", errors);
-        const at = this.now();
-        const actor = this.options.session().actor;
-        const prefix = content.kind === "prescription" ? "RX-FICTIF" : "MES-FICTIF";
-        const rank = this.records.filter((candidate) => candidate.kind === content.kind).length + 1;
-        const record: StoredRecord = {
-          kind: content.kind,
-          id: this.nextId(content.kind === "prescription" ? "rx" : "mes"),
-          reference: `${prefix}-${rank.toString().padStart(4, "0")}`,
-          clientId,
-          lifecycle: "active",
-          invalidation: null,
-          revisions: [this.newRevision(content, null, null, "", at, actor)],
-          events: [],
-          createdAtUtc: at,
-          createdBy: actor,
-          version: 1,
-        };
-        this.records.push(record);
-        this.event(record, "created");
-        return ok(this.view(record), 201);
-      },
-      true,
-    );
+    return this.respond("createRecord", () => this.createSync(clientId, content), true);
+  }
+
+  private createSync(clientId: string, content: RecordContent): ApiResult<OpticalRecord> {
+    if (!this.canWrite(content.kind)) return fail("forbidden", 403);
+    const client = this.client(clientId);
+    if (!client) return fail("not-found", 404, "not_found");
+    if (client.status === "archived") return fail("conflict", 409, "client_archived");
+    const errors = shapeErrors(content);
+    if (Object.keys(errors).length > 0) return fail("validation", 422, "validation_failed", errors);
+    const at = this.now();
+    const actor = this.options.session().actor;
+    const prefix = content.kind === "prescription" ? "RX-FICTIF" : "MES-FICTIF";
+    const rank = this.records.filter((candidate) => candidate.kind === content.kind).length + 1;
+    const record: StoredRecord = {
+      kind: content.kind,
+      id: this.nextId(content.kind === "prescription" ? "rx" : "mes"),
+      reference: `${prefix}-${rank.toString().padStart(4, "0")}`,
+      clientId,
+      lifecycle: "active",
+      invalidation: null,
+      revisions: [this.newRevision(content, null, null, "", at, actor)],
+      events: [],
+      createdAtUtc: at,
+      createdBy: actor,
+      version: 1,
+    };
+    this.records.push(record);
+    this.event(record, "created");
+    return ok(this.view(record), 201);
   }
 
   private newRevision(content: RecordContent, baseRevisionNo: number | null, reasonCode: OpticalRevision["reasonCode"], reasonComment: string, at: string, actor: OpticalActor): OpticalRevision {
@@ -359,59 +359,92 @@ export class InMemoryOpticalGateway implements OpticalGateway {
   }
 
   saveDraft(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>> {
+    return this.respond(`saveDraft ${id}`, () => this.saveSync(kind, id, content, version), true);
+  }
+
+  private saveSync(kind: OpticalKind, id: string, content: RecordContent, version: number): ApiResult<OpticalRecord> {
+    const record = this.writable(kind, id, version);
+    if ("ok" in record) return record;
+    const draft = this.draftOf(record);
+    if (!draft) return fail("conflict", 409, "not_draft");
+    if (!this.checkKind(record, content)) return fail("validation", 422, "kind_mismatch");
+    if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
+    const errors = shapeErrors(content);
+    if (Object.keys(errors).length > 0) return fail("validation", 422, "validation_failed", errors);
+    // Corps identique : aucune écriture, aucun événement (comme O-03-44).
+    if (JSON.stringify(draft.content) === JSON.stringify(content)) return ok(this.view(record));
+    draft.content = clone(content);
+    draft.updatedAtUtc = this.now();
+    draft.updatedBy = this.options.session().actor;
+    record.version += 1;
+    this.event(record, "draft_updated");
+    return ok(this.view(record));
+  }
+
+  confirmDraft(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>> {
+    return this.respond(`confirmDraft ${id}`, () => this.confirmSync(kind, id, version), true);
+  }
+
+  /** « Enregistrer » d'une nouvelle saisie : création + confirmation ATOMIQUES (un refus n'enregistre rien, 04-B). */
+  createAndConfirm(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>> {
     return this.respond(
-      `saveDraft ${id}`,
-      () => {
-        const record = this.writable(kind, id, version);
-        if ("ok" in record) return record;
-        const draft = this.draftOf(record);
-        if (!draft) return fail("conflict", 409, "not_draft");
-        if (!this.checkKind(record, content)) return fail("validation", 422, "kind_mismatch");
-        if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
-        const errors = shapeErrors(content);
-        if (Object.keys(errors).length > 0) return fail("validation", 422, "validation_failed", errors);
-        // Corps identique : aucune écriture, aucun événement (comme O-03-44).
-        if (JSON.stringify(draft.content) === JSON.stringify(content)) return ok(this.view(record));
-        draft.content = clone(content);
-        draft.updatedAtUtc = this.now();
-        draft.updatedBy = this.options.session().actor;
-        record.version += 1;
-        this.event(record, "draft_updated");
-        return ok(this.view(record));
-      },
+      "createAndConfirm",
+      () =>
+        this.atomically(() => {
+          const created = this.createSync(clientId, content);
+          return created.ok ? this.confirmSync(created.data.kind, created.data.id, created.data.version) : created;
+        }),
       true,
     );
   }
 
-  confirmDraft(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>> {
+  /** « Enregistrer » d'un brouillon : modification + confirmation ATOMIQUES (un refus laisse le brouillon inchangé). */
+  saveAndConfirm(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>> {
     return this.respond(
-      `confirmDraft ${id}`,
-      () => {
-        const record = this.writable(kind, id, version);
-        if ("ok" in record) return record;
-        const draft = this.draftOf(record);
-        if (!draft) return fail("conflict", 409, "not_draft");
-        if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
-        const last = this.lastConfirmedOf(record);
-        if ((last?.revisionNo ?? null) !== draft.baseRevisionNo) return fail("conflict", 409, "revision_conflict");
-        const faults = this.options.faults?.() ?? NO_FAULTS;
-        const fault = faults.nextConfirmFault;
-        faults.nextConfirmFault = null;
-        if (fault === "network") return fail("network", 0);
-        if (fault === "conflict") return fail("conflict", 409, "version_conflict");
-        const errors = incompleteErrors(draft.content);
-        if (Object.keys(errors).length > 0) return fail("validation", 422, "incomplete", errors);
-        const at = this.now();
-        draft.status = "confirmed";
-        draft.revisionNo = (last?.revisionNo ?? 0) + 1;
-        draft.confirmedAtUtc = at;
-        draft.confirmedBy = this.options.session().actor;
-        record.version += 1;
-        this.event(record, "confirmed", { revisionNo: draft.revisionNo });
-        return ok(this.view(record));
-      },
+      `saveAndConfirm ${id}`,
+      () =>
+        this.atomically(() => {
+          const saved = this.saveSync(kind, id, content, version);
+          return saved.ok ? this.confirmSync(kind, id, saved.data.version) : saved;
+        }),
       true,
     );
+  }
+
+  /** Exécute une opération composée ; en cas de refus, l'état antérieur est restauré (comme une transaction annulée). */
+  private atomically(run: () => ApiResult<OpticalRecord>): ApiResult<OpticalRecord> {
+    const snapshot = { records: clone(this.records), sequence: this.sequence };
+    const result = run();
+    if (!result.ok) {
+      this.records.splice(0, this.records.length, ...snapshot.records);
+      this.sequence = snapshot.sequence;
+    }
+    return result;
+  }
+
+  private confirmSync(kind: OpticalKind, id: string, version: number): ApiResult<OpticalRecord> {
+    const record = this.writable(kind, id, version);
+    if ("ok" in record) return record;
+    const draft = this.draftOf(record);
+    if (!draft) return fail("conflict", 409, "not_draft");
+    if (this.client(record.clientId)?.status === "archived") return fail("conflict", 409, "client_archived");
+    const last = this.lastConfirmedOf(record);
+    if ((last?.revisionNo ?? null) !== draft.baseRevisionNo) return fail("conflict", 409, "revision_conflict");
+    const faults = this.options.faults?.() ?? NO_FAULTS;
+    const fault = faults.nextConfirmFault;
+    faults.nextConfirmFault = null;
+    if (fault === "network") return fail("network", 0);
+    if (fault === "conflict") return fail("conflict", 409, "version_conflict");
+    const errors = incompleteErrors(draft.content);
+    if (Object.keys(errors).length > 0) return fail("validation", 422, "incomplete", errors);
+    const at = this.now();
+    draft.status = "confirmed";
+    draft.revisionNo = (last?.revisionNo ?? 0) + 1;
+    draft.confirmedAtUtc = at;
+    draft.confirmedBy = this.options.session().actor;
+    record.version += 1;
+    this.event(record, "confirmed", { revisionNo: draft.revisionNo });
+    return ok(this.view(record));
   }
 
   startRectification(kind: OpticalKind, id: string, request: RectificationRequest): Promise<ApiResult<OpticalRecord>> {

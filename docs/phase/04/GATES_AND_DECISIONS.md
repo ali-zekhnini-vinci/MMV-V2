@@ -7,6 +7,7 @@
 - **GO G04-A** (propriétaire, 19/10/2026) : **G04-A APPROVED — UI ONLY**, O-04-16 APPROVED — [`prompts/PHASE04_A_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_GO_CLAUDE_CODE.md). N'approuve pas D-04-02 à D-04-14 ; aucune migration, aucune API optique, aucune permission `optical.*` attribuée, aucune donnée de santé réelle.
 - **GO refonte UX Lot 3** (propriétaire, 20/10/2026, après son essai du banc) : **D-04-15 APPROVED** — [`prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_UX_LOT3_GO_CLAUDE_CODE.md). Reste dans 04-A (banc isolé) ; mêmes interdits : aucune migration `0006`, aucun schéma, aucune API optique, aucune donnée réelle, aucune base, aucun droit sur un compte réel, aucune activation en production (O-04-16).
 - **GO simplification du dossier optique** (propriétaire, 20/10/2026) : **D-04-16 APPROVED** — [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md). Suppression de « État de l'œil », report de la gestion des pièces sources au backlog permanent (BL-04-01), révisions conservées. Mêmes interdits : aucune migration `0006`, aucun backend optique, aucune table ni API de pièces, aucune activation réelle ; règles cliniques ouvertes non modifiées.
+- **GO officiel d'implémentation 04-B / 04-C** (propriétaire, 27/10/2026) — [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md) : décisions métier et UX approuvées (ne plus les redemander), règles cliniques maintenues **sous réserve de validation professionnelle** ; code, SQL 0006 et raccordement autorisés ; **une seule validation intermédiaire : G04-SQL** (SQL exact, empreintes, dossier d'audit) avant toute application sur `mmv_v2_dev` / `mmv_v2_test` ; commits locaux seulement, aucun push / PR / merge ; aucune attribution de droits aux comptes réels sans autorisation.
 - Interdits respectés en 04-00 : aucun code applicatif, aucune migration, aucun SQL, aucune connexion à `mmv_v2_dev` / `mmv_v2_test` / PostgreSQL 17, aucun accès à l'ancien dépôt, aucun push / PR / merge, aucun fichier non suivi du propriétaire modifié, aucun processus du propriétaire interrompu.
 
 ## Gates Phase 04
@@ -130,3 +131,49 @@
 | O-04-35 | le récapitulatif « Confirmer la transcription ? » (mention « ne signifie pas validé médicalement ») n'apparaît plus sur le parcours principal du formulaire ; il reste sur le détail pour confirmer un brouillon existant | conforme à D-04-17 (« saisir, Enregistrer, poursuivre ») ; à revoir seulement si G04-METIER (D-04-02.d) exige une relecture explicite avant confirmation |
 | O-04-36 | la règle de démonstration du double sur la provenance (D-04-03.a/b : prescripteur et date, ou date et collaborateur) n'est plus appliquée ; seule reste « aucune valeur optique → confirmation refusée » | D-04-03.a/b et D-04-02.b restent PROPOSED ; les critères définitifs seront fixés à G04-METIER puis codés côté serveur en 04-B |
 | O-04-37 | captures de la clôture prises sur le serveur de banc **déjà actif** sur 127.0.0.1:1520 (`node e2e/bench-04a/serve.mjs`, PID 27732, lancé à 15:11, pas par cette session) | serveur utilisé en lecture seule et **laissé actif** ; aucun autre processus touché |
+
+## Amendement daté — 27/10/2026 (GO d'implémentation 04-B, livraison `PHASE04_B_READY — OWNER_SQL_REVIEW_REQUIRED`)
+
+Les sections précédentes sont conservées comme historique.
+
+### Gates
+
+| Gate | État au 27/10/2026 |
+|---|---|
+| G04-METIER | **franchie par le mandat du propriétaire** pour les décisions produit et UX (orientations listées au mandat § 1) ; **validation professionnelle (opticien) OUVERTE** pour les règles cliniques ([`LIVRAISON_04B.md`](LIVRAISON_04B.md) § 2, O-04-38) — ni certification médicale, ni autorisation d'exploitation sur données réelles |
+| G04-SQL | **OPEN — `OWNER_SQL_REVIEW_REQUIRED`** : `docs/phase/04/sql/0006_OpticalModule.idempotent.sql`, SHA-256 `927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013` ; dossier [`G04_SQL_DOSSIER.md`](G04_SQL_DOSSIER.md) ; **non appliqué** |
+| G04-LEGAL | inchangée : **OPEN**, bloque tout pilote sur données réelles |
+| G04-FINAL | NOT_STARTED ; `PHASE04_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` proposable seulement après migration et tests réels (PostgreSQL, HTTP, Tauri) attestés ; clôture commerciale / pilote distincte |
+
+### Décisions — état au 27/10/2026
+
+| ID | État |
+|---|---|
+| D-04-02 | **APPROVED (orientation produit, mandat 27/10/2026)** : un œil suffit, l'autre reste vide ; sphère unique à zéro seule insuffisante ; acuité seule suffisante pour une mesure, insuffisante pour une ordonnance ; confirmation explicite (« Enregistrer ») — **validation opticien ouverte** (O-04-38) |
+| D-04-03 | a, b **APPROVED** : nom et date de prescription, date et collaborateur ayant mesuré exigés pour confirmer ; qualité et catégorie libres, facultatives ; date de réception distincte ; auteur rempli par le serveur ; c reportée (BL-04-01) ; d inchangée (aucun lien mesure ↔ ordonnance) |
+| D-04-04 | **APPROVED** : révisions confirmées immuables, rectification en brouillon distinct avec motif, abandon d'une rectification, invalidation motivée sans suppression ; listes de motifs du prototype reprises (O-04-32 inchangé) |
+| D-04-05 | **APPROVED** : 4 permissions explicites (`optical.read`, `optical.prescriptions.write`, `optical.measurements.write`, `optical.invalidate`) combinées avec `clients.read` ; aucune via `system.admin` ; historique optique = `audit.read` ET `optical.read` ; aucune attribution aux comptes réels |
+| D-04-06 | **APPROVED partiellement** : pas de 0,25 pour Sphère, Cylindre, Addition (boutons ±) ; saisie manuelle jamais arrondie ; cylindre non nul → axe requis ; prisme non nul → base requise ; axe 0° / 180° conservé, aucune conversion silencieuse ; **pas des prismes, bornes, conventions de base et composantes multiples : NON ARRÊTÉS** (avis opticien) |
+| D-04-07 | **APPROVED** : client archivé consultable par les personnes autorisées ; écriture refusée ; invalidation autorisée |
+| D-04-11 | **APPROVED** (cycle E-02 : révision confirmée et rectification en brouillon coexistantes ; numéro attribué à la confirmation) |
+| D-04-17 | **précisée** : « Enregistrer » atomique côté API (création ou modification + confirmation en une transaction ; refus = rien d'enregistré) ; O-04-34 **résolu** |
+| D-04-08, D-04-09, D-04-12.c, D-04-13 | inchangées (PROPOSED) ; D-04-09 / D-04-12.c relèvent de G04-LEGAL |
+
+### Points ouverts ajoutés — 27/10/2026 (04-B)
+
+| Réf. | Sujet | Proposition / échéance |
+|---|---|---|
+| O-04-38 | règles cliniques codées côté serveur (`OpticalConfirmationRules`) = orientations produit ; cas « deux sphères à zéro sans autre valeur » **accepté** (lecture littérale « une seule Sphère ») | validation par un opticien avant tout usage réel ; toute évolution = code serveur + tests, sans migration |
+| O-04-39 | Prisme : boutons ± **retirés** (pas non arrêté, mandat § 1.2) ; saisie libre conservée | rétablir les ± quand le pas des prismes sera arrêté |
+| O-04-40 | création confirmée réémise avec une saisie **modifiée** après une issue incertaine : l'enregistrement déjà confirmé est renvoyé tel qu'enregistré (aucun doublon) | l'utilisateur vérifie sur le détail et rectifie ; à revoir si constaté en recette |
+| O-04-41 | listes : projection légère des en-têtes et révisions puis filtre / tri / pagination dans le service | mesurer en pilote ; colonnes de synthèse ou requête SQL paginée si nécessaire (sans changement de contrat) |
+| O-04-42 | pré-essais 04-B sur un cluster PostgreSQL 18.6 **jetable** (initdb de l'agent, `localhost:55433`, authentification locale `trust`, données fictives, supprimé en fin de session) et API locale `https://localhost:7567` (environnement `Scratch`, sans user-secrets) | transparence : aucune base ni serveur du propriétaire touché ; ne remplace pas l'étape B |
+| O-04-43 | « historique » interprété comme : révisions antérieures / abandonnées et journal de gestion, servis avec `audit.read` + `optical.read` ; la dernière révision confirmée et le brouillon ouvert restent lisibles avec `optical.read` (nécessaires au dossier) | à confirmer par le propriétaire |
+| O-04-44 | nom du collaborateur ayant mesuré affiché d'après la liste des comptes habilités : un compte qui perd `optical.measurements.write` n'apparaît plus par son nom sur une mesure ancienne | servir le nom affiché avec la révision si constaté gênant |
+| O-04-45 | onglet « Historique » de la fiche : pas d'option de filtre « Dossier optique » ajoutée (les événements optiques apparaissent sous « Toutes les actions » quand les droits le permettent) | à décider en 04-C (aucune refonte) |
+| O-04-46 | `scripts/Invoke-MmvSqlScript.ps1` modifié : `lock_timeout` (défaut 5s) transmis par `PGOPTIONS`, paramètre `-LockTimeout` ; test 16 / 16 avec psql simulé | revue du propriétaire avec le dossier G04-SQL |
+| O-04-47 | `MMV.PostgreSql.Tests` attend désormais 6 migrations : `TestDatabase_AllMigrationsApplied` / `DevDatabase_AllMigrationsApplied` échouent **par construction** tant que 0006 n'est pas appliquée ; tests `OpticalWrite` « Skipped » (NOT_TESTED) | lever à l'étape B |
+
+### Journal
+
+- 27/10/2026 : GO d'implémentation reçu ; préflight (HEAD `3bb25a6`, ascendance de `6924860` confirmée, fichiers non suivis du propriétaire intacts) ; 04-B réalisé ; SQL 0006 généré, régénéré octet pour octet identique, pré-essayé sur cluster jetable ; **STOP G04-SQL**.

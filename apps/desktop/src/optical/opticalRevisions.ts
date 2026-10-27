@@ -2,7 +2,7 @@
 // restituées telles qu'enregistrées, aucune interprétation clinique. Ni « état de l'œil » ni pièces liées (D-04-16).
 import { formatIsoDate } from "../clients/clientForm.ts";
 import { EYE_FIELDS, EYE_SIDES, type OpticalActor, type OpticalRevision, type RecordContent } from "./opticalContract.ts";
-import { FIELD_LABEL, SIDE_SHORT, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
+import { FIELD_LABEL, SIDE_SHORT } from "./opticalLabels.ts";
 
 export function revisionLabel(revision: OpticalRevision): string {
   if (revision.status === "confirmed") return `Révision ${revision.revisionNo}`;
@@ -24,7 +24,7 @@ function rowsOf(content: RecordContent, measurers: readonly OpticalActor[]): [st
     const p = content.provenance;
     rows.push(
       ["provenance.prescriberName", "Prescripteur — nom", p.prescriberName],
-      ["provenance.prescriberQualification", "Prescripteur — qualité", UNSPECIFIED_LABEL],
+      ["provenance.prescriberQualification", "Prescripteur — qualité", p.prescriberQualification],
       ["provenance.prescriberIdentifier", "Prescripteur — identifiant", p.prescriberIdentifier],
       ["provenance.prescribedOn", "Date de prescription", formatIsoDate(p.prescribedOn)],
       ["provenance.receivedOn", "Date de réception", formatIsoDate(p.receivedOn)],
@@ -34,7 +34,7 @@ function rowsOf(content: RecordContent, measurers: readonly OpticalActor[]): [st
     rows.push(
       ["provenance.measuredOn", "Date de la mesure", formatIsoDate(p.measuredOn)],
       ["provenance.measuredByUserId", "Collaborateur ayant mesuré", measurers.find((actor) => actor.id === p.measuredByUserId)?.displayName ?? ""],
-      ["provenance.category", "Catégorie de mesure", UNSPECIFIED_LABEL],
+      ["provenance.category", "Catégorie de mesure", p.category],
     );
   }
   for (const side of EYE_SIDES) {

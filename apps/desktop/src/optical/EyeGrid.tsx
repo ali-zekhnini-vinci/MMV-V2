@@ -1,5 +1,7 @@
-// PROTOTYPE 04-A — grille OD / OG selon la maquette Lot 3 (D-04-15 APPROVED : cartes OD et OG côte à côte, rangées
-// libellé 118 px + contrôle, boutons ± de part et d'autre de la valeur pour Sphère, Cylindre, Addition et Prisme).
+// Grille OD / OG selon la maquette Lot 3 (D-04-15 APPROVED : cartes OD et OG côte à côte, rangées libellé 118 px +
+// contrôle, boutons ± de part et d'autre de la valeur pour Sphère, Cylindre et Addition — pas de 0,25 approuvé par le
+// mandat 04-B ; Prisme en saisie libre, son pas n'étant pas arrêté). Axe conservé avec un Cylindre absent ou nul :
+// contrôle VISIBLE demandant l'intervention de l'utilisateur, l'axe n'est jamais effacé ni converti en silence.
 // Saisie au clavier conservée EXACTEMENT : aucun arrondi, aucun signe ajouté, aucune conversion (0° reste 0°), aucune
 // borne, aucune dépendance entre champs, aucun champ désactivé (états 25 et 36 non repris, D-04-06 ouverte). Seul un
 // clic ± (ou ↑ / ↓ dans le champ) produit une nouvelle valeur, calculée sans alignement sur le pas (opticalStep.ts).
@@ -9,12 +11,12 @@
 // ↑ / ↓ et de la saisie directe).
 import { ChevronDown, X } from "lucide-react";
 import { type KeyboardEvent, type ReactNode, useContext, useId, useRef, useState } from "react";
-import { type Control, Controller } from "react-hook-form";
+import { type Control, Controller, useWatch } from "react-hook-form";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu.tsx";
 import { cn } from "../lib/utils.ts";
 import { EYE_FIELDS, EYE_SIDES, type EyeField, type EyeSide, type EyeValues, type RecordContent } from "./opticalContract.ts";
 import { BASE_SUGGESTIONS, FIELD_LABEL, FIELD_UNIT, FIELD_UNIT_SHORT, SIDE_LABEL, SIDE_SHORT } from "./opticalLabels.ts";
-import { isSteppable, OpticalStepContext, STEPPER_FIELDS, stepLabel, stepValue } from "./opticalStep.ts";
+import { isEmptyOrZero, isSteppable, OpticalStepContext, STEPPER_FIELDS, stepLabel, stepValue } from "./opticalStep.ts";
 
 const LATIN: Record<EyeSide, string> = { od: "Oculus dexter", og: "Oculus sinister" };
 const EYE_TITLE: Record<EyeSide, string> = { od: "Œil droit", og: "Œil gauche" };
@@ -80,8 +82,21 @@ function EyeCard({ side, control, errors, onAnnounce }: EyeCardProps) {
             )}
           />
         ))}
+        <AxisCheck side={side} control={control} />
       </div>
     </fieldset>
+  );
+}
+
+/** Axe saisi alors que le Cylindre est absent ou nul : signalé, conservé tel quel (l'utilisateur décide). */
+function AxisCheck({ side, control }: { side: EyeSide; control: Control<RecordContent> }) {
+  const [cylinder = "", axis = ""] = useWatch({ control, name: [`${side}.cylinder`, `${side}.axis`] });
+  if (axis.trim() === "" || !isEmptyOrZero(cylinder)) return null;
+  return (
+    <p className="optical-row__hint" role="note">
+      Axe {SIDE_SHORT[side]} renseigné sans cylindre (ou cylindre nul) : vérifiez la source. L&apos;axe est conservé tel quel ; effacez-le
+      vous-même s&apos;il ne doit pas figurer.
+    </p>
   );
 }
 
@@ -120,7 +135,7 @@ function EyeRow(props: EyeRowProps) {
         )}
         <span id={ids.unit} className="visually-hidden">
           Unité : {FIELD_UNIT[field]}. Vide = non renseigné.
-          {steppable && " Flèches haut et bas : plus ou moins le pas de démonstration."}
+          {steppable && " Flèches haut et bas : plus ou moins le pas."}
         </span>
         {unparsable && (
           <span id={ids.hint} className="optical-row__hint">

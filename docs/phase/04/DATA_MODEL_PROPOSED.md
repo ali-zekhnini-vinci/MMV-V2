@@ -131,3 +131,19 @@ Mandat : [`prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`](../../../prompts
 | § 4 audit : `document.attached`, `document.invalidated`, `document.viewed` / `document.content_served` | **retirés** ; codes conservés : `prescription.*` / `measurement.*` (`created`, `draft_updated`, `confirmed`, `rectification_started`, `rectification_discarded`, `invalidated`) ; aucune valeur optique | D-04-16 |
 | § 5 non modélisé en 04 | **ajouté** : pièces sources et gestion documentaire (BL-04-01) ; état par œil | D-04-16 |
 | § 6 migration `0006` | contenu attendu réduit : schéma `optical`, en-têtes et révisions des deux types, contrainte de permissions (4 droits, [`PERMISSIONS_04_PROPOSED.md`](PERMISSIONS_04_PROPOSED.md)) ; **aucune** table de pièces. Toujours soumise à G04-METIER puis G04-SQL ; **aucune migration écrite ni appliquée** le 20/10/2026 | — |
+
+## Amendement daté — 27/10/2026 (04-B : modèle implémenté, migration `0006_OpticalModule` préparée, NON appliquée)
+
+Les sections précédentes sont conservées comme historique. Modèle réalisé (schéma `optical`, [`src/MMV.Infrastructure/Optical/OpticalModel.cs`](../../../src/MMV.Infrastructure/Optical/OpticalModel.cs), SQL et contrôles : [`G04_SQL_DOSSIER.md`](G04_SQL_DOSSIER.md)) :
+
+| Élément proposé | Réalisation 04-B |
+|---|---|
+| deux agrégats distincts | `optical.prescriptions` + `optical.prescription_revisions`, `optical.measurements` + `optical.measurement_revisions` ; aucune table commune |
+| en-tête : `lifecycle`, pointeurs `last_confirmed_revision` / `open_draft` (E-02) | **dérivés** : cycle = `invalidated_at_utc` renseigné ou non ; dernière confirmée = plus grand `revision_no` ; brouillon = révision `draft` (au plus une, index unique partiel) — aucun pointeur à maintenir |
+| `xmin` | conservé (jeton de version) ; en plus `creation_request_id` (unique) et `last_request_id` : **idempotence** des écritures |
+| révision : uuid, `status`, `base_revision_no`, numéro à la confirmation | conforme ; contraintes de cohérence (confirmation, abandon, motif, numéros) |
+| valeurs `numeric(…, 2)` | **remplacé** : texte EXACT `varchar(16)` (forme contrôlée) + colonne générée `numeric` **sans échelle** pour Sphère / Cylindre / Axe / Addition / Prisme — un `numeric(p, 2)` arrondirait en silence ; Base et Acuité texte libre |
+| `prescriber_qualification_code`, `measurement_category_code` (listes fermées) | **texte libre** facultatif (`prescriber_qualification`, `category`) — aucune liste imposée |
+| provenance exigée à la confirmation | contrainte `ck_*_confirmed_provenance` (en plus du service) |
+| immuabilité « à discuter » | déclencheurs : révision confirmée / abandonnée immuable, enregistrement invalidé figé, aucune suppression ni troncature (42501) ; même limite que 0005 (rôle propriétaire, O-B04) |
+| permissions | contrainte `ck_user_permissions_permission` recréée avec 4 droits optiques ; aucun droit documentaire |

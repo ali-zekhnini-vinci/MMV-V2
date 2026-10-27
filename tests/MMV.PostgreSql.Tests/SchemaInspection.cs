@@ -33,20 +33,25 @@ public sealed record SchemaState(
     IReadOnlyList<string> AppointmentsIndexes,
     IReadOnlyList<string> AuditColumns,
     IReadOnlyList<string> AuditConstraints,
-    IReadOnlyList<string> AuditIndexes)
+    IReadOnlyList<string> AuditIndexes,
+    IReadOnlyList<string> OpticalColumns,
+    IReadOnlyList<string> OpticalConstraints,
+    IReadOnlyList<string> OpticalIndexes,
+    IReadOnlyList<string> OpticalSequences)
 {
     public const string BaselineMigrationId = "20261015125000_InitialBaseline";
     public const string AuthIdentityMigrationId = "20261015223849_AuthIdentity";
     public const string ClientsModuleMigrationId = "20261016230630_ClientsModule";
     public const string AppointmentsModuleMigrationId = "20261017150504_AppointmentsModule";
     public const string AuditJournalMigrationId = "20261018163108_AuditJournal";
+    public const string OpticalModuleMigrationId = "20261027134615_OpticalModule";
 
     /// <summary>
     /// Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule ;
-    /// phase 03-D2 : + AuditJournal, préparée, revue du propriétaire requise avant toute application).
+    /// phase 03-D2 : + AuditJournal ; phase 04-B : + OpticalModule, préparée, G04-SQL requise avant toute application).
     /// </summary>
     public static readonly string[] AllMigrationIds =
-        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId];
+        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId, OpticalModuleMigrationId];
 
     /// <summary>
     /// Base vide, baseline seule, baseline + identité, + clients, + rendez-vous ou + journal d'audit : aucun autre
@@ -55,12 +60,13 @@ public sealed record SchemaState(
     public IReadOnlyList<string> KnownStateDifferences(string role)
     {
         if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0
-            || ClientsModuleDifferences(role).Count == 0 || AppointmentsModuleDifferences(role).Count == 0)
+            || ClientsModuleDifferences(role).Count == 0 || AppointmentsModuleDifferences(role).Count == 0
+            || AuditJournalDifferences(role).Count == 0)
         {
             return [];
         }
 
-        return AuditJournalDifferences(role);
+        return OpticalModuleDifferences(role);
     }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));
@@ -127,12 +133,20 @@ public sealed record SchemaState(
     /// </summary>
     public IReadOnlyList<string> AuditJournalDifferences(string role) => IdentityDifferences(role, Stage.Audit);
 
+    /// <summary>
+    /// Exactement l'état produit par 0001 à 0006_OpticalModule (docs/phase/04/sql/, 04-B) : schémas précédents inchangés
+    /// (contrainte de permissions recréée sous le même nom), schéma <c>optical</c> exact (deux familles de tables,
+    /// séquences, fonctions et déclencheurs d'immuabilité).
+    /// </summary>
+    public IReadOnlyList<string> OpticalModuleDifferences(string role) => IdentityDifferences(role, Stage.Optical);
+
     private enum Stage
     {
         Auth,
         Clients,
         Appointments,
         Audit,
+        Optical,
     }
 
     private List<string> IdentityDifferences(string role, Stage stage)
@@ -140,8 +154,10 @@ public sealed record SchemaState(
         var withClients = stage >= Stage.Clients;
         var withAppointments = stage >= Stage.Appointments;
         var withAudit = stage >= Stage.Audit;
+        var withOptical = stage >= Stage.Optical;
         var differences = new List<string>();
-        string[] schemas = withAudit ? ["appointments", "audit", "auth", "clients"]
+        string[] schemas = withOptical ? ["appointments", "audit", "auth", "clients", "optical"]
+            : withAudit ? ["appointments", "audit", "auth", "clients"]
             : withAppointments ? ["appointments", "auth", "clients"] : withClients ? ["auth", "clients"] : ["auth"];
         Expect(differences, "schémas", ExtraSchemas, schemas);
         string[] authRelations =
@@ -159,13 +175,22 @@ public sealed record SchemaState(
             .. (withClients ? ClientsRelations : []).Select(r => $"clients.{r} owner={role} acl=default"),
             .. (withAppointments ? AppointmentsRelations : []).Select(r => $"appointments.{r} owner={role} acl=default"),
             .. (withAudit ? AuditRelations : []).Select(r => $"audit.{r} owner={role} acl=default"),
+            .. (withOptical ? OpticalRelations : []).Select(r => $"optical.{r} owner={role} acl=default"),
         ]);
-        Expect(differences, "routines", Routines, withAudit ? ["audit.reject_event_mutation"] : []);
+        Expect(differences, "routines", Routines,
+        [
+            .. withAudit ? ["audit.reject_event_mutation"] : Array.Empty<string>(),
+            .. withOptical ? ["optical.reject_frozen_record_change", "optical.reject_frozen_revision_change"] : Array.Empty<string>(),
+        ]);
         Expect(differences, "types", Types, []);
         Expect(differences, "extensions", Extensions, []);
-        Expect(differences, "décorations", Decorations, withAudit
-            ? ["trigger trg_events_append_only on audit.events", "trigger trg_events_no_truncate on audit.events"]
-            : []);
+        Expect(differences, "décorations", Decorations,
+        [
+            .. withAudit ? ["trigger trg_events_append_only on audit.events", "trigger trg_events_no_truncate on audit.events"] : Array.Empty<string>(),
+            .. withOptical
+                ? OpticalTables.SelectMany(t => new[] { $"trigger trg_{t}_frozen on optical.{t}", $"trigger trg_{t}_no_truncate on optical.{t}" })
+                : [],
+        ]);
         Expect(differences, "lignes", HistoryRows,
         [
             $"{BaselineMigrationId} 10.0.4",
@@ -173,6 +198,7 @@ public sealed record SchemaState(
             .. (withClients ? [$"{ClientsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
             .. (withAppointments ? [$"{AppointmentsModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
             .. (withAudit ? [$"{AuditJournalMigrationId} 10.0.4"] : Array.Empty<string>()),
+            .. (withOptical ? [$"{OpticalModuleMigrationId} 10.0.4"] : Array.Empty<string>()),
         ]);
         Expect(differences, "colonnes auth", AuthColumns,
         [
@@ -246,8 +272,125 @@ public sealed record SchemaState(
         Expect(differences, "colonnes audit", AuditColumns, withAudit ? AuditColumnsExpected : []);
         Expect(differences, "contraintes audit", AuditConstraints, withAudit ? AuditConstraintsExpected : []);
         Expect(differences, "index audit", AuditIndexes, withAudit ? AuditIndexesExpected : []);
+        Expect(differences, "colonnes optical", OpticalColumns, withOptical ? OpticalColumnsExpected : []);
+        Expect(differences, "contraintes optical", OpticalConstraints, withOptical ? OpticalConstraintsExpected : []);
+        Expect(differences, "index optical", OpticalIndexes, withOptical ? OpticalIndexesExpected : []);
+        Expect(differences, "séquences optical", OpticalSequences, withOptical
+            ? [.. OpticalSequenceKinds.Select(k => $"{k}_reference_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f owned_by=-")]
+            : []);
         return differences;
     }
+
+    // ---------- 0006_OpticalModule (04-B) : deux familles symétriques (en-tête, révisions, colonne de rattachement) ----------
+
+    private static readonly (string Records, string Revisions, string RecordColumn)[] OpticalFamilies =
+        [("prescriptions", "prescription_revisions", "prescription_id"), ("measurements", "measurement_revisions", "measurement_id")];
+
+    private static readonly string[] OpticalSequenceKinds = ["measurement", "prescription"];
+
+    private static readonly string[] OpticalTables = ["measurement_revisions", "measurements", "prescription_revisions", "prescriptions"];
+
+    private static readonly string[] EyeColumns =
+        [.. new[] { "od", "og" }.SelectMany(side => new[] { "sphere", "cylinder", "axis", "addition", "prism", "base", "acuity" }.Select(f => $"{side}_{f}"))];
+
+    private static readonly string[] NumericEyeColumns =
+        [.. new[] { "od", "og" }.SelectMany(side => new[] { "sphere", "cylinder", "axis", "addition", "prism" }.Select(f => $"{side}_{f}"))];
+
+    private static readonly string[] RecordUserColumns = ["created_by_user_id", "updated_by_user_id", "invalidated_by_user_id"];
+
+    private static readonly string[] RevisionUserColumns = ["started_by_user_id", "updated_by_user_id", "confirmed_by_user_id", "discarded_by_user_id"];
+
+    private static IEnumerable<string> OpticalIndexNames()
+    {
+        foreach (var (records, revisions, recordColumn) in OpticalFamilies)
+        {
+            yield return $"pk_{records}";
+            yield return $"pk_{revisions}";
+            yield return $"ux_{records}_reference";
+            yield return $"ux_{records}_creation_request_id";
+            yield return $"ix_{records}_client_created";
+            foreach (var column in RecordUserColumns)
+            {
+                yield return $"ix_{records}_{column}";
+            }
+
+            yield return $"ix_{revisions}_{recordColumn[..^3]}_started";
+            yield return $"ux_{revisions}_number";
+            yield return $"ux_{revisions}_open_draft";
+            foreach (var column in RevisionUserColumns)
+            {
+                yield return $"ix_{revisions}_{column}";
+            }
+        }
+
+        yield return "ix_measurement_revisions_measured_by_user_id";
+    }
+
+    private static readonly string[] OpticalRelations =
+    [
+        .. OpticalTables.Select(t => $"{t} kind=r"),
+        "prescription_reference_seq kind=S", "measurement_reference_seq kind=S",
+        .. OpticalIndexNames().Select(i => $"{i} kind=i"),
+    ];
+
+    private static readonly string[] OpticalIndexesExpected =
+        [.. OpticalIndexNames().Select(i => $"{i} unique={(i.StartsWith("ix_", StringComparison.Ordinal) ? 'f' : 't')}")];
+
+    // Valeurs d'œil : texte exact (varchar(16)) et valeur numérique EXACTE générée (numeric sans précision ni échelle).
+    private static readonly string[] OpticalColumnsExpected =
+    [
+        .. OpticalFamilies.SelectMany(f => new[]
+        {
+            $"{f.Records}.id uuid notnull=t", $"{f.Records}.reference character varying(24) notnull=t", $"{f.Records}.client_id uuid notnull=t",
+            $"{f.Records}.created_at_utc timestamp with time zone notnull=t", $"{f.Records}.created_by_user_id uuid notnull=t",
+            $"{f.Records}.updated_at_utc timestamp with time zone notnull=t", $"{f.Records}.updated_by_user_id uuid notnull=t",
+            $"{f.Records}.invalidated_at_utc timestamp with time zone notnull=f", $"{f.Records}.invalidated_by_user_id uuid notnull=f",
+            $"{f.Records}.invalidation_reason_code character varying(32) notnull=f", $"{f.Records}.invalidation_comment character varying(500) notnull=f",
+            $"{f.Records}.creation_request_id uuid notnull=t", $"{f.Records}.last_request_id uuid notnull=t",
+            $"{f.Revisions}.id uuid notnull=t", $"{f.Revisions}.{f.RecordColumn} uuid notnull=t", $"{f.Revisions}.status character varying(16) notnull=t",
+            $"{f.Revisions}.revision_no integer notnull=f", $"{f.Revisions}.base_revision_no integer notnull=f",
+            $"{f.Revisions}.reason_code character varying(32) notnull=f", $"{f.Revisions}.reason_comment character varying(500) notnull=f",
+            $"{f.Revisions}.notes character varying(2000) notnull=f",
+            $"{f.Revisions}.started_at_utc timestamp with time zone notnull=t", $"{f.Revisions}.started_by_user_id uuid notnull=t",
+            $"{f.Revisions}.updated_at_utc timestamp with time zone notnull=t", $"{f.Revisions}.updated_by_user_id uuid notnull=t",
+            $"{f.Revisions}.confirmed_at_utc timestamp with time zone notnull=f", $"{f.Revisions}.confirmed_by_user_id uuid notnull=f",
+            $"{f.Revisions}.discarded_at_utc timestamp with time zone notnull=f", $"{f.Revisions}.discarded_by_user_id uuid notnull=f",
+        }.Concat(EyeColumns.Select(c => $"{f.Revisions}.{c} character varying(16) notnull=f"))
+         .Concat(NumericEyeColumns.Select(c => $"{f.Revisions}.{c}_value numeric notnull=f"))),
+        "prescription_revisions.prescriber_name character varying(120) notnull=f",
+        "prescription_revisions.prescriber_qualification character varying(120) notnull=f",
+        "prescription_revisions.prescriber_identifier character varying(120) notnull=f",
+        "prescription_revisions.prescribed_on date notnull=f",
+        "prescription_revisions.received_on date notnull=f",
+        "measurement_revisions.measured_on date notnull=f",
+        "measurement_revisions.measured_by_user_id uuid notnull=f",
+        "measurement_revisions.category character varying(120) notnull=f",
+    ];
+
+    private static readonly string[] OpticalConstraintsExpected =
+    [
+        .. OpticalFamilies.SelectMany(f => new[]
+        {
+            $"{f.Records}.pk_{f.Records} p -", $"{f.Records}.fk_{f.Records}_clients f r",
+            $"{f.Records}.fk_{f.Records}_created_by_users f r", $"{f.Records}.fk_{f.Records}_updated_by_users f r",
+            $"{f.Records}.fk_{f.Records}_invalidated_by_users f r",
+            $"{f.Records}.ck_{f.Records}_reference_format c -", $"{f.Records}.ck_{f.Records}_updated_after_created c -",
+            $"{f.Records}.ck_{f.Records}_invalidation_complete c -", $"{f.Records}.ck_{f.Records}_invalidated_after_created c -",
+            $"{f.Records}.ck_{f.Records}_invalidation_reason_format c -",
+            $"{f.Revisions}.pk_{f.Revisions} p -", $"{f.Revisions}.fk_{f.Revisions}_{f.Records} f r",
+            $"{f.Revisions}.fk_{f.Revisions}_started_by_users f r", $"{f.Revisions}.fk_{f.Revisions}_updated_by_users f r",
+            $"{f.Revisions}.fk_{f.Revisions}_confirmed_by_users f r", $"{f.Revisions}.fk_{f.Revisions}_discarded_by_users f r",
+            $"{f.Revisions}.ck_{f.Revisions}_status c -", $"{f.Revisions}.ck_{f.Revisions}_confirmation c -",
+            $"{f.Revisions}.ck_{f.Revisions}_discard c -", $"{f.Revisions}.ck_{f.Revisions}_numbers c -", $"{f.Revisions}.ck_{f.Revisions}_reason c -",
+            $"{f.Revisions}.ck_{f.Revisions}_updated_after_started c -", $"{f.Revisions}.ck_{f.Revisions}_confirmed_provenance c -",
+            $"{f.Revisions}.ck_{f.Revisions}_dates c -",
+        }.Concat(NumericEyeColumns.Select(c => $"{f.Revisions}.ck_{f.Revisions}_{c}_number c -"))
+         .Concat(new[] { "id", "reference", "client_id", "created_at_utc", "created_by_user_id", "updated_at_utc", "updated_by_user_id", "creation_request_id", "last_request_id" }
+             .Select(c => $"{f.Records}.{f.Records}_{c}_not_null n -"))
+         .Concat(new[] { "id", f.RecordColumn, "status", "started_at_utc", "started_by_user_id", "updated_at_utc", "updated_by_user_id" }
+             .Select(c => $"{f.Revisions}.{f.Revisions}_{c}_not_null n -"))),
+        "measurement_revisions.fk_measurement_revisions_measured_by_users f r",
+    ];
 
     private static readonly string[] AuditRelations =
     [
@@ -439,7 +582,11 @@ public sealed record SchemaState(
         Section("index appointments", AppointmentsIndexes),
         Section("colonnes audit", AuditColumns),
         Section("contraintes audit", AuditConstraints),
-        Section("index audit", AuditIndexes));
+        Section("index audit", AuditIndexes),
+        Section("colonnes optical", OpticalColumns),
+        Section("contraintes optical", OpticalConstraints),
+        Section("index optical", OpticalIndexes),
+        Section("séquences optical", OpticalSequences));
 
     private static string Section(string name, IReadOnlyList<string> items) =>
         $"{name} ({items.Count}) : " + (items.Count == 0 ? "—" : string.Join(" | ", items));
@@ -535,22 +682,28 @@ public static class SchemaInspection
             ClientsColumns: await ListAsync(connection, ColumnsSql("clients"), cancellationToken),
             ClientsConstraints: await ListAsync(connection, ConstraintsSql("clients"), cancellationToken),
             ClientsIndexes: await ListAsync(connection, IndexesSql("clients"), cancellationToken),
-            ClientsSequences: await ListAsync(connection, """
-                SELECT format('%s type=%s start=%s increment=%s min=%s max=%s cycle=%s owned_by=%s', c.relname,
-                              format_type(s.seqtypid, NULL), s.seqstart, s.seqincrement, s.seqmin, s.seqmax,
-                              CASE WHEN s.seqcycle THEN 't' ELSE 'f' END,
-                              coalesce((SELECT d.refobjid::regclass::text FROM pg_depend d
-                                        WHERE d.objid = c.oid AND d.classid = 'pg_class'::regclass AND d.deptype = 'a'), '-'))
-                FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid JOIN pg_namespace n ON n.oid = c.relnamespace
-                WHERE n.nspname = 'clients'
-                """, cancellationToken),
+            ClientsSequences: await ListAsync(connection, SequencesSql("clients"), cancellationToken),
             AppointmentsColumns: await ListAsync(connection, ColumnsSql("appointments"), cancellationToken),
             AppointmentsConstraints: await ListAsync(connection, ConstraintsSql("appointments"), cancellationToken),
             AppointmentsIndexes: await ListAsync(connection, IndexesSql("appointments"), cancellationToken),
             AuditColumns: await ListAsync(connection, ColumnsSql("audit"), cancellationToken),
             AuditConstraints: await ListAsync(connection, ConstraintsSql("audit"), cancellationToken),
-            AuditIndexes: await ListAsync(connection, IndexesSql("audit"), cancellationToken));
+            AuditIndexes: await ListAsync(connection, IndexesSql("audit"), cancellationToken),
+            OpticalColumns: await ListAsync(connection, ColumnsSql("optical"), cancellationToken),
+            OpticalConstraints: await ListAsync(connection, ConstraintsSql("optical"), cancellationToken),
+            OpticalIndexes: await ListAsync(connection, IndexesSql("optical"), cancellationToken),
+            OpticalSequences: await ListAsync(connection, SequencesSql("optical"), cancellationToken));
     }
+
+    private static string SequencesSql(string schema) => $"""
+        SELECT format('%s type=%s start=%s increment=%s min=%s max=%s cycle=%s owned_by=%s', c.relname,
+                      format_type(s.seqtypid, NULL), s.seqstart, s.seqincrement, s.seqmin, s.seqmax,
+                      CASE WHEN s.seqcycle THEN 't' ELSE 'f' END,
+                      coalesce((SELECT d.refobjid::regclass::text FROM pg_depend d
+                                WHERE d.objid = c.oid AND d.classid = 'pg_class'::regclass AND d.deptype = 'a'), '-'))
+        FROM pg_sequence s JOIN pg_class c ON c.oid = s.seqrelid JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = '{schema}'
+        """;
 
     private static string ColumnsSql(string schema) => $"""
         SELECT format('%s.%s %s notnull=%s', c.relname, a.attname, format_type(a.atttypid, a.atttypmod),

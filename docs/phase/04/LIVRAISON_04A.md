@@ -378,3 +378,7 @@ Captures finales des deux formulaires : `P04A_CLOT_navigateur_70-d0417-formulair
 7. **D-04-11, D-04-12.c, D-04-13** (révisions, volet encore applicable des événements, granularité de lecture) ; puis G04-SQL (revue de la migration `0006`, non générée ni appliquée) et G04-LEGAL avant toute donnée réelle.
 
 Toujours au **backlog permanent BL-04-01** : gestion documentaire des pièces sources (D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14, `optical.documents.*`).
+
+## 14. Note datée — 27/10/2026 (04-B)
+
+Les sections précédentes restent l'historique de 04-A. Depuis 04-B ([`LIVRAISON_04B.md`](LIVRAISON_04B.md)) : « Enregistrer » est **atomique** (O-04-34 résolu) — les messages « Brouillon enregistré — confirmation refusée / non aboutie » et le bouton « Laisser en brouillon » n'existent plus (un refus n'enregistre rien) ; le pas 0,25 est **approuvé** pour Sphère, Cylindre et Addition, le Prisme passe en saisie libre (pas non arrêté) ; qualité du prescripteur et catégorie de mesure deviennent des champs libres ; le banc reste isolé et son double applique la même atomicité.

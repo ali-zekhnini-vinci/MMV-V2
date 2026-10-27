@@ -3,9 +3,10 @@
 // change jamais. Mise en page de la maquette Lot 3 (D-04-15 APPROVED) : en-tête avec Annuler / Enregistrer, carte
 // « Informations générales » avec le client concerné, cartes OD / OG côte à côte avec boutons ±, carte Notes.
 // Aucun « état de l'œil » ni pièce source (D-04-16 APPROVED : parcours simplifié, révisions conservées).
-// Enregistrement simplifié (D-04-17 APPROVED) : « Enregistrer » (principal, Ctrl+S, Entrée) enregistre le brouillon PUIS
-// le confirme ; « Enregistrer comme brouillon » (discret) enregistre sans confirmer. Si la confirmation échoue après un
-// brouillon enregistré, le formulaire est resynchronisé sur ce brouillon et l'échec est annoncé comme tel.
+// Enregistrement simplifié (D-04-17 APPROVED) : « Enregistrer » (principal, Ctrl+S, Entrée) enregistre ET confirme en UNE
+// opération atomique du service (04-B) — un refus n'enregistre rien (aucun brouillon orphelin, saisie conservée) ;
+// « Enregistrer comme brouillon » (discret) enregistre sans confirmer. Réponse incertaine (réseau, délai) : l'état réel
+// est relu avant toute nouvelle tentative, qui reprend la même demande sans doublon (passerelle src/api/optical.ts).
 // Aucune règle locale : champs facultatifs à l'écran ; seules les erreurs renvoyées par le service
 // s'affichent sous les champs (aria-describedby) ; critère de confirmation décidé par le service (422 affiché tel quel).
 // Version lue à l'ouverture figée (409 sans écrasement, saisie conservée, GAP-04-09). Garde de sortie et Ctrl+S
@@ -25,10 +26,10 @@ import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { EyeGrid } from "./EyeGrid.tsx";
 import { KindBadge, ProposedTag } from "./OpticalBadges.tsx";
 import { emptyContent, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
-import { KIND_LABEL, LIST_PENDING_NOTE, RECTIFICATION_REASON_LABEL, UNSPECIFIED_LABEL } from "./opticalLabels.ts";
-import { useConfirmDraft, useCreateRecord, useMeasurers, useOpticalGateway, useSaveDraft } from "./opticalQueries.ts";
+import { KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
+import { useCreateAndConfirm, useCreateRecord, useMeasurers, useOpticalGateway, useSaveAndConfirm, useSaveDraft } from "./opticalQueries.ts";
 import { OpticalStepContext, stepLabel } from "./opticalStep.ts";
-import { describeConfirmFailure, describeOpticalFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
+import { describeOpticalFailure, describeSaveFailure, type FailureView, fieldErrorMessage, fieldPathLabel, opticalDetailPath, type OpticalLaunchState } from "./opticalUi.ts";
 
 type OpticalRecordFormProps =
   | { mode: "create"; kind: OpticalKind; client: { id: string; label: string }; launch: OpticalLaunchState | null }
@@ -40,7 +41,7 @@ const MAX_YEAR = new Date().getFullYear() + 1;
 /** Erreurs de champ du service (`{ champ: [codes] }`) → messages par chemin. */
 function toFieldMessages(error: ApiError): Record<string, string> {
   const messages: Record<string, string> = {};
-  for (const [field, codes] of Object.entries(error.fieldErrors ?? {})) messages[field] = fieldErrorMessage(codes[0]);
+  for (const [field, codes] of Object.entries(error.fieldErrors ?? {})) messages[field] = fieldErrorMessage(codes[0], field);
   return messages;
 }
 
@@ -50,7 +51,8 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const { setNotice } = useClientsUi();
   const create = useCreateRecord();
   const save = useSaveDraft();
-  const confirm = useConfirmDraft();
+  const createConfirm = useCreateAndConfirm();
+  const saveConfirm = useSaveAndConfirm();
   const kind: OpticalKind = props.mode === "create" ? props.kind : props.record.kind;
   const measurers = useMeasurers(kind === "measurement");
   // Enregistrement et version lus à l'ouverture, figés jusqu'à un rechargement explicite (GAP-04-09).
@@ -72,16 +74,14 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<FailureView | null>(null);
-  // Brouillon enregistré mais confirmation en échec : proposer de le laisser tel quel (aucune nouvelle écriture).
-  const [keptDraft, setKeptDraft] = useState<OpticalRecord | null>(null);
   const [leaveRequest, setLeaveRequest] = useState<(() => void) | null>(null);
   const [reloadAsk, setReloadAsk] = useState(false);
   const [done, setDone] = useState(false);
-  // Une seule opération à la fois : double clic, Ctrl+S répété ou Entrée pendant l'enregistrement sont ignorés, y compris
-  // entre l'enregistrement du brouillon et sa confirmation (aucun doublon créé).
+  // Une seule opération à la fois : double clic, Ctrl+S répété ou Entrée pendant l'enregistrement sont ignorés (aucun
+  // doublon ; le serveur reconnaît en outre la réémission d'une même demande).
   const busyRef = useRef(false);
   const [busy, setBusy] = useState(false);
-  const saving = busy || create.isPending || save.isPending || confirm.isPending;
+  const saving = busy || create.isPending || save.isPending || createConfirm.isPending || saveConfirm.isPending;
   const back = props.launch?.returnTo ?? (record ? opticalDetailPath(record.kind, record.id) : "/optique");
 
   // Après un refus : focus sur le premier champ en erreur (convention 03-A), sinon bandeau ramené à l'écran.
@@ -128,7 +128,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   const persist = async (values: RecordContent): Promise<OpticalRecord | null> => {
     setFailure(null);
     setFieldErrors({});
-    setKeptDraft(null);
     try {
       if (record === null) {
         if (props.mode !== "create") return null;
@@ -169,23 +168,32 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
       }),
     )();
 
-  // Action principale : enregistrer le brouillon, puis le confirmer (critère décidé par le service).
+  // Action principale : enregistrer ET confirmer en une opération atomique (critère décidé par le service).
   const onSave = () =>
     handleSubmit((values) =>
       exclusive(async () => {
-        const saved = await persist(values);
-        if (!saved) return;
+        setFailure(null);
+        setFieldErrors({});
         try {
-          const confirmed = await confirm.mutateAsync({ kind: saved.kind, id: saved.id, version: saved.version });
+          const confirmed =
+            record === null
+              ? props.mode === "create"
+                ? await createConfirm.mutateAsync({ clientId: props.client.id, content: values })
+                : null
+              : await saveConfirm.mutateAsync({ kind: record.kind, id: record.id, content: values, version: record.version });
+          if (confirmed === null) return;
           const revisionNo = confirmed.lastConfirmed?.revisionNo ?? 1;
           finish(confirmed, `${KIND_LABEL[confirmed.kind]} enregistrée`, `${confirmed.reference} : révision ${revisionNo} confirmée.`);
         } catch (error) {
-          // Le brouillon EST enregistré : formulaire resynchronisé sur lui (aucun faux avertissement de perte de saisie),
-          // prochaine tentative sur ce même brouillon (aucun doublon), dernière révision confirmée inchangée.
-          reset(saved.openDraft?.content ?? values);
-          setKeptDraft(saved);
+          // Rien n'a été enregistré (refus) ou l'issue est incertaine (réseau) : saisie conservée à l'écran ; pour un
+          // brouillon existant, l'état réel est relu (version) avant de proposer une nouvelle tentative.
           const refused = (error as { error: ApiError }).error;
-          showFailure(refused, describeConfirmFailure(refused));
+          let view = describeSaveFailure(refused);
+          if (record !== null && ["network", "timeout", "http", "invalid-response"].includes(refused.kind)) {
+            const latest = await gateway.getRecord(record.kind, record.id);
+            if (latest.ok && latest.data.version !== record.version) view = { ...view, reload: true, text: `${view.text} L'enregistrement a changé sur le serveur : rechargez-le pour vérifier son état.` };
+          }
+          showFailure(refused, view);
         }
       }),
     )();
@@ -200,7 +208,6 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
     reset(latest.data.openDraft?.content ?? getValues());
     setFailure(null);
     setFieldErrors({});
-    setKeptDraft(null);
   };
 
   // Ctrl+S = action principale « Enregistrer » (jamais le brouillon).
@@ -288,14 +295,8 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
               </ul>
             )}
           </div>
-          {(keptDraft || (failure.reload && record)) && (
+          {failure.reload && record && (
             <div className="clients-actions clients-actions--wrap">
-              {keptDraft && (
-                <Button onClick={() => draftSaved(keptDraft)}>
-                  <FilePen size={16} aria-hidden="true" />
-                  Laisser en brouillon
-                </Button>
-              )}
               {failure.reload && record && (
                 <Button onClick={() => setReloadAsk(true)}>
                   <RefreshCw size={16} aria-hidden="true" />
@@ -519,25 +520,6 @@ function DateField({ label, name, control, error, hint }: { label: string; name:
   );
 }
 
-function PendingListField({ label, name, register }: { label: string; name: string; register: FieldProps["register"] }) {
-  const id = useId();
-  return (
-    <div className="clients-field">
-      <label className="clients-field__label" htmlFor={id}>
-        {label}
-      </label>
-      <div className="clients-input">
-        <select id={id} className="optical-select" aria-describedby={`${id}-hint`} {...register(name as never)}>
-          <option value="unspecified">{UNSPECIFIED_LABEL}</option>
-        </select>
-      </div>
-      <span id={`${id}-hint`} className="clients-field__hint">
-        Seule valeur disponible : {LIST_PENDING_NOTE}.
-      </span>
-    </div>
-  );
-}
-
 // Grille de la maquette (genInfo) : trois colonnes, Date · Prescripteur · Référence en première ligne. Aucun champ
 // marqué obligatoire (la maquette marquait la date ; D-04-03.a non ratifiée).
 function PrescriptionProvenanceFields({ register, control, errors, reference }: FieldProps & { reference?: string }) {
@@ -546,7 +528,13 @@ function PrescriptionProvenanceFields({ register, control, errors, reference }: 
       <DateField label="Date de prescription" name="provenance.prescribedOn" control={control} error={errors["provenance.prescribedOn"]} hint="Date portée sur le document. Aucune validité n'est calculée." />
       <TextField label="Prescripteur — nom (tel que sur le document)" name="provenance.prescriberName" register={register} error={errors["provenance.prescriberName"]} />
       <ReferenceField reference={reference} />
-      <PendingListField label="Prescripteur — qualité" name="provenance.prescriberQualification" register={register} />
+      <TextField
+        label="Prescripteur — qualité"
+        name="provenance.prescriberQualification"
+        register={register}
+        error={errors["provenance.prescriberQualification"]}
+        hint="Facultatif, texte libre (aucune liste imposée)."
+      />
       <TextField
         label="Prescripteur — identifiant professionnel"
         name="provenance.prescriberIdentifier"
@@ -580,7 +568,7 @@ function MeasurementProvenanceFields({ register, control, errors, measurers, ref
           </select>
         </div>
         <span id={`${id}-hint`} className="clients-field__hint">
-          Comptes fictifs du banc ; l&apos;auteur de la saisie est tracé séparément (D-04-03.b, proposé).
+          Comptes habilités à mesurer ; l&apos;auteur de la saisie est tracé séparément par le serveur.
         </span>
         {error && (
           <span id={`${id}-error`} className="clients-field__error" role="alert">
@@ -589,7 +577,7 @@ function MeasurementProvenanceFields({ register, control, errors, measurers, ref
         )}
       </div>
       <ReferenceField reference={reference} />
-      <PendingListField label="Catégorie de mesure" name="provenance.category" register={register} />
+      <TextField label="Catégorie de mesure" name="provenance.category" register={register} error={errors["provenance.category"]} hint="Facultatif, texte libre (aucune liste imposée)." />
       <p className="optical-geninfo__note">
         <Ruler size={14} aria-hidden="true" />
         Mesure réalisée au magasin par un collaborateur : ce n&apos;est pas une prescription délivrée par un médecin (D-04-01).
