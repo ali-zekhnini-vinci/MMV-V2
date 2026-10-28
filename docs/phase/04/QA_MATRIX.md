@@ -301,3 +301,26 @@ Mandat : [`prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`](../../../prompts/PHASE0
 | Q-04-218 | Matrice HTTP HTTPS réelle | API de test sur `mmv_v2_test` | NOT_TESTED | étape B |
 | Q-04-219 | Parcours Tauri natif | fiche → dossier → nouveau → ± → Enregistrer → historique → rectifier → conflit deux postes → invalider ; thèmes, zooms | NOT_TESTED | étape B |
 | Q-04-220 | Captures navigateur du banc | `plan.mjs` / `plan-lot3.mjs` | NOT_RERUN | banc modifié (Prisme sans ±, champs libres, contrôle d'axe) — à rejouer en 04-C |
+
+## 04-C — contrôles exécutés le 28/10/2026 (G04-SQL accordée, 0006 appliquée)
+
+Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../../../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md). Rapport : [`LIVRAISON_04C.md`](LIVRAISON_04C.md). Données et comptes **fictifs**, `mmv_v2_test` ; résidu final 0.
+
+| ID | Contrôle | Méthode | Statut | Preuve / détail |
+|---|---|---|---|---|
+| Q-04-221 | Précontrôles G04-SQL | empreinte, manifeste, identité serveur (18.6, 5433), bases et rôles, historique 0001–0005, dérive, régénération EF Core, processus, sauvegarde | PASS | [`evidence/P04C_preflight_20261028.log`](evidence/P04C_preflight_20261028.log) |
+| Q-04-222 | Application 0006 — `mmv_v2_dev` | `Invoke-MmvSqlScript.ps1 -LockTimeout 5s`, empreinte imposée | PASS | COMMIT, 6 migrations — [`evidence/P04C_0006_apply_mmv_v2_dev_20261028T2147Z.log`](evidence/P04C_0006_apply_mmv_v2_dev_20261028T2147Z.log) |
+| Q-04-223 | Application 0006 — `mmv_v2_test` | idem, après contrôle conforme de dev | PASS | [`evidence/P04C_0006_apply_mmv_v2_test_20261028T2148Z.log`](evidence/P04C_0006_apply_mmv_v2_test_20261028T2148Z.log) |
+| Q-04-224 | Contrôle de schéma | `0006_OpticalModule.verify.sql` (lecture seule) + `SchemaState.OpticalModuleDifferences` | PASS | 18 / 18 OK sur chaque base ; inventaire exact 0 différence ; comptages existants inchangés — [`evidence/P04C_0006_verify_20261028.log`](evidence/P04C_0006_verify_20261028.log), [`evidence/P04C_counts_20261028.log`](evidence/P04C_counts_20261028.log) |
+| Q-04-225 | PostgreSQL 18 réel (remplace Q-04-217) | `dotnet test tests/MMV.PostgreSql.Tests` | **FAIL puis PASS** | 50 / 52 au premier passage : 2 tests encore sur l'inventaire 0005 (défaut de TEST, O-04-50) ; corrigés : **52 / 52** dont `OpticalWrite` ×5 — [`evidence/P04C_postgresql_20261028.log`](evidence/P04C_postgresql_20261028.log) |
+| Q-04-226 | .NET | `dotnet build -warnaserror`, `MMV.Api.Tests`, `MMV.Maintenance.Tests` | PASS | 0 avertissement ; 452 / 452 ; 50 / 50 — [`evidence/P04C_dotnet_20261028.log`](evidence/P04C_dotnet_20261028.log) |
+| Q-04-227 | Frontend | `npm run check`, `eslint .`, `vitest run`, `vite build` | PASS | 301 / 301 ; lint 1 avertissement préexistant ; parallèle .NET : 296 / 300 par délais (O-04-51) — [`evidence/P04C_frontend_20261028.log`](evidence/P04C_frontend_20261028.log) |
+| Q-04-228 | Matrice HTTPS réelle (remplace Q-04-218) | outil [`evidence/P04C_harness_c04http.cs.txt`](evidence/P04C_harness_c04http.cs.txt), API de banc 7367 sur `mmv_v2_test` | **FAIL puis PASS** | premier passage 67 / 68 : 10.4 non exercé (désactivation toujours gagnante, cas rendu déterministe) puis 67 / 69 : collaborateur désactivé non nommé (**défaut produit O-04-48**, corrigé) et 2 lignes `fail` 23505 traitées (O-04-49, critère précisé) ; final **69 / 69** — [`evidence/P04C_http_matrix_20261028.log`](evidence/P04C_http_matrix_20261028.log) |
+| Q-04-229 | HTTP en clair | même outil, 5367 | PASS | premier passage interrompu (la matrice complète supposait une connexion en HTTP, refusée 403 par conception ; données du passage purgées) ; contrôle de refus : 6 / 6 — 403 `https_required` (connexion, lectures, écriture), rien écrit ; même jeton 200 en HTTPS (O-04-55) |
+| Q-04-230 | Archivage ‖ écriture optique | 10 paires simultanées (création, rectification) | PASS | jamais de 500 ; 409 `client_archived` après ; constat O-04-53 (réserve) |
+| Q-04-231 | Désactivation ‖ confirmation de mesure | 10 paires décalées 0–45 ms | PASS | 422 `not_eligible` ou 201 selon l'ordre ; nom servi (`citedUsers`) ; constat O-04-54 (réserve) |
+| Q-04-232 | Parcours Tauri natif (remplace Q-04-219) | `run-native.mjs optique-04c`, exécutable de banc `com.mmv.v2.c04test`, CDP 9223 | **FAIL puis PASS** | défauts du SCÉNARIO corrigés (étalonnage souris faussé, attentes de chargement, libellé d'onglet, valeur ambiguë) ; final **123 contrôles PASS**, 12 captures — [`evidence/P04C_native_optique-04c_20261028.log`](evidence/P04C_native_optique-04c_20261028.log) |
+| Q-04-233 | Confidentialité | recherche dans le journal de l'API de banc, corps 401 / 403, `audit.events` | PASS | 0 valeur optique, prescripteur, note, catégorie, nom de client ; 0 erreur non traitée |
+| Q-04-234 | Script d'application | `scripts/tests/Invoke-MmvSqlScript.Tests.ps1` | PASS | 16 / 16 |
+| Q-04-235 | Captures du banc 04-A (Q-04-220) | `plan.mjs` / `plan-lot3.mjs` | NOT_RERUN | banc non modifié en 04-C |
+| Q-04-236 | Restauration de sauvegarde, rôle SQL applicatif, multi-postes physiques | — | NOT_TESTED | hors mandat ; réserves BL-04-04, BL-04-05 |

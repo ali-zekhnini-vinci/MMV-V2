@@ -2210,6 +2210,7 @@
           "revisions",
           "historyAvailable",
           "events",
+          "citedUsers",
           "createdAtUtc",
           "createdBy",
           "version"
@@ -2277,6 +2278,12 @@
               "$ref": "#/components/schemas/OpticalEventResponse"
             }
           },
+          "citedUsers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpticalActorResponse"
+            }
+          },
           "createdAtUtc": {
             "type": "string",
             "format": "date-time"
@@ -2303,6 +2310,7 @@
           "revisions",
           "historyAvailable",
           "events",
+          "citedUsers",
           "createdAtUtc",
           "createdBy",
           "version"
@@ -2368,6 +2376,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OpticalEventResponse"
+            }
+          },
+          "citedUsers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpticalActorResponse"
             }
           },
           "createdAtUtc": {

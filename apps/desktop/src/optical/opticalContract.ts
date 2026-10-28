@@ -64,6 +64,14 @@ export interface OpticalActor {
   displayName: string;
 }
 
+/**
+ * 04-C (O-04-48) : collaborateurs connus pour l'affichage = comptes habilités actifs (`/measurers`) complétés par ceux
+ * cités dans l'enregistrement (`citedUsers`), même désactivés ou plus habilités depuis la mesure.
+ */
+export function knownActors(active: readonly OpticalActor[], cited: readonly OpticalActor[]): OpticalActor[] {
+  return [...active, ...cited.filter((actor) => !active.some((known) => known.id === actor.id))];
+}
+
 /** E-02 / D-04-11 (PROPOSED) : statut d'une révision ; le numéro n'est attribué qu'à la confirmation. */
 export type RevisionStatus = "draft" | "confirmed" | "discarded";
 
@@ -139,6 +147,8 @@ export interface OpticalRecord {
    * seulement ; sinon `revisions` se limite à la dernière révision confirmée et au brouillon ouvert, `events` est vide. */
   historyAvailable: boolean;
   events: OpticalEvent[];
+  /** 04-C : comptes cités dans la provenance des révisions servies (collaborateur ayant mesuré), avec leur nom. */
+  citedUsers: OpticalActor[];
   createdAtUtc: string;
   createdBy: OpticalActor;
   /** Jeton de concurrence de l'enregistrement (équivalent `xmin`). */

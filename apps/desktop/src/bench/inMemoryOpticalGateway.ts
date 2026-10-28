@@ -195,6 +195,8 @@ export class InMemoryOpticalGateway implements OpticalGateway {
       openDraft,
       revisions: record.revisions,
       events: record.events,
+      // Banc : tous les collaborateurs fictifs restent habilités, la liste `/measurers` suffit à les nommer.
+      citedUsers: [],
       createdAtUtc: record.createdAtUtc,
       createdBy: record.createdBy,
       version: record.version,

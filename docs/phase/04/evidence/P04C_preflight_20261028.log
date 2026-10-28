@@ -1,0 +1,198 @@
+# 04-C — précontrôles G04-SQL (28/10/2026, avant toute écriture). Lecture seule : sessions default_transaction_read_only=on.
+## 1. Empreintes
+sha256sum docs/phase/04/sql/0006_OpticalModule.idempotent.sql = 927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013 (attendu : identique)
+sha256sum -c docs/phase/04/sql/0006_MANIFEST.sha256 : 12 / 12 OK (scripts, diff, migration EF Core, Designer, instantané, modèle, Permissions.cs, Invoke-MmvSqlScript.ps1, G04_SQL_DOSSIER.md)
+## 2. Serveurs et processus
+Écoute : 5433 (PostgreSQL 18, service postgresql-x64-18, PID 8400) ; 5432 (PostgreSQL 17) jamais contacté.
+Processus du propriétaire au précontrôle : aucun MMV.Api (7267 / 5022 libres), aucun tauri dev (1420), aucun banc (1520) ; seuls des serveurs de langage (IDE / Serena). Aucune session sur mmv_v2_dev ni mmv_v2_test (pg_stat_activity vide) : fenêtre de maintenance libre.
+## 3. Identité, historique, schéma (psql -X, lecture seule)
+     db     |    usr     | port |                                   ver                                   |  sv  | ro 
+------------+------------+------+-------------------------------------------------------------------------+------+----
+ mmv_v2_dev | mmv_v2_dev | 5433 | PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit | 18.6 | on
+(1 row)
+
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+ 20261018163108_AuditJournal       | 10.0.4
+(5 rows)
+
+   nspname    
+--------------
+ appointments
+ audit
+ auth
+ clients
+ public
+(5 rows)
+
+   nspname    | tables | idx | seqs 
+--------------+--------+-----+------
+ appointments |      2 |   9 |    0
+ audit        |      1 |   4 |    0
+ auth         |      4 |   7 |    0
+ clients      |      1 |   6 |    1
+ public       |      1 |   1 |    0
+(5 rows)
+
+                                                                                                                                                                       pg_get_constraintdef                                                                                                                                                                       
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying])::text[])))
+(1 row)
+
+ datname | usename | application_name | client_addr | state | backend_start 
+---------+---------+------------------+-------------+-------+---------------
+(0 rows)
+
+   rolname   | rolsuper | rolcreaterole | rolcreatedb 
+-------------+----------+---------------+-------------
+ mmv_v2_dev  | f        | f             | f
+ mmv_v2_test | f        | f             | f
+(2 rows)
+
+   datname   
+-------------
+ mmv_v2_dev
+ mmv_v2_test
+(2 rows)
+
+EXIT 0
+     db      |     usr     | port |                                   ver                                   |  sv  | ro 
+-------------+-------------+------+-------------------------------------------------------------------------+------+----
+ mmv_v2_test | mmv_v2_test | 5433 | PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit | 18.6 | on
+(1 row)
+
+            MigrationId            | ProductVersion 
+-----------------------------------+----------------
+ 20261015125000_InitialBaseline    | 10.0.4
+ 20261015223849_AuthIdentity       | 10.0.4
+ 20261016230630_ClientsModule      | 10.0.4
+ 20261017150504_AppointmentsModule | 10.0.4
+ 20261018163108_AuditJournal       | 10.0.4
+(5 rows)
+
+   nspname    
+--------------
+ appointments
+ audit
+ auth
+ clients
+ public
+(5 rows)
+
+   nspname    | tables | idx | seqs 
+--------------+--------+-----+------
+ appointments |      2 |   9 |    0
+ audit        |      1 |   4 |    0
+ auth         |      4 |   7 |    0
+ clients      |      1 |   6 |    1
+ public       |      1 |   1 |    0
+(5 rows)
+
+                                                                                                                                                                       pg_get_constraintdef                                                                                                                                                                       
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying])::text[])))
+(1 row)
+
+ datname | usename | application_name | client_addr | state | backend_start 
+---------+---------+------------------+-------------+-------+---------------
+(0 rows)
+
+   rolname   | rolsuper | rolcreaterole | rolcreatedb 
+-------------+----------+---------------+-------------
+ mmv_v2_dev  | f        | f             | f
+ mmv_v2_test | f        | f             | f
+(2 rows)
+
+   datname   
+-------------
+ mmv_v2_dev
+ mmv_v2_test
+(2 rows)
+
+EXIT 0
+## 4. Dérive de schéma (dotnet test tests/MMV.PostgreSql.Tests --filter SchemaStateTests|TargetIdentityTests, lecture seule)
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState [158 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [794 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [152 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations [40 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [12 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches [9 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5432;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=postgres;Usernam"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches [4 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget [< 1 ms]
+     Réussi(s) : 10
+     Non réussi(s) : 2
+Lecture : ContainsOnlyAKnownState PASS sur les deux bases (0 objet inattendu) ; les deux AllMigrationsApplied échouent PAR CONSTRUCTION avant application (6 migrations attendues, 5 appliquées).
+## 5. Correspondance des scripts avec la migration EF Core
+dotnet tool run dotnet-ef migrations script 20261018163108_AuditJournal 20261027134615_OpticalModule [--idempotent] --no-build (UseArtifactsOutput, sortie hors dépôt), BOM et CR retirés :
+  idempotent régénéré 927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013 — cmp : IDENTIQUE au fichier du dépôt
+  direct régénéré     7c5aba78035c39bf834311cc089c4eabc71e1f69363b685a41c3c9fb78aa221b — cmp : IDENTIQUE au fichier du dépôt
+  verify.sql : contrôle manuel en lecture seule, couvert par le manifeste (empreinte OK) ; exécuté après application (P04C_0006_verify_*).
+  migrations has-pending-model-changes : No changes have been made to the model since the last migration.
+## 6. Sauvegarde vérifiée de mmv_v2_dev (hors dépôt)
+pg_dump (PostgreSQL) 18.6
+DUMP : C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0006_20261028_224659.dump
+SIZE : 31800
+SHA256 : 5FF611B387C422DCF52E8580CD0D8BD1B8E8CE27E00599C4C2152B57828E1066
+LIST : 81 lignes -> C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0006_20261028_224659.dump.list.txt
+ENTRIES : 66
+  CONSTRAINT appointments 2
+  CONSTRAINT audit     1
+  CONSTRAINT auth      4
+  CONSTRAINT clients   1
+  CONSTRAINT public    1
+  FK CONSTRAINT        12
+  FUNCTION audit       1
+  INDEX appointments   7
+  INDEX audit          3
+  INDEX auth           3
+  INDEX clients        5
+  SCHEMA -             4
+  SEQUENCE clients     1
+  SEQUENCE SET         1
+  TABLE appointments   2
+  TABLE audit          1
+  TABLE auth           4
+  TABLE clients        1
+  TABLE DATA           9
+  TABLE public         1
+  TRIGGER audit        2
+TABLE DATA : appointments.appointments, appointments.responsibles, audit.events, auth.bootstrap_record, auth.sessions, auth.user_permissions, auth.users, clients.clients, public.__EFMigrationsHistory
+SCHEMA optical present : False
+Inventaire complet (pg_restore --list) conservé à côté du fichier : mmv_v2_dev_avant_0006_20261028_224659.dump.list.txt.
+Restauration complète sur base indépendante : NON ÉPROUVÉE (aucune base supplémentaire autorisée) — réserve maintenue.
+## 7. Comptages avant application (lecture seule)
+===== mmv_v2_dev
+appointments.appointments|1
+appointments.responsibles|0
+audit.events|2
+auth.sessions|28
+auth.user_permissions|8
+auth.users|1
+clients.clients|1
+perm:appointments.cancel|1
+perm:appointments.read|1
+perm:appointments.write|1
+perm:audit.read|1
+perm:clients.archive|1
+perm:clients.read|1
+perm:clients.write|1
+perm:system.admin|1
+EXIT 0
+===== mmv_v2_test
+appointments.appointments|0
+appointments.responsibles|0
+audit.events|0
+auth.sessions|0
+auth.user_permissions|0
+auth.users|0
+clients.clients|0
+EXIT 0
+VERDICT PRÉCONTRÔLES : tous conformes -> application autorisée par le mandat.

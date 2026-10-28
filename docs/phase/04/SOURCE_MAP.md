@@ -115,3 +115,17 @@ Maquette Lot 3 non modifiée et non rouverte (l'en-tête « Annuler / Enregistre
 | PostgreSQL 18.6 local (`C:\Program Files\PostgreSQL\18\bin` : `initdb`, `pg_ctl`, `psql`, `pg_dump`) | cluster **jetable** de pré-essai (port 55433, répertoire temporaire de l'agent) — le serveur du propriétaire (5433) et PostgreSQL 17 n'ont pas été touchés |
 
 Toujours aucune lecture de l'ancien dépôt, aucune dépendance ajoutée (ADR-014), maquette Lot 3 non modifiée.
+
+## Complément daté — 28/10/2026 (04-C, G04-SQL accordée)
+
+| Source | Usage |
+|---|---|
+| [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../../../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md) | mandat G04-SQL / 04-C (copie fidèle du message du propriétaire) |
+| [`sql/0006_OpticalModule.idempotent.sql`](sql/0006_OpticalModule.idempotent.sql), [`sql/0006_OpticalModule.verify.sql`](sql/0006_OpticalModule.verify.sql), [`sql/0006_MANIFEST.sha256`](sql/0006_MANIFEST.sha256) | script appliqué (inchangé, empreinte vérifiée), contrôle en lecture seule, manifeste (12 / 12 OK) — [`G04_SQL_DOSSIER.md`](G04_SQL_DOSSIER.md) conservé tel qu'approuvé |
+| PostgreSQL 18.6 du propriétaire, port 5433 (`mmv_v2_dev`, `mmv_v2_test`) | précontrôles en lecture seule, sauvegarde `pg_dump -Fc` de dev hors dépôt, application, contrôles ; PostgreSQL 17 (5432) jamais contacté |
+| [`LIVRAISON_04C.md`](LIVRAISON_04C.md) | rapport 04-C |
+| `evidence/P04C_*` | [`P04C_preflight_20261028.log`](evidence/P04C_preflight_20261028.log), [`P04C_0006_apply_mmv_v2_dev_20261028T2147Z.log`](evidence/P04C_0006_apply_mmv_v2_dev_20261028T2147Z.log), [`P04C_0006_apply_mmv_v2_test_20261028T2148Z.log`](evidence/P04C_0006_apply_mmv_v2_test_20261028T2148Z.log), [`P04C_0006_verify_20261028.log`](evidence/P04C_0006_verify_20261028.log), [`P04C_counts_20261028.log`](evidence/P04C_counts_20261028.log), [`P04C_postgresql_20261028.log`](evidence/P04C_postgresql_20261028.log), [`P04C_dotnet_20261028.log`](evidence/P04C_dotnet_20261028.log), [`P04C_frontend_20261028.log`](evidence/P04C_frontend_20261028.log), [`P04C_http_matrix_20261028.log`](evidence/P04C_http_matrix_20261028.log), [`P04C_harness_c04http.cs.txt`](evidence/P04C_harness_c04http.cs.txt), [`P04C_native_optique-04c_20261028.log`](evidence/P04C_native_optique-04c_20261028.log) et 12 captures `P04C_native_c04_*.jpg` |
+| [`apps/desktop/e2e/run-native.mjs`](../../../apps/desktop/e2e/run-native.mjs) | scénario natif `optique-04c` ajouté |
+| [`apps/desktop/src/api/contract/optical.openapi.json`](../../../apps/desktop/src/api/contract/optical.openapi.json) | instantané régénéré (`MMV_UPDATE_OPENAPI_SNAPSHOT=1`) : ajout `citedUsers` seulement |
+
+Toujours aucune lecture de l'ancien dépôt, aucune dépendance ajoutée (ADR-014), maquette Lot 3 non modifiée.

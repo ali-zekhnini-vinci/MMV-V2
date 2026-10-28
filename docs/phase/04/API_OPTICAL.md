@@ -42,3 +42,6 @@ Ligne de liste : révision affichée = dernière confirmée, sinon brouillon de 
 ## 5. Préparation de la vente (inerte)
 
 Aucune route. Une vente future référencera `(type, id, revisionNo)` d'une révision confirmée (immuable) ; une mesure magasin ne sera jamais acceptée là où une ordonnance médicale est exigée (D-04-01).
+
+*Ajout daté 28/10/2026 (04-C, O-04-48) :* la réponse d'enregistrement (`GET`/écritures `…/prescriptions/{id}`, `…/measurements/{id}`) porte en plus `citedUsers` : liste `{ id, displayName }` des comptes cités dans la provenance des révisions servies (collaborateur ayant mesuré), **y compris** s'ils ne sont plus actifs ni habilités ; `/api/optical/measurers` reste limité aux comptes actifs habilités. Ajout seul (instantané [`apps/desktop/src/api/contract/optical.openapi.json`](../../../apps/desktop/src/api/contract/optical.openapi.json)).
+

@@ -1,0 +1,52 @@
+# psql -X -A -t -f docs/phase/04/sql/0006_OpticalModule.verify.sql (lecture seule) — mmv_v2_dev
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+port|5433|5433|OK
+migrations (6, dernière 0006)|6|20261027134615_OpticalModule|6|20261027134615_OpticalModule|OK
+schéma optical|1|1|OK
+tables optical|measurement_revisions,measurements,prescription_revisions,prescriptions|measurement_revisions,measurements,prescription_revisions,prescriptions|OK
+séquences optical|measurement_reference_seq,prescription_reference_seq|measurement_reference_seq,prescription_reference_seq|OK
+index optical|31|31|OK
+index uniques partiels (brouillon unique, numéro)|4|4|OK
+contraintes CHECK optical (2 × 5 en-têtes + 2 × 18 révisions)|46|46|OK
+clés étrangères optical (toutes RESTRICT)|19|19|19|19|OK
+colonnes numériques générées (numeric sans échelle)|20|20|20|20|OK
+déclencheurs optical activés|8|8|8|8|OK
+fonctions optical|reject_frozen_record_change,reject_frozen_revision_change|reject_frozen_record_change,reject_frozen_revision_change|OK
+contrainte des permissions : 4 droits optiques, aucun droit documentaire|4|0|4|0|OK
+droits existants conservés (8)|8|8|OK
+aucune donnée optique (base fraîchement migrée)|0|0|OK
+aucun droit optique attribué|0|0|OK
+journal d'audit inchangé (déclencheurs 0005 actifs)|2|2|OK
+ROLLBACK
+EXIT 0
+# — mmv_v2_test
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+port|5433|5433|OK
+migrations (6, dernière 0006)|6|20261027134615_OpticalModule|6|20261027134615_OpticalModule|OK
+schéma optical|1|1|OK
+tables optical|measurement_revisions,measurements,prescription_revisions,prescriptions|measurement_revisions,measurements,prescription_revisions,prescriptions|OK
+séquences optical|measurement_reference_seq,prescription_reference_seq|measurement_reference_seq,prescription_reference_seq|OK
+index optical|31|31|OK
+index uniques partiels (brouillon unique, numéro)|4|4|OK
+contraintes CHECK optical (2 × 5 en-têtes + 2 × 18 révisions)|46|46|OK
+clés étrangères optical (toutes RESTRICT)|19|19|19|19|OK
+colonnes numériques générées (numeric sans échelle)|20|20|20|20|OK
+déclencheurs optical activés|8|8|8|8|OK
+fonctions optical|reject_frozen_record_change,reject_frozen_revision_change|reject_frozen_record_change,reject_frozen_revision_change|OK
+contrainte des permissions : 4 droits optiques, aucun droit documentaire|4|0|4|0|OK
+droits existants conservés (8)|8|8|OK
+aucune donnée optique (base fraîchement migrée)|0|0|OK
+aucun droit optique attribué|0|0|OK
+journal d'audit inchangé (déclencheurs 0005 actifs)|2|2|OK
+ROLLBACK
+EXIT 0
+# Inventaire exact (SchemaState.OpticalModuleDifferences : relations, colonnes, contraintes, index, séquences, fonctions, déclencheurs, propriétaires, droits) :
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches [68 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [662 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [14 ms]
+     Réussi(s) : 3
+# (mmv_v2_test : même contrôle dans la suite complète, P04C_postgresql_20261028.log)

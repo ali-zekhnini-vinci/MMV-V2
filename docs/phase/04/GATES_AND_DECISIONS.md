@@ -177,3 +177,35 @@ Les sections précédentes sont conservées comme historique.
 ### Journal
 
 - 27/10/2026 : GO d'implémentation reçu ; préflight (HEAD `3bb25a6`, ascendance de `6924860` confirmée, fichiers non suivis du propriétaire intacts) ; 04-B réalisé ; SQL 0006 généré, régénéré octet pour octet identique, pré-essayé sur cluster jetable ; **STOP G04-SQL**.
+
+## Amendement daté — 28/10/2026 (G04-SQL accordée, 04-C, livraison `PHASE04_C_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`)
+
+Les sections précédentes sont conservées comme historique. Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../../../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md). Rapport : [`LIVRAISON_04C.md`](LIVRAISON_04C.md).
+
+### Gates
+
+| Gate | État au 28/10/2026 |
+|---|---|
+| G04-SQL | **APPROVED — GO conditionnel du propriétaire (28/10/2026)** pour l'application locale du seul script `0006_OpticalModule.idempotent.sql` (`927ed7cc…706c013`). Conditions remplies (précontrôles conformes, sauvegarde vérifiée de dev) ; **appliqué** : `mmv_v2_dev` 22:47:28 puis `mmv_v2_test` 22:48:28 (+01:00), COMMIT, `verify.sql` 18 / 18, inventaire exact — preuves `evidence/P04C_*` |
+| G04-METIER | inchangée : franchie pour le produit et l'UX ; **validation professionnelle (opticien) OUVERTE** |
+| G04-LEGAL | inchangée : **OPEN** — module non activé sur données médicales réelles |
+| G04-FINAL | **OWNER_FINAL_REVIEW_REQUIRED** : 04-C livré ; clôture globale de la Phase 04 soumise à l'audit final du propriétaire ; aucun push, PR ni merge |
+
+### Points ouverts — mise à jour du 28/10/2026 (04-C)
+
+| Réf. | Constat | Suite |
+|---|---|---|
+| O-04-44 | **RÉSOLU (28/10/2026)** par O-04-48 | — |
+| O-04-47 | **LEVÉ (28/10/2026)** : 0006 appliquée ; `AllMigrationsApplied` ×2 et `OpticalWrite` ×5 **PASS** sur PostgreSQL 18.6 | — |
+| O-04-48 | **CORRIGÉ** : nom du collaborateur ayant mesuré résolu seulement par la liste active `/measurers` → « Non renseigné » après désactivation, comparaison vide, sélection perdue en rectification. Champ additif `citedUsers` de la réponse d'enregistrement + `knownActors` côté poste ; contrat OpenAPI mis à jour (ajout seul) | revue du propriétaire |
+| O-04-49 | double création réémise simultanée : réponse correcte (201 + 200, un enregistrement) mais 23505 `ux_*_creation_request_id` journalisé `fail` par EF Core (paramètres et détail masqués) | filtrage du journal ou insertion conditionnelle, à décider |
+| O-04-50 | **CORRIGÉ (tests seulement)** : `SchemaStateTests.AllMigrationsApplied` et `AuditPostgreSqlTests.AuditJournalScript_ProducesExactlyTheExpectedSchema` comparaient l'inventaire 0005 → FAIL sur base correctement migrée ; assertion sur `OpticalModuleDifferences` | — |
+| O-04-51 | `vitest` en parallèle des tests .NET : 4 délais de 5 s dépassés (Shell, Clients, Historique, activation) ; seul : 100 % | relancer seul ; délais à revoir si récurrent |
+| O-04-52 | libellé du formulaire « pas de démonstration 0,25 (paramétrable, D-04-06 ouverte) » et étiquette « Prototype · D-04-06 PROPOSED » alors que le mandat 04-B fixe le pas 0,25 (Sphère, Cylindre, Addition) | libellé à arbitrer par le propriétaire (non modifié) |
+| O-04-53 | archivage ‖ écriture optique (10 paires) : jamais de 500 ; une écriture commencée avant l'archivage peut être validée après (9 révisions horodatées après `archived_at_utc`) — ordre sérialisable écriture → archivage | **réserve BL-04-07** (verrou du client à envisager) |
+| O-04-54 | désactivation du mesureur ‖ confirmation (10 paires décalées) : 1 × 422 `not_eligible`, 9 × 201 (contrôle avant désactivation) — ordre sérialisable | **réserve BL-04-07** |
+| O-04-55 | HTTP en clair : toute route `/api` refusée 403 `https_required` (conception phase 03) ; matrice complète en HTTPS, HTTP limité au contrôle de refus | — |
+
+### Journal
+
+- 28/10/2026 : GO G04-SQL reçu ; précontrôles conformes ; sauvegarde `mmv_v2_dev_avant_0006_20261028_224659.dump` (SHA-256 `5FF611B3…1066`, hors dépôt) ; 0006 appliquée dev puis test ; tests réels PostgreSQL, HTTPS, Tauri natif ; O-04-48 et O-04-50 corrigés ; **STOP audit final du propriétaire**. Constat : `MMV.Api` et `tauri dev` du propriétaire démarrés après l'application (écritures `clients` sur dev à 23:14, non issues de l'agent).

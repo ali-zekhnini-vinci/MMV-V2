@@ -146,3 +146,20 @@ Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../..
 - **Idempotence** : `requestId` par écriture (`creation_request_id` unique, `last_request_id`) ; passerelle du poste : rejeu automatique unique, identifiant conservé tant que l'issue est incertaine, relecture avant nouvelle tentative.
 - **Poste** : passerelle [`apps/desktop/src/api/optical.ts`](../../../apps/desktop/src/api/optical.ts) ; hôte [`OpticalHost.tsx`](../../../apps/desktop/src/optical/OpticalHost.tsx), route [`OpticalRoute.tsx`](../../../apps/desktop/src/optical/OpticalRoute.tsx) chargée à la demande ; activation [`opticalActivation.ts`](../../../apps/desktop/src/optical/opticalActivation.ts) (interrupteur `VITE_MMV_OPTICAL_MODULE=enabled` ET `clients.read` + `optical.read`) ; navigation `navSections(opticalActive)` ; fiche client : onglet « Dossier optique » si activé. Banc isolé conservé (double en mémoire, enregistrement atomique).
 - **Écarts d'interface imposés par le mandat** (aucune refonte) : Prisme sans ± ; qualité / catégorie en texte libre ; contrôle visible « axe sans cylindre » ; messages d'« Enregistrer » atomique ; historique selon `historyAvailable`.
+
+## Complément daté — 28/10/2026 (04-C, G04-SQL accordée)
+
+Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../../../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md). Rapport : [`LIVRAISON_04C.md`](LIVRAISON_04C.md). Sous-lot **04-C réalisé** (tableau des sous-lots ci-dessus conservé) ; 04-D = audit final du propriétaire.
+
+- **Application** (une base à la fois, dev puis test) : `./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-api -Key ConnectionStrings:Mmv -Database mmv_v2_dev -Script docs/phase/04/sql/0006_OpticalModule.idempotent.sql -Sha256 927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013 -LockTimeout 5s`, puis `-SecretsId mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Database mmv_v2_test` ; contrôle `psql -X -A -t -f docs/phase/04/sql/0006_OpticalModule.verify.sql` en session `default_transaction_read_only=on`.
+- **Sauvegarde avant application** : `pg_dump -Fc -h localhost -p 5433 -U mmv_v2_dev -d mmv_v2_dev -f C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0006_<horodatage>.dump`, `pg_restore --list`, SHA-256 consignée.
+- **Contrat** : réponse d'enregistrement + `citedUsers` (O-04-48) ; poste : `knownActors` (`opticalContract.ts`) pour le détail, la comparaison, le dialogue de confirmation et le formulaire de mesure.
+- **Banc HTTP** : outil jetable (copie versionnée [`evidence/P04C_harness_c04http.cs.txt`](evidence/P04C_harness_c04http.cs.txt)), `dotnet run c04http.cs -- api <dll> <journal> 7367 5367 | run <journal> https://localhost:7367 http://localhost:5367 | seed-ui <fichier> | cleanup <suffixe> | residue` ; cible relue côté serveur (`mmv_v2_test` / 5433), purge avec déclencheurs `optical` et `audit` désactivés **dans** la transaction puis réactivés et vérifiés.
+- **Banc natif** :
+```powershell
+$env:VITE_MMV_API_BASE_URL = 'https://localhost:7367'; $env:VITE_MMV_OPTICAL_MODULE = 'enabled'; $env:CARGO_TARGET_DIR = '<temp>/mmvc04t'
+npx tauri build --debug --no-bundle --config <bloc-notes>/native/tauri.c04test.json   # identifier com.mmv.v2.c04test, csp/devCsp connect-src https://localhost:7367
+# copie renommée mmv-c04test.exe, lancée avec WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223
+node --use-system-ca e2e/run-native.mjs optique-04c --port 9223 --page-url http://tauri.localhost --api https://localhost:7367 --process mmv-c04test --prefix P04C_native --out <dossier>
+```
+  L'interrupteur `VITE_MMV_OPTICAL_MODULE` n'est posé qu'au build de banc ; aucune construction ordinaire ne l'active.

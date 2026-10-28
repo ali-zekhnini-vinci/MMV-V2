@@ -18,6 +18,7 @@ const port = Number(option("--port", "9222"));
 const outDir = resolve(option("--out", "."));
 // Préfixe des captures : P02_native (phase 02, défaut) ou P03_native (scénarios clients-*, phase 03-A3) ;
 // P03B3_native (rdv-b3*), P03C_native (parcours-03c, matrice-03c), P03D_native (parcours-03d1).
+// P04C_native (optique-04c : dossier optique réel, migration 0006 appliquée, banc mmv_v2_test).
 const prefix = option("--prefix", "P02_native");
 // 03-D3 : banc isolé à côté des processus ouverts par le propriétaire (son MMV.Api garde 7267, son mmv-desktop reste
 // ouvert) : origine de l'API de test et nom du processus de la fenêtre testée (exécutable renommé).
@@ -1506,6 +1507,245 @@ const scenarios = {
     log("STOCKAGE", storage);
     check(!/token|session|auth/i.test(storage), "aucune clé de session dans le stockage WebView2");
     capture("client-restart_login_1920x1080", { width: 1920, height: 1080 });
+  },
+
+  /**
+   * 04-C : dossier optique RÉEL (migration 0006 appliquée, G04-SQL) dans la fenêtre Tauri native, contre MMV.Api sur
+   * mmv_v2_test, comptes et clients FICTIFS (outil de banc seed-ui) ; chaque étape de l'interface est vérifiée par
+   * l'API réelle. Boutons ± cliqués à la VRAIE souris (Input.dispatchMouseEvent), saisies au clavier (insertText).
+   * Fichier MMV_E2E_CREDENTIALS_FILE : { password, agent, reader, noOptical, agentId, clientId, client2Id, clientLastName }.
+   */
+  async "optique-04c"(page) {
+    const c = credentials();
+    const account = (userName, displayName) => ({ userName, password: c.password, displayName });
+    const agent = account(c.agent, "C04 Opticien fictif");
+    const reader = account(c.reader, "C04 Lecture fictive");
+    const noOptical = account(c.noOptical, "C04 Sans optique");
+    const upper = c.clientLastName.toUpperCase();
+    const shot = (name, size) => capture(`c04_${name}`, size);
+    const inputOf = (label) =>
+      `document.getElementById([...document.querySelectorAll('label[for]')].find(l => l.textContent.replace(/\\s+/g, ' ').replace('*', '').trim() === ${J(label)})?.htmlFor)`;
+    const valueOf = (label) => page.evaluate(`(${inputOf(label)})?.value ?? null`);
+    const typeInto = async (label, value) => {
+      check(await page.evaluate(`(() => { const e = ${inputOf(label)}; if (!e) return false; e.scrollIntoView({ block: 'center' }); e.focus(); e.select?.(); return true; })()`), `champ ${label}`);
+      await page.type(value);
+    };
+    /**
+     * Vrai clic souris au centre de l'élément (événements pointeur du moteur WebView2), en coordonnées CSS de la vue :
+     * pas d'étalonnage (mouseScale), qu'un curseur réel posé sur la fenêtre fausse.
+     */
+    const mouseClick = async (expression, label) => {
+      const rect = await page.evaluate(`(() => { const e = ${expression}; if (!e) return null; e.scrollIntoView({ block: 'center' });
+        const r = e.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`);
+      check(rect !== null, label);
+      const [x, y] = rect;
+      await page.send("Input.dispatchMouseEvent", { type: "mouseMoved", x, y });
+      await page.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+      await page.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
+      await page.sleep(120);
+    };
+    const stepper = async (label, times) => {
+      for (let i = 0; i < times; i++) await mouseClick(buttonByName(label), i === 0 ? `± souris : ${label}` : `${label} (${i + 1})`);
+    };
+    const datePick = async (label, iso) => {
+      await click(page, `[...document.querySelectorAll('button[aria-haspopup]')].find(b => (b.getAttribute('aria-labelledby') || '').split(' ')
+        .some(id => document.getElementById(id)?.textContent.trim() === ${J(label)}))`, `calendrier : ${label}`);
+      await page.waitFor(calendarOpen, { label: "calendrier ouvert" });
+      const [y, m] = iso.split("-").map(Number);
+      await chooseDropdown(page, "Choisir l'année", y);
+      await chooseDropdown(page, "Choisir le mois", m - 1);
+      await click(page, `[...document.querySelectorAll('[role=dialog][aria-label="Calendrier"] button')].find(b => (b.getAttribute('aria-label') || '').includes(${J(dayLabel(iso))}))`, `jour ${iso}`);
+      await page.waitFor(`!${calendarOpen}`, { label: "calendrier fermé" });
+    };
+    const selectIn = async (scope, value, label) =>
+      check(await page.evaluate(`(() => { const s = document.querySelector(${J(scope)}); if (!s) return false;
+        Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, ${J(value)});
+        s.dispatchEvent(new Event('change', { bubbles: true })); return s.value === ${J(value)}; })()`), label);
+    const records = async () => (await apiGet(agent, `/api/optical/clients/${c.clientId}/records?includeInvalidated=true`));
+    const detail = async (kind, id) => (await apiSend(agent, "GET", `/api/optical/${kind === "prescription" ? "prescriptions" : "measurements"}/${id}`)).json;
+    const num = (v) => (v === null || v === "" ? null : Number(v.replace("−", "-").replace(",", ".").replace(" ", "")));
+    /** Ligne du dossier optique désignée par sa référence : attend son chargement (liste servie par l'API), puis la consulte. */
+    const consult = async (reference, label) => {
+      const row = `[...document.querySelectorAll('button[aria-label^="Consulter"]')].find(b => b.closest('tr')?.textContent.includes(${J(reference)}))`;
+      await page.waitFor(`!!${row}`, { label: `ligne ${reference}` });
+      await click(page, row, label);
+    };
+    const openOptical = async (account, first = "Patient") => {
+      await openFiche(page, first, upper);
+      await openTab(page, "Dossier optique");
+      await page.waitFor(hasText("Ordonnances médicales"), { label: "onglet Dossier optique" });
+    };
+    log("PARCOURS 04-C", `API ${API}, client fictif ${upper}`);
+
+    resize(1920, 1080);
+    await signIn(page, agent);
+    await setZoom(page, 1);
+    await setTheme(page, "light");
+
+    // 1. Ordonnance : saisie OD / OG aux boutons ± (souris) et au clavier, provenance, « Enregistrer » atomique.
+    await openOptical(agent);
+    check((await records()).length === 0, "API : dossier optique vide");
+    shot("01_dossier-vide_light_1920x1080");
+    await click(page, buttonByText("Transcrire une ordonnance médicale"), "Transcrire une ordonnance médicale");
+    await page.waitFor(`!!(${inputOf("Sphère OD")})`, { label: "formulaire ordonnance" });
+    shot("02_ordonnance-vide_light_1920x1080");
+    await stepper("Diminuer Sphère OD de 0,25", 9);
+    await stepper("Diminuer Cylindre OD de 0,25", 2);
+    await typeInto("Axe OD", "175");
+    await stepper("Augmenter Addition OD de 0,25", 8);
+    await stepper("Augmenter Sphère OG de 0,25", 6);
+    await typeInto("Cylindre OG", "−0,75");
+    await typeInto("Axe OG", "10");
+    const ui = {
+      odSphere: await valueOf("Sphère OD"), odCyl: await valueOf("Cylindre OD"), odAdd: await valueOf("Addition OD"),
+      ogSphere: await valueOf("Sphère OG"), ogCyl: await valueOf("Cylindre OG"), ogAdd: await valueOf("Addition OG"),
+    };
+    log("VALEURS ÉCRAN", J(ui));
+    check(num(ui.odSphere) === -2.25 && num(ui.odCyl) === -0.5 && num(ui.odAdd) === 2 && num(ui.ogSphere) === 1.5, "± : −2,25 / −0,50 / +2,00 / +1,50 (pas 0,25 depuis le vide)");
+    check(ui.ogCyl === "−0,75", "saisie clavier conservée telle quelle (signe moins typographique, virgule)");
+    check(ui.ogAdd === "", "Addition OG non touchée : vide, jamais 0");
+    await datePick("Date de prescription", "2026-10-20");
+    await typeInto("Prescripteur — nom (tel que sur le document)", "Dr Fictif-C04");
+    shot("03_ordonnance-remplie_light_1920x1080");
+    await click(page, buttonByText("Enregistrer"), "Enregistrer (ordonnance)");
+    await page.waitFor(hasText("Dernière révision confirmée"), { label: "ordonnance enregistrée" });
+    const rxRow = (await records()).find((r) => r.kind === "prescription");
+    check(!!rxRow, `API : ordonnance créée (${rxRow?.reference})`);
+    let rx = await detail("prescription", rxRow.id);
+    const od = rx.lastConfirmed.content.od;
+    const og = rx.lastConfirmed.content.og;
+    check(rx.lastConfirmed.revisionNo === 1 && rx.openDraft === null, "API : révision 1 confirmée, aucun brouillon (création + confirmation atomiques)");
+    check(od.sphere === ui.odSphere && od.cylinder === ui.odCyl && od.axis === "175" && od.addition === ui.odAdd && og.sphere === ui.ogSphere && og.cylinder === "−0,75" && og.axis === "10",
+      "API : valeurs enregistrées = valeurs affichées, exactes (aucune réécriture)");
+    check(og.addition === null && og.prism === null, "API : champs vides enregistrés null (jamais 0)");
+    const shown = await text(page);
+    check(shown.includes(rx.reference) && shown.includes(ui.odSphere) && shown.includes("−0,75"), "écran : référence et valeurs de l'API affichées");
+    shot("04_ordonnance-enregistree_light_1920x1080");
+
+    // 2. Modification : rectification motivée, puis conflit avec un autre poste (même compte, autre session API).
+    await click(page, buttonByText("Modifier"), "Modifier");
+    await page.waitFor(hasText("Modifier cet enregistrement ?"), { label: "dialogue de modification" });
+    await selectIn("[role=alertdialog] select", "transcription_error", "motif : erreur de transcription");
+    await click(page, inDialog("Modifier"), "ouvrir la modification");
+    await page.waitFor(`(${inputOf("Sphère OD")})?.value === ${J(ui.odSphere)}`, { label: "formulaire de modification prérempli" });
+    await stepper("Augmenter Sphère OD de 0,25", 1);
+    rx = await detail("prescription", rxRow.id);
+    check(rx.lastConfirmed.revisionNo === 1 && rx.openDraft !== null, "API : rectification ouverte, révision 1 toujours de référence");
+    const other = await apiSend(agent, "PUT", `/api/optical/prescriptions/${rx.id}/draft`, {
+      requestId: crypto.randomUUID(), version: rx.version,
+      content: { ...rx.openDraft.content, od: { ...rx.openDraft.content.od, sphere: "-2,50" } },
+    });
+    check(other.status === 200, "autre poste : brouillon modifié (200)");
+    await click(page, buttonByText("Enregistrer"), "Enregistrer (formulaire périmé)");
+    await page.waitFor(hasText("Modifié depuis un autre poste"), { label: "conflit affiché" });
+    rx = await detail("prescription", rxRow.id);
+    check(rx.lastConfirmed.revisionNo === 1 && rx.openDraft.content.od.sphere === "-2,50", "API : rien écrit par le poste périmé (révision 1, brouillon de l'autre poste)");
+    check(await page.evaluate(`(() => { const b = [...document.querySelectorAll('.clients-banner[role=alert]')].find(e => e.textContent.includes("Modifié depuis un autre poste"));
+      b?.scrollIntoView({ block: 'center' }); return !!b && b.textContent.includes("rien n'a été enregistré"); })()`), "écran : bandeau d'alerte du conflit (saisie conservée, rien enregistré)");
+    await page.sleep(300);
+    shot("05_conflit-deux-postes_light_1920x1080");
+
+    // 3. Reprise : « Recharger » depuis le conflit reprend le brouillon réel, « Enregistrer » confirme la révision 2.
+    await click(page, buttonByText("Recharger"), "Recharger (bandeau de conflit)");
+    await page.sleep(300);
+    if (await page.evaluate(`!!${inDialog("Recharger")}`)) await click(page, inDialog("Recharger"), "rechargement confirmé (saisie locale abandonnée)");
+    await page.waitFor(`(${inputOf("Sphère OD")})?.value === "-2,50"`, { label: "brouillon réel repris (−2,50)" });
+    // Deux clics : révision 2 (−2,00) distincte de la révision 1 (−2,25), pour vérifier ce qu'un compte sans audit.read voit.
+    await stepper("Augmenter Sphère OD de 0,25", 2);
+    const resumed = await valueOf("Sphère OD");
+    check(num(resumed) === -2 && num(resumed) !== num(ui.odSphere), `révision 2 distincte de la révision 1 (${resumed})`);
+    await click(page, buttonByText("Enregistrer"), "Enregistrer (révision 2)");
+    await page.waitFor(hasText("Dernière révision confirmée"), { label: "révision 2 enregistrée" });
+    rx = await detail("prescription", rxRow.id);
+    check(rx.lastConfirmed.revisionNo === 2 && rx.lastConfirmed.content.od.sphere === resumed && rx.openDraft === null, `API : révision 2 confirmée (${resumed})`);
+    const rev1 = rx.revisions.find((r) => r.revisionNo === 1);
+    check(rev1?.content.od.sphere === ui.odSphere, "API (audit.read) : révision 1 conservée intacte");
+    check((await text(page)).includes("Historique des modifications"), "écran : historique des modifications (audit.read)");
+    shot("06_revision2-historique_light_1920x1080");
+
+    // 4. Mesure magasin : brouillon, reprise, confirmation ; collaborateur ayant mesuré.
+    await openOptical(agent);
+    await click(page, buttonByText("Saisir une mesure magasin"), "Saisir une mesure magasin");
+    await page.waitFor(`!!(${inputOf("Sphère OD")})`, { label: "formulaire mesure" });
+    await page.waitFor(`[...((${inputOf("Collaborateur ayant mesuré")})?.options ?? [])].some(o => o.textContent.trim() === ${J(agent.displayName)})`,
+      { label: "liste des collaborateurs habilités chargée (/measurers)" });
+    await setSelect(page, "Collaborateur ayant mesuré", agent.displayName);
+    await datePick("Date de la mesure", "2026-10-28");
+    await stepper("Augmenter Sphère OD de 0,25", 3);
+    await click(page, buttonByText("Enregistrer comme brouillon"), "Enregistrer comme brouillon");
+    await page.sleep(1500);
+    let mesRow = (await records()).find((r) => r.kind === "measurement");
+    check(!!mesRow, `API : mesure créée (${mesRow?.reference})`);
+    let mes = await detail("measurement", mesRow.id);
+    check(mes.lastConfirmed === null && mes.openDraft?.content.od.sphere === "+0,75", "API : brouillon seulement (+0,75), aucune révision confirmée");
+    shot("07_mesure-brouillon_light_1920x1080");
+    await openOptical(agent);
+    await consult(mes.reference, "Consulter la mesure (brouillon)");
+    await page.waitFor(hasText("Confirmer la mesure"), { label: "détail du brouillon" });
+    await click(page, buttonByText("Modifier"), "Modifier (reprise du brouillon de mesure)");
+    await page.waitFor(`(${inputOf("Sphère OD")})?.value === "+0,75"`, { label: "brouillon de mesure repris" });
+    await stepper("Augmenter Sphère OG de 0,25", 2);
+    await click(page, buttonByText("Enregistrer"), "Enregistrer (mesure)");
+    await page.waitFor(hasText("Dernière révision confirmée"), { label: "mesure enregistrée" });
+    mes = await detail("measurement", mesRow.id);
+    check(mes.lastConfirmed?.revisionNo === 1 && mes.lastConfirmed.content.og.sphere === "+0,50" && mes.lastConfirmed.content.provenance.measuredByUserId === c.agentId,
+      "API : mesure confirmée (OD +0,75, OG +0,50, collaborateur)");
+    check((await text(page)).includes(agent.displayName), "écran : collaborateur ayant mesuré nommé");
+    shot("08_mesure-confirmee_light_1920x1080");
+
+    // 5. Invalidation motivée (menu « Plus d'actions », vraie souris : déclencheur Radix au pointeur).
+    await mouseClick(buttonByName("Plus d'actions"), "Plus d'actions");
+    await page.waitFor("!!document.querySelector('[role=menuitem]')", { label: "menu" });
+    await mouseClick("[...document.querySelectorAll('[role=menuitem]')].find(m => m.textContent.includes('Invalider'))", "Invalider…");
+    await page.waitFor("!!document.querySelector('[role=alertdialog] select')", { label: "dialogue d'invalidation" });
+    await click(page, inDialog("Invalider"), "Invalider sans motif");
+    await page.waitFor(hasText("Choisissez un motif d'invalidation."), { label: "motif exigé" });
+    await selectIn("[role=alertdialog] select", "entry_error", "motif : erreur de saisie");
+    await click(page, inDialog("Invalider"), "Invalider");
+    await page.waitFor("!document.querySelector('[role=alertdialog]')", { label: "dialogue fermé" });
+    await page.sleep(800);
+    mes = await detail("measurement", mesRow.id);
+    check(mes.lifecycle === "invalidated" && mes.invalidation.reasonCode === "entry_error", "API : mesure invalidée, motif enregistré, aucune suppression");
+    shot("09_mesure-invalidee_light_1920x1080");
+
+    // 6. Lecture seule (optical.read sans audit.read) : aucune action d'écriture, historique masqué, valeurs antérieures absentes.
+    await signIn(page, reader);
+    await openOptical(reader);
+    check(!(await page.evaluate(`!!${buttonByText("Ajouter…")}`)), "lecture : aucun bouton Ajouter…");
+    await consult(rx.reference, "Consulter l'ordonnance (lecture)");
+    await page.waitFor(hasText("Dernière révision confirmée"), { label: "détail en lecture" });
+    const readText = await text(page);
+    check(!(await page.evaluate(`!!${buttonByText("Modifier")}`)) && !(await page.evaluate(`!!${buttonByName("Plus d'actions")}`)), "lecture : ni Modifier ni Invalider");
+    check(readText.includes("exige le droit de consultation de l'historique"), "lecture : historique masqué (audit.read absent)");
+    check(!readText.includes(ui.odSphere), `lecture : valeur de la révision 1 (${ui.odSphere}) absente`);
+    shot("10_lecture-seule_light_1920x1080");
+
+    // 7. Sans droit optique : onglet reporté, aucune requête /api/optical servie.
+    await signIn(page, noOptical);
+    await openFiche(page, "Patient", upper);
+    check(!(await page.evaluate(`!!${tabByName("Dossier optique")}`)), "sans optical.read : aucun onglet Dossier optique");
+    await openTab(page, "Ordonnances");
+    await page.waitFor(hasText("Ordonnances — phase ultérieure"), { label: "sans optical.read : onglet reporté « Ordonnances — phase ultérieure »" });
+    shot("11_sans-droit-optique_light_1920x1080");
+
+    // 8. Thème sombre, 1024×700, zoom 125 % : saisie ± puis abandon (rien n'est écrit).
+    resize(1024, 700);
+    await signIn(page, agent);
+    await setZoom(page, 1.25);
+    await setTheme(page, "dark");
+    const before = (await apiGet(agent, `/api/optical/clients/${c.client2Id}/records?includeInvalidated=true`)).length;
+    await openOptical(agent, "Second");
+    await click(page, buttonByText("Transcrire une ordonnance médicale"), "Transcrire (sombre)");
+    await page.waitFor(`!!(${inputOf("Sphère OD")})`, { label: "formulaire (sombre)" });
+    await stepper("Augmenter Sphère OD de 0,25", 4);
+    await stepper("Diminuer Sphère OG de 0,25", 3);
+    shot("12_ordonnance_dark_1024x700_z125");
+    await click(page, buttonByText("Annuler"), "Annuler");
+    if (await page.evaluate(`!!${inDialog("Abandonner")}`)) await click(page, inDialog("Abandonner"), "abandon confirmé");
+    await page.sleep(800);
+    check((await apiGet(agent, `/api/optical/clients/${c.client2Id}/records?includeInvalidated=true`)).length === before, "abandon : aucun enregistrement créé");
+    await setZoom(page, 1);
+    await setTheme(page, "light");
   },
 };
 

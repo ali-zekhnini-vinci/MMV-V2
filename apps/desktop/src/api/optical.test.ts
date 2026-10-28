@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, test, vi } from "vitest";
-import { emptyContent, type PrescriptionContent } from "../optical/opticalContract.ts";
+import { emptyContent, knownActors, type PrescriptionContent } from "../optical/opticalContract.ts";
 import type { ApiResult } from "./client.ts";
 import { contentBody, createHttpOpticalGateway, opticalListQuery, parseOpticalRecord } from "./optical.ts";
 
@@ -60,6 +60,7 @@ const record = (status: "draft" | "confirmed", sphere: string | null, version = 
   revisions: [revision(status, sphere, status === "confirmed" ? 1 : null)],
   historyAvailable: false,
   events: [],
+  citedUsers: [],
   createdAtUtc: "2026-10-27T09:00:00Z",
   createdBy: actor,
   version,
@@ -125,6 +126,16 @@ describe("contrat OpenAPI du dossier optique ↔ passerelle", () => {
     assert.equal(parsed.lastConfirmed?.content.od.cylinder, "", "absent ≠ 0");
     assert.equal(parsed.lastConfirmed?.content.kind, "prescription");
     assert.equal(parseOpticalRecord({ ...record("draft", null), historyAvailable: "oui" }), null, "réponse incohérente refusée");
+  });
+
+  test("04-C (O-04-48) : collaborateur cité servi avec l'enregistrement, nommé même hors de la liste des habilités", () => {
+    const cited = { id: "u-ancien", displayName: "Collaborateur désactivé" };
+    const parsed = parseOpticalRecord({ ...record("confirmed", "+0,75"), citedUsers: [cited] });
+    assert.deepEqual(parsed?.citedUsers, [cited]);
+    assert.equal(parseOpticalRecord({ ...record("confirmed", "+0,75"), citedUsers: undefined }), null, "champ exigé par le contrat");
+    assert.equal(parseOpticalRecord({ ...record("confirmed", "+0,75"), citedUsers: [{ id: 1 }] }), null, "acteur mal formé refusé");
+    const active = [{ id: "u-actif", displayName: "Collaborateur actif" }];
+    assert.deepEqual(knownActors(active, [cited, active[0]]), [...active, cited], "liste active complétée, sans doublon");
   });
 
   test("liste : paramètres de liste blanche uniquement", () => {

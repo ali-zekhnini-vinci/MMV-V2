@@ -147,3 +147,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **Idempotence des écritures** (proposée en 04-00 comme « ADR-011 à confirmer ») : identifiant de requête obligatoire, reconnu par le serveur (`creation_request_id` unique, `last_request_id`) ; réémission = état courant, aucune réécriture. Décision technique réversible, sans nouvel ADR.
 - **Valeurs optiques** : texte exact + valeur `numeric` générée sans échelle (aucun arrondi silencieux, aucune borne clinique cachée) — [`docs/phase/04/G04_SQL_DOSSIER.md`](phase/04/G04_SQL_DOSSIER.md) § 2.
 - **ADR-014** : aucune dépendance ajoutée (serveur et poste). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION`. Rôle SQL applicatif distinct (O-B04) toujours prérequis d'un pilote.
+
+## Note datée — 28/10/2026 (Phase 04-C, G04-SQL accordée)
+
+- Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md). Migration `0006_OpticalModule` **appliquée** (`mmv_v2_dev` puis `mmv_v2_test`) par le seul script approuvé (`927ed7cc…706c013`), `lock_timeout` 5 s ; retour arrière = restauration de la sauvegarde vérifiée prise avant application (aucun `Down` exécutable).
+- Contrat de l'API : ajout du champ `citedUsers` à la réponse d'enregistrement optique (O-04-48) — ajout seul, aucun champ existant modifié ; décision technique réversible, sans nouvel ADR.
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; rôle SQL applicatif distinct (O-B04) inscrit au backlog BL-04-04, toujours prérequis d'un pilote.
+

@@ -1,0 +1,15 @@
+== npm run check (2026-10-28T23:26:59+01:00)
+> mmv-v2-desktop@0.1.0 check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+== eslint .
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+== vitest run
+ Test Files  26 passed (26)
+      Tests  301 passed (301)
+== vite build
+[32m✓ built in 977ms[39m
+# Observation : un premier passage lancé EN PARALLÈLE des tests .NET avait donné 296 / 300 (4 délais de 5 s dépassés sur des écrans sans lien avec l'optique : Shell, ClientsModule, ClientHistoryTab, realAppIsolation) ; relancé seul : 300 / 300 (O-04-51). Passage final ci-dessus : 301 / 301.

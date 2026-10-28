@@ -320,6 +320,17 @@ public sealed class OpticalEndpointsTests : IDisposable
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         var record = await ReadAsync(created);
         Assert.Equal("measurement", record.GetProperty("kind").GetString());
+        Assert.Equal($"{_measurerId}|{_reads.Names[_measurerId]}", CitedUser(record));
+
+        // 04-C (O-04-48) : collaborateur désactivé ou plus habilité après la mesure -> absent de /measurers, mais son nom
+        // reste servi avec l'enregistrement (jamais affiché « non renseigné »).
+        var eligible = _directory.Measurers.Single();
+        _directory.Measurers.Clear();
+        using var reread = await measurer.GetAsync($"/api/optical/measurements/{record.GetProperty("id").GetString()}");
+        using var measurers = await measurer.GetAsync("/api/optical/measurers");
+        Assert.Equal($"{_measurerId}|{_reads.Names[_measurerId]}", CitedUser(await ReadAsync(reread)));
+        Assert.Equal(0, (await ReadAsync(measurers)).GetArrayLength());
+        _directory.Measurers.Add(eligible);
 
         using var forbidden = await measurer.SendAsync(Json("POST", $"/api/optical/measurements/{record.GetProperty("id").GetString()}/invalidate", new
         {
@@ -345,6 +356,9 @@ public sealed class OpticalEndpointsTests : IDisposable
         using var withInvalidated = await invalidator.GetAsync($"/api/optical/clients/{clientId}/records?includeInvalidated=true");
         Assert.Equal("invalidated", (await ReadAsync(withInvalidated))[0].GetProperty("status").GetString());
     }
+
+    private static string CitedUser(JsonElement record) =>
+        string.Join(",", record.GetProperty("citedUsers").EnumerateArray().Select(a => $"{a.GetProperty("id").GetString()}|{a.GetProperty("displayName").GetString()}"));
 
     [Fact]
     public async Task Lists_ValidateQueryStrictly()

@@ -1,0 +1,677 @@
+#:project C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/src/MMV.Infrastructure/MMV.Infrastructure.csproj
+#:package Microsoft.Extensions.Configuration.UserSecrets@10.0.4
+#:property TreatWarningsAsErrors=false
+#:property PublishAot=false
+#:property NoWarn=CA1303;CA1307;CA1031;CA2007;CA1849;CA1861;CA2000;CA1859;CA1822;CA1305;CA1310;CA1304;CA1311;CA1862;CA2234
+// Banc 04-C (outil JETABLE, hors dépôt) : matrice HTTP/HTTPS RÉELLE du dossier optique sur mmv_v2_test UNIQUEMENT,
+// migration 0006 appliquée (G04-SQL, 28/10/2026). Données et comptes FICTIFS (c04-*-<suffixe>, Fictif-C04-<suffixe>).
+//   api <dll> <journal> <https> <http>     lance MMV.Api (build hors src/) sur mmv_v2_test (chaîne passée au SEUL enfant)
+//   run <journal api> <base1> [<base2>]    matrice complète, une fois par URL de base (HTTPS puis HTTP)
+//   seed-ui <fichier>                      comptes + clients fictifs pour le parcours Tauri natif
+//   cleanup <suffixe>                      purge des données fictives du suffixe (déclencheurs désactivés DANS la transaction)
+//   residue                                lignes restantes (toutes tables métier + audit + optique) de mmv_v2_test
+// Cible relue côté serveur avant toute écriture ; aucun mot de passe ni chaîne de connexion affichés.
+using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Identity;
+using MMV.Domain.Clients;
+using MMV.Domain.Identity;
+using MMV.Infrastructure;
+using MMV.Infrastructure.Persistence;
+using Npgsql;
+
+var raw = new ConfigurationBuilder().AddUserSecrets("mmv-v2-postgresql-tests").Build()["ConnectionStrings:MmvTest"]
+          ?? throw new InvalidOperationException("ConnectionStrings:MmvTest absente.");
+var builder = new NpgsqlConnectionStringBuilder(raw);
+if (builder.Host is not ("localhost" or "127.0.0.1" or "::1") || builder.Port != 5433 || builder.Database != "mmv_v2_test" || builder.Username != "mmv_v2_test")
+{
+    throw new InvalidOperationException("Cible refusée (mmv_v2_test sur 5433 attendu).");
+}
+
+const string IdentitySql = "SELECT current_database() || '|' || current_user || '|' || inet_server_port() || '|' || current_setting('server_version_num')";
+await using (var probe = new NpgsqlConnection(builder.ConnectionString))
+{
+    await probe.OpenAsync();
+    await using var identity = new NpgsqlCommand(IdentitySql, probe);
+    var value = (string)(await identity.ExecuteScalarAsync())!;
+    var parts = value.Split('|');
+    if (parts[0] != "mmv_v2_test" || parts[1] != "mmv_v2_test" || parts[2] != "5433" || int.Parse(parts[3]) < 180000)
+    {
+        throw new InvalidOperationException($"Identité serveur refusée : {value}");
+    }
+
+    Console.WriteLine($"CIBLE : {value}");
+}
+
+var services = new ServiceCollection()
+    .AddInfrastructure(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = builder.ConnectionString }).Build())
+    .BuildServiceProvider();
+
+switch (args)
+{
+    case ["api", var dll, var log, var https, var http]:
+        StartApi(dll, log, https, http);
+        return 0;
+    case ["run", var apiLog, .. var bases]:
+        var ok = true;
+        foreach (var b in bases)
+        {
+            ok &= b.StartsWith("https:", StringComparison.Ordinal) ? await RunAsync(new Uri(b), apiLog) : await RunPlainHttpAsync(new Uri(b), new Uri(bases[0]));
+        }
+
+        return ok ? 0 : 1;
+    case ["seed-ui", var file]:
+        await SeedUiAsync(file);
+        return 0;
+    case ["cleanup", var suffix]:
+        await CleanupAsync(suffix);
+        return 0;
+    case ["residue"]:
+        Console.WriteLine($"RÉSIDUS mmv_v2_test = {await ResidueAsync()}");
+        return 0;
+    default:
+        Console.Error.WriteLine("usage : api | run | seed-ui | cleanup | residue");
+        return 2;
+}
+
+void StartApi(string dll, string log, string https, string http)
+{
+    var info = new ProcessStartInfo("cmd.exe", $"/c dotnet \"{dll}\" --urls \"https://localhost:{https};http://localhost:{http}\" > \"{log}\" 2>&1")
+    {
+        UseShellExecute = false,
+        CreateNoWindow = true,
+        WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(dll))!,
+    };
+    info.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+    info.Environment["ConnectionStrings__Mmv"] = builder.ConnectionString;
+    info.Environment["Appointments__TimeZone"] = "Europe/Brussels";
+    info.Environment["Appointments__DisplayStartTime"] = "09:00";
+    info.Environment["Appointments__DisplayEndTime"] = "19:00";
+    info.Environment["Appointments__ReceptionCapacity"] = "1";
+    // Banc seulement : le banc ouvre ~12 sessions par passage (défaut 10/min/IP inchangé dans le code et la config).
+    info.Environment["Auth__LoginAttemptsPerMinute"] = "120";
+    var process = Process.Start(info)!;
+    Console.WriteLine($"API lancée (processus {process.Id}) sur mmv_v2_test, https {https} / http {http} ; journal : {log}");
+}
+
+async Task<long> ResidueAsync()
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    await using var residue = new NpgsqlCommand(
+        "SELECT (SELECT count(*) FROM appointments.appointments) + (SELECT count(*) FROM appointments.responsibles) + (SELECT count(*) FROM clients.clients) + (SELECT count(*) FROM auth.users) + (SELECT count(*) FROM auth.sessions) + (SELECT count(*) FROM auth.user_permissions) + (SELECT count(*) FROM audit.events)"
+        + " + (SELECT count(*) FROM optical.prescriptions) + (SELECT count(*) FROM optical.prescription_revisions) + (SELECT count(*) FROM optical.measurements) + (SELECT count(*) FROM optical.measurement_revisions)",
+        connection);
+    return (long)(await residue.ExecuteScalarAsync())!;
+}
+
+async Task CleanupAsync(string suffix)
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    await using var transaction = await connection.BeginTransactionAsync();
+    async Task<int> Exec(string sql)
+    {
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("u", $"c04-%-{suffix}");
+        command.Parameters.AddWithValue("l", $"Fictif-C04-{suffix}%");
+        return await command.ExecuteNonQueryAsync();
+    }
+
+    await using (var identity = new NpgsqlCommand(IdentitySql, connection, transaction))
+    {
+        var value = (string)(await identity.ExecuteScalarAsync())!;
+        if (!value.StartsWith("mmv_v2_test|mmv_v2_test|5433|", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Cible de nettoyage refusée : {value}");
+        }
+    }
+
+    const string users = "SELECT id FROM auth.users WHERE user_name LIKE @u";
+    const string clients = "SELECT id FROM clients.clients WHERE last_name LIKE @l";
+    string[] tables = ["prescription_revisions", "prescriptions", "measurement_revisions", "measurements"];
+    foreach (var t in tables) await Exec($"ALTER TABLE optical.{t} DISABLE TRIGGER USER");
+    var o = 0;
+    foreach (var (records, revisions, column) in new[] { ("prescriptions", "prescription_revisions", "prescription_id"), ("measurements", "measurement_revisions", "measurement_id") })
+    {
+        o += await Exec($"DELETE FROM optical.{revisions} WHERE {column} IN (SELECT id FROM optical.{records} WHERE client_id IN ({clients}) OR created_by_user_id IN ({users}))");
+        o += await Exec($"DELETE FROM optical.{records} WHERE client_id IN ({clients}) OR created_by_user_id IN ({users})");
+    }
+
+    foreach (var t in tables) await Exec($"ALTER TABLE optical.{t} ENABLE TRIGGER USER");
+    await Exec("ALTER TABLE audit.events DISABLE TRIGGER trg_events_append_only");
+    var e = await Exec($"DELETE FROM audit.events WHERE actor_user_id IN ({users}) OR client_id IN ({clients})");
+    await Exec("ALTER TABLE audit.events ENABLE TRIGGER trg_events_append_only");
+    var a = await Exec($"DELETE FROM appointments.appointments WHERE client_id IN ({clients}) OR created_by_user_id IN ({users})");
+    var s = await Exec($"DELETE FROM auth.sessions WHERE user_id IN ({users})");
+    var c = await Exec("DELETE FROM clients.clients WHERE last_name LIKE @l");
+    var p = await Exec($"DELETE FROM auth.user_permissions WHERE user_id IN ({users})");
+    var u = await Exec("DELETE FROM auth.users WHERE user_name LIKE @u");
+    await using (var state = new NpgsqlCommand(
+        "SELECT count(*) FROM pg_trigger t JOIN pg_class k ON k.oid = t.tgrelid JOIN pg_namespace n ON n.oid = k.relnamespace WHERE n.nspname IN ('optical','audit') AND NOT t.tgisinternal AND t.tgenabled <> 'O'",
+        connection, transaction))
+    {
+        var disabled = (long)(await state.ExecuteScalarAsync())!;
+        if (disabled != 0)
+        {
+            throw new InvalidOperationException($"{disabled} déclencheur(s) non réactivé(s) : transaction annulée.");
+        }
+    }
+
+    await transaction.CommitAsync();
+    Console.WriteLine($"NETTOYAGE {suffix} : {o} lignes optiques, {e} événements d'audit, {a} rendez-vous, {s} sessions, {c} clients, {p} droits, {u} comptes ; déclencheurs optical/audit tous actifs (O) ; RÉSIDUS mmv_v2_test = {await ResidueAsync()}");
+}
+
+async Task<Guid> AddUserAsync(string userName, string display, string password, params string[] permissions)
+{
+    await using var scope = services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var user = new UserAccount(Guid.CreateVersion7(), userName, display, DateTimeOffset.UtcNow);
+    user.SetPasswordHash(scope.ServiceProvider.GetRequiredService<IPasswordHashing>().Hash(user, password));
+    foreach (var p in permissions) user.Grant(p);
+    context.Users.Add(user);
+    await context.SaveChangesAsync();
+    return user.Id;
+}
+
+async Task<Guid> AddClientAsync(string first, string last, Guid author)
+{
+    await using var scope = services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var client = Client.Create(Guid.CreateVersion7(), new ClientDetails(first, last, null, null, null, null, "Namur", null, null), author, DateTimeOffset.UtcNow);
+    context.Clients.Add(client);
+    await context.SaveChangesAsync();
+    return client.Id;
+}
+
+async Task<int> SqlAsync(string sql, params (string Name, object Value)[] parameters)
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    await using var command = new NpgsqlCommand(sql, connection);
+    foreach (var (n, v) in parameters) command.Parameters.AddWithValue(n, v);
+    return await command.ExecuteNonQueryAsync();
+}
+
+async Task<T> ScalarAsync<T>(string sql, params (string Name, object Value)[] parameters)
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    await using var command = new NpgsqlCommand(sql, connection);
+    foreach (var (n, v) in parameters) command.Parameters.AddWithValue(n, v);
+    return (T)(await command.ExecuteScalarAsync())!;
+}
+
+async Task SeedUiAsync(string file)
+{
+    var suffix = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
+    var password = "Fictif-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8));
+    var agent = await AddUserAsync($"c04-ui-{suffix}", "C04 Opticien fictif", password,
+        Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive, Permissions.AuditRead,
+        Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate);
+    var reader = await AddUserAsync($"c04-uilecture-{suffix}", "C04 Lecture fictive", password, Permissions.ClientsRead, Permissions.OpticalRead);
+    var noOptical = await AddUserAsync($"c04-uisans-{suffix}", "C04 Sans optique", password, Permissions.ClientsRead, Permissions.ClientsWrite);
+    var client = await AddClientAsync("Patient", $"Fictif-C04-{suffix}", agent);
+    var client2 = await AddClientAsync("Second", $"Fictif-C04-{suffix}-B", agent);
+    await File.WriteAllTextAsync(file, JsonSerializer.Serialize(new
+    {
+        suffix, password,
+        agent = $"c04-ui-{suffix}", reader = $"c04-uilecture-{suffix}", noOptical = $"c04-uisans-{suffix}",
+        agentId = agent, readerId = reader, noOpticalId = noOptical, clientId = client, client2Id = client2,
+        clientLastName = $"Fictif-C04-{suffix}",
+    }));
+    Console.WriteLine($"SEED-UI : suffixe {suffix} ; 3 comptes (complet, lecture, sans optique), 2 clients fictifs ; identifiants écrits hors dépôt");
+}
+
+// HTTP en clair : refus attendu 403 https_required sur tout /api (filtre du groupe, Q-03-55 / Q-03-89), sans écriture.
+async Task<bool> RunPlainHttpAsync(Uri http, Uri https)
+{
+    var suffix = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
+    var password = "Fictif-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8));
+    var results = new List<bool>();
+    void Check(string name, bool pass, string detail = "") { results.Add(pass); Console.WriteLine($"[HTTP] {(pass ? "PASS" : "FAIL")} {name} {detail}"); }
+    Console.WriteLine($"===== [HTTP] {http} — suffixe {suffix}");
+    var user = await AddUserAsync($"c04-http-{suffix}", "C04 HTTP", password, Permissions.ClientsRead, Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite);
+    var client = await AddClientAsync("Patient", $"Fictif-C04-{suffix}", user);
+    var handler = new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator };
+    using var plain = new HttpClient(handler, disposeHandler: false) { BaseAddress = http };
+    using var secure = new HttpClient(handler, disposeHandler: false) { BaseAddress = https };
+    var plainLogin = await plain.PostAsJsonAsync("/api/auth/login", new { userName = $"c04-http-{suffix}", password });
+    var plainLoginText = await plainLogin.Content.ReadAsStringAsync();
+    Check("H.1 connexion en HTTP -> 403 https_required, aucun jeton", plainLogin.StatusCode == HttpStatusCode.Forbidden && plainLoginText.Contains("https_required", StringComparison.Ordinal) && !plainLoginText.Contains("accessToken", StringComparison.Ordinal), $"{(int)plainLogin.StatusCode}");
+    var login = await secure.PostAsJsonAsync("/api/auth/login", new { userName = $"c04-http-{suffix}", password });
+    var token = (await login.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString();
+    plain.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    var paths = new[] { "/api/optical/records", $"/api/optical/clients/{client}/records", "/api/optical/measurers" };
+    foreach (var p in paths)
+    {
+        var r = await plain.GetAsync(p);
+        var t = await r.Content.ReadAsStringAsync();
+        Check($"H.2 GET {p.Replace(client.ToString(), "{client}", StringComparison.Ordinal)} en HTTP (jeton valide) -> 403 https_required", r.StatusCode == HttpStatusCode.Forbidden && t.Contains("https_required", StringComparison.Ordinal), $"{(int)r.StatusCode}");
+    }
+
+    var post = await plain.PostAsJsonAsync("/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId = client, confirm = true, content = new { provenance = new { prescriberName = "Dr HTTP", prescribedOn = "2026-10-20" }, od = new { sphere = "-1,00" } } });
+    var rows = await ScalarAsync<long>("SELECT count(*) FROM optical.prescriptions WHERE client_id = @c", ("c", client));
+    Check("H.3 POST ordonnance en HTTP -> 403 https_required, RIEN écrit", post.StatusCode == HttpStatusCode.Forbidden && rows == 0, $"{(int)post.StatusCode} lignes={rows}");
+    secure.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    var sameOverHttps = await secure.GetAsync($"/api/optical/clients/{client}/records");
+    Check("H.4 même jeton en HTTPS -> 200 (refus dû au seul transport)", sameOverHttps.StatusCode == HttpStatusCode.OK, $"{(int)sameOverHttps.StatusCode}");
+    Console.WriteLine($"===== [HTTP] TOTAL {results.Count(r => r)}/{results.Count} PASS ; suffixe {suffix}");
+    await CleanupAsync(suffix);
+    return results.All(r => r);
+}
+
+async Task<bool> RunAsync(Uri api, string apiLog)
+{
+    var suffix = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(3));
+    var label = api.Scheme.ToUpperInvariant();
+    var results = new List<(string Case, string Status, string Detail)>();
+    void Check(string name, bool pass, string detail = "")
+    {
+        results.Add((name, pass ? "PASS" : "FAIL", detail));
+        Console.WriteLine($"[{label}] {(pass ? "PASS" : "FAIL")} {name} {detail}");
+    }
+
+    async Task Section(string name, Func<Task> body)
+    {
+        try { await body(); }
+        catch (Exception ex) { Check($"{name} (exception)", false, ex.GetType().Name + ": " + ex.Message.Split('\n')[0]); }
+    }
+
+    Console.WriteLine($"===== [{label}] {api} — suffixe {suffix}");
+    var password = "Fictif-" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(8));
+    string U(string role) => $"c04-{role}-{suffix}";
+    var ids = new Dictionary<string, Guid>
+    {
+        ["complet"] = await AddUserAsync(U("complet"), "C04 Complet", password, Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive, Permissions.AuditRead,
+            Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate),
+        ["poste2"] = await AddUserAsync(U("poste2"), "C04 Poste deux", password, Permissions.ClientsRead, Permissions.ClientsArchive,
+            Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate),
+        ["lecture"] = await AddUserAsync(U("lecture"), "C04 Lecture", password, Permissions.ClientsRead, Permissions.OpticalRead),
+        ["rx"] = await AddUserAsync(U("rx"), "C04 Ordonnances", password, Permissions.ClientsRead, Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite),
+        ["mes"] = await AddUserAsync(U("mes"), "C04 Mesures", password, Permissions.ClientsRead, Permissions.OpticalRead, Permissions.OpticalMeasurementsWrite),
+        ["inval"] = await AddUserAsync(U("inval"), "C04 Invalidation", password, Permissions.ClientsRead, Permissions.OpticalRead, Permissions.OpticalInvalidate),
+        ["sansclients"] = await AddUserAsync(U("sansclients"), "C04 Sans clients.read", password, Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite),
+        ["auditeur"] = await AddUserAsync(U("auditeur"), "C04 Auditeur", password, Permissions.ClientsRead, Permissions.AuditRead),
+        ["admin"] = await AddUserAsync(U("admin"), "C04 Admin", password, Permissions.SystemAdmin),
+        ["mesureur"] = await AddUserAsync(U("mesureur"), "C04 Mesureur", password, Permissions.ClientsRead, Permissions.OpticalRead, Permissions.OpticalMeasurementsWrite),
+    };
+    var clientId = await AddClientAsync("Patient", $"Fictif-C04-{suffix}", ids["complet"]);
+
+    var handler = new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator };
+    async Task<HttpClient> Login(string role)
+    {
+        var http = new HttpClient(handler, disposeHandler: false) { BaseAddress = api };
+        var login = await http.PostAsJsonAsync("/api/auth/login", new { userName = U(role), password });
+        if (!login.IsSuccessStatusCode) throw new InvalidOperationException($"login {role} : {(int)login.StatusCode}");
+        var token = (await login.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accessToken").GetString();
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return http;
+    }
+
+    async Task<(HttpStatusCode Status, JsonElement Body, string Text, HttpResponseMessage Response)> Send(HttpClient http, HttpMethod method, string path, object? body = null)
+    {
+        var request = new HttpRequestMessage(method, path) { Content = body is null ? null : JsonContent.Create(body) };
+        var response = await http.SendAsync(request);
+        var text = await response.Content.ReadAsStringAsync();
+        return (response.StatusCode, text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone(), text, response);
+    }
+
+    var full = await Login("complet");
+    var station2 = await Login("poste2");
+    var reader = await Login("lecture");
+    var rxOnly = await Login("rx");
+    var mesOnly = await Login("mes");
+    var invalOnly = await Login("inval");
+    var noClients = await Login("sansclients");
+    var auditor = await Login("auditeur");
+    var admin = await Login("admin");
+    var anonymous = new HttpClient(handler, disposeHandler: false) { BaseAddress = api };
+
+    // Valeurs « secrètes » : ne doivent apparaître ni dans l'audit, ni dans un refus, ni dans le journal de l'API.
+    var secretPrescriber = $"Dr SECRET-PRESCRIPTEUR-{suffix}";
+    var secretNotes = $"NOTE-SECRETE-{suffix}";
+    const string SecretSphere = "\u22122,125";
+    object Rx(string? sphere, string? cylinder = null, string? axis = null, bool provenance = true, string? notes = null) => new
+    {
+        provenance = provenance ? new { prescriberName = secretPrescriber, prescribedOn = "2026-10-20", receivedOn = "2026-10-22" } : null,
+        od = new { sphere, cylinder, axis },
+        notes = notes ?? secretNotes,
+    };
+    object Mes(Guid measurer, string? odSphere = "+0,75", string? ogSphere = null) => new
+    {
+        provenance = new { measuredOn = "2026-10-28", measuredByUserId = measurer, category = "Réfraction magasin" },
+        od = new { sphere = odSphere },
+        og = new { sphere = ogSphere },
+    };
+    static JsonElement P(JsonElement e, params string[] path) { foreach (var p in path) e = e.GetProperty(p); return e; }
+    static uint V(JsonElement e) => e.GetProperty("version").GetUInt32();
+    static string? Code(JsonElement e) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("code", out var c) ? c.GetString() : null;
+
+    string rxId = "", draftRxId = "";
+    // ---------- 1. Ordonnance : création + confirmation atomiques ----------
+    await Section("1", async () =>
+    {
+        var requestId = Guid.CreateVersion7();
+        var create = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId, clientId, confirm = true, content = Rx(SecretSphere, "-0,50", "0") });
+        Check("1.1 ordonnance Enregistrer -> 201, révision 1 confirmée, aucun brouillon", create.Status == HttpStatusCode.Created
+            && P(create.Body, "lastConfirmed", "revisionNo").GetInt32() == 1 && P(create.Body, "openDraft").ValueKind == JsonValueKind.Null, $"{(int)create.Status}");
+        rxId = create.Body.GetProperty("id").GetString()!;
+        Check("1.2 référence RX-######", create.Body.GetProperty("reference").GetString()!.StartsWith("RX-", StringComparison.Ordinal), create.Body.GetProperty("reference").GetString()!);
+        var od = P(create.Body, "lastConfirmed", "content", "od");
+        Check("1.3 valeur exacte conservée (U+2212, virgule, 3 décimales)", od.GetProperty("sphere").GetString() == SecretSphere);
+        Check("1.4 axe 0 conservé tel quel", od.GetProperty("axis").GetString() == "0");
+        Check("1.5 OG vide = null (jamais 0)", P(create.Body, "lastConfirmed", "content", "og", "sphere").ValueKind == JsonValueKind.Null);
+        Check("1.6 Cache-Control: no-store", create.Response.Headers.CacheControl?.NoStore == true);
+        var db = await ScalarAsync<string>("SELECT od_sphere || '|' || od_sphere_value::text || '|' || status FROM optical.prescription_revisions WHERE prescription_id = @i", ("i", Guid.Parse(rxId)));
+        Check("1.7 PostgreSQL : texte exact + numeric exact, statut confirmed", db == $"{SecretSphere}|-2.125|confirmed", db);
+        var incomplete = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Rx("0,00") });
+        var count = await ScalarAsync<long>("SELECT count(*) FROM optical.prescriptions WHERE client_id = @c", ("c", clientId));
+        Check("1.8 refus (sphère seule à zéro) -> 422 incomplete, RIEN écrit (aucun brouillon orphelin)", incomplete.Status == HttpStatusCode.UnprocessableEntity && Code(incomplete.Body) == "incomplete" && count == 1, $"{(int)incomplete.Status} enregistrements={count}");
+        var noProv = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Rx("-1,00", provenance: false) });
+        Check("1.9 provenance absente -> 422 à la confirmation", noProv.Status == HttpStatusCode.UnprocessableEntity, $"{(int)noProv.Status}");
+        var twoZero = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = new { provenance = new { prescriberName = secretPrescriber, prescribedOn = "2026-10-20" }, od = new { sphere = "0,00" }, og = new { sphere = "0" } } });
+        Check("1.10 deux sphères à zéro sans autre valeur : comportement constaté (règle à valider par un opticien)", true, $"{(int)twoZero.Status} {Code(twoZero.Body)}");
+        if (twoZero.Status == HttpStatusCode.Created)
+        {
+            var id = twoZero.Body.GetProperty("id").GetString();
+            await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/invalidate", new { requestId = Guid.CreateVersion7(), version = V(twoZero.Body), reasonCode = "entry_error" });
+        }
+    });
+
+    // ---------- 2. Mesure magasin : création + confirmation ----------
+    string mesId = "";
+    await Section("2", async () =>
+    {
+        var create = await Send(mesOnly, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Mes(ids["mes"], "+0,75", "+1,00") });
+        Check("2.1 mesure Enregistrer -> 201, révision 1", create.Status == HttpStatusCode.Created && P(create.Body, "lastConfirmed", "revisionNo").GetInt32() == 1, $"{(int)create.Status}");
+        mesId = create.Body.GetProperty("id").GetString()!;
+        Check("2.2 référence MES-######, type measurement", create.Body.GetProperty("reference").GetString()!.StartsWith("MES-", StringComparison.Ordinal) && create.Body.GetProperty("kind").GetString() == "measurement");
+        Check("2.3 provenance mesure (date, collaborateur, catégorie libre)", P(create.Body, "lastConfirmed", "content", "provenance", "category").GetString() == "Réfraction magasin");
+        var acuity = await Send(mesOnly, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = new { provenance = new { measuredOn = "2026-10-28", measuredByUserId = ids["mes"] }, og = new { acuity = "9/10" } } });
+        Check("2.4 mesure : acuité seule acceptée -> 201", acuity.Status == HttpStatusCode.Created, $"{(int)acuity.Status}");
+        var rxAcuity = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = new { provenance = new { prescriberName = "Dr X", prescribedOn = "2026-10-01" }, od = new { acuity = "10/10" } } });
+        Check("2.5 ordonnance : acuité seule refusée -> 422", rxAcuity.Status == HttpStatusCode.UnprocessableEntity, $"{(int)rxAcuity.Status}");
+        var measurers = await Send(reader, HttpMethod.Get, "/api/optical/measurers");
+        Check("2.6 liste des collaborateurs mesureurs (actifs avec optical.measurements.write)", measurers.Status == HttpStatusCode.OK && measurers.Text.Contains(ids["mes"].ToString(), StringComparison.Ordinal), $"{(int)measurers.Status}");
+    });
+
+    // ---------- 3. Brouillon : enregistrement, reprise sur un autre poste, confirmation ----------
+    await Section("3", async () =>
+    {
+        var draft = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = false, content = new { od = new { sphere = "-0,25" } } });
+        Check("3.1 Enregistrer comme brouillon -> 201, sans révision confirmée, sans provenance exigée", draft.Status == HttpStatusCode.Created
+            && P(draft.Body, "lastConfirmed").ValueKind == JsonValueKind.Null && P(draft.Body, "openDraft").ValueKind == JsonValueKind.Object, $"{(int)draft.Status}");
+        draftRxId = draft.Body.GetProperty("id").GetString()!;
+        var resumed = await Send(station2, HttpMethod.Get, $"/api/optical/prescriptions/{draftRxId}");
+        Check("3.2 reprise du brouillon sur un autre poste (valeur identique)", P(resumed.Body, "openDraft", "content", "od", "sphere").GetString() == "-0,25");
+        var put = await Send(station2, HttpMethod.Put, $"/api/optical/prescriptions/{draftRxId}/draft", new { requestId = Guid.CreateVersion7(), version = V(resumed.Body), content = new { od = new { sphere = "-0,50", cylinder = "-0,25", axis = "90" } } });
+        Check("3.3 brouillon modifié -> 200, version changée", put.Status == HttpStatusCode.OK && V(put.Body) != V(resumed.Body), $"{(int)put.Status}");
+        var same = await Send(station2, HttpMethod.Put, $"/api/optical/prescriptions/{draftRxId}/draft", new { requestId = Guid.CreateVersion7(), version = V(put.Body), content = new { od = new { sphere = "-0,50", cylinder = "-0,25", axis = "90" } } });
+        Check("3.4 brouillon inchangé -> aucune écriture (même version)", same.Status == HttpStatusCode.OK && V(same.Body) == V(put.Body), $"{(int)same.Status}");
+        var confirm = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{draftRxId}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = V(same.Body), content = Rx("-0,50", "-0,25", "90") });
+        Check("3.5 Enregistrer depuis le brouillon repris -> révision 1, brouillon fermé", confirm.Status == HttpStatusCode.OK && P(confirm.Body, "lastConfirmed", "revisionNo").GetInt32() == 1 && P(confirm.Body, "openDraft").ValueKind == JsonValueKind.Null, $"{(int)confirm.Status}");
+    });
+
+    // ---------- 4. Modification : révisions confirmées conservées ; 5. anciennes révisions selon audit.read ----------
+    await Section("4", async () =>
+    {
+        var current = await Send(full, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        var rect = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(current.Body), expectedRevisionNo = 1, reasonCode = "transcription_error" });
+        Check("4.1 Modifier -> 201 rectification ouverte (révision 1 toujours de référence)", rect.Status == HttpStatusCode.Created && P(rect.Body, "lastConfirmed", "revisionNo").GetInt32() == 1 && P(rect.Body, "openDraft").ValueKind == JsonValueKind.Object, $"{(int)rect.Status}");
+        var confirm = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = V(rect.Body), content = Rx("-2,25", "-0,50", "180") });
+        Check("4.2 Enregistrer la modification -> révision 2", confirm.Status == HttpStatusCode.OK && P(confirm.Body, "lastConfirmed", "revisionNo").GetInt32() == 2, $"{(int)confirm.Status}");
+        var rev1 = await ScalarAsync<string>("SELECT od_sphere || '|' || status || '|' || revision_no FROM optical.prescription_revisions WHERE prescription_id = @i AND revision_no = 1", ("i", Guid.Parse(rxId)));
+        Check("4.3 révision 1 intacte en base (valeur, statut)", rev1 == $"{SecretSphere}|confirmed|1", rev1);
+        var immutable = await Send(full, HttpMethod.Put, $"/api/optical/prescriptions/{rxId}/draft", new { requestId = Guid.CreateVersion7(), version = V(confirm.Body), content = Rx("-9,00") });
+        Check("4.4 aucune modification directe d'une révision confirmée (pas de brouillon -> refus)", immutable.Status is HttpStatusCode.Conflict or HttpStatusCode.NotFound, $"{(int)immutable.Status} {Code(immutable.Body)}");
+        var withHistory = await Send(full, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        var revisions = withHistory.Body.GetProperty("revisions").EnumerateArray().ToList();
+        Check("4.5 audit.read : anciennes révisions accessibles (révision 1 avec sa valeur) + journal", withHistory.Body.GetProperty("historyAvailable").GetBoolean()
+            && revisions.Any(r => r.GetProperty("revisionNo").ValueKind == JsonValueKind.Number && r.GetProperty("revisionNo").GetInt32() == 1 && P(r, "content", "od", "sphere").GetString() == SecretSphere)
+            && withHistory.Body.GetProperty("events").GetArrayLength() >= 3, $"révisions={revisions.Count} événements={withHistory.Body.GetProperty("events").GetArrayLength()}");
+        var noHistory = await Send(reader, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        Check("4.6 sans audit.read : dernière révision seulement, aucun événement, révision 1 absente de la réponse", !noHistory.Body.GetProperty("historyAvailable").GetBoolean()
+            && noHistory.Body.GetProperty("revisions").GetArrayLength() == 1 && noHistory.Body.GetProperty("events").GetArrayLength() == 0 && !noHistory.Text.Contains(SecretSphere, StringComparison.Ordinal),
+            $"révisions={noHistory.Body.GetProperty("revisions").GetArrayLength()}");
+        var rect2 = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(withHistory.Body), expectedRevisionNo = 2, reasonCode = "other", comment = "Essai fictif d'abandon" });
+        var discard = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/draft/discard", new { requestId = Guid.CreateVersion7(), version = V(rect2.Body) });
+        Check("4.7 rectification abandonnée -> révision 2 reste de référence, aucun brouillon", discard.Status == HttpStatusCode.OK && P(discard.Body, "lastConfirmed", "revisionNo").GetInt32() == 2 && P(discard.Body, "openDraft").ValueKind == JsonValueKind.Null, $"{(int)rect2.Status}/{(int)discard.Status}");
+        var stale = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(discard.Body), expectedRevisionNo = 1, reasonCode = "transcription_error" });
+        Check("4.8 rectification d'une révision dépassée -> 409 revision_conflict", stale.Status == HttpStatusCode.Conflict && Code(stale.Body) == "revision_conflict", $"{(int)stale.Status} {Code(stale.Body)}");
+        var auditOptical = await Send(full, HttpMethod.Get, $"/api/audit/clients/{clientId}?module=optical");
+        Check("4.9 journal client module=optical (audit.read + optical.read) sans valeur, prescripteur ni note", auditOptical.Status == HttpStatusCode.OK
+            && auditOptical.Body.GetProperty("totalCount").GetInt32() > 0
+            && !auditOptical.Text.Contains("SECRET", StringComparison.Ordinal) && !auditOptical.Text.Contains("2,125", StringComparison.Ordinal) && !auditOptical.Text.Contains("2,25", StringComparison.Ordinal),
+            $"{(int)auditOptical.Status}");
+        var auditOnly = await Send(auditor, HttpMethod.Get, $"/api/audit/clients/{clientId}");
+        Check("4.10 audit.read sans optical.read : événements optical exclus", auditOnly.Status == HttpStatusCode.OK && auditOnly.Body.GetProperty("items").EnumerateArray().All(e => e.GetProperty("module").GetString() != "optical"));
+        var auditOnlyOptical = await Send(auditor, HttpMethod.Get, $"/api/audit/clients/{clientId}?module=optical");
+        Check("4.11 audit.read sans optical.read, module=optical -> 403", auditOnlyOptical.Status == HttpStatusCode.Forbidden, $"{(int)auditOnlyOptical.Status}");
+        var dbAudit = await ScalarAsync<long>("SELECT count(*) FROM audit.events WHERE module = 'optical' AND client_id = @c AND (changes::text LIKE '%SECRET%' OR changes::text LIKE '%2,125%' OR changes::text LIKE '%2,25%')", ("c", clientId));
+        Check("4.12 audit.events en base : aucune valeur optique, prescripteur ni note", dbAudit == 0, $"lignes suspectes={dbAudit}");
+    });
+
+    // ---------- 6. Quatre permissions optiques, refus sans fuite ----------
+    await Section("6", async () =>
+    {
+        var newRx = new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Rx("-1,00") };
+        var r1 = await Send(rxOnly, HttpMethod.Post, "/api/optical/prescriptions", newRx);
+        Check("6.1 optical.prescriptions.write : ordonnance -> 201", r1.Status == HttpStatusCode.Created, $"{(int)r1.Status}");
+        var r2 = await Send(rxOnly, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Mes(ids["mes"]) });
+        Check("6.2 optical.prescriptions.write : mesure -> 403", r2.Status == HttpStatusCode.Forbidden, $"{(int)r2.Status}");
+        var r3 = await Send(mesOnly, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Rx("-1,00") });
+        Check("6.3 optical.measurements.write : ordonnance -> 403", r3.Status == HttpStatusCode.Forbidden, $"{(int)r3.Status}");
+        var target = await Send(full, HttpMethod.Get, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}");
+        var r4 = await Send(rxOnly, HttpMethod.Post, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}/invalidate", new { requestId = Guid.CreateVersion7(), version = V(target.Body), reasonCode = "duplicate" });
+        Check("6.4 sans optical.invalidate : invalidation -> 403", r4.Status == HttpStatusCode.Forbidden, $"{(int)r4.Status}");
+        var r5 = await Send(invalOnly, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Rx("-1,00") });
+        Check("6.5 optical.invalidate seul : écriture -> 403", r5.Status == HttpStatusCode.Forbidden, $"{(int)r5.Status}");
+        var noReason = await Send(invalOnly, HttpMethod.Post, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}/invalidate", new { requestId = Guid.CreateVersion7(), version = V(target.Body) });
+        Check("6.6 invalidation sans motif -> refus 4xx, rien écrit", (int)noReason.Status is 400 or 422, $"{(int)noReason.Status} {Code(noReason.Body)}");
+        var r6 = await Send(invalOnly, HttpMethod.Post, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}/invalidate", new { requestId = Guid.CreateVersion7(), version = V(target.Body), reasonCode = "duplicate", comment = "Doublon fictif" });
+        Check("6.7 optical.invalidate : invalidation motivée -> 200 invalidated (aucune suppression)", r6.Status == HttpStatusCode.OK && r6.Body.GetProperty("lifecycle").GetString() == "invalidated"
+            && P(r6.Body, "invalidation", "reasonCode").GetString() == "duplicate", $"{(int)r6.Status}");
+        var still = await ScalarAsync<long>("SELECT count(*) FROM optical.prescriptions WHERE id = @i AND invalidated_at_utc IS NOT NULL", ("i", Guid.Parse(r1.Body.GetProperty("id").GetString()!)));
+        Check("6.8 enregistrement invalidé conservé en base", still == 1);
+        var frozen = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(r6.Body), expectedRevisionNo = 1, reasonCode = "transcription_error" });
+        Check("6.9 invalidé : écriture -> 409 invalidated", frozen.Status == HttpStatusCode.Conflict && Code(frozen.Body) == "invalidated", $"{(int)frozen.Status} {Code(frozen.Body)}");
+        var again = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{r1.Body.GetProperty("id").GetString()}/invalidate", new { requestId = Guid.CreateVersion7(), version = V(r6.Body), reasonCode = "duplicate" });
+        Check("6.10 seconde invalidation -> 409 already_invalidated", again.Status == HttpStatusCode.Conflict && Code(again.Body) == "already_invalidated", $"{(int)again.Status} {Code(again.Body)}");
+        var list = await Send(reader, HttpMethod.Get, $"/api/optical/clients/{clientId}/records");
+        var listAll = await Send(reader, HttpMethod.Get, $"/api/optical/clients/{clientId}/records?includeInvalidated=true");
+        var invalidId = r1.Body.GetProperty("id").GetString();
+        Check("6.11 invalidé exclu par défaut, listé sur demande", list.Body.EnumerateArray().All(r => r.GetProperty("id").GetString() != invalidId) && listAll.Body.EnumerateArray().Any(r => r.GetProperty("id").GetString() == invalidId));
+        var read = await Send(reader, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        var readWrite = await Send(reader, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId, content = new { } });
+        Check("6.12 optical.read seul : lecture 200, écriture 403", read.Status == HttpStatusCode.OK && readWrite.Status == HttpStatusCode.Forbidden, $"{(int)read.Status}/{(int)readWrite.Status}");
+        var forbidden = new[]
+        {
+            await Send(admin, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}"),
+            await Send(auditor, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}"),
+            await Send(noClients, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}"),
+            await Send(admin, HttpMethod.Get, $"/api/optical/clients/{clientId}/records"),
+            await Send(noClients, HttpMethod.Get, "/api/optical/records"),
+        };
+        Check("6.13 system.admin seul / audit.read seul / optique sans clients.read -> 403", forbidden.All(f => f.Status == HttpStatusCode.Forbidden), string.Join(",", forbidden.Select(f => (int)f.Status)));
+        var unauth = await Send(anonymous, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        Check("6.14 sans session -> 401", unauth.Status == HttpStatusCode.Unauthorized, $"{(int)unauth.Status}");
+        var leak = forbidden.Append(unauth).Append(r2).Append(r3).Append(r4).Append(r5).Append(readWrite)
+            .Where(f => f.Text.Contains("2,25", StringComparison.Ordinal) || f.Text.Contains(SecretSphere, StringComparison.Ordinal) || f.Text.Contains("SECRET", StringComparison.Ordinal) || f.Text.Contains("Fictif-C04", StringComparison.Ordinal)).Count();
+        Check("6.15 refus sans fuite (aucune valeur, prescripteur, note ni nom de client dans les corps 401/403)", leak == 0, $"corps suspects={leak}");
+    });
+
+    // ---------- 7. Deux postes sur le même enregistrement ----------
+    await Section("7", async () =>
+    {
+        var current = await Send(full, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        var rect = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(current.Body), expectedRevisionNo = 2, reasonCode = "additional_information" });
+        var v = V(rect.Body);
+        var drafts = await Task.WhenAll(
+            Send(full, HttpMethod.Put, $"/api/optical/prescriptions/{rxId}/draft", new { requestId = Guid.CreateVersion7(), version = v, content = Rx("-2,50", "-0,50", "180") }),
+            Send(station2, HttpMethod.Put, $"/api/optical/prescriptions/{rxId}/draft", new { requestId = Guid.CreateVersion7(), version = v, content = Rx("-2,75", "-0,50", "180") }));
+        Check("7.1 deux postes enregistrent le même brouillon -> un 200 + un 409 version_conflict", drafts.Count(d => d.Status == HttpStatusCode.OK) == 1 && drafts.Count(d => d.Status == HttpStatusCode.Conflict && Code(d.Body) == "version_conflict") == 1, string.Join(",", drafts.Select(d => (int)d.Status)));
+        var fresh = await Send(full, HttpMethod.Get, $"/api/optical/prescriptions/{rxId}");
+        var winner = drafts.First(d => d.Status == HttpStatusCode.OK);
+        Check("7.2 le brouillon retenu est celui du poste gagnant (aucun mélange)", P(fresh.Body, "openDraft", "content", "od", "sphere").GetString() == P(winner.Body, "openDraft", "content", "od", "sphere").GetString());
+        var w = V(fresh.Body);
+        var confirms = await Task.WhenAll(
+            Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = w, content = Rx("-2,50", "-0,50", "180") }),
+            Send(station2, HttpMethod.Post, $"/api/optical/prescriptions/{rxId}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = w, content = Rx("-2,75", "-0,50", "180") }));
+        Check("7.3 deux postes confirment la même version -> un 200 + un 409", confirms.Count(d => d.Status == HttpStatusCode.OK) == 1 && confirms.Count(d => d.Status == HttpStatusCode.Conflict) == 1, string.Join(",", confirms.Select(d => (int)d.Status)));
+        var revs = await ScalarAsync<string>("SELECT string_agg(revision_no::text, ',' ORDER BY revision_no) FROM optical.prescription_revisions WHERE prescription_id = @i AND status = 'confirmed'", ("i", Guid.Parse(rxId)));
+        Check("7.4 révisions confirmées sans doublon ni trou (1,2,3)", revs == "1,2,3", revs);
+        var twin = Guid.CreateVersion7();
+        var twins = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Send(full, HttpMethod.Post, "/api/optical/measurements", new { requestId = twin, clientId, confirm = true, content = Mes(ids["mes"], "+2,00") })));
+        Check("7.5 double requête simultanée (même requestId) -> un seul enregistrement", twins.All(t => t.Status is HttpStatusCode.Created or HttpStatusCode.OK) && twins.Select(t => t.Body.GetProperty("id").GetString()).Distinct().Count() == 1, string.Join(",", twins.Select(t => (int)t.Status)));
+    });
+
+    // ---------- 8. Réémission après réponse incertaine ----------
+    await Section("8", async () =>
+    {
+        var requestId = Guid.CreateVersion7();
+        var body = new { requestId, clientId, confirm = true, content = Rx("+3,00") };
+        var first = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", body); // réponse « perdue » : le poste ne la lit pas
+        var replay = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", body);
+        var n = await ScalarAsync<long>("SELECT count(*) FROM optical.prescriptions WHERE creation_request_id = @r", ("r", requestId));
+        Check("8.1 création réémise (même requestId) -> 200 même enregistrement, 1 seule ligne, 1 révision", first.Status == HttpStatusCode.Created && replay.Status == HttpStatusCode.OK
+            && replay.Body.GetProperty("id").GetString() == first.Body.GetProperty("id").GetString() && n == 1 && replay.Body.GetProperty("revisions").GetArrayLength() == 1, $"{(int)first.Status}/{(int)replay.Status} lignes={n}");
+        var id = first.Body.GetProperty("id").GetString()!;
+        var rect = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(first.Body), expectedRevisionNo = 1, reasonCode = "transcription_error" });
+        var confirmId = Guid.CreateVersion7();
+        var confirmBody = new { requestId = confirmId, version = V(rect.Body), content = Rx("+3,25") };
+        var c1 = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/draft/confirm", confirmBody);
+        var c2 = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/draft/confirm", confirmBody);
+        var confirmed = await ScalarAsync<long>("SELECT count(*) FROM optical.prescription_revisions WHERE prescription_id = @i AND status = 'confirmed'", ("i", Guid.Parse(id)));
+        Check("8.2 confirmation réémise -> 200 état courant, aucune seconde révision (2 confirmées au total)", c1.Status == HttpStatusCode.OK && c2.Status == HttpStatusCode.OK && V(c1.Body) == V(c2.Body) && confirmed == 2, $"{(int)c1.Status}/{(int)c2.Status} confirmées={confirmed}");
+        var rect2 = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(c2.Body), expectedRevisionNo = 2, reasonCode = "transcription_error" });
+        var late = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{id}/draft/confirm", confirmBody);
+        var after = await ScalarAsync<long>("SELECT count(*) FROM optical.prescription_revisions WHERE prescription_id = @i AND status = 'confirmed'", ("i", Guid.Parse(id)));
+        Check("8.3 réémission TARDIVE (après une autre écriture) -> 409, rien écrit", late.Status == HttpStatusCode.Conflict && after == 2, $"{(int)late.Status} {Code(late.Body)} confirmées={after} (rect2 {(int)rect2.Status})");
+        var reused = await Send(station2, HttpMethod.Post, "/api/optical/prescriptions", new { requestId, clientId, confirm = true, content = Rx("+3,00") });
+        Check("8.4 requestId réutilisé par un autre auteur -> 409 request_id_reused", reused.Status == HttpStatusCode.Conflict && Code(reused.Body) == "request_id_reused", $"{(int)reused.Status} {Code(reused.Body)}");
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(1));
+        var timeoutId = Guid.CreateVersion7();
+        var timeoutBody = new { requestId = timeoutId, clientId, confirm = true, content = Rx("+4,00") };
+        try { await full.PostAsJsonAsync("/api/optical/prescriptions", timeoutBody, cts.Token); } catch (OperationCanceledException) { }
+        await Task.Delay(500);
+        var retry = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", timeoutBody);
+        var rows = await ScalarAsync<long>("SELECT count(*) FROM optical.prescriptions WHERE creation_request_id = @r", ("r", timeoutId));
+        Check("8.5 délai client dépassé (requête annulée côté poste) puis réémission -> exactement 1 enregistrement", (retry.Status is HttpStatusCode.Created or HttpStatusCode.OK) && rows == 1, $"{(int)retry.Status} lignes={rows}");
+    });
+
+    // ---------- 9. Archivage du client simultané à une écriture optique ----------
+    await Section("9", async () =>
+    {
+        var outcomes = new List<string>();
+        var bad = 0;
+        var archivedClients = new List<Guid>();
+        for (var i = 0; i < 10; i++)
+        {
+            var c = await AddClientAsync("Archive", $"Fictif-C04-{suffix}-A{i}", ids["complet"]);
+            archivedClients.Add(c);
+            Guid? existing = null;
+            uint existingVersion = 0;
+            if (i % 2 == 1)
+            {
+                var seed = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId = c, confirm = true, content = Rx("-1,50") });
+                var rect = await Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{seed.Body.GetProperty("id").GetString()}/rectifications", new { requestId = Guid.CreateVersion7(), version = V(seed.Body), expectedRevisionNo = 1, reasonCode = "transcription_error" });
+                existing = Guid.Parse(seed.Body.GetProperty("id").GetString()!);
+                existingVersion = V(rect.Body);
+            }
+
+            var detail = await Send(full, HttpMethod.Get, $"/api/clients/{c}");
+            var write = existing is null
+                ? Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId = c, confirm = true, content = Rx("-1,75") })
+                : Send(full, HttpMethod.Post, $"/api/optical/prescriptions/{existing}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = existingVersion, content = Rx("-1,75") });
+            var archive = Send(station2, HttpMethod.Post, $"/api/clients/{c}/archive", new { version = V(detail.Body) });
+            var pair = await Task.WhenAll(write, archive);
+            var w = pair[0];
+            var a = pair[1];
+            var ok = a.Status == HttpStatusCode.OK && (w.Status is HttpStatusCode.Created or HttpStatusCode.OK || (w.Status == HttpStatusCode.Conflict && Code(w.Body) == "client_archived"));
+            if (!ok) bad++;
+            outcomes.Add($"{(existing is null ? "création" : "rectif")}:{(int)w.Status}{(Code(w.Body) is { } code ? "/" + code : "")}+archive:{(int)a.Status}");
+        }
+
+        Check("9.1 écriture optique ‖ archivage (10 paires) : jamais de 500 ; écriture 201/200 OU 409 client_archived ; archivage 200", bad == 0, string.Join(" ", outcomes));
+        var lateWrites = await ScalarAsync<long>("SELECT count(*) FROM optical.prescription_revisions r JOIN optical.prescriptions p ON p.id = r.prescription_id JOIN clients.clients c ON c.id = p.client_id WHERE c.id = ANY(@c) AND r.confirmed_at_utc > c.archived_at_utc", ("c", archivedClients.ToArray()));
+        Check("9.2 constat : révisions confirmées horodatées APRÈS l'archivage (écriture commencée avant, sérialisable écriture→archivage ; réserve BL)", true, $"{lateWrites}");
+        var after = await Send(full, HttpMethod.Post, "/api/optical/prescriptions", new { requestId = Guid.CreateVersion7(), clientId = archivedClients[0], confirm = true, content = Rx("-1,00") });
+        Check("9.3 après archivage : nouvelle écriture -> 409 client_archived", after.Status == HttpStatusCode.Conflict && Code(after.Body) == "client_archived", $"{(int)after.Status} {Code(after.Body)}");
+        var readArchived = await Send(reader, HttpMethod.Get, $"/api/optical/clients/{archivedClients[1]}/records");
+        Check("9.4 client archivé : consultation 200", readArchived.Status == HttpStatusCode.OK, $"{(int)readArchived.Status}");
+    });
+
+    // ---------- 10. Désactivation d'un collaborateur simultanée à une confirmation de mesure ----------
+    await Section("10", async () =>
+    {
+        var measurer = ids["mesureur"];
+        var outcomes = new List<string>();
+        var bad = 0;
+        // Mesure confirmée AVANT la désactivation (déterministe) : sert à 10.4 / 10.5.
+        var before = await Send(full, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Mes(measurer, "+0,05") });
+        string? keptId = before.Status == HttpStatusCode.Created ? before.Body.GetProperty("id").GetString() : null;
+        var keptVersion = keptId is null ? 0 : V(before.Body);
+        // Course : la désactivation est décalée de 0 à 45 ms pour couvrir les deux ordres (avant / après le contrôle d'éligibilité).
+        for (var i = 0; i < 10; i++)
+        {
+            await SqlAsync("UPDATE auth.users SET is_active = true WHERE id = @u", ("u", measurer));
+            var confirm = Send(full, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Mes(measurer, $"+0,{i}5") });
+            var delay = i * 5;
+            var deactivate = Task.Run(async () => { await Task.Delay(delay); await SqlAsync("UPDATE auth.users SET is_active = false WHERE id = @u", ("u", measurer)); });
+            await Task.WhenAll(confirm, deactivate);
+            var r = confirm.Result;
+            var ok = r.Status == HttpStatusCode.Created || (r.Status == HttpStatusCode.UnprocessableEntity && r.Text.Contains("not_eligible", StringComparison.Ordinal));
+            if (!ok) bad++;
+            outcomes.Add($"+{delay}ms:" + (r.Status == HttpStatusCode.Created ? "201" : $"{(int)r.Status}{(r.Text.Contains("not_eligible", StringComparison.Ordinal) ? "/not_eligible" : "")}"));
+        }
+
+        Check("10.1 confirmation de mesure ‖ désactivation du mesureur (10 paires décalées) : 201 OU 422 not_eligible, jamais de 500", bad == 0, string.Join(" ", outcomes));
+        var after = await Send(full, HttpMethod.Post, "/api/optical/measurements", new { requestId = Guid.CreateVersion7(), clientId, confirm = true, content = Mes(measurer) });
+        Check("10.2 mesureur désactivé : nouvelle confirmation -> 422 not_eligible, rien écrit", after.Status == HttpStatusCode.UnprocessableEntity && after.Text.Contains("not_eligible", StringComparison.Ordinal), $"{(int)after.Status}");
+        var list = await Send(reader, HttpMethod.Get, "/api/optical/measurers");
+        Check("10.3 mesureur désactivé absent de la liste des collaborateurs", !list.Text.Contains(measurer.ToString(), StringComparison.Ordinal));
+        if (keptId is not null)
+        {
+            var read = await Send(reader, HttpMethod.Get, $"/api/optical/measurements/{keptId}");
+            var cited = read.Body.GetProperty("citedUsers").EnumerateArray().Any(a => a.GetProperty("id").GetString() == measurer.ToString() && a.GetProperty("displayName").GetString() == "C04 Mesureur");
+            Check("10.4 mesure confirmée avant désactivation : lisible, collaborateur désactivé nommé (citedUsers, O-04-48)", read.Status == HttpStatusCode.OK && cited, $"{(int)read.Status}");
+            var rect = await Send(full, HttpMethod.Post, $"/api/optical/measurements/{keptId}/rectifications", new { requestId = Guid.CreateVersion7(), version = keptVersion, expectedRevisionNo = 1, reasonCode = "transcription_error" });
+            var conf = await Send(full, HttpMethod.Post, $"/api/optical/measurements/{keptId}/draft/confirm", new { requestId = Guid.CreateVersion7(), version = V(rect.Body), content = Mes(measurer, "+0,99") });
+            Check("10.5 rectification gardant le même collaborateur (désignation passée) -> 200", conf.Status == HttpStatusCode.OK, $"{(int)rect.Status}/{(int)conf.Status}");
+        }
+        else
+        {
+            Check("10.4/10.5 aucune mesure confirmée pendant la course : rectification avec collaborateur désactivé", false, "NOT_TESTED (aucune 201 obtenue)");
+        }
+    });
+
+    // ---------- 11. Journal de l'API : aucune valeur, prescripteur, note ni nom ----------
+    await Section("11", async () =>
+    {
+        await Task.Delay(1000);
+        string log;
+        await using (var stream = new FileStream(apiLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var readerLog = new StreamReader(stream)) log = await readerLog.ReadToEndAsync();
+        var hits = new[] { secretPrescriber, secretNotes, SecretSphere, "Fictif-C04", "Réfraction magasin" }.Where(s => log.Contains(s, StringComparison.Ordinal)).ToList();
+        // Blocs « fail: » : 23505 sur ux_*_creation_request_id = course de double création réémise, TRAITÉE par le service
+        // (200, enregistrement existant) mais journalisée par EF Core (O-04-49) ; tout autre bloc est une erreur réelle.
+        var blocks = log.Replace("\r\n", "\n").Split("\nfail: ").Skip(1).Select(b => b.Split(["\ninfo: ", "\nwarn: ", "\nfail: "], StringSplitOptions.None)[0]).ToList();
+        var unique = blocks.Count(b => b.StartsWith("Microsoft.EntityFrameworkCore.Update[10000]", StringComparison.Ordinal) && b.Contains("SqlState: 23505", StringComparison.Ordinal) && b.Contains("ConstraintName: ux_", StringComparison.Ordinal) && b.Contains("_creation_request_id", StringComparison.Ordinal));
+        var commands = blocks.Count(b => b.StartsWith("Microsoft.EntityFrameworkCore.Database.Command[20102]", StringComparison.Ordinal));
+        var handled = commands == unique ? unique + commands : -1;
+        Check("11.1 journal API : aucune valeur optique, prescripteur, note, catégorie ni nom de client", hits.Count == 0, hits.Count == 0 ? "" : string.Join(",", hits));
+        Check("11.2 journal API : aucune erreur non traitée (hors 23505 creation_request_id traité, O-04-49)", blocks.Count == handled, $"fail={blocks.Count} dont 23505 traités={handled}");
+    });
+
+    var pass = results.Count(r => r.Status == "PASS");
+    Console.WriteLine($"===== [{label}] TOTAL {pass}/{results.Count} PASS ; suffixe {suffix} ; client {clientId}");
+    await CleanupAsync(suffix);
+    return pass == results.Count;
+}

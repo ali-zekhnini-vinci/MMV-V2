@@ -127,6 +127,8 @@ internal sealed record OpticalEventResponse(Guid Id, DateTimeOffset AtUtc, strin
 /// <summary>
 /// Enregistrement. <c>historyAvailable</c> faux (session sans <c>audit.read</c>) : <c>revisions</c> se limite à la
 /// dernière révision confirmée et au brouillon ouvert, <c>events</c> est vide.
+/// <c>citedUsers</c> (04-C, O-04-48) : comptes cités dans la provenance des révisions servies (collaborateur ayant mesuré),
+/// avec leur nom, y compris s'ils ne sont plus actifs ni habilités (la liste <c>/measurers</c> ne contient que les actifs).
 /// </summary>
 internal sealed record OpticalRecordResponse<TProvenance>(
     OpticalKindValue Kind,
@@ -140,6 +142,7 @@ internal sealed record OpticalRecordResponse<TProvenance>(
     IReadOnlyList<OpticalRevisionResponse<TProvenance>> Revisions,
     bool HistoryAvailable,
     IReadOnlyList<OpticalEventResponse> Events,
+    IReadOnlyList<OpticalActorResponse> CitedUsers,
     DateTimeOffset CreatedAtUtc,
     OpticalActorResponse CreatedBy,
     uint Version);

@@ -1,5 +1,7 @@
 # 04-B — Livraison : dossier optique réel (backend .NET, migration 0006 préparée, raccordement 04-C préparé)
 
+*Note datée 28/10/2026 :* G04-SQL accordée ; 0006 appliquée et tests réels (PostgreSQL, HTTPS, Tauri natif) exécutés — voir [`LIVRAISON_04C.md`](LIVRAISON_04C.md). Les résultats `NOT_TESTED` / `NOT_RUN` ci-dessous restent l'état du 27/10/2026. O-04-44 résolu par O-04-48 (`citedUsers`).
+
 **Statut (27/10/2026) : `PHASE04_B_READY — OWNER_SQL_REVIEW_REQUIRED`.** Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md) (GO officiel du propriétaire, 27/10/2026). Branche locale `feat/phase-04-00-cadrage` (ascendance de `main` `6924860` vérifiée ; commits locaux, aucun push, PR ni merge). Migration `0006_OpticalModule` **préparée, NON APPLIQUÉE** : dossier de revue [`G04_SQL_DOSSIER.md`](G04_SQL_DOSSIER.md). Aucune connexion d'écriture à `mmv_v2_dev` / `mmv_v2_test`, aucun droit attribué à un compte réel, PostgreSQL 17 non touché.
 
 ## 1. Décisions appliquées (APPROVED par le mandat, non redemandées)

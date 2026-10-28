@@ -25,7 +25,7 @@ import { cn } from "../lib/utils.ts";
 import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { EyeGrid } from "./EyeGrid.tsx";
 import { KindBadge, ProposedTag } from "./OpticalBadges.tsx";
-import { emptyContent, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
+import { emptyContent, knownActors, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
 import { KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
 import { useCreateAndConfirm, useCreateRecord, useMeasurers, useOpticalGateway, useSaveAndConfirm, useSaveDraft } from "./opticalQueries.ts";
 import { OpticalStepContext, stepLabel } from "./opticalStep.ts";
@@ -58,6 +58,12 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
   // Enregistrement et version lus à l'ouverture, figés jusqu'à un rechargement explicite (GAP-04-09).
   const [record, setRecord] = useState<OpticalRecord | null>(props.mode === "draft" ? props.record : null);
   const draft = record?.openDraft ?? null;
+  // 04-C (O-04-48) : un collaborateur cité mais plus habilité reste sélectionnable pour une rectification (le serveur
+  // admet le collaborateur inchangé), signalé comme tel ; la liste active seule l'aurait fait disparaître du champ.
+  const measurerOptions = knownActors(
+    measurers.data ?? [],
+    (record?.citedUsers ?? []).map((actor) => (measurers.isSuccess ? { ...actor, displayName: `${actor.displayName} (n'est plus habilité à mesurer)` } : actor)),
+  );
   const [clientName, clientReference = ""] = props.mode === "create" ? props.client.label.split(" · ") : [props.record.client.displayName, props.record.client.reference];
   const step = useContext(OpticalStepContext);
   const formId = useId();
@@ -339,7 +345,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
             {kind === "prescription" ? (
               <PrescriptionProvenanceFields register={register} control={control} errors={fieldErrors} reference={record?.reference} />
             ) : (
-              <MeasurementProvenanceFields register={register} control={control} errors={fieldErrors} measurers={measurers.data ?? []} reference={record?.reference} />
+              <MeasurementProvenanceFields register={register} control={control} errors={fieldErrors} measurers={measurerOptions} reference={record?.reference} />
             )}
           </FormSection>
 

@@ -549,6 +549,7 @@ internal static partial class OpticalEndpoints
             [.. revisions.Select(Revision)],
             history,
             [.. events.Select(e => ToEvent(e, Actor(e.ActorUserId)))],
+            [.. revisions.SelectMany(r => kind.CitedUsers(r.Content)).Distinct().Select(Actor)],
             record.CreatedAtUtc,
             Actor(record.CreatedByUserId),
             record.Version);

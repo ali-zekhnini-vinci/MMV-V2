@@ -203,6 +203,7 @@ export function parseOpticalRecord(value: unknown): OpticalRecord | null {
   const openDraft = value.openDraft === null ? null : parseRevision(kind, value.openDraft);
   const revisions = parseList(value.revisions, (item) => parseRevision(kind, item));
   const events = parseList(value.events, parseEvent);
+  const citedUsers = parseList(value.citedUsers, parseActor);
   let invalidation: OpticalRecord["invalidation"] = null;
   if (value.invalidation !== null) {
     const raw = value.invalidation;
@@ -230,6 +231,7 @@ export function parseOpticalRecord(value: unknown): OpticalRecord | null {
     (value.openDraft !== null && openDraft === null) ||
     revisions === null ||
     events === null ||
+    citedUsers === null ||
     typeof historyAvailable !== "boolean" ||
     typeof createdAtUtc !== "string" ||
     createdBy === null ||
@@ -237,7 +239,7 @@ export function parseOpticalRecord(value: unknown): OpticalRecord | null {
   ) {
     return null;
   }
-  return { kind, id, reference, client, lifecycle, invalidation, lastConfirmed, openDraft, revisions, historyAvailable, events, createdAtUtc, createdBy, version };
+  return { kind, id, reference, client, lifecycle, invalidation, lastConfirmed, openDraft, revisions, historyAvailable, events, citedUsers, createdAtUtc, createdBy, version };
 }
 
 export function parseOpticalSummary(value: unknown): OpticalRecordSummary | null {

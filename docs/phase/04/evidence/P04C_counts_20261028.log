@@ -1,0 +1,67 @@
+# Comptages en lecture seule (aucune donnée existante modifiée par 0006)
+## mmv_v2_dev après application
+appointments.appointments|1
+appointments.responsibles|0
+audit.events|2
+auth.sessions|28
+auth.user_permissions|8
+auth.users|1
+clients.clients|1
+perm:appointments.cancel|1
+perm:appointments.read|1
+perm:appointments.write|1
+perm:audit.read|1
+perm:clients.archive|1
+perm:clients.read|1
+perm:clients.write|1
+perm:system.admin|1
+EXIT 0
+## mmv_v2_test après application
+appointments.appointments|0
+appointments.responsibles|0
+audit.events|0
+auth.sessions|0
+auth.user_permissions|0
+auth.users|0
+clients.clients|0
+EXIT 0
+## fin de session (après les bancs, nettoyage fait)
+===== mmv_v2_dev (lecture seule, 2026-10-28T23:24:59.3178684+01:00)
+appointments.appointments|1
+appointments.responsibles|0
+audit.events|4
+auth.sessions|30
+auth.user_permissions|8
+auth.users|1
+clients.clients|1
+optical.measurement_revisions|0
+optical.measurements|0
+optical.prescription_revisions|0
+optical.prescriptions|0
+perm:appointments.cancel|1
+perm:appointments.read|1
+perm:appointments.write|1
+perm:audit.read|1
+perm:clients.archive|1
+perm:clients.read|1
+perm:clients.write|1
+perm:system.admin|1
+EXIT 0
+6 migrations, derniere 20261027134615_OpticalModule
+EXIT 0
+===== mmv_v2_test (lecture seule, 2026-10-28T23:24:59.6599154+01:00)
+appointments.appointments|0
+appointments.responsibles|0
+audit.events|0
+auth.sessions|0
+auth.user_permissions|0
+auth.users|0
+clients.clients|0
+optical.measurement_revisions|0
+optical.measurements|0
+optical.prescription_revisions|0
+optical.prescriptions|0
+EXIT 0
+6 migrations, derniere 20261027134615_OpticalModule
+EXIT 0
+Note : sur mmv_v2_dev, +2 sessions et +2 événements (clients : client.archived 23:14:33, client.reactivated 23:14:50) proviennent du MMV.Api du PROPRIÉTAIRE (port 7267, démarré 22:59:59) et de son tauri dev (1420, 22:58:46), lancés après l'application ; aucune écriture de l'agent sur mmv_v2_dev hors du script 0006. Tables optical : 0 ligne sur les deux bases ; mmv_v2_test : 0 ligne partout.

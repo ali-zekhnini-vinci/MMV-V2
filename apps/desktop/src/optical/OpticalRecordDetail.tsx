@@ -18,7 +18,7 @@ import { cn } from "../lib/utils.ts";
 import { EyeTable } from "./EyeGrid.tsx";
 import { canWriteKind, useOpticalAccess } from "./opticalAccess.ts";
 import { KindBadge, OpticalStatusBadge, ProposedTag } from "./OpticalBadges.tsx";
-import { displayStatus, type OpticalActor, type OpticalRecord, type OpticalRevision } from "./opticalContract.ts";
+import { displayStatus, knownActors, type OpticalActor, type OpticalRecord, type OpticalRevision } from "./opticalContract.ts";
 import { ConfirmTranscriptionDialog, InvalidateDialog, RectifyDialog } from "./OpticalDialogs.tsx";
 import { eventLabel, formatDateTime, INVALIDATION_REASON_LABEL, KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
 import { useConfirmDraft, useDiscardRectification, useInvalidateRecord, useMeasurers, useStartRectification } from "./opticalQueries.ts";
@@ -30,7 +30,8 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
   const navigate = useNavigate();
   const access = useOpticalAccess();
   const { setNotice } = useClientsUi();
-  const measurers = useMeasurers(record.kind === "measurement");
+  const measurerList = useMeasurers(record.kind === "measurement");
+  const measurers = knownActors(measurerList.data ?? [], record.citedUsers);
   const confirm = useConfirmDraft();
   const rectify = useStartRectification();
   const discard = useDiscardRectification();
@@ -284,7 +285,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
               ? `Confirmée le ${formatDateTime(shown.confirmedAtUtc)} par ${shown.confirmedBy?.displayName ?? "—"} · saisie par ${shown.startedBy.displayName}`
               : `Modifié le ${formatDateTime(shown.updatedAtUtc)} par ${shown.updatedBy.displayName} · non confirmé`}
           </p>
-          <ProvenanceList revision={shown} measurers={measurers.data ?? []} />
+          <ProvenanceList revision={shown} measurers={measurers} />
           <EyeTable od={shown.content.od} og={shown.content.og} caption={`Correction optique — ${revisionLabel(shown)}`} />
           <h3 className="optical-detail__subtitle">Notes</h3>
           <p className="client-info__notes">{shown.content.notes || <span className="clients-muted">Aucune note.</span>}</p>
@@ -292,7 +293,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
 
         {record.historyAvailable ? (
           <>
-            <RevisionsPanel key={`${record.id}-${record.version}`} record={record} measurers={measurers.data ?? []} />
+            <RevisionsPanel key={`${record.id}-${record.version}`} record={record} measurers={measurers} />
             <EventsPanel record={record} />
           </>
         ) : (
@@ -313,7 +314,7 @@ export function OpticalRecordDetail({ record, launch }: { record: OpticalRecord;
         onOpenChange={(open) => !open && setDialog(null)}
         content={draft?.content ?? null}
         clientLabel={`${record.client.displayName} · ${record.client.reference}`}
-        measurers={measurers.data ?? []}
+        measurers={measurers}
         pending={confirm.isPending}
         onConfirm={onConfirm}
       />

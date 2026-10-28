@@ -1,0 +1,83 @@
+# Banc HTTP/HTTPS réel 04-C : MMV.Api (build du dépôt, copie hors dépôt) sur mmv_v2_test, https://localhost:7367 / http://localhost:5367 ; outil P04C_harness_c04http.cs.txt ; comptes et clients fictifs créés puis purgés (résidu 0).
+CIBLE : mmv_v2_test|mmv_v2_test|5433|180006
+===== [HTTPS] https://localhost:7367/ — suffixe bbbeac
+[HTTPS] PASS 1.1 ordonnance Enregistrer -> 201, révision 1 confirmée, aucun brouillon 201
+[HTTPS] PASS 1.2 référence RX-###### RX-000047
+[HTTPS] PASS 1.3 valeur exacte conservée (U+2212, virgule, 3 décimales) 
+[HTTPS] PASS 1.4 axe 0 conservé tel quel 
+[HTTPS] PASS 1.5 OG vide = null (jamais 0) 
+[HTTPS] PASS 1.6 Cache-Control: no-store 
+[HTTPS] PASS 1.7 PostgreSQL : texte exact + numeric exact, statut confirmed −2,125|-2.125|confirmed
+[HTTPS] PASS 1.8 refus (sphère seule à zéro) -> 422 incomplete, RIEN écrit (aucun brouillon orphelin) 422 enregistrements=1
+[HTTPS] PASS 1.9 provenance absente -> 422 à la confirmation 422
+[HTTPS] PASS 1.10 deux sphères à zéro sans autre valeur : comportement constaté (règle à valider par un opticien) 201 
+[HTTPS] PASS 2.1 mesure Enregistrer -> 201, révision 1 201
+[HTTPS] PASS 2.2 référence MES-######, type measurement 
+[HTTPS] PASS 2.3 provenance mesure (date, collaborateur, catégorie libre) 
+[HTTPS] PASS 2.4 mesure : acuité seule acceptée -> 201 201
+[HTTPS] PASS 2.5 ordonnance : acuité seule refusée -> 422 422
+[HTTPS] PASS 2.6 liste des collaborateurs mesureurs (actifs avec optical.measurements.write) 200
+[HTTPS] PASS 3.1 Enregistrer comme brouillon -> 201, sans révision confirmée, sans provenance exigée 201
+[HTTPS] PASS 3.2 reprise du brouillon sur un autre poste (valeur identique) 
+[HTTPS] PASS 3.3 brouillon modifié -> 200, version changée 200
+[HTTPS] PASS 3.4 brouillon inchangé -> aucune écriture (même version) 200
+[HTTPS] PASS 3.5 Enregistrer depuis le brouillon repris -> révision 1, brouillon fermé 200
+[HTTPS] PASS 4.1 Modifier -> 201 rectification ouverte (révision 1 toujours de référence) 201
+[HTTPS] PASS 4.2 Enregistrer la modification -> révision 2 200
+[HTTPS] PASS 4.3 révision 1 intacte en base (valeur, statut) −2,125|confirmed|1
+[HTTPS] PASS 4.4 aucune modification directe d'une révision confirmée (pas de brouillon -> refus) 409 not_draft
+[HTTPS] PASS 4.5 audit.read : anciennes révisions accessibles (révision 1 avec sa valeur) + journal révisions=2 événements=5
+[HTTPS] PASS 4.6 sans audit.read : dernière révision seulement, aucun événement, révision 1 absente de la réponse révisions=1
+[HTTPS] PASS 4.7 rectification abandonnée -> révision 2 reste de référence, aucun brouillon 201/200
+[HTTPS] PASS 4.8 rectification d'une révision dépassée -> 409 revision_conflict 409 revision_conflict
+[HTTPS] PASS 4.9 journal client module=optical (audit.read + optical.read) sans valeur, prescripteur ni note 200
+[HTTPS] PASS 4.10 audit.read sans optical.read : événements optical exclus 
+[HTTPS] PASS 4.11 audit.read sans optical.read, module=optical -> 403 403
+[HTTPS] PASS 4.12 audit.events en base : aucune valeur optique, prescripteur ni note lignes suspectes=0
+[HTTPS] PASS 6.1 optical.prescriptions.write : ordonnance -> 201 201
+[HTTPS] PASS 6.2 optical.prescriptions.write : mesure -> 403 403
+[HTTPS] PASS 6.3 optical.measurements.write : ordonnance -> 403 403
+[HTTPS] PASS 6.4 sans optical.invalidate : invalidation -> 403 403
+[HTTPS] PASS 6.5 optical.invalidate seul : écriture -> 403 403
+[HTTPS] PASS 6.6 invalidation sans motif -> refus 4xx, rien écrit 422 validation_failed
+[HTTPS] PASS 6.7 optical.invalidate : invalidation motivée -> 200 invalidated (aucune suppression) 200
+[HTTPS] PASS 6.8 enregistrement invalidé conservé en base 
+[HTTPS] PASS 6.9 invalidé : écriture -> 409 invalidated 409 invalidated
+[HTTPS] PASS 6.10 seconde invalidation -> 409 already_invalidated 409 already_invalidated
+[HTTPS] PASS 6.11 invalidé exclu par défaut, listé sur demande 
+[HTTPS] PASS 6.12 optical.read seul : lecture 200, écriture 403 200/403
+[HTTPS] PASS 6.13 system.admin seul / audit.read seul / optique sans clients.read -> 403 403,403,403,403,403
+[HTTPS] PASS 6.14 sans session -> 401 401
+[HTTPS] PASS 6.15 refus sans fuite (aucune valeur, prescripteur, note ni nom de client dans les corps 401/403) corps suspects=0
+[HTTPS] PASS 7.1 deux postes enregistrent le même brouillon -> un 200 + un 409 version_conflict 200,409
+[HTTPS] PASS 7.2 le brouillon retenu est celui du poste gagnant (aucun mélange) 
+[HTTPS] PASS 7.3 deux postes confirment la même version -> un 200 + un 409 200,409
+[HTTPS] PASS 7.4 révisions confirmées sans doublon ni trou (1,2,3) 1,2,3
+[HTTPS] PASS 7.5 double requête simultanée (même requestId) -> un seul enregistrement 201,200
+[HTTPS] PASS 8.1 création réémise (même requestId) -> 200 même enregistrement, 1 seule ligne, 1 révision 201/200 lignes=1
+[HTTPS] PASS 8.2 confirmation réémise -> 200 état courant, aucune seconde révision (2 confirmées au total) 200/200 confirmées=2
+[HTTPS] PASS 8.3 réémission TARDIVE (après une autre écriture) -> 409, rien écrit 409 version_conflict confirmées=2 (rect2 201)
+[HTTPS] PASS 8.4 requestId réutilisé par un autre auteur -> 409 request_id_reused 409 request_id_reused
+[HTTPS] PASS 8.5 délai client dépassé (requête annulée côté poste) puis réémission -> exactement 1 enregistrement 200 lignes=1
+[HTTPS] PASS 9.1 écriture optique ‖ archivage (10 paires) : jamais de 500 ; écriture 201/200 OU 409 client_archived ; archivage 200 création:201+archive:200 rectif:200+archive:200 création:201+archive:200 rectif:200+archive:200 création:201+archive:200 rectif:200+archive:200 création:201+archive:200 rectif:200+archive:200 création:201+archive:200 rectif:200+archive:200
+[HTTPS] PASS 9.2 constat : révisions confirmées horodatées APRÈS l'archivage (écriture commencée avant, sérialisable écriture→archivage ; réserve BL) 9
+[HTTPS] PASS 9.3 après archivage : nouvelle écriture -> 409 client_archived 409 client_archived
+[HTTPS] PASS 9.4 client archivé : consultation 200 200
+[HTTPS] PASS 10.1 confirmation de mesure ‖ désactivation du mesureur (10 paires décalées) : 201 OU 422 not_eligible, jamais de 500 +0ms:422/not_eligible +5ms:201 +10ms:201 +15ms:201 +20ms:201 +25ms:201 +30ms:201 +35ms:201 +40ms:201 +45ms:201
+[HTTPS] PASS 10.2 mesureur désactivé : nouvelle confirmation -> 422 not_eligible, rien écrit 422
+[HTTPS] PASS 10.3 mesureur désactivé absent de la liste des collaborateurs 
+[HTTPS] PASS 10.4 mesure confirmée avant désactivation : lisible, collaborateur désactivé nommé (citedUsers, O-04-48) 200
+[HTTPS] PASS 10.5 rectification gardant le même collaborateur (désignation passée) -> 200 201/200
+[HTTPS] PASS 11.1 journal API : aucune valeur optique, prescripteur, note, catégorie ni nom de client 
+[HTTPS] PASS 11.2 journal API : aucune erreur non traitée (hors 23505 creation_request_id traité, O-04-49) fail=0 dont 23505 traités=0
+===== [HTTPS] TOTAL 69/69 PASS ; suffixe bbbeac ; client 01a18491-5461-7a7b-b7df-f0a059b6681d
+NETTOYAGE bbbeac : 69 lignes optiques, 102 événements d'audit, 0 rendez-vous, 9 sessions, 11 clients, 33 droits, 10 comptes ; déclencheurs optical/audit tous actifs (O) ; RÉSIDUS mmv_v2_test = 0
+===== [HTTP] http://localhost:5367/ — suffixe c89085
+[HTTP] PASS H.1 connexion en HTTP -> 403 https_required, aucun jeton 403
+[HTTP] PASS H.2 GET /api/optical/records en HTTP (jeton valide) -> 403 https_required 403
+[HTTP] PASS H.2 GET /api/optical/clients/{client}/records en HTTP (jeton valide) -> 403 https_required 403
+[HTTP] PASS H.2 GET /api/optical/measurers en HTTP (jeton valide) -> 403 https_required 403
+[HTTP] PASS H.3 POST ordonnance en HTTP -> 403 https_required, RIEN écrit 403 lignes=0
+[HTTP] PASS H.4 même jeton en HTTPS -> 200 (refus dû au seul transport) 200
+===== [HTTP] TOTAL 6/6 PASS ; suffixe c89085
+NETTOYAGE c89085 : 0 lignes optiques, 0 événements d'audit, 0 rendez-vous, 1 sessions, 1 clients, 3 droits, 1 comptes ; déclencheurs optical/audit tous actifs (O) ; RÉSIDUS mmv_v2_test = 0
