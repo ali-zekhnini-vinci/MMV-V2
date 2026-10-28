@@ -1588,6 +1588,10 @@ const scenarios = {
     shot("01_dossier-vide_light_1920x1080");
     await click(page, buttonByText("Transcrire une ordonnance médicale"), "Transcrire une ordonnance médicale");
     await page.waitFor(`!!(${inputOf("Sphère OD")})`, { label: "formulaire ordonnance" });
+    // O-04-52 : libellé du pas approuvé (0,25 : Sphère, Cylindre, Addition ; Prisme libre), aucune mention obsolète.
+    const formText = await page.evaluate("document.querySelector('form')?.textContent.replace(/\\s+/g, ' ') ?? ''");
+    check(formText.includes("Boutons ± : pas de 0,25 (Sphère, Cylindre, Addition) · ↑ / ↓ au clavier · saisie libre conservée telle quelle · Prisme en saisie libre"), "libellé du pas 0,25 approuvé (O-04-52)");
+    check(!/démonstration|D-04-06 ouverte|Prototype|PROPOSED/.test(formText), "formulaire réel : ni « démonstration », ni « D-04-06 ouverte », ni « Prototype » (O-04-52)");
     shot("02_ordonnance-vide_light_1920x1080");
     await stepper("Diminuer Sphère OD de 0,25", 9);
     await stepper("Diminuer Cylindre OD de 0,25", 2);

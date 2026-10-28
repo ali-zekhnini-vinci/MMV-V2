@@ -129,3 +129,18 @@ Toujours aucune lecture de l'ancien dépôt, aucune dépendance ajoutée (ADR-01
 | [`apps/desktop/src/api/contract/optical.openapi.json`](../../../apps/desktop/src/api/contract/optical.openapi.json) | instantané régénéré (`MMV_UPDATE_OPENAPI_SNAPSHOT=1`) : ajout `citedUsers` seulement |
 
 Toujours aucune lecture de l'ancien dépôt, aucune dépendance ajoutée (ADR-014), maquette Lot 3 non modifiée.
+
+## Complément daté — 29/10/2026 (correctifs finaux, G04-FINAL)
+
+| Source | Usage |
+|---|---|
+| [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../../../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md) | mandat des derniers correctifs (copie fidèle du message du propriétaire) ; le rapport d'audit qu'il cite est absent de l'espace de travail (O-04-56) |
+| [`src/MMV.Application/Optical/OpticalService.cs`](../../../src/MMV.Application/Optical/OpticalService.cs), [`src/MMV.Infrastructure/Optical/OpticalStore.cs`](../../../src/MMV.Infrastructure/Optical/OpticalStore.cs) | `OpticalCommitGuard`, contrôles sous verrou (client, collaborateur) dans la transaction d'enregistrement (O-04-53, O-04-54) |
+| [`src/MMV.Application/Clients/ClientService.cs`](../../../src/MMV.Application/Clients/ClientService.cs), [`src/MMV.Infrastructure/Clients/ClientStore.cs`](../../../src/MMV.Infrastructure/Clients/ClientStore.cs) | `LockForLifecycleAsync` : archivage / réactivation verrouillent le client avant lecture et date |
+| [`tests/MMV.PostgreSql.Tests/OpticalLifecycleRacePostgreSqlTests.cs`](../../../tests/MMV.PostgreSql.Tests/OpticalLifecycleRacePostgreSqlTests.cs) | 16 tests de concurrence à barrières déterministes (deux ordres par conflit) |
+| [`apps/desktop/src/optical/OpticalRecordForm.tsx`](../../../apps/desktop/src/optical/OpticalRecordForm.tsx), [`Optical.css`](../../../apps/desktop/src/optical/Optical.css) | libellé O-04-52, étiquettes « Prototype » retirées du formulaire réel |
+| [`apps/desktop/e2e/run-native.mjs`](../../../apps/desktop/e2e/run-native.mjs) | scénario `optique-04c` : 2 contrôles du libellé ajoutés |
+| [`evidence/P04C_harness_c04http.cs.txt`](evidence/P04C_harness_c04http.cs.txt) | outil HTTP du 28/10/2026 rejoué **sans modification** |
+| `evidence/P04F_*` | [`P04F_race_postgresql_20261029.log`](evidence/P04F_race_postgresql_20261029.log), [`P04F_dotnet_20261029.log`](evidence/P04F_dotnet_20261029.log), [`P04F_frontend_20261029.log`](evidence/P04F_frontend_20261029.log), [`P04F_http_matrix_20261029.log`](evidence/P04F_http_matrix_20261029.log), [`P04F_native_optique-04c_20261029.log`](evidence/P04F_native_optique-04c_20261029.log), [`P04F_native_c04_02_ordonnance-vide_light_1920x1080.jpg`](evidence/P04F_native_c04_02_ordonnance-vide_light_1920x1080.jpg), [`P04F_native_O-04-52_correction-optique_crop.jpg`](evidence/P04F_native_O-04-52_correction-optique_crop.jpg) |
+
+SQL 0006 et manifeste inchangés ; aucune dépendance ajoutée (ADR-014) ; maquette Lot 3 non modifiée.

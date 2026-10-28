@@ -261,10 +261,6 @@
   color: var(--accent);
 }
 
-.optical-form__title .optical-proposed {
-  margin-left: 0;
-}
-
 .optical-form__aside {
   display: inline-flex;
   align-items: center;

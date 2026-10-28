@@ -21,15 +21,13 @@ public sealed class OpticalPostgreSqlFactAttribute : FactAttribute
 {
     public OpticalPostgreSqlFactAttribute()
     {
-        if (!PostgreSqlTarget.Test.IsConfigured)
-        {
-            Skip = $"NOT_TESTED : '{PostgreSqlTarget.Test.Key}' non configurée.";
-        }
-        else if (!OpticalModulePresent())
-        {
-            Skip = "NOT_TESTED : exige la migration 0006_OpticalModule appliquée à mmv_v2_test (G04-SQL, revue du propriétaire).";
-        }
+        Skip = SkipReason();
     }
+
+    internal static string? SkipReason() =>
+        !PostgreSqlTarget.Test.IsConfigured ? $"NOT_TESTED : '{PostgreSqlTarget.Test.Key}' non configurée."
+        : !OpticalModulePresent() ? "NOT_TESTED : exige la migration 0006_OpticalModule appliquée à mmv_v2_test (G04-SQL, revue du propriétaire)."
+        : null;
 
     private static bool OpticalModulePresent()
     {
@@ -44,6 +42,15 @@ public sealed class OpticalPostgreSqlFactAttribute : FactAttribute
         {
             return false;
         }
+    }
+}
+
+/// <summary>Variante paramétrée de <see cref="OpticalPostgreSqlFactAttribute"/> (mêmes conditions, jamais « Passed » sans 0006).</summary>
+public sealed class OpticalPostgreSqlTheoryAttribute : TheoryAttribute
+{
+    public OpticalPostgreSqlTheoryAttribute()
+    {
+        Skip = OpticalPostgreSqlFactAttribute.SkipReason();
     }
 }
 

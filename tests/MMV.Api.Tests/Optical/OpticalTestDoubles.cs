@@ -34,6 +34,12 @@ internal sealed class InMemoryOpticalStore<TRecord, TRevision, TContent>(string 
 
     public int SaveCount { get; private set; }
 
+    /// <summary>Conditions transmises au dernier enregistrement (revérifiées sous verrou par le store réel).</summary>
+    public OpticalCommitGuard? LastGuard { get; private set; }
+
+    /// <summary>Simule un archivage ou une désactivation concurrents constatés sous verrou au prochain enregistrement.</summary>
+    public OpticalCommitResult? NextGuardRefusal { get; set; }
+
     public Task<TRecord?> FindForUpdateAsync(Guid id, CancellationToken cancellationToken)
     {
         lock (_gate)
@@ -64,11 +70,20 @@ internal sealed class InMemoryOpticalStore<TRecord, TRevision, TContent>(string 
         }
     }
 
-    public Task<OpticalCommitResult> SaveChangesAsync(CancellationToken cancellationToken)
+    public Task<OpticalCommitResult> SaveChangesAsync(OpticalCommitGuard guard, CancellationToken cancellationToken)
     {
         lock (_gate)
         {
             SaveCount++;
+            LastGuard = guard;
+            if (NextGuardRefusal is { } refusal)
+            {
+                NextGuardRefusal = null;
+                _pending.Clear();
+                audit.Discard();
+                return Task.FromResult(refusal);
+            }
+
             if (FailNextSave)
             {
                 FailNextSave = false;

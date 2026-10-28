@@ -51,6 +51,30 @@ internal sealed class ClientStore(MmvDbContext context) : IClientStore
     public Task<Client?> FindForUpdateAsync(Guid id, CancellationToken cancellationToken) =>
         context.Clients.SingleOrDefaultAsync(c => c.Id == id, cancellationToken);
 
+    public async Task<IClientLifecycleLock> LockForLifecycleAsync(Guid id, CancellationToken cancellationToken)
+    {
+        // Transaction englobante (tests PostgreSQL annulés au ROLLBACK) : réutilisée, jamais validée ici.
+        var transaction = context.Database.CurrentTransaction is null
+            ? await context.Database.BeginTransactionAsync(System.Data.IsolationLevel.ReadCommitted, cancellationToken)
+            : null;
+        try
+        {
+            // Mode pris par l'UPDATE qui suit : incompatible avec le verrou partagé d'une écriture optique (FOR SHARE),
+            // compatible avec les clés étrangères des autres modules (FOR KEY SHARE). Seul verrou de la transaction.
+            await context.Database.ExecuteSqlAsync($"SELECT 1 FROM clients.clients WHERE id = {id} FOR NO KEY UPDATE", cancellationToken);
+            return new LifecycleLock(transaction);
+        }
+        catch
+        {
+            if (transaction is not null)
+            {
+                await transaction.DisposeAsync();
+            }
+
+            throw;
+        }
+    }
+
     public void Add(Client client) => context.Clients.Add(client);
 
     public async Task<bool> SaveChangesAsync(CancellationToken cancellationToken)
@@ -92,4 +116,12 @@ internal sealed class ClientStore(MmvDbContext context) : IClientStore
         $"%{value.Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
             .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
             .Replace("_", LikeEscape + "_", StringComparison.Ordinal)}%";
+
+    /// <summary>Transaction propre au store (validée par <see cref="CommitAsync"/>, sinon annulée) ou englobante (rien).</summary>
+    private sealed class LifecycleLock(Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction) : IClientLifecycleLock
+    {
+        public Task CommitAsync(CancellationToken cancellationToken) => transaction?.CommitAsync(cancellationToken) ?? Task.CompletedTask;
+
+        public ValueTask DisposeAsync() => transaction?.DisposeAsync() ?? ValueTask.CompletedTask;
+    }
 }

@@ -82,6 +82,11 @@ describe("J-04-01 — depuis la fiche client", () => {
     await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: /^Ordonnance médicale/ }));
     await screen.findByRole("heading", { level: 1, name: "Nouvelle ordonnance médicale" });
     assertFormClient("FICTIF-CHARLIE Noa", "CLI-FICTIF-003");
+    // O-04-52 : pas de 0,25 approuvé (D-04-06 partielle) pour Sphère, Cylindre, Addition ; Prisme en saisie libre ; plus
+    // aucune mention « démonstration », « D-04-06 ouverte » ni « Prototype » dans le formulaire réel (composant partagé).
+    const correction = screen.getByRole("region", { name: "Correction optique" });
+    within(correction).getByText(/^Boutons ± : pas de 0,25 \(Sphère, Cylindre, Addition\) · ↑ \/ ↓ au clavier · saisie libre conservée telle quelle · Prisme en saisie libre$/);
+    assert.doesNotMatch(correction.closest("form")?.textContent ?? "∅", /démonstration|D-04-06 ouverte|Prototype|PROPOSED|∅/);
     await user.type(screen.getByLabelText("Sphère OD"), "+1,25");
     await user.type(screen.getByLabelText("Axe OD"), "0");
     await user.click(screen.getByRole("button", { name: "Enregistrer comme brouillon" }));

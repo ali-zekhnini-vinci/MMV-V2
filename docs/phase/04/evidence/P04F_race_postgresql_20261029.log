@@ -1,0 +1,143 @@
+# dotnet test tests/MMV.PostgreSql.Tests --filter OpticalLifecycleRacePostgreSqlTests (PostgreSQL 18.6, port 5433, mmv_v2_test, données fictives validées puis purgées)
+# Le passage APRÈS a été rejoué après l'ajout du verrou d'archivage (date d'archivage postérieure à la validation optique) : voir P04F_dotnet_20261029.log (68 / 68).
+
+## AVANT — code 04-C (97bfd5e), seuls les nouveaux tests ajoutés (src/ inchangé) : 16 / 16 ÉCHECS ATTENDUS
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: DiscardRectification) [11 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: StartRectification) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: EditDraft) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: ConfirmDraft) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: Create) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: CreateMeasurement) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: Deactivation) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: PermissionRevoked) [10 s]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: Deactivation) [41 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: PermissionRevoked) [28 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: ConfirmDraft) [37 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: StartRectification) [32 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: Create) [28 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: CreateMeasurement) [28 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: EditDraft) [31 ms]
+Échoué MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: DiscardRectification) [47 ms]
+
+# motifs d'échec (regroupés)
+[xUnit.net 00:00:12.27]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:00:22.35]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:00:32.43]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:00:42.50]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:00:52.59]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:01:02.76]       L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+L'archivage n'attend pas l'écriture optique en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:01:12.81]       Deactivation n'attend pas la confirmation de mesure en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+Deactivation n'attend pas la confirmation de mesure en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:01:22.87]       PermissionRevoked n'attend pas la confirmation de mesure en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+PermissionRevoked n'attend pas la confirmation de mesure en cours : wait_event_type=Client wait_event=ClientRead blocking=[]
+[xUnit.net 00:01:22.91]       Expected: ValidationFailed
+[xUnit.net 00:01:22.91]       Actual:   Success
+[xUnit.net 00:01:22.91]         Deactivation validée après le contrôle de A → A = Success
+[xUnit.net 00:01:22.94]       Expected: ValidationFailed
+[xUnit.net 00:01:22.94]       Actual:   Success
+[xUnit.net 00:01:22.94]         PermissionRevoked validée après le contrôle de A → A = Success
+[xUnit.net 00:01:22.98]       Expected: ClientArchived
+[xUnit.net 00:01:22.98]       Actual:   Success
+[xUnit.net 00:01:22.98]         ConfirmDraft : archivage validé après le contrôle de A → A = Success
+[xUnit.net 00:01:23.01]       Expected: ClientArchived
+[xUnit.net 00:01:23.01]       Actual:   Success
+[xUnit.net 00:01:23.01]         StartRectification : archivage validé après le contrôle de A → A = Success
+[xUnit.net 00:01:23.04]       Expected: ClientArchived
+[xUnit.net 00:01:23.04]       Actual:   Success
+[xUnit.net 00:01:23.04]         Create : archivage validé après le contrôle de A → A = Success
+[xUnit.net 00:01:23.07]       Expected: ClientArchived
+[xUnit.net 00:01:23.07]       Actual:   Success
+[xUnit.net 00:01:23.07]         CreateMeasurement : archivage validé après le contrôle de A → A = Success
+[xUnit.net 00:01:23.10]       Expected: ClientArchived
+[xUnit.net 00:01:23.10]       Actual:   Success
+[xUnit.net 00:01:23.10]         EditDraft : archivage validé après le contrôle de A → A = Success
+[xUnit.net 00:01:23.15]       Expected: ClientArchived
+[xUnit.net 00:01:23.15]       Actual:   Success
+[xUnit.net 00:01:23.15]         DiscardRectification : archivage validé après le contrôle de A → A = Success
+Expected: ValidationFailed
+Actual:   Success
+Deactivation validée après le contrôle de A → A = Success
+Expected: ValidationFailed
+Actual:   Success
+PermissionRevoked validée après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+ConfirmDraft : archivage validé après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+StartRectification : archivage validé après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+Create : archivage validé après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+CreateMeasurement : archivage validé après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+EditDraft : archivage validé après le contrôle de A → A = Success
+Expected: ClientArchived
+Actual:   Success
+DiscardRectification : archivage validé après le contrôle de A → A = Success
+Nombre total de tests : 16
+
+## APRÈS — correctif (verrous client / collaborateur dans la transaction d'enregistrement) : 16 / 16
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: DiscardRectification) [1 s]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: StartRectification) [145 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: EditDraft) [113 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: ConfirmDraft) [108 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: Create) [114 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: CreateMeasurement) [281 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: Deactivation) [59 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: PermissionRevoked) [58 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: Deactivation) [48 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: PermissionRevoked) [33 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: ConfirmDraft) [58 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: StartRectification) [79 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: Create) [48 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: CreateMeasurement) [47 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: EditDraft) [59 ms]
+Réussi MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: DiscardRectification) [56 ms]
+
+# observations (barrières déterministes, attente constatée par pg_blocking_pids)
+processus 15448 en attente du processus 42216 : wait_event_type=Lock wait_event=transactionid blocking=[42216]
+DiscardRectification : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 42216 en attente du processus 15448 : wait_event_type=Lock wait_event=transactionid blocking=[15448]
+StartRectification : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 15448 en attente du processus 42216 : wait_event_type=Lock wait_event=transactionid blocking=[42216]
+EditDraft : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 42216 en attente du processus 15448 : wait_event_type=Lock wait_event=transactionid blocking=[15448]
+ConfirmDraft : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 15448 en attente du processus 42216 : wait_event_type=Lock wait_event=transactionid blocking=[42216]
+Create : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 42216 en attente du processus 15448 : wait_event_type=Lock wait_event=transactionid blocking=[15448]
+CreateMeasurement : écriture validée d'abord, archivage ensuite (attente constatée)
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+processus 42216 en attente du processus 15448 : wait_event_type=Lock wait_event=transactionid blocking=[15448]
+Deactivation : mesure validée d'abord, perte d'éligibilité ensuite (attente constatée)
+processus 42216 en attente du processus 15448 : wait_event_type=Lock wait_event=transactionid blocking=[15448]
+PermissionRevoked : mesure validée d'abord, perte d'éligibilité ensuite (attente constatée)
+Deactivation validée après le contrôle de A → A = ValidationFailed provenance.measuredByUserId=not_eligible
+PermissionRevoked validée après le contrôle de A → A = ValidationFailed provenance.measuredByUserId=not_eligible
+ConfirmDraft : archivage validé après le contrôle de A → A = ClientArchived
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+StartRectification : archivage validé après le contrôle de A → A = ClientArchived
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+Create : archivage validé après le contrôle de A → A = ClientArchived
+CreateMeasurement : archivage validé après le contrôle de A → A = ClientArchived
+EditDraft : archivage validé après le contrôle de A → A = ClientArchived
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+DiscardRectification : archivage validé après le contrôle de A → A = ClientArchived
+client archivé : 1 enregistrement(s) consultable(s), invalidation = Success
+Nombre total de tests : 16
+Réussi(s) : 16

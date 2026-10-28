@@ -154,3 +154,8 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - Contrat de l'API : ajout du champ `citedUsers` à la réponse d'enregistrement optique (O-04-48) — ajout seul, aucun champ existant modifié ; décision technique réversible, sans nouvel ADR.
 - ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; rôle SQL applicatif distinct (O-B04) inscrit au backlog BL-04-04, toujours prérequis d'un pilote.
 
+
+## Note datée — 29/10/2026 (Phase 04, correctifs finaux)
+
+- Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Synchronisation transactionnelle par **verrous de ligne PostgreSQL** (ADR-003 : PostgreSQL seul, aucune extension) : écriture optique `FOR SHARE` sur le client et sur le compte / droit du collaborateur désigné ; archivage `FOR NO KEY UPDATE` sur le client avant lecture ; ordre unique client → collaborateur → en-tête. Décision technique réversible, sans nouvel ADR ; aucune migration (0006 inchangée).
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; aucune dépendance ajoutée.

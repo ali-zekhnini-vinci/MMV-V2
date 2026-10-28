@@ -94,3 +94,7 @@ Validation professionnelle des règles optiques et des cas limites (dont deux sp
 ## 9. Étape suivante
 
 **STOP — audit final du propriétaire.** `PHASE04_COMPLETE` n'est pas déclaré : la clôture globale de la Phase 04 (G04-FINAL) reste soumise à cet audit ; G04-LEGAL reste **OPEN** (aucune donnée médicale réelle).
+
+---
+
+*Note datée 29/10/2026 :* O-04-52, O-04-53 et O-04-54 corrigés après l'audit de 04-C — [`LIVRAISON_04_FINAL.md`](LIVRAISON_04_FINAL.md). Le présent rapport est conservé tel quel.

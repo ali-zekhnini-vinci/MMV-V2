@@ -209,3 +209,28 @@ Les sections précédentes sont conservées comme historique. Mandat : [`prompts
 ### Journal
 
 - 28/10/2026 : GO G04-SQL reçu ; précontrôles conformes ; sauvegarde `mmv_v2_dev_avant_0006_20261028_224659.dump` (SHA-256 `5FF611B3…1066`, hors dépôt) ; 0006 appliquée dev puis test ; tests réels PostgreSQL, HTTPS, Tauri natif ; O-04-48 et O-04-50 corrigés ; **STOP audit final du propriétaire**. Constat : `MMV.Api` et `tauri dev` du propriétaire démarrés après l'application (écritures `clients` sur dev à 23:14, non issues de l'agent).
+
+## 29/10/2026 — derniers correctifs avant clôture (G04-FINAL)
+
+Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../../../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md) — 04-C acceptée techniquement ; trois correctifs ciblés. Rapport : [`LIVRAISON_04_FINAL.md`](LIVRAISON_04_FINAL.md). Les lignes du 28/10/2026 ci-dessus sont conservées telles quelles.
+
+| Gate | État au 29/10/2026 |
+|---|---|
+| G04-SQL | inchangée (APPROVED, 28/10/2026) ; **aucune nouvelle migration ni modification de schéma** : SQL 0006 inchangé, manifeste 11 / 11 OK |
+| G04-METIER | inchangée : validation professionnelle (opticien) **OUVERTE** |
+| G04-LEGAL | inchangée : **OPEN** — module non activé sur données médicales réelles |
+| G04-FINAL | **OWNER_FINAL_REVIEW_REQUIRED** : correctifs O-04-52 à O-04-54 réalisés ; statut proposé `PHASE04_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` ; aucun push, PR ni merge ; Phase 05 non commencée |
+
+| Réf. | Mise à jour du 29/10/2026 | Suite |
+|---|---|---|
+| O-04-52 | **CORRIGÉ** : « Boutons ± : pas de 0,25 (Sphère, Cylindre, Addition) · ↑ / ↓ au clavier · saisie libre conservée telle quelle · Prisme en saisie libre » ; étiquettes « Prototype · D-04-06 PROPOSED » et « Prototype · D-04-03.a/b PROPOSED » retirées du formulaire réel ; liste de bases toujours « non approuvée » (D-04-06 partielle) ; design Lot 3 conservé | revue du propriétaire |
+| O-04-53 | **CORRIGÉ** : contrôle du client sous verrou `FOR SHARE` dans la transaction d'enregistrement optique (toutes écritures sauf invalidation) ; archivage / réactivation verrouillent le client (`FOR NO KEY UPDATE`) avant lecture et date ; barrières PostgreSQL : 0 / 12 avant, 12 / 12 après ; HTTPS 9.2 : 9 → 0 | revue du propriétaire |
+| O-04-54 | **CORRIGÉ** : compte et droit `optical.measurements.write` du collaborateur nouvellement désigné verrouillés `FOR SHARE` dans la même transaction ; désactivation et retrait du droit, deux ordres chacun : 0 / 4 avant, 4 / 4 après ; collaborateur historique conservé sans contrôle (règle inchangée) | revue du propriétaire |
+| O-04-56 | rapport d'audit `MMV_V2_AUDIT_FINAL_PHASE04_C_2026-10-28.md` cité « joint » par le mandat, absent de l'espace de travail | fournir le rapport si des points s'ajoutent |
+| O-04-57 | brouillon de mesure désignant un collaborateur alors éligible, confirmé après sa désactivation sans changer la provenance : accepté (D-04-03.b « au moment où il est désigné », non rouvert) | à confirmer par le propriétaire |
+| O-04-58 | verrou du client : modification de fiche ou archivage attend une écriture optique en cours sur ce client (transaction courte), sans `lock_timeout` applicatif ; interblocage avec une écriture SQL extérieure → `409`, chemin **NOT_TESTED** | à observer en pilote |
+| O-04-59 | désactivation et retrait de droits : par SQL seulement en Phase 04 ; couverts par le verrou (`UPDATE auth.users`, `DELETE auth.user_permissions`) | administration des comptes : phase ultérieure |
+
+### Journal (29/10/2026)
+
+- 29/10/2026 : mandat des derniers correctifs reçu ; tests de concurrence à barrières écrits puis exécutés **sur le code 04-C** (0 / 16, défauts reproduits) ; correctifs O-04-53 / O-04-54 / O-04-52 ; 16 / 16, .NET, PostgreSQL, frontend, HTTPS, HTTP, Tauri natif rejoués ; données de test purgées (résidu 0) ; processus du propriétaire (7267, 1420) non touchés ; **STOP audit final du propriétaire**.

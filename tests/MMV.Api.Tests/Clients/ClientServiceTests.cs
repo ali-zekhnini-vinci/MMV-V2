@@ -132,6 +132,8 @@ public sealed class ClientServiceTests
         var reactivated = await _service.ReactivateAsync(client.Id, client.Version, Author, CancellationToken.None);
         Assert.Equal(ClientWriteStatus.Success, reactivated.Status);
         Assert.Null(reactivated.Client!.ArchivedAtUtc);
+        // O-04-53 : chaque archivage / réactivation verrouille d'abord le client (attente d'une écriture optique en cours).
+        Assert.Equal(5, _store.LifecycleLocks);
         // Jamais de suppression physique.
         Assert.Single(_store.Clients);
     }

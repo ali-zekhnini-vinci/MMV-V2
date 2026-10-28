@@ -284,4 +284,65 @@ public sealed class OpticalServiceTests
         Assert.Equal(User, accepted.Record.CreatedByUserId);
         Assert.Equal("measurement.confirmed", _audit.Committed[^1].Action);
     }
+
+    [Fact]
+    public async Task Writes_PassTheGuardRecheckedUnderLock_InvalidationOnlyWithoutClientRequirement()
+    {
+        var clientId = ActiveClient();
+        var record = await Confirmed(clientId);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true), _prescriptions.LastGuard);
+
+        await _service.StartRectificationAsync(record.Id, 1, "transcription_error", null, record.Version, Guid.CreateVersion7(), User, CancellationToken.None);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true), _prescriptions.LastGuard);
+        await Save(record, Prescription(new EyeInput(Sphere: "-1,50")), confirm: false);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true), _prescriptions.LastGuard);
+        await _service.DiscardRectificationAsync(record.Id, record.Version, Guid.CreateVersion7(), User, CancellationToken.None);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true), _prescriptions.LastGuard);
+        await _service.InvalidateAsync(record.Id, "duplicate", null, record.Version, Guid.CreateVersion7(), User, CancellationToken.None);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: false), _prescriptions.LastGuard);
+    }
+
+    [Fact]
+    public async Task Write_ClientArchivedUnderLock_IsRefused_WithoutWriteNorAuditEvent()
+    {
+        var clientId = ActiveClient();
+        var audits = _audit.Committed.Count;
+        _prescriptions.NextGuardRefusal = OpticalCommitResult.ClientArchived;
+
+        var created = await _service.CreateAsync(clientId, Prescription(new EyeInput(Sphere: "-1,25")), confirm: true, Guid.CreateVersion7(), User, CancellationToken.None);
+
+        Assert.Equal(OpticalWriteStatus.ClientArchived, created.Status);
+        Assert.Null(created.Record);
+        Assert.Empty(_prescriptions.Records);
+        Assert.Equal(audits, _audit.Committed.Count);
+
+        var draft = await Draft(clientId);
+        audits = _audit.Committed.Count;
+        _prescriptions.NextGuardRefusal = OpticalCommitResult.ClientArchived;
+        Assert.Equal(OpticalWriteStatus.ClientArchived, (await Save(draft, Prescription(new EyeInput(Sphere: "-2")), confirm: true)).Status);
+        Assert.Equal(audits, _audit.Committed.Count);
+    }
+
+    [Fact]
+    public async Task Measurement_DesignatedMeasurerRecheckedUnderLock_KeptMeasurerIsNot()
+    {
+        var clientId = ActiveClient();
+        _measurements.NextGuardRefusal = OpticalCommitResult.MeasurerNotEligible;
+
+        var refused = await _measurementService.CreateAsync(clientId, Measurement(Measurer, new EyeInput(Acuity: "10/10")), true, Guid.CreateVersion7(), User, CancellationToken.None);
+
+        Assert.Equal(OpticalWriteStatus.ValidationFailed, refused.Status);
+        Assert.Equal([OpticalFieldErrors.NotEligible], refused.Errors!["provenance.measuredByUserId"]);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true, Measurer), _measurements.LastGuard);
+        Assert.Empty(_measurements.Records);
+
+        var record = (await _measurementService.CreateAsync(clientId, Measurement(Measurer, new EyeInput(Acuity: "10/10")), true, Guid.CreateVersion7(), User, CancellationToken.None)).Record!;
+        await _measurementService.StartRectificationAsync(record.Id, 1, "transcription_error", null, record.Version, Guid.CreateVersion7(), User, CancellationToken.None);
+        // Collaborateur historique conservé par la rectification : ni contrôlé, ni verrouillé (désignation passée).
+        _directory.Measurers.Clear();
+        var kept = await _measurementService.SaveDraftAsync(record.Id, Measurement(Measurer, new EyeInput(Acuity: "9/10")), true, record.Version, Guid.CreateVersion7(), User, CancellationToken.None);
+
+        Assert.Equal(OpticalWriteStatus.Success, kept.Status);
+        Assert.Equal(new OpticalCommitGuard(clientId, RequireActiveClient: true), _measurements.LastGuard);
+    }
 }

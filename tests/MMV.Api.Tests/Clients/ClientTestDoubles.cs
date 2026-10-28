@@ -90,12 +90,33 @@ internal sealed class InMemoryClientStore(TimeProvider? clock = null) : IClientS
         }
     }
 
+    /// <summary>Verrous et transactions réels prouvés par tests/MMV.PostgreSql.Tests ; ici, simple compteur.</summary>
+    public int LifecycleLocks { get; private set; }
+
+    public Task<IClientLifecycleLock> LockForLifecycleAsync(Guid id, CancellationToken cancellationToken)
+    {
+        lock (_gate)
+        {
+            LifecycleLocks++;
+            return Task.FromResult<IClientLifecycleLock>(NoTransaction.Instance);
+        }
+    }
+
     public void Add(Client client)
     {
         lock (_gate)
         {
             _pending.Add(client);
         }
+    }
+
+    private sealed class NoTransaction : IClientLifecycleLock
+    {
+        public static readonly NoTransaction Instance = new();
+
+        public Task CommitAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     /// <summary>Journal d'audit doublé (03-D2) : événements validés avec l'enregistrement, abandonnés avec son échec.</summary>

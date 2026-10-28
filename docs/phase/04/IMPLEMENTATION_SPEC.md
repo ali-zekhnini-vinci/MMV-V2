@@ -163,3 +163,13 @@ npx tauri build --debug --no-bundle --config <bloc-notes>/native/tauri.c04test.j
 node --use-system-ca e2e/run-native.mjs optique-04c --port 9223 --page-url http://tauri.localhost --api https://localhost:7367 --process mmv-c04test --prefix P04C_native --out <dossier>
 ```
   L'interrupteur `VITE_MMV_OPTICAL_MODULE` n'est posé qu'au build de banc ; aucune construction ordinaire ne l'active.
+
+## Complément daté — 29/10/2026 (correctifs finaux, G04-FINAL)
+
+Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../../../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Rapport : [`LIVRAISON_04_FINAL.md`](LIVRAISON_04_FINAL.md).
+
+- **Contrôles qui font foi** : `IOpticalRecordStore.SaveChangesAsync(OpticalCommitGuard, …)` ; dans la transaction d'enregistrement, avant toute écriture : client `FOR SHARE` (sauf invalidation) → collaborateur nouvellement désigné, compte et droit `optical.measurements.write` `FOR SHARE` (jointure) → en-tête(s) `FOR UPDATE` + `xmin`. Refus : `OpticalCommitResult.ClientArchived` (409 `client_archived`) ou `MeasurerNotEligible` (422 `not_eligible`), suivi vidé, rien d'écrit. Les lectures préalables sans verrou restent une réponse rapide, pas une garantie.
+- **Archivage / réactivation** : `IClientStore.LockForLifecycleAsync` ouvre la transaction et prend `FOR NO KEY UPDATE` sur le client avant sa lecture ; la date d'archivage suit donc toute écriture optique en cours (aucune inversion d'horodatage).
+- **Ordre des verrous** (unique) : client → collaborateur → en-tête. Interblocage détecté (`40P01`) → transaction annulée, 409.
+- **Tests** : `--filter "Stage=OpticalWrite"` inclut `OpticalLifecycleRacePostgreSqlTests` (barrières : store suspendu après la lecture réelle, ou transaction ouverte + attente constatée par `pg_blocking_pids`).
+- **Banc natif** : recette du 28/10/2026 inchangée, préfixe `P04F_native`.

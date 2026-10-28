@@ -324,3 +324,24 @@ Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../../../prompts/
 | Q-04-234 | Script d'application | `scripts/tests/Invoke-MmvSqlScript.Tests.ps1` | PASS | 16 / 16 |
 | Q-04-235 | Captures du banc 04-A (Q-04-220) | `plan.mjs` / `plan-lot3.mjs` | NOT_RERUN | banc non modifié en 04-C |
 | Q-04-236 | Restauration de sauvegarde, rôle SQL applicatif, multi-postes physiques | — | NOT_TESTED | hors mandat ; réserves BL-04-04, BL-04-05 |
+
+## Correctifs finaux — contrôles exécutés le 29/10/2026 (G04-FINAL)
+
+Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../../../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Rapport : [`LIVRAISON_04_FINAL.md`](LIVRAISON_04_FINAL.md). PostgreSQL 18.6, port 5433, `mmv_v2_test` seule en écriture ; données fictives ; résidu final 0. Les lignes Q-04-230 et Q-04-231 ci-dessus restent le constat du 28/10/2026.
+
+| ID | Contrôle | Méthode | Statut | Preuve / détail |
+|---|---|---|---|---|
+| Q-04-237 | Archivage validé après le contrôle ‖ 6 écritures (création, brouillon, confirmation, rectification ouverte / abandonnée, mesure) | `OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_*`, barrière après la lecture réelle du client | **FAIL puis PASS** | code 04-C : 6 × `Success` après archivage ; corrigé : 6 × `ClientArchived`, aucune ligne / version / événement, consultation et invalidation `Success` — [`evidence/P04F_race_postgresql_20261029.log`](evidence/P04F_race_postgresql_20261029.log) |
+| Q-04-238 | Écriture en cours ‖ archivage (6 écritures) | `WriteHoldsTheClientLock_*`, transaction optique ouverte, attente constatée (`pg_blocking_pids`) | **FAIL puis PASS** | code 04-C : archivage non bloqué ; corrigé : bloqué puis `Success`, date d'archivage > validation optique, événements complets, écriture suivante refusée |
+| Q-04-239 | Désactivation / retrait du droit validé après le contrôle ‖ confirmation de mesure | `MeasurerLostAfterTheCheck_*` (×2) | **FAIL puis PASS** | code 04-C : `Success` ; corrigé : `not_eligible`, rien d'écrit |
+| Q-04-240 | Confirmation de mesure en cours ‖ désactivation / retrait du droit | `MeasurementHoldsTheMeasurerLock_*` (×2) | **FAIL puis PASS** | code 04-C : non bloqué ; corrigé : bloqué puis appliqué ; nouvelle mesure refusée ; nom servi ; rectification gardant le collaborateur historique admise |
+| Q-04-241 | Service optique (doubles) | `OpticalServiceTests` : condition transmise, refus sous verrou, collaborateur historique | PASS | `MMV.Api.Tests` 455 / 455 — [`evidence/P04F_dotnet_20261029.log`](evidence/P04F_dotnet_20261029.log) |
+| Q-04-242 | .NET | `dotnet build MMV.slnx -warnaserror`, `MMV.Api.Tests`, `MMV.Maintenance.Tests` | PASS | 0 avertissement ; 455 / 455 ; 50 / 50 |
+| Q-04-243 | PostgreSQL 18 réel (suite complète) | `dotnet test tests/MMV.PostgreSql.Tests` | PASS | 68 / 68 (52 + 16) |
+| Q-04-244 | Frontend | `npm run check`, `eslint .`, `vitest run` | PASS | 301 / 301 ; lint 0 erreur, 1 avertissement préexistant — [`evidence/P04F_frontend_20261029.log`](evidence/P04F_frontend_20261029.log) |
+| Q-04-245 | Matrice HTTPS réelle + HTTP en clair | outil 04-C inchangé, API de banc 7367 / 5367 | PASS | 69 / 69 ; 6 / 6 ; 9.1 : 1 × 201 + 9 × 409 `client_archived` ; 9.2 : **0** (9 le 28/10) ; aucun 500 — [`evidence/P04F_http_matrix_20261029.log`](evidence/P04F_http_matrix_20261029.log) |
+| Q-04-246 | Parcours Tauri natif + libellé O-04-52 | `run-native.mjs optique-04c` (2 contrôles ajoutés), exécutable de banc `com.mmv.v2.c04test` | PASS | 125 contrôles, 0 échec ; captures [`P04F_native_c04_02_…`](evidence/P04F_native_c04_02_ordonnance-vide_light_1920x1080.jpg), [`P04F_native_O-04-52_…`](evidence/P04F_native_O-04-52_correction-optique_crop.jpg) — [`evidence/P04F_native_optique-04c_20261029.log`](evidence/P04F_native_optique-04c_20261029.log) |
+| Q-04-247 | SQL 0006 et schéma inchangés | `sha256sum -c docs/phase/04/sql/0006_MANIFEST.sha256` | PASS | 11 / 11 OK ; aucune migration ajoutée |
+| Q-04-248 | Purge et résidus | `OpticalCleanup` / `CommittedTestData` par test ; outil 04-C `cleanup`, `residue` | PASS | résidu `mmv_v2_test` = 0 ; déclencheurs `optical` / `audit` tous actifs |
+| Q-04-249 | Interblocage avec une écriture SQL extérieure (→ 409) | — | NOT_TESTED | chemin défensif (O-04-58) |
+| Q-04-250 | Captures du banc 04-A | `plan.mjs` / `plan-lot3.mjs` | NOT_RERUN | libellé couvert par `vitest` et le parcours natif |

@@ -27,7 +27,7 @@ internal sealed class OpticalRecordStore<TRecord, TRevision, TContent>(MmvDbCont
 
     public void Add(TRecord record) => context.Set<TRecord>().Add(record);
 
-    public async Task<OpticalCommitResult> SaveChangesAsync(CancellationToken cancellationToken)
+    public async Task<OpticalCommitResult> SaveChangesAsync(OpticalCommitGuard guard, CancellationToken cancellationToken)
     {
         // Transaction propre (sauf transaction déjà ouverte par l'appelant) : en-tête verrouillé et version revérifiée AVANT
         // toute écriture, pour qu'un second poste soit refusé proprement (409) au lieu d'atteindre une révision déjà figée.
@@ -36,6 +36,13 @@ internal sealed class OpticalRecordStore<TRecord, TRevision, TContent>(MmvDbCont
             : null;
         try
         {
+            // Ordre des verrous, le même pour toute écriture optique : client, puis collaborateur désigné, puis en-tête(s).
+            if (await LockGuardAsync(guard, cancellationToken) is { } refusal)
+            {
+                context.ChangeTracker.Clear();
+                return refusal;
+            }
+
             if (!await LockModifiedRecordsAsync(cancellationToken))
             {
                 context.ChangeTracker.Clear();
@@ -73,6 +80,13 @@ internal sealed class OpticalRecordStore<TRecord, TRevision, TContent>(MmvDbCont
             context.ChangeTracker.Clear();
             return OpticalCommitResult.VersionConflict;
         }
+        catch (Exception exception) when ((exception as PostgresException ?? exception.InnerException as PostgresException) is { SqlState: PostgresErrorCodes.DeadlockDetected })
+        {
+            // Interblocage détecté par PostgreSQL (écriture extérieure prenant ses verrous dans un autre ordre) : cette
+            // transaction est annulée, rien n'est écrit — même issue qu'un conflit (409, recharger), jamais une erreur 500.
+            context.ChangeTracker.Clear();
+            return OpticalCommitResult.VersionConflict;
+        }
         finally
         {
             // Non validée (refus, erreur) : annulée à la libération, verrous relâchés.
@@ -81,6 +95,45 @@ internal sealed class OpticalRecordStore<TRecord, TRevision, TContent>(MmvDbCont
                 await transaction.DisposeAsync();
             }
         }
+    }
+
+    /// <summary>
+    /// Contrôles qui font foi, dans la transaction d'enregistrement (O-04-53, O-04-54). <c>FOR SHARE</c> : un archivage
+    /// (<c>UPDATE</c> du client), une désactivation (<c>UPDATE</c> du compte) ou un retrait d'habilitation (<c>DELETE</c> du
+    /// droit) concurrents attendent la fin de cette transaction ; s'ils ont été validés avant, la ligne relue (READ
+    /// COMMITTED, ligne la plus récente après attente) les montre et rien n'est écrit. Plusieurs écritures optiques
+    /// partagent ces verrous sans s'attendre entre elles.
+    /// </summary>
+    private async Task<OpticalCommitResult?> LockGuardAsync(OpticalCommitGuard guard, CancellationToken cancellationToken)
+    {
+        if (guard.RequireActiveClient)
+        {
+            var archived = await context.Database
+                .SqlQuery<bool>($"SELECT (archived_at_utc IS NOT NULL) AS \"Value\" FROM clients.clients WHERE id = {guard.ClientId} FOR SHARE")
+                .ToListAsync(cancellationToken);
+            if (archived is [true])
+            {
+                return OpticalCommitResult.ClientArchived;
+            }
+        }
+
+        if (guard.DesignatedMeasurerId is { } measurer)
+        {
+            // Compte ET droit verrouillés (jointure : les deux lignes) ; compte inactif ou droit retiré → aucune ligne.
+            var eligible = await context.Database
+                .SqlQuery<bool>($"""
+                    SELECT true AS "Value" FROM auth.users u JOIN auth.user_permissions p ON p.user_id = u.id
+                    WHERE u.id = {measurer} AND u.is_active AND p.permission = {Permissions.OpticalMeasurementsWrite}
+                    FOR SHARE
+                    """)
+                .ToListAsync(cancellationToken);
+            if (eligible is not [true])
+            {
+                return OpticalCommitResult.MeasurerNotEligible;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

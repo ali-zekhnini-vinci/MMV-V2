@@ -24,7 +24,7 @@ import { useClientsUi } from "../clients/clientsUi.ts";
 import { cn } from "../lib/utils.ts";
 import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { EyeGrid } from "./EyeGrid.tsx";
-import { KindBadge, ProposedTag } from "./OpticalBadges.tsx";
+import { KindBadge } from "./OpticalBadges.tsx";
 import { emptyContent, knownActors, type OpticalKind, type OpticalRecord, type RecordContent } from "./opticalContract.ts";
 import { KIND_LABEL, RECTIFICATION_REASON_LABEL } from "./opticalLabels.ts";
 import { useCreateAndConfirm, useCreateRecord, useMeasurers, useOpticalGateway, useSaveAndConfirm, useSaveDraft } from "./opticalQueries.ts";
@@ -325,7 +325,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
         noValidate
       >
         <fieldset className="optical-form__body" disabled={saving}>
-          <FormSection card icon={<User size={16} />} title="Informations générales" refs={kind === "prescription" ? "D-04-03.a" : "D-04-03.b"}>
+          <FormSection card icon={<User size={16} />} title="Informations générales">
             <div className="optical-client" role="group" aria-label="Client concerné">
               <span className="optical-client__avatar" aria-hidden="true">
                 {initials(clientName)}
@@ -352,11 +352,10 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
           <FormSection
             icon={<Glasses size={16} />}
             title="Correction optique"
-            refs="D-04-06"
             aside={
               <>
                 <Info size={14} aria-hidden="true" />
-                Boutons ± : pas de démonstration {stepLabel(step)} (paramétrable, D-04-06 ouverte) · ↑ / ↓ au clavier · saisie libre conservée telle quelle
+                Boutons ± : pas de {stepLabel(step)} (Sphère, Cylindre, Addition) · ↑ / ↓ au clavier · saisie libre conservée telle quelle · Prisme en saisie libre
               </>
             }
           >
@@ -402,7 +401,7 @@ export function OpticalRecordForm(props: OpticalRecordFormProps) {
 }
 
 /** Section de la maquette : titre à pastille d'icône (30 px, accent atténué), dans une carte ou à nu (Correction optique). */
-function FormSection({ icon, title, refs, aside, card = false, children }: { icon: ReactNode; title: string; refs?: string; aside?: ReactNode; card?: boolean; children: ReactNode }) {
+function FormSection({ icon, title, aside, card = false, children }: { icon: ReactNode; title: string; aside?: ReactNode; card?: boolean; children: ReactNode }) {
   const id = useId();
   return (
     <section className={cn("optical-form__section", card && "optical-form__card")} aria-labelledby={id}>
@@ -411,7 +410,6 @@ function FormSection({ icon, title, refs, aside, card = false, children }: { ico
           {icon}
         </span>
         <h2 id={id}>{title}</h2>
-        {refs && <ProposedTag refs={refs} />}
         {aside && <p className="optical-form__aside">{aside}</p>}
       </div>
       {children}

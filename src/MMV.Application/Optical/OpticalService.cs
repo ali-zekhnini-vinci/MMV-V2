@@ -38,7 +38,23 @@ public enum OpticalCommitResult
 
     /// <summary>Insertion refusée par l'unicité de l'identifiant de requête de création (réémission concurrente).</summary>
     DuplicateCreationRequest,
+
+    /// <summary>Client archivé, constaté sous verrou dans la transaction d'enregistrement (O-04-53) : rien n'est écrit.</summary>
+    ClientArchived,
+
+    /// <summary>Collaborateur désigné plus éligible, constaté sous verrou dans la transaction (O-04-54) : rien n'est écrit.</summary>
+    MeasurerNotEligible,
 }
+
+/// <summary>
+/// Conditions revérifiées SOUS VERROU dans la transaction d'enregistrement, juste avant l'écriture (O-04-53, O-04-54) : un
+/// archivage du client, une désactivation ou un retrait d'habilitation concurrents ne peuvent plus s'intercaler entre le
+/// contrôle et la validation. Ils attendent la fin de l'écriture optique, ou l'écriture constate leur effet et n'écrit rien.
+/// </summary>
+/// <param name="ClientId">Client de l'enregistrement.</param>
+/// <param name="RequireActiveClient">Écriture refusée si le client est archivé (toutes sauf l'invalidation, D-04-07).</param>
+/// <param name="DesignatedMeasurerId">Collaborateur nouvellement désigné comme ayant mesuré : doit rester actif et habilité.</param>
+public sealed record OpticalCommitGuard(Guid ClientId, bool RequireActiveClient, Guid? DesignatedMeasurerId = null);
 
 /// <summary>Persistance d'un type d'enregistrement optique (implémentée par MMV.Infrastructure sur PostgreSQL).</summary>
 public interface IOpticalRecordStore<TRecord>
@@ -53,10 +69,10 @@ public interface IOpticalRecordStore<TRecord>
     void Add(TRecord record);
 
     /// <summary>
-    /// Enregistre en UNE transaction (en-tête, révisions, événements d'audit) ; en cas de conflit ou de doublon, rien
-    /// n'est écrit et le suivi est vidé.
+    /// Enregistre en UNE transaction (en-tête, révisions, événements d'audit) après avoir revérifié <paramref name="guard"/>
+    /// sous verrou ; en cas de refus, de conflit ou de doublon, rien n'est écrit et le suivi est vidé.
     /// </summary>
-    Task<OpticalCommitResult> SaveChangesAsync(CancellationToken cancellationToken);
+    Task<OpticalCommitResult> SaveChangesAsync(OpticalCommitGuard guard, CancellationToken cancellationToken);
 }
 
 /// <summary>Comptes MMV cités par le dossier optique (collaborateurs pouvant être désignés comme ayant mesuré).</summary>
@@ -78,7 +94,9 @@ public interface IOpticalDirectory
 /// <item>n'écrit rien si le contenu est inchangé (aucune version, aucun auteur, aucun événement) ;</item>
 /// <item>enregistre ses événements d'audit dans le même <c>SaveChanges</c> que la modification (une transaction).</item>
 /// </list>
-/// Un client archivé est consultable mais gelé : seule l'invalidation reste possible.
+/// Un client archivé est consultable mais gelé : seule l'invalidation reste possible. L'état du client et l'éligibilité
+/// d'un collaborateur nouvellement désigné sont lus d'abord sans verrou (réponse immédiate), puis revérifiés SOUS VERROU
+/// dans la transaction d'enregistrement (<see cref="OpticalCommitGuard"/>, O-04-53, O-04-54) : ce second contrôle fait foi.
 /// </summary>
 public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>(
     IOpticalRecordStore<TRecord> store, IClientStore clients, TimeProvider clock, IAuditRecorder audit)
@@ -98,6 +116,12 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
     /// <summary>Contrôles de références (comptes cités) d'un contenu dont la provenance a changé ; erreurs par champ.</summary>
     protected virtual Task<IReadOnlyDictionary<string, string[]>> CheckReferencesAsync(TContent content, TContent? previous, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyDictionary<string, string[]>>(new Dictionary<string, string[]>());
+
+    /// <summary>Compte nouvellement désigné par <paramref name="content"/>, dont l'éligibilité est revérifiée sous verrou, ou <c>null</c>.</summary>
+    protected virtual Guid? DesignatedUserId(TContent content, TContent? previous) => null;
+
+    /// <summary>Erreurs par champ quand le compte désigné n'est plus éligible au moment de l'enregistrement.</summary>
+    protected virtual IReadOnlyDictionary<string, string[]> NotEligibleErrors() => new Dictionary<string, string[]>();
 
     protected abstract bool ProvenanceEquals(TContent left, TContent right);
 
@@ -151,13 +175,13 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
             Record(record, "confirmed", [RevisionNo(confirmed.RevisionNo)], userId, now);
         }
 
-        return await store.SaveChangesAsync(cancellationToken) switch
+        return await store.SaveChangesAsync(new(clientId, RequireActiveClient: true, DesignatedUserId(content, null)), cancellationToken) switch
         {
             OpticalCommitResult.Saved => new(OpticalWriteStatus.Success, record),
             // Même requête réémise en parallèle : la première l'a emporté, son résultat est relu (aucun doublon).
             OpticalCommitResult.DuplicateCreationRequest =>
                 await ReplayCreationAsync(clientId, requestId, userId, cancellationToken) ?? new(OpticalWriteStatus.VersionConflict),
-            _ => new(OpticalWriteStatus.VersionConflict),
+            var refused => Refused(refused),
         };
     }
 
@@ -187,6 +211,7 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
 
         var current = draft.Content;
         var content = current;
+        Guid? designated = null;
         if (input is not null)
         {
             var validation = Validate(input);
@@ -203,6 +228,8 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
                 {
                     return new(OpticalWriteStatus.ValidationFailed, Errors: references);
                 }
+
+                designated = DesignatedUserId(content, current);
             }
         }
 
@@ -239,7 +266,7 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
             Record(record, "confirmed", [RevisionNo(confirmed.RevisionNo)], userId, now);
         }
 
-        return await CommitAsync(record, cancellationToken);
+        return await CommitAsync(record, new(record.ClientId, RequireActiveClient: true, designated), cancellationToken);
     }
 
     /// <summary>Ouvre une rectification de la dernière révision confirmée (motif obligatoire ; un seul brouillon à la fois).</summary>
@@ -277,7 +304,7 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
         var now = Now();
         record.StartRectification(Guid.CreateVersion7(now), code!, text, userId, now, requestId);
         Record(record, "rectification_started", [BaseRevisionNo(basis.RevisionNo), Kept("rectificationReasonCode", code), .. Masked("comment", text)], userId, now);
-        return await CommitAsync(record, cancellationToken);
+        return await CommitAsync(record, new(record.ClientId, RequireActiveClient: true), cancellationToken);
     }
 
     /// <summary>Abandonne la rectification ouverte (conservée) ; une première saisie s'invalide, elle ne s'abandonne pas.</summary>
@@ -303,7 +330,7 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
         var now = Now();
         record.DiscardRectification(userId, now, requestId);
         Record(record, "rectification_discarded", [BaseRevisionNo(draft.BaseRevisionNo)], userId, now);
-        return await CommitAsync(record, cancellationToken);
+        return await CommitAsync(record, new(record.ClientId, RequireActiveClient: true), cancellationToken);
     }
 
     /// <summary>Invalide l'enregistrement (motif obligatoire, aucune suppression) ; possible aussi pour un client archivé.</summary>
@@ -346,7 +373,8 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
         }
 
         Record(record, "invalidated", [Kept("invalidationReasonCode", code), .. Masked("comment", text)], userId, now);
-        return await CommitAsync(record, cancellationToken);
+        // Invalidation permise pour un client archivé (D-04-07) : aucun contrôle, donc aucun verrou du client.
+        return await CommitAsync(record, new(record.ClientId, RequireActiveClient: false), cancellationToken);
     }
 
     /// <summary>Préalables communs : existence, réémission reconnue, enregistrement actif, version attendue.</summary>
@@ -389,10 +417,20 @@ public abstract class OpticalRecordService<TRecord, TRevision, TContent, TInput>
     private async Task<bool> IsClientArchivedAsync(TRecord record, CancellationToken cancellationToken) =>
         (await clients.GetAsync(record.ClientId, cancellationToken))?.IsArchived ?? false;
 
-    private async Task<OpticalWriteResult<TRecord>> CommitAsync(TRecord record, CancellationToken cancellationToken) =>
-        await store.SaveChangesAsync(cancellationToken) == OpticalCommitResult.Saved
-            ? new(OpticalWriteStatus.Success, record)
-            : new(OpticalWriteStatus.VersionConflict);
+    private async Task<OpticalWriteResult<TRecord>> CommitAsync(TRecord record, OpticalCommitGuard guard, CancellationToken cancellationToken) =>
+        await store.SaveChangesAsync(guard, cancellationToken) switch
+        {
+            OpticalCommitResult.Saved => new(OpticalWriteStatus.Success, record),
+            var refused => Refused(refused),
+        };
+
+    /// <summary>Refus constaté à l'enregistrement : rien n'a été écrit (suivi vidé, enregistrement non renvoyé).</summary>
+    private OpticalWriteResult<TRecord> Refused(OpticalCommitResult result) => result switch
+    {
+        OpticalCommitResult.ClientArchived => new(OpticalWriteStatus.ClientArchived),
+        OpticalCommitResult.MeasurerNotEligible => new(OpticalWriteStatus.ValidationFailed, Errors: NotEligibleErrors()),
+        _ => new(OpticalWriteStatus.VersionConflict),
+    };
 
     /// <summary>Groupes modifiés, MASQUÉS : jamais un nom de champ optique, une valeur, un prescripteur ni une note.</summary>
     private List<AuditChange> ContentGroups(TContent? before, TContent after)
@@ -477,15 +515,19 @@ public sealed class MeasurementService(
     protected override bool HasProvenance(MeasurementContent content) => content.Provenance != MeasurementProvenance.Empty;
 
     protected override async Task<IReadOnlyDictionary<string, string[]>> CheckReferencesAsync(
-        MeasurementContent content, MeasurementContent? previous, CancellationToken cancellationToken)
-    {
-        var measurer = content.Provenance.MeasuredByUserId;
-        // Collaborateur inchangé (rectification d'une mesure ancienne) : sa désignation passée n'est pas remise en cause.
-        if (measurer is null || measurer == previous?.Provenance.MeasuredByUserId || await directory.IsEligibleMeasurerAsync(measurer.Value, cancellationToken))
-        {
-            return new Dictionary<string, string[]>();
-        }
+        MeasurementContent content, MeasurementContent? previous, CancellationToken cancellationToken) =>
+        DesignatedUserId(content, previous) is not { } measurer || await directory.IsEligibleMeasurerAsync(measurer, cancellationToken)
+            ? new Dictionary<string, string[]>()
+            : NotEligibleErrors();
 
-        return new Dictionary<string, string[]>(StringComparer.Ordinal) { ["provenance.measuredByUserId"] = [OpticalFieldErrors.NotEligible] };
-    }
+    /// <summary>
+    /// Collaborateur inchangé (rectification d'une mesure ancienne) : sa désignation passée n'est pas remise en cause, ni ici
+    /// ni à l'enregistrement. Un collaborateur nouvellement désigné est contrôlé par lecture simple (réponse immédiate), puis
+    /// sous verrou dans la transaction d'enregistrement (désactivation ou retrait d'habilitation concurrents, O-04-54).
+    /// </summary>
+    protected override Guid? DesignatedUserId(MeasurementContent content, MeasurementContent? previous) =>
+        content.Provenance.MeasuredByUserId is { } measurer && measurer != previous?.Provenance.MeasuredByUserId ? measurer : null;
+
+    protected override IReadOnlyDictionary<string, string[]> NotEligibleErrors() =>
+        new Dictionary<string, string[]>(StringComparer.Ordinal) { ["provenance.measuredByUserId"] = [OpticalFieldErrors.NotEligible] };
 }
