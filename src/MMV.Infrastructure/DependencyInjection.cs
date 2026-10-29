@@ -6,11 +6,14 @@ using MMV.Application.Appointments;
 using MMV.Application.Audit;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
+using MMV.Application.Optical;
 using MMV.Infrastructure.Appointments;
 using MMV.Infrastructure.Audit;
 using MMV.Infrastructure.Clients;
 using MMV.Infrastructure.Identity;
+using MMV.Infrastructure.Optical;
 using MMV.Infrastructure.Persistence;
+using MMV.Domain.Optical;
 
 namespace MMV.Infrastructure;
 
@@ -62,6 +65,15 @@ public static class DependencyInjection
         services.TryAddScoped<IAppointmentResponsibleStore, AppointmentResponsibleStore>();
         services.TryAddScoped<AppointmentService>();
         services.TryAddScoped<ResponsibleAdministrationService>();
+
+        // Dossier optique (phase 04-B) : deux types distincts, même contexte EF (même transaction que l'audit).
+        services.TryAddScoped<IOpticalRecordStore<Prescription>, OpticalRecordStore<Prescription, PrescriptionRevision, PrescriptionContent>>();
+        services.TryAddScoped<IOpticalRecordStore<Measurement>, OpticalRecordStore<Measurement, MeasurementRevision, MeasurementContent>>();
+        services.TryAddScoped<IOpticalReadStore, OpticalReadStore>();
+        services.TryAddScoped<IOpticalDirectory, OpticalDirectory>();
+        services.TryAddScoped<PrescriptionService>();
+        services.TryAddScoped<MeasurementService>();
+        services.TryAddScoped<OpticalQueryService>();
 
         return services;
     }

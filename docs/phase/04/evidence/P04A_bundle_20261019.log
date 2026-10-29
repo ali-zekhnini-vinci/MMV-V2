@@ -1,0 +1,15 @@
+# 04-A — recherche des marqueurs du banc dans le bundle de production (vite build, sortie hors dépôt)
+== recherche du banc dans le bundle de production
+assets
+index.html
+licenses
+BANC DE D : 
+optical-bench : 
+RX-FICTIF : 
+MES-FICTIF : 
+Fictif- : 
+InMemoryOpticalGateway : 
+banc-04a : 
+OpticalModule : 
+/optique : 
+Dossier optique : dist-final/assets/ClientsModule-hpR4pK6M.js 

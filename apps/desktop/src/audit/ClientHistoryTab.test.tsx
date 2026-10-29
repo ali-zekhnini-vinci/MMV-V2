@@ -181,8 +181,10 @@ describe("onglet Historique (03-D2)", () => {
 });
 
 describe("présentation de l'historique", () => {
-  test("libellés des dix actions journalisées, champs masqués ou valorisés", () => {
-    assert.equal(Object.keys(AUDIT_ACTION_LABELS).length, 10);
+  test("libellés des actions journalisées (10 en 03-D2, + 12 du dossier optique en 04-B), champs masqués ou valorisés", () => {
+    assert.equal(Object.keys(AUDIT_ACTION_LABELS).length, 22);
+    assert.equal(Object.keys(AUDIT_ACTION_LABELS).filter((action) => /^(prescription|measurement)\./.test(action)).length, 12);
+    assert.equal(describeAuditChange({ field: "values", masked: true, old: null, new: null, oldDisplay: null, newDisplay: null }), "Valeurs optiques");
     assert.equal(describeAuditChange({ field: "notes", masked: true, old: null, new: null, oldDisplay: null, newDisplay: null }), "Notes");
     assert.equal(describeAuditChange({ field: "reasonCode", masked: false, old: null, new: "conseil_devis", oldDisplay: null, newDisplay: "Conseil / Devis" }), "Motif : Conseil / Devis");
     assert.equal(

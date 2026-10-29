@@ -3,6 +3,7 @@ using MMV.Api.Appointments;
 using MMV.Api.Audit;
 using MMV.Api.Clients;
 using MMV.Api.Cors;
+using MMV.Api.Optical;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 
@@ -49,6 +50,9 @@ internal static class AuthEndpoints
 
         // Phase 03-D2 : historique des actions (lecture seule, audit.read).
         api.MapAuditEndpoints();
+
+        // Phase 04-B : dossier optique (ordonnances médicales et mesures magasin).
+        api.MapOpticalEndpoints();
 
         return app;
     }

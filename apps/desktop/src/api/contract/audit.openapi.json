@@ -23,7 +23,8 @@
             "schema": {
               "enum": [
                 "clients",
-                "appointments"
+                "appointments",
+                "optical"
               ],
               "type": "string"
             }

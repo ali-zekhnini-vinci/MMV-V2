@@ -1,0 +1,142 @@
+# node --use-system-ca e2e/run-native.mjs optique-04c (exécutable de banc com.mmv.v2.c04test, API de banc https://localhost:7367 sur mmv_v2_test) — 29/10/2026
+﻿2026-10-28T23:33:10.181Z SCÉNARIO — optique-04c
+2026-10-28T23:33:10.182Z PARCOURS 04-C — API https://localhost:7367, client fictif FICTIF-C04-8F7BA3
+2026-10-28T23:33:11.571Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-28T23:33:13.411Z PASS — zoom WebView2 effectif 100 %
+2026-10-28T23:33:13.413Z PASS — thème light
+2026-10-28T23:33:13.638Z PASS — Consulter la fiche
+2026-10-28T23:33:13.800Z PASS — onglet Dossier optique
+2026-10-28T23:33:14.057Z PASS — API : dossier optique vide
+2026-10-28T23:33:14.662Z CAPTURE — <EVIDENCE>\P04F_native_c04_01_dossier-vide_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:14.665Z PASS — Transcrire une ordonnance médicale
+2026-10-28T23:33:14.832Z PASS — libellé du pas 0,25 approuvé (O-04-52)
+2026-10-28T23:33:14.833Z PASS — formulaire réel : ni « démonstration », ni « D-04-06 ouverte », ni « Prototype » (O-04-52)
+2026-10-28T23:33:15.405Z CAPTURE — <EVIDENCE>\P04F_native_c04_02_ordonnance-vide_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:15.406Z PASS — ± souris : Diminuer Sphère OD de 0,25
+2026-10-28T23:33:15.544Z PASS — Diminuer Sphère OD de 0,25 (2)
+2026-10-28T23:33:15.669Z PASS — Diminuer Sphère OD de 0,25 (3)
+2026-10-28T23:33:15.793Z PASS — Diminuer Sphère OD de 0,25 (4)
+2026-10-28T23:33:15.918Z PASS — Diminuer Sphère OD de 0,25 (5)
+2026-10-28T23:33:16.047Z PASS — Diminuer Sphère OD de 0,25 (6)
+2026-10-28T23:33:16.187Z PASS — Diminuer Sphère OD de 0,25 (7)
+2026-10-28T23:33:16.313Z PASS — Diminuer Sphère OD de 0,25 (8)
+2026-10-28T23:33:16.439Z PASS — Diminuer Sphère OD de 0,25 (9)
+2026-10-28T23:33:16.578Z PASS — ± souris : Diminuer Cylindre OD de 0,25
+2026-10-28T23:33:16.717Z PASS — Diminuer Cylindre OD de 0,25 (2)
+2026-10-28T23:33:16.843Z PASS — champ Axe OD
+2026-10-28T23:33:16.906Z PASS — ± souris : Augmenter Addition OD de 0,25
+2026-10-28T23:33:17.046Z PASS — Augmenter Addition OD de 0,25 (2)
+2026-10-28T23:33:17.171Z PASS — Augmenter Addition OD de 0,25 (3)
+2026-10-28T23:33:17.298Z PASS — Augmenter Addition OD de 0,25 (4)
+2026-10-28T23:33:17.425Z PASS — Augmenter Addition OD de 0,25 (5)
+2026-10-28T23:33:17.566Z PASS — Augmenter Addition OD de 0,25 (6)
+2026-10-28T23:33:17.691Z PASS — Augmenter Addition OD de 0,25 (7)
+2026-10-28T23:33:17.817Z PASS — Augmenter Addition OD de 0,25 (8)
+2026-10-28T23:33:17.945Z PASS — ± souris : Augmenter Sphère OG de 0,25
+2026-10-28T23:33:18.084Z PASS — Augmenter Sphère OG de 0,25 (2)
+2026-10-28T23:33:18.209Z PASS — Augmenter Sphère OG de 0,25 (3)
+2026-10-28T23:33:18.335Z PASS — Augmenter Sphère OG de 0,25 (4)
+2026-10-28T23:33:18.461Z PASS — Augmenter Sphère OG de 0,25 (5)
+2026-10-28T23:33:18.604Z PASS — Augmenter Sphère OG de 0,25 (6)
+2026-10-28T23:33:18.743Z PASS — champ Cylindre OG
+2026-10-28T23:33:18.807Z PASS — champ Axe OG
+2026-10-28T23:33:18.872Z VALEURS ÉCRAN — {"odSphere":"-2,25","odCyl":"-0,50","odAdd":"+2,00","ogSphere":"+1,50","ogCyl":"−0,75","ogAdd":""}
+2026-10-28T23:33:18.873Z PASS — ± : −2,25 / −0,50 / +2,00 / +1,50 (pas 0,25 depuis le vide)
+2026-10-28T23:33:18.873Z PASS — saisie clavier conservée telle quelle (signe moins typographique, virgule)
+2026-10-28T23:33:18.873Z PASS — Addition OG non touchée : vide, jamais 0
+2026-10-28T23:33:18.890Z PASS — calendrier : Date de prescription
+2026-10-28T23:33:18.895Z PASS — calendrier : Choisir l'année = 2026
+2026-10-28T23:33:19.111Z PASS — calendrier : Choisir le mois = 9
+2026-10-28T23:33:19.329Z PASS — jour 2026-10-20
+2026-10-28T23:33:19.331Z PASS — champ Prescripteur — nom (tel que sur le document)
+2026-10-28T23:33:19.943Z CAPTURE — <EVIDENCE>\P04F_native_c04_03_ordonnance-remplie_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:19.946Z PASS — Enregistrer (ordonnance)
+2026-10-28T23:33:20.120Z PASS — API : ordonnance créée (RX-000156)
+2026-10-28T23:33:20.128Z PASS — API : révision 1 confirmée, aucun brouillon (création + confirmation atomiques)
+2026-10-28T23:33:20.128Z PASS — API : valeurs enregistrées = valeurs affichées, exactes (aucune réécriture)
+2026-10-28T23:33:20.128Z PASS — API : champs vides enregistrés null (jamais 0)
+2026-10-28T23:33:20.128Z PASS — écran : référence et valeurs de l'API affichées
+2026-10-28T23:33:20.689Z CAPTURE — <EVIDENCE>\P04F_native_c04_04_ordonnance-enregistree_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:20.699Z PASS — Modifier
+2026-10-28T23:33:20.702Z PASS — motif : erreur de transcription
+2026-10-28T23:33:20.704Z PASS — ouvrir la modification
+2026-10-28T23:33:20.859Z PASS — ± souris : Augmenter Sphère OD de 0,25
+2026-10-28T23:33:21.020Z PASS — API : rectification ouverte, révision 1 toujours de référence
+2026-10-28T23:33:21.031Z PASS — autre poste : brouillon modifié (200)
+2026-10-28T23:33:21.034Z PASS — Enregistrer (formulaire périmé)
+2026-10-28T23:33:21.207Z PASS — API : rien écrit par le poste périmé (révision 1, brouillon de l'autre poste)
+2026-10-28T23:33:21.208Z PASS — écran : bandeau d'alerte du conflit (saisie conservée, rien enregistré)
+2026-10-28T23:33:22.057Z CAPTURE — <EVIDENCE>\P04F_native_c04_05_conflit-deux-postes_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:22.064Z PASS — Recharger (bandeau de conflit)
+2026-10-28T23:33:22.377Z PASS — rechargement confirmé (saisie locale abandonnée)
+2026-10-28T23:33:22.533Z PASS — ± souris : Augmenter Sphère OD de 0,25
+2026-10-28T23:33:22.673Z PASS — Augmenter Sphère OD de 0,25 (2)
+2026-10-28T23:33:22.813Z PASS — révision 2 distincte de la révision 1 (-2,00)
+2026-10-28T23:33:22.815Z PASS — Enregistrer (révision 2)
+2026-10-28T23:33:22.975Z PASS — API : révision 2 confirmée (-2,00)
+2026-10-28T23:33:22.975Z PASS — API (audit.read) : révision 1 conservée intacte
+2026-10-28T23:33:22.976Z PASS — écran : historique des modifications (audit.read)
+2026-10-28T23:33:23.524Z CAPTURE — <EVIDENCE>\P04F_native_c04_06_revision2-historique_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:23.592Z PASS — Consulter la fiche
+2026-10-28T23:33:23.599Z PASS — onglet Dossier optique
+2026-10-28T23:33:23.600Z PASS — Saisir une mesure magasin
+2026-10-28T23:33:23.765Z PASS — Collaborateur ayant mesuré = C04 Opticien fictif
+2026-10-28T23:33:23.773Z PASS — calendrier : Date de la mesure
+2026-10-28T23:33:23.776Z PASS — calendrier : Choisir l'année = 2026
+2026-10-28T23:33:23.982Z PASS — calendrier : Choisir le mois = 9
+2026-10-28T23:33:24.202Z PASS — jour 2026-10-28
+2026-10-28T23:33:24.203Z PASS — ± souris : Augmenter Sphère OD de 0,25
+2026-10-28T23:33:24.340Z PASS — Augmenter Sphère OD de 0,25 (2)
+2026-10-28T23:33:24.480Z PASS — Augmenter Sphère OD de 0,25 (3)
+2026-10-28T23:33:24.608Z PASS — Enregistrer comme brouillon
+2026-10-28T23:33:26.125Z PASS — API : mesure créée (MES-000074)
+2026-10-28T23:33:26.132Z PASS — API : brouillon seulement (+0,75), aucune révision confirmée
+2026-10-28T23:33:26.674Z CAPTURE — <EVIDENCE>\P04F_native_c04_07_mesure-brouillon_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:26.747Z PASS — Consulter la fiche
+2026-10-28T23:33:26.755Z PASS — onglet Dossier optique
+2026-10-28T23:33:26.917Z PASS — Consulter la mesure (brouillon)
+2026-10-28T23:33:26.924Z PASS — Modifier (reprise du brouillon de mesure)
+2026-10-28T23:33:26.935Z PASS — ± souris : Augmenter Sphère OG de 0,25
+2026-10-28T23:33:27.070Z PASS — Augmenter Sphère OG de 0,25 (2)
+2026-10-28T23:33:27.198Z PASS — Enregistrer (mesure)
+2026-10-28T23:33:27.358Z PASS — API : mesure confirmée (OD +0,75, OG +0,50, collaborateur)
+2026-10-28T23:33:27.359Z PASS — écran : collaborateur ayant mesuré nommé
+2026-10-28T23:33:27.925Z CAPTURE — <EVIDENCE>\P04F_native_c04_08_mesure-confirmee_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:27.926Z PASS — Plus d'actions
+2026-10-28T23:33:28.088Z PASS — Invalider…
+2026-10-28T23:33:28.229Z PASS — Invalider sans motif
+2026-10-28T23:33:28.231Z PASS — motif : erreur de saisie
+2026-10-28T23:33:28.232Z PASS — Invalider
+2026-10-28T23:33:29.212Z PASS — API : mesure invalidée, motif enregistré, aucune suppression
+2026-10-28T23:33:29.755Z CAPTURE — <EVIDENCE>\P04F_native_c04_09_mesure-invalidee_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:31.963Z PASS — Consulter la fiche
+2026-10-28T23:33:32.126Z PASS — onglet Dossier optique
+2026-10-28T23:33:32.296Z PASS — lecture : aucun bouton Ajouter…
+2026-10-28T23:33:32.297Z PASS — Consulter l'ordonnance (lecture)
+2026-10-28T23:33:32.456Z PASS — lecture : ni Modifier ni Invalider
+2026-10-28T23:33:32.457Z PASS — lecture : historique masqué (audit.read absent)
+2026-10-28T23:33:32.457Z PASS — lecture : valeur de la révision 1 (-2,25) absente
+2026-10-28T23:33:33.005Z CAPTURE — <EVIDENCE>\P04F_native_c04_10_lecture-seule_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:35.222Z PASS — Consulter la fiche
+2026-10-28T23:33:35.378Z PASS — sans optical.read : aucun onglet Dossier optique
+2026-10-28T23:33:35.381Z PASS — onglet Ordonnances
+2026-10-28T23:33:35.931Z CAPTURE — <EVIDENCE>\P04F_native_c04_11_sans-droit-optique_light_1920x1080_20261028T233310Z.png 1920x1080
+2026-10-28T23:33:37.294Z PASS — fenêtre 1024×700 (client 1024x700)
+2026-10-28T23:33:42.108Z PASS — zoom WebView2 effectif 125 %
+2026-10-28T23:33:42.419Z PASS — thème dark
+2026-10-28T23:33:42.826Z PASS — Consulter la fiche
+2026-10-28T23:33:42.986Z PASS — onglet Dossier optique
+2026-10-28T23:33:43.140Z PASS — Transcrire (sombre)
+2026-10-28T23:33:43.297Z PASS — ± souris : Augmenter Sphère OD de 0,25
+2026-10-28T23:33:43.439Z PASS — Augmenter Sphère OD de 0,25 (2)
+2026-10-28T23:33:43.580Z PASS — Augmenter Sphère OD de 0,25 (3)
+2026-10-28T23:33:43.721Z PASS — Augmenter Sphère OD de 0,25 (4)
+2026-10-28T23:33:43.862Z PASS — ± souris : Diminuer Sphère OG de 0,25
+2026-10-28T23:33:44.002Z PASS — Diminuer Sphère OG de 0,25 (2)
+2026-10-28T23:33:44.142Z PASS — Diminuer Sphère OG de 0,25 (3)
+2026-10-28T23:33:44.808Z CAPTURE — <EVIDENCE>\P04F_native_c04_12_ordonnance_dark_1024x700_z125_20261028T233310Z.png 1024x700
+2026-10-28T23:33:44.818Z PASS — Annuler
+2026-10-28T23:33:45.628Z PASS — abandon : aucun enregistrement créé
+2026-10-28T23:33:48.383Z PASS — zoom WebView2 effectif 100 %
+2026-10-28T23:33:48.696Z PASS — thème light
+2026-10-28T23:33:48.697Z TERMINÉ — optique-04c

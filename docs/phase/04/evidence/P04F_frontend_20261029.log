@@ -1,0 +1,4 @@
+# Frontend apps/desktop — npm run check : exit 0 ; eslint . : 0 erreur, 1 avertissement préexistant (ClientsTable, react-hooks/incompatible-library) ; vitest run :
+Test Files  26 passed (26)
+Tests  301 passed (301)
+Duration  59.90s (tests 78%, environment 9%, import 8%, transform 4%)

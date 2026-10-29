@@ -1,0 +1,389 @@
+# 04-A — chaîne frontend finale (19/10/2026), apps/desktop — exécution 1 (contient 1 échec intermittent d'un test Phase 03, voir le rejeu)
+== npm run check
+
+> mmv-v2-desktop@0.1.0 check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+check_exit=0
+== eslint .
+
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src\clients\ClientsTable.tsx
+  153:17  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src\clients\ClientsTable.tsx:153:17
+  151 |   // Avertissement lint attendu (react-hooks/incompatible-library) : useReactTable renvoie des fonctions
+  152 |   // non mémoïsables ; le React Compiler ignore alors ce composant, qui reste correct (rendu à chaque état).
+> 153 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  154 |     data: rows,
+  155 |     columns,
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+lint_exit=0
+== vitest run
+
+ RUN  v5.0.3 C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/apps/desktop
+
+ ❯ src/clients/ClientsModule.test.tsx (24 tests | 1 failed) 24305ms
+   ❯ liste des clients (12)
+     × O-03-43 : la confirmation d'une modification s'affiche sur la fiche atteinte, puis disparaît en la quittant 1709ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/clients/ClientsModule.test.tsx > liste des clients > O-03-43 : la confirmation d'une modification s'affiche sur la fiche atteinte, puis disparaît en la quittant
+TestingLibraryElementError: Unable to find role="heading" and name "BENALI Omar"
+
+Ignored nodes: comments, script, style
+<body
+  style=""
+>
+  <div>
+    <div
+      class="shell"
+    >
+      <header
+        aria-label="Barre supérieure"
+        class="topbar"
+      >
+        <div
+          class="search"
+          title="Recherche globale — Disponible dans une phase suivante"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          <input
+            aria-label="Recherche globale — Disponible dans une phase suivante"
+            disabled=""
+            placeholder="Recherche — disponible dans une phase suivante"
+            type="search"
+          />
+        </div>
+        <div
+          class="topbar__actions"
+        >
+          <button
+            aria-label="Thème — passer en mode sombre"
+            class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none disabled:cursor-not-allowed focus-visible:shadow-focus [&_svg]:shrink-0 rounded-sm bg-transparent font-normal text-text-secondary enabled:hover:bg-surface-hover enabled:hover:text-text-primary disabled:text-text-disabled size-[42px] p-0"
+            data-slot="button"
+            title="Mode sombre"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-moon"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+              />
+            </svg>
+          </button>
+          <button
+            aria-label="Notifications — Disponible dans une phase suivante"
+            class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none disabled:cursor-not-allowed focus-visible:shadow-focus [&_svg]:shrink-0 rounded-sm bg-transparent font-normal text-text-secondary enabled:hover:bg-surface-hover enabled:hover:text-text-primary disabled:text-text-disabled size-[42px] p-0"
+            data-slot="button"
+            disabled=""
+            title="Notifications — Disponible dans une phase suivante"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-bell"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.268 21a2 2 0 0 0 3.464 0"
+              />
+              <path
+                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+              />
+            </svg>
+          </button>
+          <button
+            aria-expanded="false"
+            aria-haspopup="menu"
+            aria-label="Menu utilisateur — Agent Test"
+            class="profile-chip"
+            data-state="closed"
+            id="radix-_r_6c_"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="avatar avatar--small"
+            >
+              A
+            </span>
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-chevron-down"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m6 9 6 6 6-6"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <aside
+        aria-label="Menu principal"
+        class="sidebar"
+      >
+        <div
+          class="sidebar__brand"
+        >
+...
+
+Ignored nodes: comments, script, style
+<body
+  style=""
+>
+  <div>
+    <div
+      class="shell"
+    >
+      <header
+        aria-label="Barre supérieure"
+        class="topbar"
+      >
+        <div
+          class="search"
+          title="Recherche globale — Disponible dans une phase suivante"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search"
+            fill="none"
+            height="18"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          <input
+            aria-label="Recherche globale — Disponible dans une phase suivante"
+            disabled=""
+            placeholder="Recherche — disponible dans une phase suivante"
+            type="search"
+          />
+        </div>
+        <div
+          class="topbar__actions"
+        >
+          <button
+            aria-label="Thème — passer en mode sombre"
+            class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none disabled:cursor-not-allowed focus-visible:shadow-focus [&_svg]:shrink-0 rounded-sm bg-transparent font-normal text-text-secondary enabled:hover:bg-surface-hover enabled:hover:text-text-primary disabled:text-text-disabled size-[42px] p-0"
+            data-slot="button"
+            title="Mode sombre"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-moon"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+              />
+            </svg>
+          </button>
+          <button
+            aria-label="Notifications — Disponible dans une phase suivante"
+            class="inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap outline-none disabled:cursor-not-allowed focus-visible:shadow-focus [&_svg]:shrink-0 rounded-sm bg-transparent font-normal text-text-secondary enabled:hover:bg-surface-hover enabled:hover:text-text-primary disabled:text-text-disabled size-[42px] p-0"
+            data-slot="button"
+            disabled=""
+            title="Notifications — Disponible dans une phase suivante"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-bell"
+              fill="none"
+              height="20"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.268 21a2 2 0 0 0 3.464 0"
+              />
+              <path
+                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+              />
+            </svg>
+          </button>
+          <button
+            aria-expanded="false"
+            aria-haspopup="menu"
+            aria-label="Menu utilisateur — Agent Test"
+            class="profile-chip"
+            data-state="closed"
+            id="radix-_r_6c_"
+            type="button"
+          >
+            <span
+              aria-hidden="true"
+              class="avatar avatar--small"
+            >
+              A
+            </span>
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-chevron-down"
+              fill="none"
+              height="16"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="16"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="m6 9 6 6 6-6"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
+      <aside
+        aria-label="Menu principal"
+        class="sidebar"
+      >
+        <div
+          class="sidebar__brand"
+        >
+...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ src/clients/ClientsModule.test.tsx:196:18
+    194|     const { user } = await openClients();
+    195|     await user.click(await screen.findByRole("button", { name: "Consul…
+    196|     await screen.findByRole("heading", { name: "BENALI Omar", level: 1…
+       |                  ^
+    197|     await user.click(screen.getByRole("button", { name: "Modifier" }));
+    198|     const city = await screen.findByLabelText("Ville");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 23 passed (24)
+      Tests  1 failed | 264 passed (265)
+   Start at  20:29:33
+   Duration  53.77s (tests 75%, environment 11%, import 9%, transform 5%)
+
+test_exit=1
+== vite build (outDir hors dépôt)
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 3108 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/index.html                                                      0.41 kB │ gzip:   0.28 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-greek-ext-wght-normal-BXZfsJY4.woff2       9.74 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2             10.25 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-vietnamese-wght-normal-BDs68eHQ.woff2     10.36 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-cyrillic-ext-wght-normal-c-5QAGAI.woff2   10.73 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2              11.23 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-greek-wght-normal-Cc-u-6OI.woff2          14.52 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-cyrillic-wght-normal-BMDVbyM7.woff2       18.49 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/logo-monogram-BPIp4hY8.png                              18.60 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2               18.74 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-greek-wght-normal-CkhJZR-_.woff2                  18.99 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2           25.96 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-latin-wght-normal-Bo_j9asI.woff2          28.87 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-latin-wght-normal-Dx4kXJAl.woff2                  48.25 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/source-sans-3-latin-ext-wght-normal-C8iNium2.woff2      60.08 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/logo-login-CsjuZy2a.png                                 66.34 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2              85.06 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/logo-horizontal-dark-sidebar-DK4O83AH.png              102.34 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/logo-horizontal-CX8f7qe7.png                           104.99 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/AppointmentsModule-COPiTKmt.css                         22.27 kB │ gzip:   4.73 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/appointmentLaunch-s4z4g4pi.css                          23.17 kB │ gzip:   4.24 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/index-DcFIFow5.css                                      31.99 kB │ gzip:   7.69 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/appointmentLaunch-Dd8hSI0t.js                          102.12 kB │ gzip:  33.77 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/ClientsModule-hpR4pK6M.js                              107.48 kB │ gzip:  30.33 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/AppointmentsModule-D0xFRg81.js                         394.88 kB │ gzip: 111.25 kB
+../../../../../../ALIZEK~1/AppData/Local/Temp/claude/C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2/3a0c1598-a25b-4956-95b7-4997544ae9fc/scratchpad/dist-final/assets/index-Gx12K0Yt.js                                      554.10 kB │ gzip: 175.79 kB
+
+[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 869ms
+build_exit=0

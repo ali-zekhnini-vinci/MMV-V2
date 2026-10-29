@@ -132,6 +132,8 @@ public sealed class ClientServiceTests
         var reactivated = await _service.ReactivateAsync(client.Id, client.Version, Author, CancellationToken.None);
         Assert.Equal(ClientWriteStatus.Success, reactivated.Status);
         Assert.Null(reactivated.Client!.ArchivedAtUtc);
+        // O-04-53 : chaque archivage / réactivation verrouille d'abord le client (attente d'une écriture optique en cours).
+        Assert.Equal(5, _store.LifecycleLocks);
         // Jamais de suppression physique.
         Assert.Single(_store.Clients);
     }
@@ -208,10 +210,11 @@ public sealed class PermissionAdministrationServiceTests
     public void SystemAdmin_ImpliesNoClientsPermission()
     {
         // 17/10/2026 (03-B2, D-03-17) : + appointments.read|write|cancel ; 18/10/2026 (03-D2) : + audit.read ;
-        // system.admin reste non attribuable.
+        // 27/10/2026 (04-B) : + 4 droits optiques ; system.admin reste non attribuable.
         Assert.Equal(
             [Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive,
-             Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel, Permissions.AuditRead],
+             Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel, Permissions.AuditRead,
+             Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate],
             Permissions.Grantable);
         Assert.DoesNotContain(Permissions.SystemAdmin, Permissions.Grantable);
     }

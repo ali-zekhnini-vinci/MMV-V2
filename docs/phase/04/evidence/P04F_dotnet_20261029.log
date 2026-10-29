@@ -1,0 +1,27 @@
+# .NET — arbre final des correctifs O-04-53 / O-04-54 / O-04-52 (29/10/2026)
+
+## dotnet build MMV.slnx -warnaserror
+0 Avertissement(s)
+0 Erreur(s)
+
+## dotnet test tests/MMV.Api.Tests
+Réussi!  - échec :     0, réussite :   455, ignorée(s) :     0, total :   455, durée : 48 s - MMV.Api.Tests.dll (net10.0)
+
+## dotnet test tests/MMV.Maintenance.Tests
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+
+## dotnet test tests/MMV.PostgreSql.Tests (arbre final)
+Nombre total de tests : 68
+Réussi(s) : 68
+nettoyage (suffixe fbdaa09013) : 5 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 1 compte(s) supprimés ; résidus = 0
+DiscardRectification : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.2994170Z > 2026-10-28T23:29:22.2986171Z)
+nettoyage (suffixe f22fa04e54) : 6 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 2 compte(s) supprimés ; résidus = 0
+StartRectification : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.4296190Z > 2026-10-28T23:29:22.4289792Z)
+nettoyage (suffixe 11bae76e47) : 6 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 2 compte(s) supprimés ; résidus = 0
+EditDraft : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.4844690Z > 2026-10-28T23:29:22.4836482Z)
+nettoyage (suffixe 419e3b1f8b) : 4 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 2 compte(s) supprimés ; résidus = 0
+ConfirmDraft : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.5419650Z > 2026-10-28T23:29:22.5412905Z)
+nettoyage (suffixe 731f1e9cf0) : 4 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 2 compte(s) supprimés ; résidus = 0
+Create : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.5966130Z > 2026-10-28T23:29:22.5958193Z)
+nettoyage (suffixe f67848a354) : 4 événement(s) d'audit, 0 rendez-vous, 0 éligibilité(s), 0 session(s), 1 client(s), 2 compte(s) supprimés ; résidus = 0
+CreateMeasurement : écriture validée d'abord, archivage ensuite (attente constatée, archivé à 2026-10-28T23:29:22.6563740Z > 2026-10-28T23:29:22.6556799Z)

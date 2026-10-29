@@ -1,0 +1,14 @@
+# 04-A clôture — enregistrement simplifié (D-04-17) — frontend, 20/10/2026, apps/desktop (exécution finale, après le dernier changement de code)
+## npm run check
+exit=0
+## eslint .
+  153:17  warning  Compilation Skipped: Use of incompatible library
+✖ 1 problem (0 errors, 1 warning)
+exit=0
+## vitest run
+ Test Files  25 passed (25)
+      Tests  288 passed (288)
+   Duration  59.64s (tests 79%, environment 9%, import 8%, transform 4%)
+## vite build (équivalent de npm run build, typage déjà exécuté ci-dessus)
+✓ built in 1.05s
+exit=0

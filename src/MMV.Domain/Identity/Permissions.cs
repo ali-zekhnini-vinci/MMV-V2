@@ -7,8 +7,9 @@ namespace MMV.Domain.Identity;
 /// distincts, attribués explicitement par <c>MMV.Maintenance permissions grant</c>. Phase 03-B2 (D-03-17,
 /// approuvée le 17/10/2026) : droits Rendez-vous distincts, même attribution. Phase 03-D2 : <see cref="AuditRead"/>,
 /// droit DÉDIÉ à la lecture du journal d'audit, distinct des droits métier (lire un client ou un rendez-vous ne donne
-/// pas son historique) et de <see cref="SystemAdmin"/>. Aucune autre permission métier (caisse, ordonnances, stock)
-/// n'est définie ici.
+/// pas son historique) et de <see cref="SystemAdmin"/>. Phase 04-B (D-04-05, mandat GO du 27/10/2026) : quatre droits
+/// du dossier optique, explicites, combinés par le serveur avec <see cref="ClientsRead"/> ; aucun n'en implique un autre
+/// et <see cref="SystemAdmin"/> n'en donne aucun. Aucune autre permission métier (caisse, ventes, stock) n'est définie ici.
 /// </summary>
 public static class Permissions
 {
@@ -35,14 +36,32 @@ public static class Permissions
     /// <summary>Historique des actions sur les dossiers (journal d'audit, lecture seule ; 03-D2).</summary>
     public const string AuditRead = "audit.read";
 
+    /// <summary>Dossier optique : listes, détail, révisions des deux types (ordonnances et mesures ; 04-B).</summary>
+    public const string OpticalRead = "optical.read";
+
+    /// <summary>Ordonnances médicales : brouillon, confirmation, rectification (04-B).</summary>
+    public const string OpticalPrescriptionsWrite = "optical.prescriptions.write";
+
+    /// <summary>Mesures magasin : brouillon, confirmation, rectification ; habilitation à mesurer (04-B).</summary>
+    public const string OpticalMeasurementsWrite = "optical.measurements.write";
+
+    /// <summary>Invalidation motivée d'une ordonnance ou d'une mesure (aucune suppression physique ; 04-B).</summary>
+    public const string OpticalInvalidate = "optical.invalidate";
+
     public const int MaxLength = 64;
 
     public static IReadOnlyList<string> All { get; } =
-        [SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead];
+        [
+            SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead,
+            OpticalRead, OpticalPrescriptionsWrite, OpticalMeasurementsWrite, OpticalInvalidate,
+        ];
 
     /// <summary>Permissions attribuables par la commande de maintenance (jamais <see cref="SystemAdmin"/>).</summary>
     public static IReadOnlyList<string> Grantable { get; } =
-        [ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead];
+        [
+            ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead,
+            OpticalRead, OpticalPrescriptionsWrite, OpticalMeasurementsWrite, OpticalInvalidate,
+        ];
 
     public static bool IsKnown(string permission) => All.Contains(permission, StringComparer.Ordinal);
 }

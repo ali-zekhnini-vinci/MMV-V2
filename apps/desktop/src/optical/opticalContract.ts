@@ -1,0 +1,261 @@
+// Contrat du dossier optique côté poste. 04-A : types du prototype (banc isolé). 04-B (mandat GO du 27/10/2026) : ces
+// types sont la vue d'écran du contrat RÉEL /api/optical (docs/phase/04/API_OPTICAL.md, extrait OpenAPI
+// src/api/contract/optical.openapi.json) ; la passerelle HTTP (src/api/optical.ts) convertit `null` ↔ `""` et le banc
+// garde son double en mémoire. Décisions acquises : D-04-01 (deux types distincts), D-04-15 (UX Lot 3), D-04-16
+// (aucun « état de l'œil », pièces sources reportées au backlog permanent) et D-04-17 (« Enregistrer » atomique).
+// Valeurs optiques : chaînes conservées EXACTEMENT telles que saisies (aucune normalisation, aucun arrondi, aucune
+// conversion) ; chaque champ peut rester vide, chaîne vide = non renseigné, jamais confondu avec la valeur « 0 ».
+import type { ApiResult } from "../api/client.ts";
+
+/** D-04-01 (APPROVED) : ordonnance médicale reçue ≠ mesure réalisée au magasin. Aucune conversion. */
+export type OpticalKind = "prescription" | "measurement";
+export const OPTICAL_KINDS: readonly OpticalKind[] = ["prescription", "measurement"];
+
+export type EyeSide = "od" | "og";
+export const EYE_SIDES: readonly EyeSide[] = ["od", "og"];
+
+/** Colonnes du Lot 3 (Sphère, Cylindre, Axe, Addition, Prisme, Base) + acuité (D-04-06, PROTO). */
+export const EYE_FIELDS = ["sphere", "cylinder", "axis", "addition", "prism", "base", "acuity"] as const;
+export type EyeField = (typeof EYE_FIELDS)[number];
+/** Valeurs d'un œil (D-04-16 : aucun état d'œil séparé ; un œil sans valeur est simplement non renseigné). */
+export type EyeValues = Record<EyeField, string>;
+
+/** Provenance d'une ordonnance (mandat 04-B) : nom et date exigés pour CONFIRMER ; qualité facultative et LIBRE. */
+export interface PrescriptionProvenance {
+  prescriberName: string;
+  /** Texte libre facultatif (aucune liste fermée imposée). */
+  prescriberQualification: string;
+  prescriberIdentifier: string;
+  /** Date portée sur le document (`AAAA-MM-JJ` ou `""`) ; aucune validité calculée. */
+  prescribedOn: string;
+  /** Date de réception au magasin, distincte. */
+  receivedOn: string;
+}
+
+/** Provenance d'une mesure magasin (mandat 04-B) : date et collaborateur exigés pour CONFIRMER ; catégorie LIBRE. */
+export interface MeasurementProvenance {
+  measuredOn: string;
+  /** Collaborateur ayant mesuré (compte détenant optical.measurements.write), distinct de l'auteur de la saisie. */
+  measuredByUserId: string;
+  /** Texte libre facultatif (aucune liste fermée imposée). */
+  category: string;
+}
+
+interface ContentBase {
+  od: EyeValues;
+  og: EyeValues;
+  notes: string;
+}
+
+export interface PrescriptionContent extends ContentBase {
+  kind: "prescription";
+  provenance: PrescriptionProvenance;
+}
+
+export interface MeasurementContent extends ContentBase {
+  kind: "measurement";
+  provenance: MeasurementProvenance;
+}
+
+export type RecordContent = PrescriptionContent | MeasurementContent;
+
+export interface OpticalActor {
+  id: string;
+  displayName: string;
+}
+
+/**
+ * 04-C (O-04-48) : collaborateurs connus pour l'affichage = comptes habilités actifs (`/measurers`) complétés par ceux
+ * cités dans l'enregistrement (`citedUsers`), même désactivés ou plus habilités depuis la mesure.
+ */
+export function knownActors(active: readonly OpticalActor[], cited: readonly OpticalActor[]): OpticalActor[] {
+  return [...active, ...cited.filter((actor) => !active.some((known) => known.id === actor.id))];
+}
+
+/** E-02 / D-04-11 (PROPOSED) : statut d'une révision ; le numéro n'est attribué qu'à la confirmation. */
+export type RevisionStatus = "draft" | "confirmed" | "discarded";
+
+/** D-04-04.b (PROPOSED) : motifs de rectification. */
+export type RectificationReason = "transcription_error" | "additional_information" | "other";
+export const RECTIFICATION_REASONS: readonly RectificationReason[] = ["transcription_error", "additional_information", "other"];
+
+/** D-04-04.c (PROPOSED) : motifs d'invalidation (aucune suppression physique). */
+export type InvalidationReason = "entry_error" | "duplicate" | "unacceptable_document" | "other";
+export const INVALIDATION_REASONS: readonly InvalidationReason[] = ["entry_error", "duplicate", "unacceptable_document", "other"];
+
+export interface OpticalRevision {
+  id: string;
+  status: RevisionStatus;
+  /** Attribué à la confirmation (1, 2, 3… sans trou) ; `null` pour un brouillon ou une révision abandonnée. */
+  revisionNo: number | null;
+  /** Révision confirmée de départ d'une rectification ; `null` pour une première saisie. */
+  baseRevisionNo: number | null;
+  reasonCode: RectificationReason | null;
+  reasonComment: string;
+  content: RecordContent;
+  startedAtUtc: string;
+  startedBy: OpticalActor;
+  updatedAtUtc: string;
+  updatedBy: OpticalActor;
+  confirmedAtUtc: string | null;
+  confirmedBy: OpticalActor | null;
+  discardedAtUtc: string | null;
+  discardedBy: OpticalActor | null;
+}
+
+export interface OpticalInvalidation {
+  atUtc: string;
+  by: OpticalActor;
+  reasonCode: InvalidationReason;
+  comment: string;
+  /** Un brouillon ouvert a été abandonné dans la même opération (D-04-11.e). */
+  discardedDraft: boolean;
+}
+
+export interface OpticalClientRef {
+  id: string;
+  reference: string;
+  displayName: string;
+  status: "active" | "archived";
+}
+
+/** Événement de gestion (libellés seulement, aucune valeur optique — D-04-12, prototype). */
+export interface OpticalEvent {
+  id: string;
+  atUtc: string;
+  code: string;
+  actor: OpticalActor;
+  revisionNo?: number;
+  reasonCode?: string;
+}
+
+/** Statut affiché, DÉRIVÉ du cycle et des révisions (E-02). */
+export type DisplayStatus = "draft" | "confirmed" | "rectification" | "invalidated";
+
+export interface OpticalRecord {
+  kind: OpticalKind;
+  id: string;
+  reference: string;
+  client: OpticalClientRef;
+  lifecycle: "active" | "invalidated";
+  invalidation: OpticalInvalidation | null;
+  lastConfirmed: OpticalRevision | null;
+  openDraft: OpticalRevision | null;
+  /** Toutes les révisions (confirmées, brouillon, abandonnées), dans l'ordre chronologique. */
+  revisions: OpticalRevision[];
+  /** 04-B : historique complet (révisions abandonnées ou antérieures, journal) servi avec `audit.read` ET `optical.read`
+   * seulement ; sinon `revisions` se limite à la dernière révision confirmée et au brouillon ouvert, `events` est vide. */
+  historyAvailable: boolean;
+  events: OpticalEvent[];
+  /** 04-C : comptes cités dans la provenance des révisions servies (collaborateur ayant mesuré), avec leur nom. */
+  citedUsers: OpticalActor[];
+  createdAtUtc: string;
+  createdBy: OpticalActor;
+  /** Jeton de concurrence de l'enregistrement (équivalent `xmin`). */
+  version: number;
+}
+
+export interface OpticalRecordSummary {
+  kind: OpticalKind;
+  id: string;
+  reference: string;
+  client: OpticalClientRef;
+  status: DisplayStatus;
+  revisionNo: number | null;
+  /** Date de prescription (RX) ou de mesure (MES) de la révision affichée. */
+  date: string;
+  /** Prescripteur (RX) ou collaborateur ayant mesuré (MES), tel qu'enregistré. */
+  source: string;
+  od: EyeValues;
+  og: EyeValues;
+  recordedAtUtc: string;
+}
+
+export type OpticalStatusFilter = "all" | "draft" | "confirmed" | "rectification";
+export type OpticalSort = "date:desc" | "date:asc" | "client:asc" | "client:desc" | "recorded:desc";
+
+export interface OpticalListParams {
+  search: string;
+  kind: "all" | OpticalKind;
+  status: OpticalStatusFilter;
+  /** Invalidés exclus par défaut, inclusion explicite (état 4). */
+  includeInvalidated: boolean;
+  sort: OpticalSort;
+  page: number;
+  pageSize: number;
+}
+
+export interface OpticalPage {
+  items: OpticalRecordSummary[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export const OPTICAL_PAGE_SIZE = 8;
+
+export interface RectificationRequest {
+  expectedRevisionNo: number;
+  reasonCode: RectificationReason;
+  comment: string;
+  version: number;
+}
+
+export interface InvalidationRequest {
+  reasonCode: InvalidationReason;
+  comment: string;
+  version: number;
+}
+
+/**
+ * Accès aux données du dossier optique : passerelle HTTP réelle (src/api/optical.ts, 04-B) ou double EN MÉMOIRE du
+ * banc isolé (src/bench/). Mêmes refus : 403, 404, 409 (`version_conflict`, `draft_exists`,
+ * `revision_conflict`, `client_archived`, `invalidated`), 422. Aucune opération sur des pièces sources (D-04-16 :
+ * gestion documentaire reportée au backlog permanent).
+ */
+export interface OpticalGateway {
+  listRecords(params: OpticalListParams): Promise<ApiResult<OpticalPage>>;
+  listClientRecords(clientId: string, includeInvalidated: boolean): Promise<ApiResult<OpticalRecordSummary[]>>;
+  getRecord(kind: OpticalKind, id: string): Promise<ApiResult<OpticalRecord>>;
+  listMeasurers(): Promise<ApiResult<OpticalActor[]>>;
+  createRecord(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>>;
+  saveDraft(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>>;
+  confirmDraft(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>>;
+  /** « Enregistrer » d'une NOUVELLE saisie (D-04-17, 04-B) : création ET confirmation en une transaction ; un refus
+   * n'enregistre rien (aucun brouillon orphelin). */
+  createAndConfirm(clientId: string, content: RecordContent): Promise<ApiResult<OpticalRecord>>;
+  /** « Enregistrer » d'un brouillon existant : modification ET confirmation en une transaction ; un refus laisse le
+   * brouillon inchangé. */
+  saveAndConfirm(kind: OpticalKind, id: string, content: RecordContent, version: number): Promise<ApiResult<OpticalRecord>>;
+  startRectification(kind: OpticalKind, id: string, request: RectificationRequest): Promise<ApiResult<OpticalRecord>>;
+  discardRectification(kind: OpticalKind, id: string, version: number): Promise<ApiResult<OpticalRecord>>;
+  invalidateRecord(kind: OpticalKind, id: string, request: InvalidationRequest): Promise<ApiResult<OpticalRecord>>;
+}
+
+export const EMPTY_EYE_VALUES: EyeValues = { sphere: "", cylinder: "", axis: "", addition: "", prism: "", base: "", acuity: "" };
+
+export const emptyEye = (): EyeValues => ({ ...EMPTY_EYE_VALUES });
+
+export function emptyContent(kind: OpticalKind, measuredByUserId = ""): RecordContent {
+  return kind === "prescription"
+    ? {
+        kind,
+        provenance: { prescriberName: "", prescriberQualification: "", prescriberIdentifier: "", prescribedOn: "", receivedOn: "" },
+        od: emptyEye(),
+        og: emptyEye(),
+        notes: "",
+      }
+    : { kind, provenance: { measuredOn: "", measuredByUserId, category: "" }, od: emptyEye(), og: emptyEye(), notes: "" };
+}
+
+/** Statut affiché dérivé (E-02) : invalidé > rectification en cours > confirmé > brouillon. */
+export function displayStatus(record: Pick<OpticalRecord, "lifecycle" | "lastConfirmed" | "openDraft">): DisplayStatus {
+  if (record.lifecycle === "invalidated") return "invalidated";
+  if (record.lastConfirmed === null) return "draft";
+  return record.openDraft !== null ? "rectification" : "confirmed";
+}
+
+/** Révision affichée par défaut : la dernière confirmée, sinon le brouillon de première saisie. */
+export function shownRevision(record: Pick<OpticalRecord, "lastConfirmed" | "openDraft" | "revisions">): OpticalRevision {
+  return record.lastConfirmed ?? record.openDraft ?? record.revisions[record.revisions.length - 1];
+}

@@ -109,3 +109,53 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **Limite** : les déclencheurs d'ajout seul ne protègent pas contre un superutilisateur PostgreSQL ni contre le rôle propriétaire de la table (rôle de migration, aujourd'hui aussi rôle de connexion de MMV.Api). **À prévoir** : rôle SQL applicatif distinct du rôle de migration (O-B04) et politique de rétention contrôlée.
 - **D-03-22 OUVERTE** : durées de conservation ; obligations RGPD / APD (Belgique) et loi 09-08 / CNDP (Maroc), avec un conseil juridique.
 - **Modification sans changement** (O-03-44) : aucune écriture (ni auteur, ni date, ni version, ni événement) ; résultat HTTP 200 avec l'état courant.
+
+## Note datée — 19/10/2026 (phase 04-00)
+
+- Phase 03 **fusionnée** (`origin/main` = `6924860`, PR #4, vérifié par `git fetch`).
+- **D-04-01 APPROVED** (propriétaire, 19/10/2026) : ordonnances médicales reçues et mesures réalisées en magasin = deux types métier distincts, sans conversion ni assimilation ; provenance, auteur et statut explicites ; aucun SQL autorisé par cette décision.
+- **D-04-02 à D-04-09 PROPOSED** (complétude, provenance et pièces, révisions et invalidation, permissions optiques, validations optiques, client archivé, navigation, pays et confidentialité) — demande consolidée : `docs/phase/04/DECISIONS_04_METIER_PROPOSED.md`. D-04-06 exige l'avis d'un opticien ; D-04-09 un conseil juridique (Belgique : RGPD / APD ; Maroc : loi 09-08 / CNDP), et prolonge D-03-22 (conservation, OUVERTE).
+- Aucun ADR modifié : ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`, ADR-003 respecté (dossier optique proposé en PostgreSQL seul). **ADR-014** : aucune dépendance ajoutée.
+
+## Note datée — 19/10/2026 (Phase 04, suite de 04-00)
+
+- Revue indépendante : G04-00 « cadrage techniquement acceptable ». **D-04-01 APPROVED** (définitive) ; D-04-02 à D-04-09 `PROPOSED` (inchangées) ; **D-04-10 à D-04-14 `PROPOSED`** ajoutées (`docs/phase/04/ETUDES_PRE_MODELE_04.md`).
+- Aucun ADR modifié. **ADR-008** (`PROPOSED`) : les pièces source domineraient le volume de la base et des sauvegardes (taille ≈ volume des pièces) ; chiffrement, copie hors serveur et restauration avec vérification des empreintes deviennent des préalables explicites à un pilote (O-04-19) ; le choix sauvegarde logique / physique reste à prendre au seuil mesuré. **ADR-014** : aucune dépendance ajoutée ni proposée (contrôles de fichiers sans bibliothèque ; AMSI = appel système Windows, à évaluer, O-04-17).
+
+## Note datée — 19/10/2026 (Phase 04-A, GO G04-A — UI ONLY)
+
+- **G04-A APPROVED — UI ONLY** et **O-04-16 APPROVED** (propriétaire) : prototypes des écrans du dossier optique **uniquement** dans un banc de démonstration isolé (`apps/desktop/optical-bench.html`, hors `vite build`) ; comptes réels inchangés (« Ordonnances — phase ultérieure »). D-04-01 APPROVED ; **D-04-02 à D-04-14 restent `PROPOSED`** (illustrées par le prototype, non tranchées).
+- Aucun ADR modifié. **ADR-014** respecté : aucune dépendance ajoutée (React Hook Form, TanStack Query, Radix, react-day-picker, Lucide existants). **ADR-003** : aucune base touchée, aucune migration. Bilan : `docs/phase/04/LIVRAISON_04A.md`.
+
+## Note datée — 20/10/2026 (Phase 04-A, refonte UX Lot 3)
+
+- **D-04-15 APPROVED** (propriétaire, 20/10/2026) : référence UX officielle des formulaires optiques = maquette HTML Claude Design du Lot 3, avec contrôles rapides ± et saisie clavier complémentaire. Décision d'interface seulement : le pas 0,25 reste un paramètre de **démonstration** ; pas, bornes, format et règles croisées relèvent de **D-04-06 (PROPOSED, avis opticien)** ; aucune règle ni aucun code de l'ancien MMV importés. Réalisation dans le banc isolé seulement (O-04-16) : `docs/phase/04/LIVRAISON_04A.md` § 11.
+
+## Note datée — 20/10/2026 (Phase 04-A, simplification du dossier optique)
+
+- **D-04-16 APPROVED** (propriétaire, 20/10/2026, `prompts/PHASE04_A_SIMPLIFICATION_GO_CLAUDE_CODE.md`) : suppression du champ « État de l'œil » (formulaires, prototype, modèle proposé ; chaque champ optique peut rester vide, jamais assimilé à zéro) ; gestion documentaire des pièces sources reportée au **backlog permanent BL-04-01** (`docs/PERIMETRE_ET_SEQUENCE.md`), aucune table ni API de pièces en Phase 04 ; révisions, comparaison, motif de rectification, traçabilité des auteurs et provenance conservés. D-04-03.c, D-04-10, D-04-12.a/b/d, D-04-14 **reportées** ; la partie « état par œil » de D-04-02.c **retirée** ; règles cliniques ouvertes (D-04-02.b, D-04-03.a/b, D-04-06) **inchangées**.
+- Aucun ADR modifié. **ADR-008** (`PROPOSED`) : la note du 19/10/2026 sur le volume des pièces dans les sauvegardes ne s'applique pas à la Phase 04 (reprise avec BL-04-01) ; la restauration complète reste exigée avant tout pilote (O-04-09).
+
+## Note datée — 20/10/2026 (Phase 04-A, enregistrement simplifié et clôture technique)
+
+- **D-04-17 APPROVED** (propriétaire, 20/10/2026, `prompts/PHASE04_A_CLOTURE_GO_CLAUDE_CODE.md`) : enregistrement optique simplifié — action principale « Enregistrer », option secondaire discrète « Enregistrer comme brouillon », sans suppression du cycle de révisions. Décision d'interface ; aucun critère clinique fixé (D-04-02 à D-04-14 restent PROPOSED). Lot 04-A : `PHASE04_A_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED` (`docs/phase/04/LIVRAISON_04A.md` § 13), pas un GO pour 04-B.
+- Aucun ADR modifié.
+
+## Note datée — 27/10/2026 (Phase 04-B, GO d'implémentation)
+
+- Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md`](../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE04_B_ET_C_2026-10-27.md). Dossier optique réalisé dans le monolithe MMV.Api (ADR-003 : PostgreSQL 18 seul, aucune extension ; aucun microservice) ; migration `0006_OpticalModule` **préparée, non appliquée** (G04-SQL).
+- **Idempotence des écritures** (proposée en 04-00 comme « ADR-011 à confirmer ») : identifiant de requête obligatoire, reconnu par le serveur (`creation_request_id` unique, `last_request_id`) ; réémission = état courant, aucune réécriture. Décision technique réversible, sans nouvel ADR.
+- **Valeurs optiques** : texte exact + valeur `numeric` générée sans échelle (aucun arrondi silencieux, aucune borne clinique cachée) — [`docs/phase/04/G04_SQL_DOSSIER.md`](phase/04/G04_SQL_DOSSIER.md) § 2.
+- **ADR-014** : aucune dépendance ajoutée (serveur et poste). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION`. Rôle SQL applicatif distinct (O-B04) toujours prérequis d'un pilote.
+
+## Note datée — 28/10/2026 (Phase 04-C, G04-SQL accordée)
+
+- Mandat : [`prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md`](../prompts/MMV_V2_G04_SQL_GO_PHASE04_C_2026-10-28.md). Migration `0006_OpticalModule` **appliquée** (`mmv_v2_dev` puis `mmv_v2_test`) par le seul script approuvé (`927ed7cc…706c013`), `lock_timeout` 5 s ; retour arrière = restauration de la sauvegarde vérifiée prise avant application (aucun `Down` exécutable).
+- Contrat de l'API : ajout du champ `citedUsers` à la réponse d'enregistrement optique (O-04-48) — ajout seul, aucun champ existant modifié ; décision technique réversible, sans nouvel ADR.
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; rôle SQL applicatif distinct (O-B04) inscrit au backlog BL-04-04, toujours prérequis d'un pilote.
+
+
+## Note datée — 29/10/2026 (Phase 04, correctifs finaux)
+
+- Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Synchronisation transactionnelle par **verrous de ligne PostgreSQL** (ADR-003 : PostgreSQL seul, aucune extension) : écriture optique `FOR SHARE` sur le client et sur le compte / droit du collaborateur désigné ; archivage `FOR NO KEY UPDATE` sur le client avant lecture ; ordre unique client → collaborateur → en-tête. Décision technique réversible, sans nouvel ADR ; aucune migration (0006 inchangée).
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; aucune dépendance ajoutée.

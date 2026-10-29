@@ -25,6 +25,12 @@ namespace MMV.Infrastructure.Persistence.Migrations
             modelBuilder.HasSequence("client_reference_seq", "clients")
                 .HasMax(999999999999999999L);
 
+            modelBuilder.HasSequence("measurement_reference_seq", "optical")
+                .HasMax(999999999999999999L);
+
+            modelBuilder.HasSequence("prescription_reference_seq", "optical")
+                .HasMax(999999999999999999L);
+
             modelBuilder.Entity("MMV.Domain.Appointments.Appointment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -415,7 +421,7 @@ namespace MMV.Infrastructure.Persistence.Migrations
 
                     b.ToTable("user_permissions", "auth", t =>
                         {
-                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive', 'appointments.read', 'appointments.write', 'appointments.cancel', 'audit.read')");
+                            t.HasCheckConstraint("ck_user_permissions_permission", "permission IN ('system.admin', 'clients.read', 'clients.write', 'clients.archive', 'appointments.read', 'appointments.write', 'appointments.cancel', 'audit.read', 'optical.read', 'optical.prescriptions.write', 'optical.measurements.write', 'optical.invalidate')");
                         });
                 });
 
@@ -531,6 +537,791 @@ namespace MMV.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MMV.Domain.Optical.Measurement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("CreationRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("creation_request_id");
+
+                    b.Property<DateTimeOffset?>("InvalidatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invalidated_at_utc");
+
+                    b.Property<Guid?>("InvalidatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invalidated_by_user_id");
+
+                    b.Property<string>("InvalidationComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("invalidation_comment");
+
+                    b.Property<string>("InvalidationReasonCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("invalidation_reason_code");
+
+                    b.Property<Guid>("LastRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_request_id");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("reference")
+                        .HasDefaultValueSql("'MES-' || to_char(nextval('optical.measurement_reference_seq'), 'FM999999999999000000')");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_measurements");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_measurements_created_by_user_id");
+
+                    b.HasIndex("CreationRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_measurements_creation_request_id");
+
+                    b.HasIndex("InvalidatedByUserId")
+                        .HasDatabaseName("ix_measurements_invalidated_by_user_id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ux_measurements_reference");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_measurements_updated_by_user_id");
+
+                    b.HasIndex("ClientId", "CreatedAtUtc", "Id")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_measurements_client_created");
+
+                    b.ToTable("measurements", "optical", t =>
+                        {
+                            t.HasCheckConstraint("ck_measurements_invalidated_after_created", "invalidated_at_utc IS NULL OR invalidated_at_utc >= created_at_utc");
+
+                            t.HasCheckConstraint("ck_measurements_invalidation_complete", "(invalidated_at_utc IS NULL) = (invalidated_by_user_id IS NULL) AND (invalidated_at_utc IS NULL) = (invalidation_reason_code IS NULL) AND (invalidation_comment IS NULL OR invalidated_at_utc IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_measurements_invalidation_reason_format", "invalidation_reason_code IS NULL OR invalidation_reason_code ~ '^[a-z][a-z_]{0,31}$'");
+
+                            t.HasCheckConstraint("ck_measurements_reference_format", "reference ~ '^MES-[0-9]{6,18}$'");
+
+                            t.HasCheckConstraint("ck_measurements_updated_after_created", "updated_at_utc >= created_at_utc");
+                        });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.MeasurementRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("BaseRevisionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_revision_no");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at_utc");
+
+                    b.Property<Guid?>("ConfirmedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("confirmed_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DiscardedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("discarded_at_utc");
+
+                    b.Property<Guid?>("DiscardedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discarded_by_user_id");
+
+                    b.Property<Guid?>("MeasuredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("measured_by_user_id");
+
+                    b.Property<DateOnly?>("MeasuredOn")
+                        .HasColumnType("date")
+                        .HasColumnName("measured_on");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OdAcuity")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_acuity");
+
+                    b.Property<string>("OdAddition")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_addition");
+
+                    b.Property<string>("OdAxis")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_axis");
+
+                    b.Property<string>("OdBase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_base");
+
+                    b.Property<string>("OdCylinder")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_cylinder");
+
+                    b.Property<string>("OdPrism")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_prism");
+
+                    b.Property<string>("OdSphere")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_sphere");
+
+                    b.Property<string>("OgAcuity")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_acuity");
+
+                    b.Property<string>("OgAddition")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_addition");
+
+                    b.Property<string>("OgAxis")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_axis");
+
+                    b.Property<string>("OgBase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_base");
+
+                    b.Property<string>("OgCylinder")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_cylinder");
+
+                    b.Property<string>("OgPrism")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_prism");
+
+                    b.Property<string>("OgSphere")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_sphere");
+
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<string>("ReasonComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason_comment");
+
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("measurement_id");
+
+                    b.Property<int?>("RevisionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_no");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<decimal?>("od_addition_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_addition_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_addition, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_axis_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_axis_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_axis, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_cylinder_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_cylinder_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_cylinder, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_prism_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_prism_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_prism, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_sphere_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_sphere_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_sphere, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_addition_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_addition_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_addition, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_axis_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_axis_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_axis, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_cylinder_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_cylinder_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_cylinder, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_prism_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_prism_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_prism, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_sphere_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_sphere_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_sphere, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.HasKey("Id")
+                        .HasName("pk_measurement_revisions");
+
+                    b.HasIndex("ConfirmedByUserId")
+                        .HasDatabaseName("ix_measurement_revisions_confirmed_by_user_id");
+
+                    b.HasIndex("DiscardedByUserId")
+                        .HasDatabaseName("ix_measurement_revisions_discarded_by_user_id");
+
+                    b.HasIndex("MeasuredByUserId")
+                        .HasDatabaseName("ix_measurement_revisions_measured_by_user_id");
+
+                    b.HasIndex("RecordId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_measurement_revisions_open_draft")
+                        .HasFilter("status = 'draft'");
+
+                    b.HasIndex("StartedByUserId")
+                        .HasDatabaseName("ix_measurement_revisions_started_by_user_id");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_measurement_revisions_updated_by_user_id");
+
+                    b.HasIndex("RecordId", "RevisionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_measurement_revisions_number")
+                        .HasFilter("revision_no IS NOT NULL");
+
+                    b.HasIndex("RecordId", "StartedAtUtc", "Id")
+                        .HasDatabaseName("ix_measurement_revisions_measurement_started");
+
+                    b.ToTable("measurement_revisions", "optical", t =>
+                        {
+                            t.HasCheckConstraint("ck_measurement_revisions_confirmation", "(status = 'confirmed') = (revision_no IS NOT NULL) AND (revision_no IS NULL) = (confirmed_at_utc IS NULL) AND (confirmed_at_utc IS NULL) = (confirmed_by_user_id IS NULL)");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_confirmed_provenance", "status <> 'confirmed' OR (measured_on IS NOT NULL AND measured_by_user_id IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_dates", "(measured_on IS NULL OR measured_on >= DATE '1900-01-01')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_discard", "(status = 'discarded') = (discarded_at_utc IS NOT NULL) AND (discarded_at_utc IS NULL) = (discarded_by_user_id IS NULL) AND (status <> 'discarded' OR base_revision_no IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_numbers", "(revision_no IS NULL OR revision_no >= 1) AND (base_revision_no IS NULL OR base_revision_no >= 1) AND (revision_no IS NULL OR base_revision_no IS NULL OR revision_no > base_revision_no)");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_od_addition_number", "od_addition IS NULL OR od_addition ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_od_axis_number", "od_axis IS NULL OR od_axis ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_od_cylinder_number", "od_cylinder IS NULL OR od_cylinder ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_od_prism_number", "od_prism IS NULL OR od_prism ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_od_sphere_number", "od_sphere IS NULL OR od_sphere ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_og_addition_number", "og_addition IS NULL OR og_addition ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_og_axis_number", "og_axis IS NULL OR og_axis ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_og_cylinder_number", "og_cylinder IS NULL OR og_cylinder ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_og_prism_number", "og_prism IS NULL OR og_prism ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_og_sphere_number", "og_sphere IS NULL OR og_sphere ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_reason", "(base_revision_no IS NULL) = (reason_code IS NULL) AND (reason_comment IS NULL OR reason_code IS NOT NULL) AND (reason_code IS NULL OR reason_code ~ '^[a-z][a-z_]{0,31}$')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_status", "status IN ('draft', 'confirmed', 'discarded')");
+
+                            t.HasCheckConstraint("ck_measurement_revisions_updated_after_started", "updated_at_utc >= started_at_utc");
+                        });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.Prescription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("client_id");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at_utc");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("CreationRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("creation_request_id");
+
+                    b.Property<DateTimeOffset?>("InvalidatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("invalidated_at_utc");
+
+                    b.Property<Guid?>("InvalidatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invalidated_by_user_id");
+
+                    b.Property<string>("InvalidationComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("invalidation_comment");
+
+                    b.Property<string>("InvalidationReasonCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("invalidation_reason_code");
+
+                    b.Property<Guid>("LastRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("last_request_id");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)")
+                        .HasColumnName("reference")
+                        .HasDefaultValueSql("'RX-' || to_char(nextval('optical.prescription_reference_seq'), 'FM999999999999000000')");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id")
+                        .HasName("pk_prescriptions");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_prescriptions_created_by_user_id");
+
+                    b.HasIndex("CreationRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_prescriptions_creation_request_id");
+
+                    b.HasIndex("InvalidatedByUserId")
+                        .HasDatabaseName("ix_prescriptions_invalidated_by_user_id");
+
+                    b.HasIndex("Reference")
+                        .IsUnique()
+                        .HasDatabaseName("ux_prescriptions_reference");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_prescriptions_updated_by_user_id");
+
+                    b.HasIndex("ClientId", "CreatedAtUtc", "Id")
+                        .IsDescending(false, true, true)
+                        .HasDatabaseName("ix_prescriptions_client_created");
+
+                    b.ToTable("prescriptions", "optical", t =>
+                        {
+                            t.HasCheckConstraint("ck_prescriptions_invalidated_after_created", "invalidated_at_utc IS NULL OR invalidated_at_utc >= created_at_utc");
+
+                            t.HasCheckConstraint("ck_prescriptions_invalidation_complete", "(invalidated_at_utc IS NULL) = (invalidated_by_user_id IS NULL) AND (invalidated_at_utc IS NULL) = (invalidation_reason_code IS NULL) AND (invalidation_comment IS NULL OR invalidated_at_utc IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_prescriptions_invalidation_reason_format", "invalidation_reason_code IS NULL OR invalidation_reason_code ~ '^[a-z][a-z_]{0,31}$'");
+
+                            t.HasCheckConstraint("ck_prescriptions_reference_format", "reference ~ '^RX-[0-9]{6,18}$'");
+
+                            t.HasCheckConstraint("ck_prescriptions_updated_after_created", "updated_at_utc >= created_at_utc");
+                        });
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.PrescriptionRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int?>("BaseRevisionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_revision_no");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("confirmed_at_utc");
+
+                    b.Property<Guid?>("ConfirmedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("confirmed_by_user_id");
+
+                    b.Property<DateTimeOffset?>("DiscardedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("discarded_at_utc");
+
+                    b.Property<Guid?>("DiscardedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("discarded_by_user_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("OdAcuity")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_acuity");
+
+                    b.Property<string>("OdAddition")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_addition");
+
+                    b.Property<string>("OdAxis")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_axis");
+
+                    b.Property<string>("OdBase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_base");
+
+                    b.Property<string>("OdCylinder")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_cylinder");
+
+                    b.Property<string>("OdPrism")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_prism");
+
+                    b.Property<string>("OdSphere")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("od_sphere");
+
+                    b.Property<string>("OgAcuity")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_acuity");
+
+                    b.Property<string>("OgAddition")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_addition");
+
+                    b.Property<string>("OgAxis")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_axis");
+
+                    b.Property<string>("OgBase")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_base");
+
+                    b.Property<string>("OgCylinder")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_cylinder");
+
+                    b.Property<string>("OgPrism")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_prism");
+
+                    b.Property<string>("OgSphere")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("og_sphere");
+
+                    b.Property<DateOnly?>("PrescribedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("prescribed_on");
+
+                    b.Property<string>("PrescriberIdentifier")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("prescriber_identifier");
+
+                    b.Property<string>("PrescriberName")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("prescriber_name");
+
+                    b.Property<string>("PrescriberQualification")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("prescriber_qualification");
+
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<string>("ReasonComment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("reason_comment");
+
+                    b.Property<DateOnly?>("ReceivedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("received_on");
+
+                    b.Property<Guid>("RecordId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("prescription_id");
+
+                    b.Property<int?>("RevisionNo")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_no");
+
+                    b.Property<DateTimeOffset>("StartedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at_utc");
+
+                    b.Property<Guid>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by_user_id");
+
+                    b.Property<decimal?>("od_addition_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_addition_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_addition, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_axis_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_axis_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_axis, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_cylinder_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_cylinder_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_cylinder, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_prism_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_prism_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_prism, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("od_sphere_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("od_sphere_value")
+                        .HasComputedColumnSql("(replace(replace(replace(od_sphere, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_addition_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_addition_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_addition, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_axis_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_axis_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_axis, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_cylinder_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_cylinder_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_cylinder, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_prism_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_prism_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_prism, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.Property<decimal?>("og_sphere_value")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("numeric")
+                        .HasColumnName("og_sphere_value")
+                        .HasComputedColumnSql("(replace(replace(replace(og_sphere, ',', '.'), U&'\\2212', '-'), ' ', ''))::numeric", true);
+
+                    b.HasKey("Id")
+                        .HasName("pk_prescription_revisions");
+
+                    b.HasIndex("ConfirmedByUserId")
+                        .HasDatabaseName("ix_prescription_revisions_confirmed_by_user_id");
+
+                    b.HasIndex("DiscardedByUserId")
+                        .HasDatabaseName("ix_prescription_revisions_discarded_by_user_id");
+
+                    b.HasIndex("RecordId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_prescription_revisions_open_draft")
+                        .HasFilter("status = 'draft'");
+
+                    b.HasIndex("StartedByUserId")
+                        .HasDatabaseName("ix_prescription_revisions_started_by_user_id");
+
+                    b.HasIndex("UpdatedByUserId")
+                        .HasDatabaseName("ix_prescription_revisions_updated_by_user_id");
+
+                    b.HasIndex("RecordId", "RevisionNo")
+                        .IsUnique()
+                        .HasDatabaseName("ux_prescription_revisions_number")
+                        .HasFilter("revision_no IS NOT NULL");
+
+                    b.HasIndex("RecordId", "StartedAtUtc", "Id")
+                        .HasDatabaseName("ix_prescription_revisions_prescription_started");
+
+                    b.ToTable("prescription_revisions", "optical", t =>
+                        {
+                            t.HasCheckConstraint("ck_prescription_revisions_confirmation", "(status = 'confirmed') = (revision_no IS NOT NULL) AND (revision_no IS NULL) = (confirmed_at_utc IS NULL) AND (confirmed_at_utc IS NULL) = (confirmed_by_user_id IS NULL)");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_confirmed_provenance", "status <> 'confirmed' OR (prescribed_on IS NOT NULL AND prescriber_name IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_dates", "(prescribed_on IS NULL OR prescribed_on >= DATE '1900-01-01') AND (received_on IS NULL OR received_on >= DATE '1900-01-01')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_discard", "(status = 'discarded') = (discarded_at_utc IS NOT NULL) AND (discarded_at_utc IS NULL) = (discarded_by_user_id IS NULL) AND (status <> 'discarded' OR base_revision_no IS NOT NULL)");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_numbers", "(revision_no IS NULL OR revision_no >= 1) AND (base_revision_no IS NULL OR base_revision_no >= 1) AND (revision_no IS NULL OR base_revision_no IS NULL OR revision_no > base_revision_no)");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_od_addition_number", "od_addition IS NULL OR od_addition ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_od_axis_number", "od_axis IS NULL OR od_axis ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_od_cylinder_number", "od_cylinder IS NULL OR od_cylinder ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_od_prism_number", "od_prism IS NULL OR od_prism ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_od_sphere_number", "od_sphere IS NULL OR od_sphere ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_og_addition_number", "og_addition IS NULL OR og_addition ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_og_axis_number", "og_axis IS NULL OR og_axis ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_og_cylinder_number", "og_cylinder IS NULL OR og_cylinder ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_og_prism_number", "og_prism IS NULL OR og_prism ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_og_sphere_number", "og_sphere IS NULL OR og_sphere ~ ('^[-+' || U&'\\2212' || ']? ?[0-9]+([.,][0-9]+)?$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_reason", "(base_revision_no IS NULL) = (reason_code IS NULL) AND (reason_comment IS NULL OR reason_code IS NOT NULL) AND (reason_code IS NULL OR reason_code ~ '^[a-z][a-z_]{0,31}$')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_status", "status IN ('draft', 'confirmed', 'discarded')");
+
+                            t.HasCheckConstraint("ck_prescription_revisions_updated_after_started", "updated_at_utc >= started_at_utc");
+                        });
+                });
+
             modelBuilder.Entity("MMV.Domain.Appointments.Appointment", b =>
                 {
                     b.HasOne("MMV.Domain.Identity.UserAccount", null)
@@ -630,9 +1421,157 @@ namespace MMV.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_sessions_users");
                 });
 
+            modelBuilder.Entity("MMV.Domain.Optical.Measurement", b =>
+                {
+                    b.HasOne("MMV.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurements_clients");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurements_created_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("InvalidatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_measurements_invalidated_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurements_updated_by_users");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.MeasurementRevision", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_measurement_revisions_confirmed_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DiscardedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_measurement_revisions_discarded_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("MeasuredByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_measurement_revisions_measured_by_users");
+
+                    b.HasOne("MMV.Domain.Optical.Measurement", null)
+                        .WithMany("Revisions")
+                        .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurement_revisions_measurements");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurement_revisions_started_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_measurement_revisions_updated_by_users");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.Prescription", b =>
+                {
+                    b.HasOne("MMV.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescriptions_clients");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescriptions_created_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("InvalidatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_prescriptions_invalidated_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescriptions_updated_by_users");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.PrescriptionRevision", b =>
+                {
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_prescription_revisions_confirmed_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("DiscardedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_prescription_revisions_discarded_by_users");
+
+                    b.HasOne("MMV.Domain.Optical.Prescription", null)
+                        .WithMany("Revisions")
+                        .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescription_revisions_prescriptions");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescription_revisions_started_by_users");
+
+                    b.HasOne("MMV.Domain.Identity.UserAccount", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_prescription_revisions_updated_by_users");
+                });
+
             modelBuilder.Entity("MMV.Domain.Identity.UserAccount", b =>
                 {
                     b.Navigation("Permissions");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.Measurement", b =>
+                {
+                    b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("MMV.Domain.Optical.Prescription", b =>
+                {
+                    b.Navigation("Revisions");
                 });
 #pragma warning restore 612, 618
         }

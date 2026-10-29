@@ -5,7 +5,8 @@
 // serveur ; tout autre champ arrive « masqué » (nom seulement). Parseurs stricts = garde à l'exécution.
 import { type ApiResult, requestJson } from "./client.ts";
 
-export type AuditModule = "clients" | "appointments";
+/** 04-B : `optical` servi seulement avec `audit.read` ET `optical.read` (sinon exclu par le serveur, filtre refusé 403). */
+export type AuditModule = "clients" | "appointments" | "optical";
 
 export interface AuditChange {
   field: string;

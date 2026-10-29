@@ -14,6 +14,19 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   "appointment.responsible_changed": "Changement de responsable",
   "appointment.cancelled": "Rendez-vous annulé",
   "appointment.restored": "Rendez-vous rétabli",
+  // 04-B : dossier optique (servi avec audit.read ET optical.read ; aucune valeur optique dans le journal).
+  "prescription.created": "Ordonnance médicale créée",
+  "prescription.draft_updated": "Ordonnance médicale : brouillon modifié",
+  "prescription.confirmed": "Ordonnance médicale confirmée",
+  "prescription.rectification_started": "Ordonnance médicale : modification ouverte",
+  "prescription.rectification_discarded": "Ordonnance médicale : modification abandonnée",
+  "prescription.invalidated": "Ordonnance médicale invalidée",
+  "measurement.created": "Mesure magasin créée",
+  "measurement.draft_updated": "Mesure magasin : brouillon modifié",
+  "measurement.confirmed": "Mesure magasin confirmée",
+  "measurement.rectification_started": "Mesure magasin : modification ouverte",
+  "measurement.rectification_discarded": "Mesure magasin : modification abandonnée",
+  "measurement.invalidated": "Mesure magasin invalidée",
 };
 
 export const AUDIT_FIELD_LABELS: Record<string, string> = {
@@ -32,6 +45,13 @@ export const AUDIT_FIELD_LABELS: Record<string, string> = {
   responsibleUserId: "Responsable",
   cancellationReason: "Motif d'annulation",
   clientId: "Client",
+  provenance: "Provenance",
+  values: "Valeurs optiques",
+  comment: "Commentaire",
+  revisionNo: "Révision",
+  baseRevisionNo: "Révision de départ",
+  rectificationReasonCode: "Motif de la modification",
+  invalidationReasonCode: "Motif d'invalidation",
 };
 
 export const auditActionLabel = (action: string) => AUDIT_ACTION_LABELS[action] ?? `Action « ${action} »`;

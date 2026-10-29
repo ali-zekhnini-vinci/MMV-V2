@@ -1,5 +1,6 @@
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 
@@ -23,6 +24,16 @@ internal static class AuthSetup
 
     /// <summary>Policy Audit (03-D2) : droit dédié ; aucun droit métier ni <c>system.admin</c> ne la satisfait.</summary>
     public const string AuditReadPolicy = "AuditRead";
+
+    /// <summary>
+    /// Policies du dossier optique (04-B, D-04-05) : chacune exige <c>clients.read</c> ET <c>optical.read</c>, plus le
+    /// droit de l'opération ; aucun droit n'en implique un autre et <c>system.admin</c> n'en satisfait aucune. Contrôle
+    /// AVANT toute lecture : un identifiant inconnu et un identifiant non autorisé donnent le même 403.
+    /// </summary>
+    public const string OpticalReadPolicy = "OpticalRead";
+    public const string OpticalPrescriptionsWritePolicy = "OpticalPrescriptionsWrite";
+    public const string OpticalMeasurementsWritePolicy = "OpticalMeasurementsWrite";
+    public const string OpticalInvalidatePolicy = "OpticalInvalidate";
 
     /// <summary>Limitation de débit de <c>POST /api/auth/login</c>, par adresse IP distante.</summary>
     public const string LoginRateLimitPolicy = "login";
@@ -58,7 +69,11 @@ internal static class AuthSetup
                 .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AppointmentsCancel))
             .AddPolicy(AuditReadPolicy, policy => policy
                 .RequireAuthenticatedUser()
-                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AuditRead));
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.AuditRead))
+            .AddPolicy(OpticalReadPolicy, policy => RequireOptical(policy))
+            .AddPolicy(OpticalPrescriptionsWritePolicy, policy => RequireOptical(policy, Permissions.OpticalPrescriptionsWrite))
+            .AddPolicy(OpticalMeasurementsWritePolicy, policy => RequireOptical(policy, Permissions.OpticalMeasurementsWrite))
+            .AddPolicy(OpticalInvalidatePolicy, policy => RequireOptical(policy, Permissions.OpticalInvalidate));
 
         var permitPerMinute = configuration.GetValue("Auth:LoginAttemptsPerMinute", 10);
         services.AddRateLimiter(options =>
@@ -77,5 +92,19 @@ internal static class AuthSetup
         });
 
         return services;
+    }
+
+    /// <summary>Chaque exigence est cumulative (toutes les revendications sont exigées).</summary>
+    private static AuthorizationPolicyBuilder RequireOptical(AuthorizationPolicyBuilder policy, params string[] operations)
+    {
+        policy.RequireAuthenticatedUser()
+            .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.ClientsRead)
+            .RequireClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.OpticalRead);
+        foreach (var operation in operations)
+        {
+            policy.RequireClaim(SessionAuthenticationHandler.PermissionClaim, operation);
+        }
+
+        return policy;
     }
 }

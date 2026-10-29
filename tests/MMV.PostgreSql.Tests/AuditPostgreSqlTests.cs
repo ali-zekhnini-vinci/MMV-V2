@@ -195,22 +195,28 @@ public sealed class AuditPostgreSqlTests(ITestOutputHelper output)
     /// Le script exact 0005 produit EXACTEMENT l'état attendu par <see cref="SchemaState.AuditJournalDifferences"/>
     /// (relations, colonnes, contraintes, index, fonction, déclencheurs, historique), relu dans les catalogues de la
     /// transaction annulée : le contrôle « PostMigration » sera juste le jour où le propriétaire appliquera 0005.
+    /// Phase 04-C (O-04-50) : sur une base déjà migrée en 0006, l'état attendu est celui de 0006 (le script 0005,
+    /// gardé par l'historique, n'y change rien).
     /// </summary>
     [PostgreSqlFact(nameof(PostgreSqlTarget.Test))]
     public async Task AuditJournalScript_ProducesExactlyTheExpectedSchema()
     {
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var connection = (NpgsqlConnection)fixture.Context.Database.GetDbConnection();
+        var opticalApplied = await fixture.ScalarAsync<bool>("SELECT to_regclass('optical.prescriptions') IS NOT NULL");
+        IReadOnlyList<string> Differences(SchemaState s) => opticalApplied
+            ? s.OpticalModuleDifferences(PostgreSqlTarget.Test.Role)
+            : s.AuditJournalDifferences(PostgreSqlTarget.Test.Role);
 
         var state = await SchemaInspection.ReadAsync(connection, CancellationToken.None);
 
-        output.WriteLine($"0005 simulée : {fixture.AuditJournalSimulated}");
-        Assert.Empty(state.AuditJournalDifferences(PostgreSqlTarget.Test.Role));
+        output.WriteLine($"0005 simulée : {fixture.AuditJournalSimulated} ; 0006 appliquée : {opticalApplied}");
+        Assert.Empty(Differences(state));
 
         // Idempotence : une seconde exécution du script à appliquer ne change rien.
         await fixture.ExecutePendingScriptAsync(RolledBackScope.AuditJournalScript);
         var again = await SchemaInspection.ReadAsync(connection, CancellationToken.None);
-        Assert.Empty(again.AuditJournalDifferences(PostgreSqlTarget.Test.Role));
+        Assert.Empty(Differences(again));
         Assert.Equal(state.ToString(), again.ToString());
     }
 

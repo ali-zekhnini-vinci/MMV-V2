@@ -1,0 +1,56 @@
+# ./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Database mmv_v2_test -Script docs/phase/04/sql/0006_OpticalModule.idempotent.sql -Sha256 927ed7cc…706c013 -LockTimeout 5s
+# début 2026-10-28T22:48:28.50+01:00, fin 22:48:28.96+01:00 ; appliqué après contrôle conforme de mmv_v2_dev
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : docs/phase/04/sql/0006_OpticalModule.idempotent.sql (SHA-256 927ED7CCB975B15EED18F6B2BCEE41FAF08ECB23C1C4F9F1F80A2EFA1706C013)
+LOCK_TIMEOUT : 5s
+START TRANSACTION
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+COMMIT
+APPLIQUE : exit 0
+MIGRATIONS : 20261015125000_InitialBaseline, 20261015223849_AuthIdentity, 20261016230630_ClientsModule, 20261017150504_AppointmentsModule, 20261018163108_AuditJournal, 20261027134615_OpticalModule

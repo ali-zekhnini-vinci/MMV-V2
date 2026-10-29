@@ -133,10 +133,26 @@ public static class AuditActions
     public const string AppointmentCancelled = "appointment.cancelled";
     public const string AppointmentRestored = "appointment.restored";
 
+    /// <summary>
+    /// Dossier optique (04-B) : module <c>optical</c>, entités <c>prescription</c> et <c>measurement</c>, actions
+    /// <c>&lt;entité&gt;.&lt;verbe&gt;</c> (<see cref="OpticalVerbs"/>). Aucune valeur optique, aucun nom de prescripteur, aucune
+    /// note ni commentaire dans les champs modifiés ; servis seulement avec <c>audit.read</c> ET <c>optical.read</c>.
+    /// </summary>
+    public const string OpticalModule = "optical";
+    public const string PrescriptionEntity = "prescription";
+    public const string MeasurementEntity = "measurement";
+
+    public static IReadOnlyList<string> OpticalVerbs { get; } =
+        ["created", "draft_updated", "confirmed", "rectification_started", "rectification_discarded", "invalidated"];
+
+    public static string Optical(string entity, string verb) => $"{entity}.{verb}";
+
     public static IReadOnlyList<string> All { get; } =
     [
         ClientCreated, ClientUpdated, ClientArchived, ClientReactivated,
         AppointmentCreated, AppointmentUpdated, AppointmentMoved, AppointmentResponsibleChanged, AppointmentCancelled, AppointmentRestored,
+        .. OpticalVerbs.Select(verb => Optical(PrescriptionEntity, verb)),
+        .. OpticalVerbs.Select(verb => Optical(MeasurementEntity, verb)),
     ];
 }
 
@@ -146,7 +162,9 @@ public static class AuditActions
 /// du dossier). Tous les champs d'identité, de contact, d'adresse, de date de naissance et toutes les zones de texte
 /// libre (notes, motif d'annulation) sont journalisés par leur NOM seulement (valeur masquée) : la valeur courante
 /// reste consultable sur la fiche selon les droits Clients, l'historique ne la duplique pas. Aucune donnée de santé,
-/// aucun mot de passe, jeton ni secret n'entre dans le journal.
+/// aucun mot de passe, jeton ni secret n'entre dans le journal. 04-B : seules les données de GESTION du dossier optique
+/// sont conservées (numéros de révision, motifs codifiés) ; valeurs optiques, provenance, notes et commentaires ne sont
+/// cités que par groupe masqué (<c>provenance</c>, <c>values</c>, <c>notes</c>, <c>comment</c>).
 /// </summary>
 public static class AuditFieldPolicy
 {
@@ -154,6 +172,7 @@ public static class AuditFieldPolicy
     public static IReadOnlySet<string> ValuesKept { get; } = new HashSet<string>(StringComparer.Ordinal)
     {
         "startsAtUtc", "durationMinutes", "reasonCode", "responsibleUserId",
+        "revisionNo", "baseRevisionNo", "rectificationReasonCode", "invalidationReasonCode",
     };
 
     public static AuditChange Change(string field, string? oldValue, string? newValue) =>

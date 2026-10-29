@@ -1,0 +1,15 @@
+# MMV V2 — dossier G04-SQL (migration 0006_OpticalModule, phase 04-B) — manifeste SHA-256
+# Fichiers du depot (LF, tels que commites). Verification depuis la racine : sha256sum -c docs/phase/04/sql/0006_MANIFEST.sha256 (Git Bash) ou Get-FileHash.
+# NON APPLIQUE : aucune execution sur mmv_v2_dev / mmv_v2_test avant le GO G04-SQL du proprietaire (27/10/2026).
+# Script a appliquer : docs/phase/04/sql/0006_OpticalModule.idempotent.sql (premiere ligne ci-dessous).
+927ed7ccb975b15eed18f6b2bcee41faf08ecb23c1c4f9f1f80a2efa1706c013  docs/phase/04/sql/0006_OpticalModule.idempotent.sql
+7c5aba78035c39bf834311cc089c4eabc71e1f69363b685a41c3c9fb78aa221b  docs/phase/04/sql/0006_OpticalModule.sql
+cc1f1687c8e2c58be0705bdd3002d7295fec17b5835a730ca5782579e695ff89  docs/phase/04/sql/0006_OpticalModule.verify.sql
+600d7d62378b2e1cb608d3fc6c9d572c9a8462e6942a3df7a5ace65db1faaf1f  docs/phase/04/sql/0006_OpticalModule.schema-diff.txt
+ff706e5c0aefb93aba654a64216dc8eda12f0d689cfbd07337b5082ee317b6cd  src/MMV.Infrastructure/Persistence/Migrations/20261027134615_OpticalModule.cs
+60feb9362826512037df76ef9a850616c004405cdb0ac78316985846fc32074a  src/MMV.Infrastructure/Persistence/Migrations/20261027134615_OpticalModule.Designer.cs
+35f500c204c972941382d001d7e5acd80307797eeef90329aee156a5e5695809  src/MMV.Infrastructure/Persistence/Migrations/MmvDbContextModelSnapshot.cs
+8e9a8832321a0f12f658da8e1225f5fb3891261aad2ba349de6feabe7821c064  src/MMV.Infrastructure/Optical/OpticalModel.cs
+e76ba7574f7ccf1ef5f5c4f1b8229fa9d2ec5d4a87bb9babbf4ca04d0c486e85  src/MMV.Domain/Identity/Permissions.cs
+7901986a6041b490ff55c7bd1ca172616a2ecaba8a89831693b910c1fa4cca52  scripts/Invoke-MmvSqlScript.ps1
+4bc8551a85be60b6f4b80054b15ad1c35deb36845ba4632ed50852ac4e2b8098  docs/phase/04/G04_SQL_DOSSIER.md

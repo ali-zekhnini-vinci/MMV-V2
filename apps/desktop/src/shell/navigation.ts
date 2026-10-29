@@ -90,15 +90,39 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 
 export const NAV_ITEMS: readonly NavItem[] = NAV_SECTIONS.flatMap((section) => section.items);
 
-export function findNavItem(id: ViewId): NavItem {
-  const item = NAV_ITEMS.find((candidate) => candidate.id === id);
+/**
+ * Entrée « Ordonnances » quand le dossier optique RÉEL est activé pour la session (04-B : interrupteur de build et
+ * droits clients.read + optical.read, src/optical/opticalActivation.ts) : « Dossiers optiques » sous /optique.
+ */
+export const OPTICAL_NAV_ITEM: NavItem = {
+  id: "prescriptions",
+  path: "/optique",
+  label: "Dossiers optiques",
+  icon: ClipboardList,
+  availability: "available",
+  nested: true,
+};
+
+/** Sections du menu ; l'entrée reportée « Ordonnances » est remplacée par le dossier optique s'il est activé. */
+export function navSections(opticalActive = false): readonly NavSection[] {
+  return opticalActive
+    ? NAV_SECTIONS.map((section) => ({ ...section, items: section.items.map((item) => (item.id === "prescriptions" ? OPTICAL_NAV_ITEM : item)) }))
+    : NAV_SECTIONS;
+}
+
+export function navItems(opticalActive = false): readonly NavItem[] {
+  return opticalActive ? navSections(true).flatMap((section) => section.items) : NAV_ITEMS;
+}
+
+export function findNavItem(id: ViewId, opticalActive = false): NavItem {
+  const item = navItems(opticalActive).find((candidate) => candidate.id === id);
   if (!item) throw new Error(`Entrée de navigation inconnue : ${id}`);
   return item;
 }
 
 /** Entrée correspondant à une route du shell ; `undefined` pour une route inconnue (redirigée vers l'Accueil). */
-export function findNavItemByPath(pathname: string): NavItem | undefined {
-  return NAV_ITEMS.find(
+export function findNavItemByPath(pathname: string, opticalActive = false): NavItem | undefined {
+  return navItems(opticalActive).find(
     (candidate) => candidate.path === pathname || (candidate.nested === true && pathname.startsWith(`${candidate.path}/`)),
   );
 }
@@ -113,8 +137,8 @@ export function hasPermission(permissions: readonly string[], permission: string
 }
 
 /** Sections visibles pour ces permissions ; une section vide disparaît. */
-export function visibleSections(permissions: readonly string[]): NavSection[] {
-  return NAV_SECTIONS.map((section) => ({
+export function visibleSections(permissions: readonly string[], opticalActive = false): NavSection[] {
+  return navSections(opticalActive).map((section) => ({
     ...section,
     items: section.items.filter((item) => hasPermission(permissions, item.requires)),
   })).filter((section) => section.items.length > 0);
@@ -123,8 +147,8 @@ export function visibleSections(permissions: readonly string[]): NavSection[] {
 export type ViewAccess = "allowed" | "later" | "forbidden";
 
 /** Garde UI : décide de l'écran à monter, sans jamais accorder un droit côté serveur. */
-export function viewAccess(id: ViewId, permissions: readonly string[]): ViewAccess {
-  const item = findNavItem(id);
+export function viewAccess(id: ViewId, permissions: readonly string[], opticalActive = false): ViewAccess {
+  const item = findNavItem(id, opticalActive);
   if (!hasPermission(permissions, item.requires)) return "forbidden";
   return item.availability === "later" ? "later" : "allowed";
 }

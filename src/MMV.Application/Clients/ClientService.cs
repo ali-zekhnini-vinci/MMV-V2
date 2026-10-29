@@ -55,6 +55,13 @@ public interface IClientStore
     /// <summary>Client suivi pour modification, ou <c>null</c>.</summary>
     Task<Client?> FindForUpdateAsync(Guid id, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Archivage / réactivation (O-04-53) : ouvre la transaction de l'opération et verrouille la ligne du client AVANT sa
+    /// lecture. Une écriture optique en cours (verrou partagé du client) est attendue jusqu'à sa validation : l'état lu, la
+    /// date d'archivage et la validation sont postérieurs à cette écriture, jamais l'inverse.
+    /// </summary>
+    Task<IClientLifecycleLock> LockForLifecycleAsync(Guid id, CancellationToken cancellationToken);
+
     void Add(Client client);
 
     /// <summary>
@@ -62,6 +69,13 @@ public interface IClientStore
     /// (écriture concurrente), sans rien écrire. La référence et la nouvelle version sont relues.
     /// </summary>
     Task<bool> SaveChangesAsync(CancellationToken cancellationToken);
+}
+
+/// <summary>Transaction d'archivage / réactivation : verrou du client tenu jusqu'à la validation ou la libération.</summary>
+public interface IClientLifecycleLock : IAsyncDisposable
+{
+    /// <summary>Valide la transaction (après un enregistrement réussi) ; sans appel, elle est annulée à la libération.</summary>
+    Task CommitAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -142,6 +156,8 @@ public sealed class ClientService(IClientStore store, TimeProvider clock, IAudit
     private async Task<ClientWriteResult> ChangeLifecycleAsync(
         Guid id, uint version, bool archive, Guid userId, CancellationToken cancellationToken)
     {
+        // Verrou du client d'abord (O-04-53) : lecture, date et enregistrement après toute écriture optique en cours.
+        await using var transaction = await store.LockForLifecycleAsync(id, cancellationToken);
         var client = await store.FindForUpdateAsync(id, cancellationToken);
         if (client is null)
         {
@@ -170,7 +186,13 @@ public sealed class ClientService(IClientStore store, TimeProvider clock, IAudit
 
         Record(client, archive ? AuditActions.ClientArchived : AuditActions.ClientReactivated, [], userId, now);
 
-        return await SaveAsync(client, cancellationToken);
+        var result = await SaveAsync(client, cancellationToken);
+        if (result.Status == ClientWriteStatus.Success)
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        return result;
     }
 
     private async Task<ClientWriteResult> SaveAsync(Client client, CancellationToken cancellationToken) =>

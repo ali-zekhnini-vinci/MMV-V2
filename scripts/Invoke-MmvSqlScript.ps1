@@ -10,6 +10,8 @@
   - Contrôle AVANT écriture (lecture seule, côté serveur) : current_database(), current_user, port, version >= 18.
   - Exécution : psql -v ON_ERROR_STOP=1 -f <script>. Les scripts EF Core sont transactionnels
     (START TRANSACTION … COMMIT) : en cas d'erreur, rien n'est appliqué.
+  - Délai d'attente de verrou (04-B) : lock_timeout transmis par PGOPTIONS (défaut 5s, -LockTimeout) ; un verrou
+    non obtenu à temps fait échouer le script, transaction annulée, au lieu de bloquer les postes.
   - Aucune migration au démarrage de l'API, aucun EnsureCreated().
   - Après COMMIT : liste des migrations relue en lecture seule (requête transmise par l'entrée standard, O-03-16).
   - Tests (psql simulé, aucune connexion) : scripts/tests/Invoke-MmvSqlScript.Tests.ps1.
@@ -24,7 +26,8 @@ param(
     [Parameter(Mandatory)] [ValidateSet('mmv_v2_dev', 'mmv_v2_test')] [string] $Database,
     [Parameter(Mandatory)] [string] $Script,
     [Parameter(Mandatory)] [string] $Sha256,
-    [string] $Psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe'
+    [string] $Psql = 'C:\Program Files\PostgreSQL\18\bin\psql.exe',
+    [ValidatePattern('^[1-9][0-9]{0,5}(ms|s)$')] [string] $LockTimeout = '5s'
 )
 $ErrorActionPreference = 'Stop'
 
@@ -45,6 +48,7 @@ if ($port -ne '5433') { throw "Port refuse (5433 attendu)." }
 if ($db -ne $Database -or $user -ne $Database) { throw "Cible refusee : base et role '$Database' attendus." }
 
 $env:PGPASSWORD = & $get @('Password')
+$env:PGOPTIONS = "-c lock_timeout=$LockTimeout"
 try {
     $common = @('-h', 'localhost', '-p', '5433', '-U', $Database, '-d', $Database, '-X', '-v', 'ON_ERROR_STOP=1')
     $identity = & $Psql @common -A -t -c "SELECT current_database() || '|' || current_user || '|' || inet_server_port() || '|' || current_setting('server_version_num')"
@@ -55,6 +59,7 @@ try {
     }
     "PRECHECK OK : $($parts[0]) / $($parts[1]) / port $($parts[2]) / server_version_num $($parts[3])"
     "SCRIPT : $Script (SHA-256 $actualHash)"
+    "LOCK_TIMEOUT : $LockTimeout"
     & $Psql @common -f $Script
     if ($LASTEXITCODE -ne 0) { throw "Echec du script (psql exit $LASTEXITCODE) : transaction annulee." }
     "APPLIQUE : exit 0"
@@ -72,5 +77,6 @@ try {
 }
 finally {
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+    Remove-Item Env:PGOPTIONS -ErrorAction SilentlyContinue
     $b.Clear()
 }

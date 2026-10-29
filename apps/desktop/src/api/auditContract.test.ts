@@ -73,7 +73,7 @@ describe("contrat OpenAPI historique des actions (03-D2) ↔ types TypeScript", 
     assert.deepEqual(sorted(Object.keys(route.get.responses)), ["200", "400", "401", "403"]);
     const parameters = Object.fromEntries((route.get.parameters ?? []).map((parameter) => [parameter.name, parameter]));
     assert.deepEqual(sorted(Object.keys(parameters)), ["clientId", "from", "module", "page", "pageSize", "to"]);
-    assert.deepEqual(parameters.module.schema.enum, ["clients", "appointments"]);
+    assert.deepEqual(parameters.module.schema.enum, ["clients", "appointments", "optical"]);
   });
 
   test("parseur strict : exemple conforme accepté ; champ masqué porteur d'une valeur, champ manquant refusés", () => {

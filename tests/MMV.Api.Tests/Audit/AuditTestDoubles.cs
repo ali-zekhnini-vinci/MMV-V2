@@ -53,7 +53,7 @@ internal sealed class InMemoryAuditStore : IAuditStore
     public Task<AuditPage> ListForClientAsync(AuditQuery query, CancellationToken cancellationToken)
     {
         var matching = Events
-            .Where(e => e.ClientId == query.ClientId && (query.Module is null || e.Module == query.Module)
+            .Where(e => e.ClientId == query.ClientId && (query.Module is null || e.Module == query.Module) && !query.ExcludedModules.Contains(e.Module)
                         && (query.FromUtc is null || e.OccurredAtUtc >= query.FromUtc) && (query.ToUtc is null || e.OccurredAtUtc < query.ToUtc))
             .OrderByDescending(e => e.OccurredAtUtc).ThenByDescending(e => e.Id)
             .ToList();

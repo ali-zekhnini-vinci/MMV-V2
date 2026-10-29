@@ -1,0 +1,767 @@
+[
+  {
+    "name": "01-banc-accueil",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Banc 04-A — dossier optique (prototype)"
+    },
+    "errors": []
+  },
+  {
+    "name": "02-etat05-fiche-dossier-optique",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-ALPHA Camille"
+    },
+    "errors": []
+  },
+  {
+    "name": "10-etat01-liste-globale",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "20-etat19-detail-rx-revision2",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "21-gap13-rectification-en-cours",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0002"
+    },
+    "errors": []
+  },
+  {
+    "name": "30-etat10-formulaire-ordonnance",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "31-gap02-formulaire-mesure",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "01-banc-accueil-sombre",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Banc 04-A — dossier optique (prototype)"
+    },
+    "errors": []
+  },
+  {
+    "name": "02-etat05-fiche-dossier-optique-sombre",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-ALPHA Camille"
+    },
+    "errors": []
+  },
+  {
+    "name": "10-etat01-liste-globale-sombre",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "20-etat19-detail-rx-revision2-sombre",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "21-gap13-rectification-en-cours-sombre",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0002"
+    },
+    "errors": []
+  },
+  {
+    "name": "30-etat10-formulaire-ordonnance-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "31-gap02-formulaire-mesure-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle mesure magasin"
+    },
+    "errors": []
+  },
+  {
+    "name": "03-etat07-fiche-vide-par-section",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-CHARLIE Noa"
+    },
+    "errors": []
+  },
+  {
+    "name": "04-etat18-client-archive",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-DELTA Alix"
+    },
+    "errors": []
+  },
+  {
+    "name": "05-gap01-choix-du-type",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-ALPHA Camille"
+    },
+    "errors": []
+  },
+  {
+    "name": "11-etat04-filtres-invalides-inclus-resume",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "12-etat03-recherche",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "13-etat06-aucun-resultat",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "14-etat08-chargement",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "15-etat09-erreur",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "16-etats12-13-selection-client",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "22-gap14-piece-invalidee",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0002"
+    },
+    "errors": []
+  },
+  {
+    "name": "23-gap07-revisions-comparaison",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "24-gap08-etat30-invalide",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0003"
+    },
+    "errors": []
+  },
+  {
+    "name": "25-etats16-21-brouillon-partiel",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0004"
+    },
+    "errors": []
+  },
+  {
+    "name": "26-gap10-confirmation",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0004"
+    },
+    "errors": []
+  },
+  {
+    "name": "27-confirmation-refusee-422",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0004"
+    },
+    "errors": []
+  },
+  {
+    "name": "28-gap03-detail-mesure",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Mesure magasin MES-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "29-etat23-rectifier-motif",
+    "notes": [
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0006"
+    },
+    "errors": []
+  },
+  {
+    "name": "32-etats28-29-invalider",
+    "notes": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "32b-etat31-erreur-invalidation",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0006"
+    },
+    "errors": []
+  },
+  {
+    "name": "33-gap06-apercu-piece-synthetique",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "34-gap06-format-refuse",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "35-etat22-lecture-seule-sans-pieces",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0002"
+    },
+    "errors": []
+  },
+  {
+    "name": "36-gap05-sans-droit-optique-fiche",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-ALPHA Camille"
+    },
+    "errors": []
+  },
+  {
+    "name": "37-gap05-acces-direct-refuse",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Accès non autorisé"
+    },
+    "errors": []
+  },
+  {
+    "name": "38-etats17-35-erreurs-sous-champ",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "38b-etat17-bandeau-erreurs",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "39-etat14-enregistrement-en-cours",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "40-gap09-conflit-deux-postes",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Brouillon — ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "41-etat26-garde-de-sortie",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "42-etat27-revision-enregistree",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0006"
+    },
+    "errors": []
+  },
+  {
+    "name": "43-etat34-focus-visible",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "50-etat32-fenetre-reduite-formulaire",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "51-etat32-fenetre-reduite-formulaire-sombre",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "52-fenetre-reduite-detail",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0002"
+    },
+    "errors": []
+  },
+  {
+    "name": "53-1920-detail-rx",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Ordonnance médicale RX-FICTIF-0001"
+    },
+    "errors": []
+  },
+  {
+    "name": "54-1920-fiche-dossier-optique-sombre",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "FICTIF-ALPHA Camille"
+    },
+    "errors": []
+  },
+  {
+    "name": "60-zoom125-formulaire",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "61-zoom125-liste-sombre",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  },
+  {
+    "name": "60-zoom150-formulaire",
+    "notes": [
+      "ok",
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Nouvelle ordonnance médicale"
+    },
+    "errors": []
+  },
+  {
+    "name": "61-zoom150-liste-sombre",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC DE DÉMONSTRATION 04-A (prototype, données fictives)",
+      "h1": "Dossiers optiques"
+    },
+    "errors": []
+  }
+]

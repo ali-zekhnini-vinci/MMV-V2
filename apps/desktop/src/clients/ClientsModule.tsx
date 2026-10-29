@@ -6,7 +6,11 @@ import { AlertTriangle, RefreshCw, SearchX, ServerOff, ShieldAlert } from "lucid
 import { useCallback, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router";
 import { Button } from "../components/ui/button.tsx";
+import { ClientOpticalTab } from "../optical/ClientOpticalTab.tsx";
+import { useOpticalActivation } from "../optical/opticalActivation.ts";
+import { readClientTab } from "../optical/opticalUi.ts";
 import { ClientDetailView } from "./ClientDetailView.tsx";
+import { clientDisplayName } from "./clientForm.ts";
 import { ClientFormView } from "./ClientFormView.tsx";
 import { useClientPermissions } from "./clientPermissions.ts";
 import { useClientDetail } from "./clientQueries.ts";
@@ -61,6 +65,8 @@ function ClientRoute({ view }: { view: "detail" | "edit" }) {
   const navigate = useNavigate();
   const { enabled } = useClientsService();
   const { canWrite } = useClientPermissions();
+  const location = useLocation();
+  const opticalOn = useOpticalActivation();
   const query = useClientDetail(clientId);
   const back = (
     <Button onClick={() => navigate("/clients")}>Retour à la liste</Button>
@@ -113,5 +119,14 @@ function ClientRoute({ view }: { view: "detail" | "edit" }) {
   if (view === "edit" && (client.status === "archived" || !canWrite)) return <Navigate to={`/clients/${client.id}`} replace />;
   // Le formulaire conserve la version lue à son ouverture (voir ClientFormView) : un rafraîchissement en
   // arrière-plan ne remplace ni les saisies ni le jeton de concurrence.
-  return view === "edit" ? <ClientFormView key={client.id} mode="edit" client={client} /> : <ClientDetailView client={client} />;
+  if (view === "edit") return <ClientFormView key={client.id} mode="edit" client={client} />;
+  // 04-B : onglet « Dossier optique » seulement si le dossier optique est activé pour la session ; sinon l'onglet
+  // reporté « Ordonnances — phase ultérieure » est conservé (O-04-16).
+  return (
+    <ClientDetailView
+      client={client}
+      initialTab={readClientTab(location.state)}
+      opticalTab={opticalOn ? <ClientOpticalTab client={client} clientName={clientDisplayName(client)} /> : undefined}
+    />
+  );
 }
