@@ -103,26 +103,40 @@ export const OPTICAL_NAV_ITEM: NavItem = {
   nested: true,
 };
 
-/** Sections du menu ; l'entrée reportée « Ordonnances » est remplacée par le dossier optique s'il est activé. */
-export function navSections(opticalActive = false): readonly NavSection[] {
-  return opticalActive
-    ? NAV_SECTIONS.map((section) => ({ ...section, items: section.items.map((item) => (item.id === "prescriptions" ? OPTICAL_NAV_ITEM : item)) }))
-    : NAV_SECTIONS;
+/**
+ * Entrées « Produits » et « Inventaire » quand le module Catalogue & stock RÉEL est activé pour la session (Phase 05 :
+ * interrupteur de build VITE_MMV_CATALOG_MODULE et droit catalog.read ou stock.read, src/catalog/catalogAccess.ts).
+ */
+export const PRODUCTS_NAV_ITEM: NavItem = { id: "products", path: "/produits", label: "Produits", icon: Package, availability: "available", nested: true };
+export const INVENTORY_NAV_ITEM: NavItem = { id: "inventory", path: "/inventaire", label: "Stock & inventaires", icon: Boxes, availability: "available", nested: true };
+
+/**
+ * Sections du menu ; l'entrée reportée « Ordonnances » est remplacée par le dossier optique s'il est activé, « Produits »
+ * et « Inventaire » par le module Catalogue & stock s'il est activé.
+ */
+export function navSections(opticalActive = false, catalogActive = false): readonly NavSection[] {
+  if (!opticalActive && !catalogActive) return NAV_SECTIONS;
+  const replace = (item: NavItem): NavItem =>
+    opticalActive && item.id === "prescriptions" ? OPTICAL_NAV_ITEM
+    : catalogActive && item.id === "products" ? PRODUCTS_NAV_ITEM
+    : catalogActive && item.id === "inventory" ? INVENTORY_NAV_ITEM
+    : item;
+  return NAV_SECTIONS.map((section) => ({ ...section, items: section.items.map(replace) }));
 }
 
-export function navItems(opticalActive = false): readonly NavItem[] {
-  return opticalActive ? navSections(true).flatMap((section) => section.items) : NAV_ITEMS;
+export function navItems(opticalActive = false, catalogActive = false): readonly NavItem[] {
+  return opticalActive || catalogActive ? navSections(opticalActive, catalogActive).flatMap((section) => section.items) : NAV_ITEMS;
 }
 
-export function findNavItem(id: ViewId, opticalActive = false): NavItem {
-  const item = navItems(opticalActive).find((candidate) => candidate.id === id);
+export function findNavItem(id: ViewId, opticalActive = false, catalogActive = false): NavItem {
+  const item = navItems(opticalActive, catalogActive).find((candidate) => candidate.id === id);
   if (!item) throw new Error(`Entrée de navigation inconnue : ${id}`);
   return item;
 }
 
 /** Entrée correspondant à une route du shell ; `undefined` pour une route inconnue (redirigée vers l'Accueil). */
-export function findNavItemByPath(pathname: string, opticalActive = false): NavItem | undefined {
-  return navItems(opticalActive).find(
+export function findNavItemByPath(pathname: string, opticalActive = false, catalogActive = false): NavItem | undefined {
+  return navItems(opticalActive, catalogActive).find(
     (candidate) => candidate.path === pathname || (candidate.nested === true && pathname.startsWith(`${candidate.path}/`)),
   );
 }
@@ -137,8 +151,8 @@ export function hasPermission(permissions: readonly string[], permission: string
 }
 
 /** Sections visibles pour ces permissions ; une section vide disparaît. */
-export function visibleSections(permissions: readonly string[], opticalActive = false): NavSection[] {
-  return navSections(opticalActive).map((section) => ({
+export function visibleSections(permissions: readonly string[], opticalActive = false, catalogActive = false): NavSection[] {
+  return navSections(opticalActive, catalogActive).map((section) => ({
     ...section,
     items: section.items.filter((item) => hasPermission(permissions, item.requires)),
   })).filter((section) => section.items.length > 0);
@@ -147,8 +161,8 @@ export function visibleSections(permissions: readonly string[], opticalActive = 
 export type ViewAccess = "allowed" | "later" | "forbidden";
 
 /** Garde UI : décide de l'écran à monter, sans jamais accorder un droit côté serveur. */
-export function viewAccess(id: ViewId, permissions: readonly string[], opticalActive = false): ViewAccess {
-  const item = findNavItem(id, opticalActive);
+export function viewAccess(id: ViewId, permissions: readonly string[], opticalActive = false, catalogActive = false): ViewAccess {
+  const item = findNavItem(id, opticalActive, catalogActive);
   if (!hasPermission(permissions, item.requires)) return "forbidden";
   return item.availability === "later" ? "later" : "allowed";
 }

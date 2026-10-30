@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_MMV_API_BASE_URL?: string;
   /** Interrupteur du dossier optique réel (04-B) : `enabled` seulement ; absent = « Ordonnances — phase ultérieure ». */
   readonly VITE_MMV_OPTICAL_MODULE?: string;
+  /** Interrupteur du module Catalogue & stock (Phase 05) : `enabled` seulement ; absent = « Produits » et « Inventaire » reportés. */
+  readonly VITE_MMV_CATALOG_MODULE?: string;
 }
 
 interface ImportMeta {

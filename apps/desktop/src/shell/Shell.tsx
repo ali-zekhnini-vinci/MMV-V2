@@ -19,6 +19,7 @@ import { UnavailableView } from "../views/UnavailableView.tsx";
 import { type LeaveGuard, NavigationGuardContext, type NavigationGuardRegistry } from "./navigationGuard.ts";
 import { isOpticalModuleActive, OpticalActivationContext } from "../optical/opticalActivation.ts";
 import { OpticalHost } from "../optical/OpticalHost.tsx";
+import { isCatalogModuleActive } from "../catalog/catalogAccess.ts";
 import { findNavItem, findNavItemByPath, type NavItem, navItems, routePattern, type ViewId, viewAccess, visibleSections } from "./navigation.ts";
 import { Sidebar } from "./Sidebar.tsx";
 import { StatusBar } from "./StatusBar.tsx";
@@ -33,6 +34,9 @@ const ClientsModule = lazy(() => import("../clients/ClientsModule.tsx").then((mo
 const AppointmentsModule = lazy(() => import("../appointments/AppointmentsModule.tsx").then((module) => ({ default: module.AppointmentsModule })));
 // Dossier optique (04-B) : écrans chargés à la demande, montés seulement s'il est activé pour la session.
 const OpticalRoute = lazy(() => import("../optical/OpticalRoute.tsx").then((module) => ({ default: module.OpticalRoute })));
+// Catalogue & stock (Phase 05) : écrans chargés à la demande, montés seulement si le module est activé pour la session.
+const ProductsModule = lazy(() => import("../catalog/CatalogModules.tsx").then((module) => ({ default: module.ProductsModule })));
+const StockModule = lazy(() => import("../catalog/CatalogModules.tsx").then((module) => ({ default: module.StockModule })));
 
 /** En dessous de cette largeur (CSS px, zoom compris), la sidebar démarre réduite (handoff §10). */
 export const COLLAPSE_BELOW_PX = 1280;
@@ -63,8 +67,10 @@ function ShellLayout({ session }: { session: SessionInfo }) {
   const { user } = session;
   // Dossier optique réel : interrupteur de build ET droits de la session ; sinon entrée « Ordonnances » reportée.
   const opticalOn = isOpticalModuleActive(user.permissions);
-  const sections = visibleSections(user.permissions, opticalOn);
-  const current: ViewId = findNavItemByPath(location.pathname, opticalOn)?.id ?? "home";
+  // Catalogue & stock réel : interrupteur de build ET droit de lecture ; sinon « Produits » / « Inventaire » reportés.
+  const catalogOn = isCatalogModuleActive(user.permissions);
+  const sections = visibleSections(user.permissions, opticalOn, catalogOn);
+  const current: ViewId = findNavItemByPath(location.pathname, opticalOn, catalogOn)?.id ?? "home";
 
   // Garde de sortie (formulaire modifié) : consultée avant tout changement d'entrée de menu.
   const leaveGuard = useRef<LeaveGuard | null>(null);
@@ -82,7 +88,7 @@ function ShellLayout({ session }: { session: SessionInfo }) {
 
   const goTo = useCallback(
     async (id: ViewId) => {
-      routerNavigate(findNavItem(id, opticalOn).path);
+      routerNavigate(findNavItem(id, opticalOn, catalogOn).path);
       // L'écran Comptes interroge lui-même l'API protégée ; les autres revalident la session
       // (révocation ou désactivation détectée dès la navigation, pas seulement à l'expiration).
       if (id === "accounts") return;
@@ -90,7 +96,7 @@ function ShellLayout({ session }: { session: SessionInfo }) {
       await refreshSession();
       setVerifyingSession(false);
     },
-    [opticalOn, refreshSession, routerNavigate],
+    [opticalOn, catalogOn, refreshSession, routerNavigate],
   );
 
   const navigate = useCallback(
@@ -109,7 +115,7 @@ function ShellLayout({ session }: { session: SessionInfo }) {
 
   // Garde UI par route : elle choisit l'écran à monter, le serveur reste seul juge des droits.
   const renderView = (item: NavItem) => {
-    const access = viewAccess(item.id, user.permissions, opticalOn);
+    const access = viewAccess(item.id, user.permissions, opticalOn, catalogOn);
     if (access === "forbidden") return <ForbiddenView reason="Votre compte ne dispose pas du droit requis pour cet écran." />;
     if (access === "later") return <UnavailableView label={item.label} note={item.note} />;
     if (item.id === "clients") {
@@ -133,6 +139,20 @@ function ShellLayout({ session }: { session: SessionInfo }) {
         </Suspense>
       );
     }
+    if (item.id === "products" && catalogOn) {
+      return (
+        <Suspense fallback={<p role="status" className="view__muted">Chargement du catalogue…</p>}>
+          <ProductsModule permissions={user.permissions} />
+        </Suspense>
+      );
+    }
+    if (item.id === "inventory" && catalogOn) {
+      return (
+        <Suspense fallback={<p role="status" className="view__muted">Chargement du stock…</p>}>
+          <StockModule permissions={user.permissions} />
+        </Suspense>
+      );
+    }
     if (item.id === "accounts") return <AccountsView />;
     if (item.id === "diagnostic") return <DiagnosticView baseUrl={baseUrl} health={health} />;
     return <HomeView user={user} />;
@@ -140,7 +160,7 @@ function ShellLayout({ session }: { session: SessionInfo }) {
 
   const routes = (
     <Routes>
-      {navItems(opticalOn).map((item) => (
+      {navItems(opticalOn, catalogOn).map((item) => (
         <Route key={item.id} path={routePattern(item)} element={renderView(item)} />
       ))}
       <Route path="*" element={<Navigate to="/" replace />} />
