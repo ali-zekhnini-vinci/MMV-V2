@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MMV.Application.Appointments;
 using MMV.Application.Audit;
+using MMV.Application.Catalog;
+using MMV.Infrastructure.Catalog;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
 using MMV.Application.Optical;
@@ -74,6 +76,22 @@ public static class DependencyInjection
         services.TryAddScoped<PrescriptionService>();
         services.TryAddScoped<MeasurementService>();
         services.TryAddScoped<OpticalQueryService>();
+
+        // Phase 05 : catalogue, tarifs, fournisseurs, stock, inventaires, import CSV — même contexte EF (même transaction que l'audit).
+        services.TryAddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
+        services.TryAddScoped<ICatalogStore, CatalogStore>();
+        services.TryAddScoped<IPricingStore, PricingStore>();
+        services.TryAddScoped<IStockStore, StockStore>();
+        services.TryAddScoped<IInventoryStore, InventoryStore>();
+        services.TryAddScoped<IImportStore, ImportStore>();
+        services.TryAddScoped<ICatalogReadStore, CatalogReadStore>();
+        services.TryAddScoped<CatalogService>();
+        services.TryAddScoped<SupplierService>();
+        services.TryAddScoped<PricingService>();
+        services.TryAddScoped<StockService>();
+        services.TryAddScoped<InventoryService>();
+        services.TryAddScoped<ImportService>();
+        services.TryAddScoped<ICatalogQuery, CatalogQuery>();
 
         return services;
     }

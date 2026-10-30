@@ -9,7 +9,8 @@ namespace MMV.Domain.Identity;
 /// droit DÉDIÉ à la lecture du journal d'audit, distinct des droits métier (lire un client ou un rendez-vous ne donne
 /// pas son historique) et de <see cref="SystemAdmin"/>. Phase 04-B (D-04-05, mandat GO du 27/10/2026) : quatre droits
 /// du dossier optique, explicites, combinés par le serveur avec <see cref="ClientsRead"/> ; aucun n'en implique un autre
-/// et <see cref="SystemAdmin"/> n'en donne aucun. Aucune autre permission métier (caisse, ventes, stock) n'est définie ici.
+/// et <see cref="SystemAdmin"/> n'en donne aucun. Phase 05 : seize droits Catalogue, Tarifs, Coûts, Fournisseurs, Stock
+/// et Inventaires (<see cref="Phase05"/>). Aucune permission de caisse ni de vente n'est définie ici.
 /// </summary>
 public static class Permissions
 {
@@ -48,12 +49,71 @@ public static class Permissions
     /// <summary>Invalidation motivée d'une ordonnance ou d'une mesure (aucune suppression physique ; 04-B).</summary>
     public const string OpticalInvalidate = "optical.invalidate";
 
+    // ---------- Phase 05 (Q16, D-05-11 ; liste QR-05 appliquée par le mandat du 30/10/2026) ----------
+    // Seize droits distincts ; aucun n'en implique un autre et system.admin n'en donne aucun. Le coefficient est un coût
+    // (prix HT ÷ coefficient = prix d'achat) : il suit costs.read / costs.write.
+
+    /// <summary>Catalogue : magasins, familles, référentiel verres, modèles, variantes, prix de vente HT, disponibilité.</summary>
+    public const string CatalogRead = "catalog.read";
+
+    /// <summary>Création et modification des modèles, variantes, politiques et rattachements fournisseurs.</summary>
+    public const string CatalogWrite = "catalog.write";
+
+    /// <summary>Archivage et réactivation des modèles et variantes (aucune suppression).</summary>
+    public const string CatalogArchive = "catalog.archive";
+
+    /// <summary>Référentiel configurable des verres (fabricants, gammes, indices, traitements).</summary>
+    public const string CatalogConfigure = "catalog.configure";
+
+    /// <summary>Import CSV contrôlé (dépôt, contrôle à blanc, application).</summary>
+    public const string CatalogImport = "catalog.import";
+
+    /// <summary>Prix de vente par coefficient : aperçu, enregistrement, recalcul explicite.</summary>
+    public const string PricingWrite = "pricing.write";
+
+    /// <summary>Prix de vente HT manuel.</summary>
+    public const string PricingManual = "pricing.manual";
+
+    /// <summary>Lecture des coûts : prix d'achat, coefficients, marges, prix fournisseurs, coûts de réception.</summary>
+    public const string CostsRead = "costs.read";
+
+    /// <summary>Écriture des coûts (prix d'achat HT, prix fournisseurs, coûts unitaires de réception).</summary>
+    public const string CostsWrite = "costs.write";
+
+    /// <summary>Fiches fournisseurs.</summary>
+    public const string SuppliersRead = "suppliers.read";
+
+    /// <summary>Création, modification, archivage des fournisseurs.</summary>
+    public const string SuppliersWrite = "suppliers.write";
+
+    /// <summary>Soldes, alertes, journal des mouvements, réceptions, sessions d'inventaire (lecture).</summary>
+    public const string StockRead = "stock.read";
+
+    /// <summary>Réceptions simples, entrées et sorties manuelles motivées.</summary>
+    public const string StockMovementsWrite = "stock.movements.write";
+
+    /// <summary>Ajustements motivés (quantité constatée + attendue) et seuils d'alerte.</summary>
+    public const string StockAdjust = "stock.adjust";
+
+    /// <summary>Ouverture de session et saisie des comptages d'inventaire.</summary>
+    public const string InventoryCount = "inventory.count";
+
+    /// <summary>Justification des écarts, validation atomique et abandon d'une session d'inventaire (distinct du comptage).</summary>
+    public const string InventoryValidate = "inventory.validate";
+
     public const int MaxLength = 64;
+
+    public static IReadOnlyList<string> Phase05 { get; } =
+        [
+            CatalogRead, CatalogWrite, CatalogArchive, CatalogConfigure, CatalogImport, PricingWrite, PricingManual, CostsRead, CostsWrite,
+            SuppliersRead, SuppliersWrite, StockRead, StockMovementsWrite, StockAdjust, InventoryCount, InventoryValidate,
+        ];
 
     public static IReadOnlyList<string> All { get; } =
         [
             SystemAdmin, ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead,
             OpticalRead, OpticalPrescriptionsWrite, OpticalMeasurementsWrite, OpticalInvalidate,
+            .. Phase05,
         ];
 
     /// <summary>Permissions attribuables par la commande de maintenance (jamais <see cref="SystemAdmin"/>).</summary>
@@ -61,6 +121,7 @@ public static class Permissions
         [
             ClientsRead, ClientsWrite, ClientsArchive, AppointmentsRead, AppointmentsWrite, AppointmentsCancel, AuditRead,
             OpticalRead, OpticalPrescriptionsWrite, OpticalMeasurementsWrite, OpticalInvalidate,
+            .. Phase05,
         ];
 
     public static bool IsKnown(string permission) => All.Contains(permission, StringComparer.Ordinal);

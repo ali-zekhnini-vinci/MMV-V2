@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using MMV.Api.Appointments;
 using MMV.Api.Audit;
+using MMV.Api.Catalog;
 using MMV.Api.Clients;
 using MMV.Api.Cors;
 using MMV.Api.Optical;
@@ -53,6 +54,10 @@ internal static class AuthEndpoints
 
         // Phase 04-B : dossier optique (ordonnances médicales et mesures magasin).
         api.MapOpticalEndpoints();
+
+        // Phase 05 : magasins, catalogue, tarifs, fournisseurs, stock, inventaires, import CSV.
+        api.MapCatalogEndpoints();
+        api.MapStockEndpoints();
 
         return app;
     }

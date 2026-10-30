@@ -210,11 +210,15 @@ public sealed class PermissionAdministrationServiceTests
     public void SystemAdmin_ImpliesNoClientsPermission()
     {
         // 17/10/2026 (03-B2, D-03-17) : + appointments.read|write|cancel ; 18/10/2026 (03-D2) : + audit.read ;
-        // 27/10/2026 (04-B) : + 4 droits optiques ; system.admin reste non attribuable.
+        // 27/10/2026 (04-B) : + 4 droits optiques ; 30/10/2026 (Phase 05) : + 16 droits catalogue / tarifs / coûts /
+        // fournisseurs / stock / inventaires ; system.admin reste non attribuable.
         Assert.Equal(
             [Permissions.ClientsRead, Permissions.ClientsWrite, Permissions.ClientsArchive,
              Permissions.AppointmentsRead, Permissions.AppointmentsWrite, Permissions.AppointmentsCancel, Permissions.AuditRead,
-             Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate],
+             Permissions.OpticalRead, Permissions.OpticalPrescriptionsWrite, Permissions.OpticalMeasurementsWrite, Permissions.OpticalInvalidate,
+             "catalog.read", "catalog.write", "catalog.archive", "catalog.configure", "catalog.import", "pricing.write", "pricing.manual",
+             "costs.read", "costs.write", "suppliers.read", "suppliers.write", "stock.read", "stock.movements.write", "stock.adjust",
+             "inventory.count", "inventory.validate"],
             Permissions.Grantable);
         Assert.DoesNotContain(Permissions.SystemAdmin, Permissions.Grantable);
     }
