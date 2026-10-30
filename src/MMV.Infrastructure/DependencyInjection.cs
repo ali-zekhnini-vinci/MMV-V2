@@ -92,6 +92,8 @@ public static class DependencyInjection
         services.TryAddScoped<InventoryService>();
         services.TryAddScoped<ImportService>();
         services.TryAddScoped<ICatalogQuery, CatalogQuery>();
+        services.TryAddScoped<IStoreAdministrationStore, StoreAdministrationStore>();
+        services.TryAddScoped<StoreAdministrationService>();
 
         return services;
     }

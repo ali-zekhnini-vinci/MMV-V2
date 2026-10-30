@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MMV.Application.Appointments;
+using MMV.Application.Catalog;
 using MMV.Application.Identity;
 using MMV.Domain.Identity;
 using MMV.Infrastructure;
@@ -27,6 +28,10 @@ using Npgsql;
 //   responsibles enable|disable <identifiant> : éligibilité EXPLICITE d'un collaborateur à être responsable de
 //                      rendez-vous, indépendante des permissions ; même cible stricte, mêmes contrôles et
 //                      confirmation que permissions grant ; jamais de suppression (désactivation logique).
+//   stores list      : lecture seule (même session forcée que status) : magasins, devise, emplacements (phase 05).
+//   stores create <code> <pays> <EUR|MAD> <nom> : création d'un magasin (devise immuable, emplacement par défaut
+//                      « MAGASIN »), même cible stricte et mêmes contrôles que permissions grant, confirmation interactive.
+//   locations create <code magasin> <code> <nom> : emplacement supplémentaire d'un magasin, mêmes contrôles.
 // Codes de sortie : 0 succès ; 1 usage ; 2 précondition non remplie ; 3 bootstrap déjà effectué ;
 //                   4 saisie invalide ou annulation ; 5 cible non autorisée (refus sans modification) ;
 //                   6 compte introuvable (aucune modification).
@@ -36,7 +41,8 @@ Console.OutputEncoding = Encoding.UTF8;
 
 const string Usage =
     "Usage : MMV.Maintenance status | bootstrap-admin | permissions list | permissions grant|revoke <identifiant> <permission>"
-    + " | responsibles list | responsibles enable|disable <identifiant>";
+    + " | responsibles list | responsibles enable|disable <identifiant>"
+    + " | stores list | stores create <code> <pays> <EUR|MAD> <nom> | locations create <code magasin> <code> <nom>";
 var command = args switch
 {
     ["status"] => "status",
@@ -45,6 +51,9 @@ var command = args switch
     ["permissions", "grant" or "revoke", _, _] => $"permissions {args[1]}",
     ["responsibles", "list"] => "responsibles list",
     ["responsibles", "enable" or "disable", _] => $"responsibles {args[1]}",
+    ["stores", "list"] => "stores list",
+    ["stores", "create", _, _, _, _] => "stores create",
+    ["locations", "create", _, _, _] => "locations create",
     _ => null,
 };
 if (command is null)
@@ -53,9 +62,10 @@ if (command is null)
     return 1;
 }
 
-var isWrite = command is "bootstrap-admin" or "permissions grant" or "permissions revoke" or "responsibles enable" or "responsibles disable";
-var targetUserName = args.Length == 4 || command is "responsibles enable" or "responsibles disable" ? args[2] : null;
-var targetPermission = args.Length == 4 ? args[3] : null;
+var isWrite = command is "bootstrap-admin" or "permissions grant" or "permissions revoke" or "responsibles enable" or "responsibles disable"
+    or "stores create" or "locations create";
+var targetUserName = command is "permissions grant" or "permissions revoke" or "responsibles enable" or "responsibles disable" ? args[2] : null;
+var targetPermission = command is "permissions grant" or "permissions revoke" ? args[3] : null;
 if (targetPermission is not null && !PermissionAdministrationService.IsGrantable(targetPermission))
 {
     // Refus avant toute lecture de configuration ou connexion.
@@ -188,6 +198,25 @@ if (command == "responsibles list")
 if (command is "responsibles enable" or "responsibles disable")
 {
     return await ChangeResponsibleAsync(command, targetUserName!, target, scope.ServiceProvider, context);
+}
+
+if (command == "stores list")
+{
+    var catalog = scope.ServiceProvider.GetRequiredService<ICatalogStore>();
+    foreach (var store in await catalog.ListStoresAsync(includeArchived: true, CancellationToken.None))
+    {
+        var locations = await catalog.ListLocationsAsync(store.Id, CancellationToken.None);
+        Console.WriteLine(
+            $"  {store.Code} ({store.CountryCode}, {store.CurrencyCode}, fiscalité {store.FiscalProfileStatus}{(store.IsArchived ? ", archivé" : string.Empty)}) : {store.Name}"
+            + $" — emplacements : {string.Join(", ", locations.Select(l => l.IsDefault ? $"{l.Code} (défaut)" : l.Code))}");
+    }
+
+    return 0;
+}
+
+if (command is "stores create" or "locations create")
+{
+    return await ChangeStoreAsync(command, args, target, scope.ServiceProvider, context);
 }
 
 if (completed)
@@ -375,6 +404,57 @@ static async Task<int> ChangeResponsibleAsync(
     }
 
     return 0;
+}
+
+static async Task<int> ChangeStoreAsync(string command, string[] args, ServerTarget target, IServiceProvider services, MmvDbContext context)
+{
+    if (Console.IsInputRedirected)
+    {
+        Console.Error.WriteLine("Refusé : saisie interactive obligatoire (aucune entrée redirigée).");
+        return 4;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine(command == "stores create"
+        ? $"Création demandée : magasin {args[2]} ({args[3]}, devise {args[4]} — immuable), « {args[5]} »."
+        : $"Création demandée : emplacement {args[3]} « {args[4]} » du magasin {args[2]}.");
+    Console.Write($"Confirmez la base cible en saisissant son nom ({target.Database}) : ");
+    if (Console.ReadLine()?.Trim() != target.Database)
+    {
+        Console.Error.WriteLine("Annulé : confirmation incorrecte.");
+        return 4;
+    }
+
+    // 3e contrôle, juste avant l'écriture : la cible n'a pas changé pendant la saisie interactive.
+    var finalViolations = BootstrapTargetPolicy.CheckServer(await ReadTargetAsync(context));
+    if (finalViolations.Count > 0)
+    {
+        return RefuseTarget(command, finalViolations, "aucune modification effectuée");
+    }
+
+    var administration = services.GetRequiredService<StoreAdministrationService>();
+    var result = command == "stores create"
+        ? await administration.CreateStoreAsync(args[2], args[3], args[4], args[5], CancellationToken.None)
+        : await administration.CreateLocationAsync(args[2], args[3], args[4], CancellationToken.None);
+    switch (result.Status)
+    {
+        case StoreChangeStatus.Created:
+            Console.WriteLine($"Créé (identifiant interne {result.Id}).");
+            return 0;
+        case StoreChangeStatus.UnknownStore:
+            Console.Error.WriteLine("Refusé : magasin introuvable (aucune modification).");
+            return 6;
+        case StoreChangeStatus.Duplicate:
+            Console.Error.WriteLine("Refusé : code déjà utilisé (aucune modification).");
+            return 4;
+        default:
+            foreach (var error in result.Errors ?? [])
+            {
+                Console.Error.WriteLine($"Saisie invalide : {error}");
+            }
+
+            return 4;
+    }
 }
 
 static int RefuseTarget(string command, IReadOnlyList<string> violations, string consequence)

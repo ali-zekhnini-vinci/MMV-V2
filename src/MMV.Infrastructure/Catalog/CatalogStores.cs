@@ -213,6 +213,19 @@ internal sealed class CatalogStore(MmvDbContext context) : ICatalogStore
 
 }
 
+internal sealed class StoreAdministrationStore(MmvDbContext context) : IStoreAdministrationStore
+{
+    public Task<Store?> FindStoreByCodeAsync(string code, CancellationToken cancellationToken) =>
+        context.Stores.AsNoTracking().SingleOrDefaultAsync(s => s.Code == code, cancellationToken);
+
+    public Task<bool> LocationCodeTakenAsync(Guid storeId, string code, CancellationToken cancellationToken) =>
+        context.Locations.AnyAsync(l => l.StoreId == storeId && l.Code == code, cancellationToken);
+
+    public void Add(Store store) => context.Stores.Add(store);
+
+    public void Add(Location location) => context.Locations.Add(location);
+}
+
 internal sealed class PricingStore(MmvDbContext context) : IPricingStore
 {
     public async Task<(VariantStorePrice Price, bool Created)> LockPriceAsync(Guid variantId, Guid storeId, string currencyCode, Guid userId, CancellationToken cancellationToken)
