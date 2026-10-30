@@ -1,0 +1,84 @@
+# 05 — QA_MATRIX
+
+Statuts : `PASS` (exécuté, preuve citée) ; `NOT_TESTED` (prévu, rien d'exécuté) ; `NOT_RERUN` (non rejoué depuis le dernier changement). En 05-00 seule de la documentation a été écrite : **aucun test applicatif exécuté** ; .NET, PostgreSQL, frontend, HTTPS et natif sont `NOT_RERUN` depuis `dcc6f0d` (code inchangé).
+
+## 05-00 — contrôles exécutés le 29/10/2026
+
+| ID | Contrôle | Méthode | Résultat |
+|---|---|---|---|
+| Q-05-001 | références distantes à jour | `git fetch origin --prune` | PASS — aucune nouvelle référence ; `origin/main` = `0a83a57a335369a5dfe54de66fd2fc376b6fb383` (merge PR #5) |
+| Q-05-002 | `main` local = `origin/main` | `git rev-parse main origin/main` ; `git rev-list --count` dans les deux sens | PASS — identiques, 0 / 0 |
+| Q-05-003 | commits Phase 04 inclus | `git merge-base --is-ancestor dcc6f0d main` (et `origin/main`) | PASS ; `97bfd5e`, `56dfb7e`, `3bb25a6` visibles dans `git log` |
+| Q-05-004 | merge sans écart | `git diff main origin/feat/phase-04-00-cadrage --stat` | PASS — vide (arbre identique à `dcc6f0d`) |
+| Q-05-005 | arbre de travail propre | `git status --short` | **FAIL (constat)** — modification suivie du propriétaire `apps/desktop/.env.development` (+1 ligne `VITE_MMV_OPTICAL_MODULE`) ; non suivis du propriétaire intacts. Non modifiés |
+| Q-05-006 | branche dédiée | condition du mandat | **NOT_DONE** — `feat/phase-05-catalogue-stock` non créée (Q-05-005) ; O-05-02 |
+| Q-05-007 | maquette Lot 6 authentique | SHA-256 de `Downloads/MMV initialisation projet V1/MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html` comparé à `registres/DESIGN_SOURCES_SHA256.csv` | PASS — `6ca2cec0…bc35e7`, 175 994 octets, 37 / 107, `DRAFT_NON_APPROVED` |
+| Q-05-008 | catalogue Lot 6 | `MMV_V2_Registre_134_Groupes.csv` (B-098 à B-134), `MMV_V2_Registre_324_Etats.csv` (`MMV-L06-*`) ; `data-mount` de la maquette | PASS — 37 groupes, 107 états ; 108 `data-mount` = 107 + notes |
+| Q-05-009 | couverture de la matrice | [`MATRICE_LOT6.md`](MATRICE_LOT6.md) | PASS — 37 / 37 groupes, 107 / 107 états affectés |
+| Q-05-010 | codes d'audit proposés compatibles | formats `ck_events_*` de `docs/phase/03/sql/0005_AuditJournal.sql` | PASS — codes de [`DATA_MODEL_PROPOSED.md`](DATA_MODEL_PROPOSED.md) § 5 conformes |
+| Q-05-011 | aucune base, aucun processus touchés | aucune commande `psql`, `dotnet`, `npm`, aucun arrêt de processus | PASS (déclaratif, aucune commande de ce type dans la session) |
+| Q-05-012 | aucun fichier du propriétaire modifié | `git status --short` avant / après : seuls ajouts `docs/phase/05.md`, `docs/phase/05/`, `prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md` et modifications de `README.md`, `docs/phase/04.md`, `docs/ADR_ET_DECISIONS.md`, `docs/PERIMETRE_ET_SEQUENCE.md` | PASS (à la livraison) |
+| Q-05-013 | liens internes des documents 05 | vérification de chaque chemin relatif cité | PASS (à la livraison, voir [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Journal) |
+
+## Plan de tests — métier (NOT_TESTED)
+
+| ID | Cas | Lot |
+|---|---|---|
+| Q-05-101 | référence unique insensible à la casse / espaces ; GTIN invalide refusé | 05-A |
+| Q-05-102 | attributs refusés hors jeu de la catégorie ; politique hors `allowed_policies` refusée | 05-A |
+| Q-05-103 | `order_only` sans fournisseur principal refusé ; prix vide accepté pour `order_only` seulement | 05-A |
+| Q-05-104 | changement de politique refusé avec stock > 0 ou inventaire ouvert ; accepté à 0 ; audité | 05-A / 05-B |
+| Q-05-105 | archivage refusé avec stock > 0 ; article archivé absent des nouveaux inventaires et non vendable (`ICatalogQuery`) ; réactivation | 05-A |
+| Q-05-106 | un seul fournisseur principal ; fournisseur archivé non éligible comme principal ; refus d'archiver l'unique principal d'un `order_only` actif | 05-A |
+| Q-05-107 | historique des prix : chaque changement tracé (ancien, nouveau, auteur) | 05-A |
+| Q-05-108 | **coûts absents** (clé non émise) dans liste, fiche, rattachements, historique, mouvements, exports, sans `catalog.costs.read` | 05-A / 05-B / 05-C |
+| Q-05-109 | écriture d'un coût sans `catalog.costs.write` → 403, rien d'écrit | 05-A |
+| Q-05-110 | chaque route refuse sans sa permission ; `system.admin` seul refusé partout | tous |
+| Q-05-111 | événements d'audit dans la même transaction ; aucune valeur de coût dans `changes` | tous |
+| Q-05-112 | disponibilité : table § 3.5 du cadrage, seuil vide, seuil 0, archivé | 05-B |
+| Q-05-113 | modification sans changement : aucune écriture (O-03-44) | 05-A |
+
+## Plan de tests — stock (NOT_TESTED)
+
+| ID | Cas | Lot |
+|---|---|---|
+| Q-05-201 | entrée / réception : avant, après, écart, motif, auteur ; solde = Σ mouvements | 05-B |
+| Q-05-202 | sortie au-delà du stock → `422 stock_insufficient`, aucun mouvement | 05-B |
+| Q-05-203 | ajustement : écart calculé ; `expectedOnHand` faux → `409 stock_changed` ; écart nul → aucun mouvement | 05-B |
+| Q-05-204 | motif obligatoire ; `other` exige un commentaire ; quantité non entière / ≤ 0 refusée | 05-B |
+| Q-05-205 | mouvement sur `order_only` / `service` / archivé refusé | 05-B |
+| Q-05-206 | journal non modifiable (`UPDATE` / `DELETE` refusés par déclencheur) | 05-B |
+| Q-05-207 | réémission d'un mouvement (même `requestId`) : un seul mouvement ; `requestId` réutilisé avec un autre contenu → 409 | 05-B |
+| Q-05-208 | invariant `on_hand = Σ quantity_delta` sur tout le jeu de test (requête de contrôle) | 05-B / 05-C |
+| Q-05-209 | `IStockLedger` : document multi-lignes tout ou rien ; lignes `order_only` / `service` ignorées ; contre-mouvements liés | 05-B |
+
+## Plan de tests — inventaires (NOT_TESTED)
+
+| ID | Cas | Lot |
+|---|---|---|
+| Q-05-301 | ouverture refusée si un article est déjà dans un inventaire ouvert | 05-C |
+| Q-05-302 | comptage à l'aveugle : quantité théorique absente de la réponse tant que la session est ouverte | 05-C |
+| Q-05-303 | validation : écarts appliqués en un seul tout ou rien, mouvements liés à la session ; motif manquant → 422 sans effet | 05-C |
+| Q-05-304 | ligne dont le stock a changé depuis le comptage : 409 sauf acceptation explicite ou recomptage | 05-C |
+| Q-05-305 | lignes non comptées : exclues ou mises à 0 selon le choix ; jamais d'interprétation implicite | 05-C |
+| Q-05-306 | abandon : aucun mouvement, session figée ; session validée figée | 05-C |
+| Q-05-307 | permission de comptage seule ne permet ni validation ni abandon | 05-C |
+
+## Plan de tests — concurrence multi-postes (PostgreSQL réel, barrières déterministes, deux ordres par conflit)
+
+| ID | Conflit | Attendu |
+|---|---|---|
+| Q-05-401 | deux sorties simultanées dont la somme dépasse le stock | une réussit, l'autre `422`, solde ≥ 0 |
+| Q-05-402 | deux ajustements sur la même quantité attendue | un réussit, l'autre `409 stock_changed` |
+| Q-05-403 | archivage ‖ mouvement | sérialisés : soit mouvement puis refus d'archivage (stock > 0), soit archivage puis refus du mouvement ; jamais d'article archivé avec stock |
+| Q-05-404 | changement de politique ‖ mouvement | jamais de mouvement sur un article devenu non stocké |
+| Q-05-405 | validation d'inventaire ‖ sortie sur un article du périmètre | la ligne est signalée (`409`) ou la sortie attend ; solde final = constaté + mouvements postérieurs |
+| Q-05-406 | deux validations / validation ‖ abandon de la même session | une seule réussit |
+| Q-05-407 | deux documents multi-articles en ordres inverses (`IStockLedger`) | aucun interblocage (ordre croissant des identifiants) |
+| Q-05-408 | modification concurrente d'un article (deux postes) | `409 version_conflict`, aucune perte silencieuse |
+| Q-05-409 | ouvertures d'inventaires concurrentes sur des périmètres qui se chevauchent | une seule réussit |
+| Q-05-410 | retrait de permission ‖ écriture de stock | comportement reconduit de la Phase 04 (session révoquée / droit relu dans la transaction) — à décider avec O-05-06 |
+
+## Plan de tests — interface, HTTPS, natif
+
+Captures comparées aux planches Lot 6 (clair / sombre, 1920×1080, 1024×700), parcours clavier B-132 à B-134, états transverses ; HTTPS réel (HTTP en clair refusé) ; Tauri natif sur les parcours principaux de chaque sous-lot ; résidu de test 0.

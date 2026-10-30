@@ -159,3 +159,10 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Synchronisation transactionnelle par **verrous de ligne PostgreSQL** (ADR-003 : PostgreSQL seul, aucune extension) : écriture optique `FOR SHARE` sur le client et sur le compte / droit du collaborateur désigné ; archivage `FOR NO KEY UPDATE` sur le client avant lecture ; ordre unique client → collaborateur → en-tête. Décision technique réversible, sans nouvel ADR ; aucune migration (0006 inchangée).
 - ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; aucune dépendance ajoutée.
+
+## Note datée — 29/10/2026 (Phase 05-00, cadrage)
+
+- Phase 04 **fusionnée** (`origin/main` = `0a83a57`, PR #5, `dcc6f0d` inclus, vérifié par `git fetch`).
+- Mandat : [`prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md`](../prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md). Registre court **D-05-01 à D-05-13 `PROPOSED`** (statut du Lot 6, trois politiques d'article, stock négatif, variantes, catégories, fournisseurs, archivage, prix et coûts, mouvements, inventaires, permissions, hors périmètre, découpage) — [`docs/phase/05/DECISIONS_05_METIER_PROPOSED.md`](phase/05/DECISIONS_05_METIER_PROPOSED.md). Aucune n'est ratifiée.
+- **D-000 / `NEW_RULES_ONLY`** : la maquette Lot 6 déclare dériver du code de l'ancien logiciel (O-05-01) ; proposée comme référence d'interface seulement (D-05-01).
+- Aucun ADR modifié. Proposition conforme à ADR-001 (monolithe modulaire) et ADR-003 (PostgreSQL 18 seul, aucune extension ; verrous de ligne et `xmin`) ; **ADR-010 reste `OPEN DECISION`** : catégorie fiscale prévue vide, bloque la première vente réelle, pas la Phase 05 ; **ADR-014** : aucune dépendance ajoutée ni proposée. ADR-001, ADR-007, ADR-014 restent `PROPOSED`.
