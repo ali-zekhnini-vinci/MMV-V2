@@ -107,13 +107,12 @@ internal sealed class CatalogReadStore(MmvDbContext context) : ICatalogReadStore
                            where l.VariantId == variantId
                            orderby l.IsPrimary descending, s.Name
                            select new { l, s.Code, s.Name, Archived = s.ArchivedAtUtc != null }).ToListAsync(cancellationToken);
-        var balances = await (from l in context.Locations.AsNoTracking()
-                              where l.StoreId == storeId
-                              join b in context.StockBalances.AsNoTracking().Where(b => b.VariantId == variantId) on l.Id equals b.LocationId into joined
-                              from b in joined.DefaultIfEmpty()
-                              orderby l.IsDefault descending, l.Code
-                              select new BalanceView(l.Id, l.Code, l.Name, l.IsDefault, b == null ? 0 : b.OnHand, b == null ? 0 : b.Reserved, b == null ? 0u : b.Version,
-                                  b == null ? l.CreatedAtUtc : b.UpdatedAtUtc)).ToListAsync(cancellationToken);
+        var locations = await context.Locations.AsNoTracking().Where(l => l.StoreId == storeId).OrderByDescending(l => l.IsDefault).ThenBy(l => l.Code).ToListAsync(cancellationToken);
+        var stored = await context.StockBalances.AsNoTracking().Where(b => b.VariantId == variantId).ToDictionaryAsync(b => b.LocationId, cancellationToken);
+        var balances = locations.Select(l => stored.GetValueOrDefault(l.Id) is { } b
+                ? new BalanceView(l.Id, l.Code, l.Name, l.IsDefault, b.OnHand, b.Reserved, b.Version, b.UpdatedAtUtc)
+                : new BalanceView(l.Id, l.Code, l.Name, l.IsDefault, 0, 0, 0, l.CreatedAtUtc))
+            .ToList();
         return new VariantDetailView(model, variant, row, [.. links.Select(x => new SupplierLinkView(x.l, x.Code, x.Name, x.Archived))], balances);
     }
 
