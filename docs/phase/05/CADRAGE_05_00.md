@@ -1,6 +1,8 @@
 # 05-00 — Cadrage Catalogue, Fournisseurs, Stock et Inventaires
 
-Date : 29/10/2026. Mandat : [`prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md`](../../../prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md). Statut : **`PHASE05_00 — OWNER_BUSINESS_REVIEW_REQUIRED`**.
+Date : 29/10/2026. Mandat : [`prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md`](../../../prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md). Statut au 29/10/2026 : **`PHASE05_00 — OWNER_BUSINESS_REVIEW_REQUIRED`** (historique ; statut courant ci-dessous).
+
+> **Clôture 30/10/2026 — `PHASE05_00_COMPLETE — OWNER_IMPLEMENTATION_REVIEW_REQUIRED`.** Le propriétaire a répondu à Q01–Q20 ([`prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md`](../../../prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md)) ; registre mis à jour (APPROVED / PROPOSED / SUPERSEDED) dans [`DECISIONS_05_METIER_PROPOSED.md`](DECISIONS_05_METIER_PROPOSED.md). Branche `feat/phase-05-catalogue-stock` **créée** depuis `main` = `0a83a57` (O-05-02 levé, modification locale du propriétaire conservée). Les §§ 1 à 7 ci-dessous sont l'état du 29/10/2026, conservé ; **le § 8 prévaut** là où il diffère (variantes, magasins, prix HT × coefficient, devise par magasin, import CSV, séquence). Toujours aucun code, aucune migration, aucune table, aucune donnée pilote.
 
 Documentation seulement : aucun code, aucune migration, aucun schéma, aucune table, aucune connexion à `mmv_v2_dev` / `mmv_v2_test`, aucun processus du propriétaire touché. Toutes les règles ci-dessous sont **proposées** ; les arbitrages sont regroupés dans [`DECISIONS_05_METIER_PROPOSED.md`](DECISIONS_05_METIER_PROPOSED.md) (D-05-01 à D-05-13).
 
@@ -146,3 +148,92 @@ Détail : [`API_PROPOSED.md`](API_PROPOSED.md) § 6. Résumé : `ICatalogQuery.G
 - **Données sensibles** : prix d'achat, marges et coûts = données commerciales protégées par permission ; contacts fournisseurs = données personnelles minimales ; aucune donnée client ni de santé dans les modules 05 (la liaison client ↔ article naîtra des ventes).
 - **Audit et traçabilité** : écritures auditées dans la même transaction (schéma `audit`, D-03-19), sans valeur de coût dans les événements ; mouvements et inventaires immuables ; historique des prix.
 - **Multi-postes** : concurrence optimiste `xmin` sur les fiches, verrous pessimistes sur les soldes, idempotence par identifiant de requête, conflits explicites (`409`) ; aucun temps réel.
+
+## 8. Révision 30/10/2026 — spécifications après validation métier (prévaut sur les §§ 3, 4 et 7)
+
+Décisions citées : [`DECISIONS_05_METIER_PROPOSED.md`](DECISIONS_05_METIER_PROPOSED.md). Modèle de données : [`DATA_MODEL_PROPOSED.md`](DATA_MODEL_PROPOSED.md) ; API : [`API_PROPOSED.md`](API_PROPOSED.md).
+
+### 8.1 Structure du catalogue (D-05-04, D-05-05, D-05-14, D-05-21 — APPROVED)
+
+| Niveau | Contenu | Porte |
+|---|---|---|
+| Famille | liste fermée de six : montures optiques, lunettes de soleil, verres correcteurs, lentilles et solutions, accessoires, prestations | jeu d'attributs (défini dans le code, PROPOSED) |
+| Modèle produit | famille, marque / fabricant, nom, description ; pour les verres : gamme d'un fabricant (D-05-21) | aucune quantité, aucun prix |
+| Variante | **SKU unique**, référence fabricant, code-barres facultatif, attributs (couleur, calibre…, ou indice + traitements pour les verres), **politique de stock** (`stocked` / `order_only` / `service`) | prix par magasin (§ 8.2), stock par emplacement (§ 8.3), seuil par magasin, fournisseurs (0..n, un principal) |
+| Référentiel verres | fabricants, gammes, indices, traitements — configurables, **aucune valeur pré-remplie** | — |
+
+Fiche `order_only` sans fournisseur principal : enregistrable, signalée « incomplète » ; fournisseur principal exigé à la commande effective (QR-01, PROPOSED). Aucune grille de puissances : les puissances viennent de la prescription au moment de la vente ou de la commande (R-05-07 inchangé).
+
+### 8.2 Spécification du coefficient multiplicateur (D-05-16 — APPROVED ; arrondi PROPOSED)
+
+**Données par (variante, magasin)**, montants dans la devise du magasin :
+
+| Donnée | Type proposé | Règle |
+|---|---|---|
+| prix d'achat HT | `numeric(14,4)`, ≥ 0 | enregistré ; protégé (`costs.read` / `costs.write`) |
+| coefficient | `numeric(8,4)`, > 0 et ≤ 100 | configurable par variante ; protégé (`costs.read`) car prix HT ÷ coefficient = prix d'achat ; < 1 (vente sous le coût) accepté seulement avec confirmation explicite (QR-12) |
+| mode de prix | `coefficient` / `manual` | `manual` exige `pricing.manual` |
+| prix de vente HT | `numeric(12,2)`, ≥ 0 | **stocké** (jamais recalculé à la lecture) |
+| état de prix | calculé | `up_to_date` ; `recalculation_pending` (mode coefficient et prix stocké ≠ prix calculé à partir des valeurs courantes) ; `incomplete` (prix d'achat ou coefficient absent) |
+
+**Calcul.** `prix de vente HT = arrondi(prix d'achat HT × coefficient)`. Le produit est calculé **exactement** en décimal (C# `decimal`, PostgreSQL `numeric`), **un seul arrondi**, à la fin. Proposition d'arrondi (QR-09) : au **centime** (2 décimales : unité mineure ISO 4217 de l'EUR comme du MAD), **demi-unité arrondie en s'éloignant de zéro** (`MidpointRounding.AwayFromZero` ; `round(numeric, 2)` de PostgreSQL a le même comportement sur `numeric`, ce qui permet un contrôle croisé). Exemples : 41,2500 × 2,5000 = 103,125 → **103,13** ; 19,9900 × 2,2000 = 43,978 → **43,98** ; 12,0000 × 2,0000 = 24,00. Un arrondi commercial supplémentaire (0,05, 0,10, terminaisons « ,90 ») n'est **pas** proposé ; s'il est souhaité, il devient une étape explicite et documentée après l'arrondi au centime.
+
+**Recalcul explicite, jamais silencieux.**
+1. Modification du prix d'achat ou du coefficient dans l'écran de tarif : le poste demande un **aperçu au serveur** (aucune écriture) ; l'enregistrement renvoie le prix aperçu (`expectedSalePriceHt`) ; le serveur recalcule et refuse en cas d'écart (`409 price_preview_stale`). Prix, coefficient, prix d'achat et historique sont écrits dans la même transaction.
+2. Changement du prix d'achat **ailleurs** (modification par un détenteur de `costs.write` sans `pricing.write`, réception à un coût différent, nouveau prix fournisseur, import) : le **prix de vente ne change pas** ; la variante passe en `recalculation_pending` (ancien prix, prix recalculé proposé). Une réception ou un prix fournisseur ne modifie jamais d'eux-mêmes le prix d'achat HT de référence : la mise à jour est une action explicite.
+3. Recalcul : action explicite (`pricing.write`), unitaire ou par lot avec **liste d'aperçu et confirmation** ; jamais de tâche de fond.
+4. Prix manuel : saisi avec `pricing.manual` ; le coefficient enregistré est conservé mais non appliqué ; **coefficient effectif** (prix HT ÷ prix d'achat, 4 décimales) et marge affichés avec `costs.read` seulement. Retour au mode coefficient = recalcul explicite avec aperçu.
+
+**Historisation.** Journal en ajout seul : chaque champ modifié (prix d'achat, coefficient, mode, prix de vente HT) → ancienne et nouvelle valeur, magasin, devise, origine (`edit`, `recalculation`, `manual_price`, `import`), auteur, date, identifiant de requête. Lignes de prix d'achat et de coefficient lisibles avec `costs.read` seulement. Audit sans valeur de coût (inchangé).
+
+**Aucun flottant binaire.** Serveur en `decimal` / `numeric` ; montants et coefficients transmis en JSON comme **chaînes décimales à échelle fixe** (`"103.13"`, `"2.5000"`) ; le poste **ne calcule aucun montant** (aperçu serveur), il formate seulement ; import CSV lu en chaînes décimales ; tests de propriétés sur le calcul et l'arrondi.
+
+**TTC calculé séparément.** Le TTC n'est jamais saisi ni stocké au catalogue. Il est calculé à la lecture **seulement si** le profil fiscal du magasin est validé **et** la variante a une catégorie fiscale dotée d'un taux validé : `TTC = arrondi_fiscal(HT × (1 + taux))`, règle d'arrondi fiscale à décider avec ADR-010. Sinon : TTC absent, `ttcStatus = tax_not_validated`, affichage « TTC indisponible — fiscalité du magasin non validée ». **Aucun taux ni catégorie fiscale n'est inventé.**
+
+**Non-rétroactivité.** La Phase 06 copie sur la ligne de vente : SKU, libellé, politique, prix HT, mode, taux, TTC, devise, magasin. Aucune modification de prix, de coefficient ou de fiscalité ne touche une vente passée.
+
+### 8.3 Magasins, emplacements, EUR / MAD et fiscalité non ratifiée (D-05-15, D-05-20 — APPROVED ; fiscalité non ratifiée)
+
+| Élément | Spécification |
+|---|---|
+| Magasin | code, nom, pays (ISO 3166-1), **devise** (ISO 4217), statut du profil fiscal (`not_validated` / `validated`) ; créé par la commande de maintenance (pas d'écran en Phase 05) ; devise **non modifiable** dès qu'un prix ou un mouvement existe |
+| Emplacement | rattaché à un magasin ; exactement un emplacement par défaut par magasin ; plusieurs emplacements possibles (structure), écrans de la Phase 05 limités à l'emplacement par défaut ; transferts OUT (BL-05-04) |
+| Devise | portée par le magasin ; chaque prix enregistre sa devise ; contrainte SQL composite (magasin, devise) → impossible d'enregistrer un prix EUR pour un magasin MAD ; formats `1 234,50 €` / `1 234,50 MAD` |
+| Conversion | **aucune** : pas de table de taux, pas de calcul croisé, aucun total multi-devises ; exports et listes groupés par magasin / devise ; prix fournisseur dans une autre devise que celle du magasin : non copiable, saisie manuelle du prix d'achat |
+| Pilotes fictifs | Belgique — EUR ; Maroc — MAD. **Rien n'est créé maintenant** (aucun compte, aucune donnée dans PostgreSQL). Proposé : les tests réels créent les deux magasins fictifs dans `mmv_v2_test` après chaque G05-SQL, résidu 0 ; forme des pilotes réels ouverte (QR-11) |
+| Contexte utilisateur | magasin actif choisi par le poste ; en Phase 05 tous les magasins sont accessibles aux détenteurs des permissions ; restriction par magasin = BL-05-07 |
+
+**Configuration fiscale — structure seulement, non ratifiée.** Par magasin : statut du profil fiscal et catégories fiscales (code, libellé, taux **vide**, référence légale, validé le / par). Aucune ligne de taux n'est créée par la migration ; un taux ne peut être enregistré que sur la base d'une décision du propriétaire appuyée par un avis fiscal (ADR-010). Sont **ouverts** : régimes, taux et catégories applicables en Belgique et au Maroc, rattachement famille → catégorie fiscale, arrondi de la taxe (par ligne ou par document), mentions obligatoires. Tant que le profil n'est pas validé : prix HT seulement, TTC indisponible, toute vente réelle bloquée (Phase 06).
+
+### 8.4 Disponibilité et réservations futures (D-05-17, D-05-19)
+
+`disponible = en main − réservé`, par (variante, emplacement), agrégé par magasin ; réservé = 0 jusqu'à la Phase 06. La réservation naît à la **validation** d'une vente ou d'une commande client, jamais au devis. États : archivé → `archived` ; `service` → `available` ; `order_only` → `on_order` (ou `incomplete` sans fournisseur principal, QR-01) ; `stocked` → `in_stock` / `low_stock` (0 < disponible ≤ seuil du magasin) / `out_of_stock` (disponible = 0). Une sortie manuelle ne peut ni rendre la quantité négative (D-05-03) ni entamer le réservé (`422 stock_reserved`).
+
+### 8.5 Séquence d'implémentation proposée (D-05-13 révisée — PROPOSED)
+
+| Sous-lot | Contenu | Migration | Prérequis |
+|---|---|---|---|
+| **05-A** Référentiels, catalogue, tarifs, fournisseurs | magasins et emplacements (maintenance), structure fiscale vide, familles, référentiel verres, modèles / variantes, SKU / références / code-barres, politiques, prix par magasin (coefficient, manuel, aperçu, recalcul, historique), fournisseurs et rattachements, archivage, permissions `catalog.*` / `pricing.*` / `costs.*` / `suppliers.*`, audit ; écrans Lot 6 catalogue et fournisseurs + états GAP | `0007` (G05-SQL-A) | GO 05-A ; réponses QR-01, 02, 05, 07, 08, 09, 12 |
+| **05-B** Stock par emplacement | soldes (en main, réservé = 0), journal de mouvements, **réceptions simples** (fournisseur, quantité, coût HT dans la devise du magasin), entrées / sorties / ajustements motivés, seuils et alertes de stock faible, disponibilité, contrats `IStockLedger` / `IStockReservations` pour la Phase 06 ; permissions `stock.*` | `0008` (G05-SQL-B) | 05-A accepté ; QR-03, QR-10 |
+| **05-C** Inventaires et clôture | sessions par magasin (complètes / partielles), comptage, écarts justifiés, validation atomique, abandon ; exports CSV ; intégration réelle PostgreSQL / HTTPS / Tauri avec deux magasins fictifs EUR / MAD dans `mmv_v2_test` ; clôture | `0009` (G05-SQL-C) | 05-B accepté ; QR-04 |
+| **05-D** Import CSV contrôlé | § 8.6 ; **avant le premier déploiement** | `0010` (G05-SQL-D) | 05-A au minimum ; autorisation pour toute donnée réelle |
+
+Chaque sous-lot : GO explicite, interrupteur `VITE_MMV_CATALOG_MODULE`, tests .NET / PostgreSQL / frontend / HTTPS / natif, revue du propriétaire.
+
+### 8.6 Import CSV contrôlé (D-05-18 — APPROVED ; détail PROPOSED)
+
+1. **Dépôt** d'un fichier UTF-8 (séparateur `;`, en-têtes fixes par type : modèles / variantes, prix par magasin, fournisseurs, rattachements) ; taille et nombre de lignes bornés ; fichier conservé dans une zone de préparation, jamais exécuté.
+2. **Contrôle à blanc** : analyse en chaînes, montants en décimal, devise = devise du magasin cible (sinon refus, aucune conversion), SKU / code-barres uniques, familles et référentiel verres existants, politiques admises ; rapport par ligne (créée / modifiée / inchangée / erreur) ; **aucune écriture** au catalogue.
+3. **Application explicite** par `catalog.import` (+ `costs.write` si le fichier contient des prix d'achat ou coefficients, + `pricing.manual` pour des prix manuels), tout ou rien, idempotente (identifiant du lot), auditée ; prix existants jamais recalculés silencieusement (les écarts deviennent `recalculation_pending`).
+4. Exports et rapports : neutralisation des cellules commençant par `=`, `+`, `-`, `@`.
+5. Aucune donnée réelle importée sans autorisation écrite du propriétaire.
+
+### 8.7 Divergences vérifiées
+
+| Sujet | Avant (29/10) | Après validation (30/10) | Statut |
+|---|---|---|---|
+| Fournisseur principal des variantes commandées | obligatoire dès l'enregistrement | fiche enregistrable « incomplète » ; principal exigé à la commande effective (et à la validation d'une vente / commande client) | PROPOSED (QR-01) |
+| Prix et fiscalité | prix TTC saisi, devise unique de l'installation, catégorie fiscale vide | prix HT = achat HT × coefficient, par magasin ; TTC calculé séparément, seulement avec fiscalité validée | APPROVED ; arrondi PROPOSED ; fiscalité non ratifiée |
+| Disponibilité et réservations | contrat seulement, réservé = 0 | réservation à la validation d'une vente / commande, jamais au devis ; formule fixée, réservé = 0 en Phase 05 | APPROVED (règle) ; QR-10 |
+| Comptage / validation d'inventaire | `stock.inventory.count` ≠ `stock.inventory.validate` | famille de permissions « inventaires » distincte (Q16) ; séparation `inventory.count` / `inventory.validate` recommandée | APPROVED (principe) ; séparation PROPOSED (QR-05) |
+| Deux magasins EUR / MAD | devise unique par installation, multi-magasin OUT | magasin porteur de la devise ; architecture multi-magasins / emplacements préparée ; pilotes fictifs BE-EUR et MA-MAD ; aucune conversion | APPROVED |

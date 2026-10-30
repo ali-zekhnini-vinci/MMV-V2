@@ -2,6 +2,8 @@
 
 Source : `MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html` (DRAFT, empreinte `6ca2cec0…bc35e7`, 175 994 octets), catalogue `MMV_V2_Registre_134_Groupes.csv` (B-098 à B-134, **37 groupes**) et `MMV_V2_Registre_324_Etats.csv` (`MMV-L06-*`, **107 états** ; la maquette compte 108 `data-mount`, le 108ᵉ étant les notes de conception, hors inventaire).
 
+> **Mise à jour 30/10/2026.** D-05-01 est `APPROVED` : le Lot 6 est une référence visuelle et ergonomique seulement ; copie de travail et index dans `references/phase05/` (`INDEX_LOT6.md`, `SHA256SUMS.txt`). Les §§ 1 à 3 sont l'état du 29/10/2026, conservé ; les routes et permissions qu'ils citent sont remplacées par [`API_PROPOSED.md`](API_PROPOSED.md) révisé. Correspondance avec les futurs modules et dispositions révisées : **§ 4** ; nouveaux états sans planche : **§ 5**.
+
 Dispositions : **ADOPT** (repris tel quel côté interface) · **ADAPT** (repris avec une règle V2 différente) · **REPLACE** (la planche illustre une limite de l'ancien logiciel ; remplacée par un état V2) · **DEFER** (hors Phase 05). Routes : [`API_PROPOSED.md`](API_PROPOSED.md). Permissions : D-05-11. Toutes les dispositions sont `PROPOSED` (D-05-01).
 
 ## 1. Groupes
@@ -76,3 +78,34 @@ Couverture : **37 / 37 groupes, 107 / 107 états** affectés ; 3 REPLACE (B-109,
 | seuil d'alerte par défaut | aucun défaut imposé | § 3.1 du cadrage |
 | visibilité des prix par rôle (masquage d'interface) | permissions serveur, champs retirés des réponses | D-05-11 |
 | politique de stock absente | trois politiques | D-05-02 |
+
+## 4. Correspondance Lot 6 ↔ futurs modules (révision 30/10/2026, après G05-METIER)
+
+| Module V2 | Groupes Lot 6 | États | Sous-lot | Révision de disposition (décision) |
+|---|---|---|---|---|
+| **Catalogue** (modèles, variantes, familles, référentiel verres) | B-098 à B-111 | 37 | 05-A | ADAPT renforcé : liste au niveau **modèle** avec variantes dépliables, colonne SKU (D-05-04, D-05-14) ; filtre « famille » sur six familles (D-05-05) ; formulaire B-102 / B-103 en deux niveaux modèle → variantes ; politique par variante (D-05-02) ; B-109 / B-110 restent REPLACE / ADAPT vers l'archivage (D-05-07, QR-02) |
+| **Tarifs** | blocs prix de B-102, B-106, B-107 | (inclus dans les 37) | 05-A | **ADAPT** : prix de vente HT par magasin, prix d'achat HT et coefficient (si `costs.read`), aperçu serveur, état « recalcul en attente », prix manuel ; TTC affiché seulement si fiscalité validée (D-05-16). Le Lot 6 ne dessine ni coefficient ni magasin : GAP-05-10 à 13 |
+| **Fournisseurs** | B-125 à B-130 | 21 | 05-A | ADAPT : rattachements **par variante**, prix fournisseur avec devise, principal unique ; B-129 : l'archivage du dernier principal n'est plus refusé mais rend les variantes `order_only` « incomplètes » (QR-01) |
+| **Stock** (soldes, mouvements, réceptions simples, alertes) | B-112 à B-120 (+ bloc historique de B-107 et états stock de B-108, comptés au Catalogue) | 26 | 05-B | ADAPT : vue par **magasin** (emplacement par défaut), colonnes en main / réservé / disponible (D-05-17), filtre « alertes » (D-05-19) ; B-118 « entrée » = réception simple avec fournisseur et coût HT protégé (Q12) |
+| **Inventaires** | B-121 à B-124 | 11 | 05-C | ADAPT : session par magasin, complète ou partielle (Q10), écarts justifiés ; permissions `inventory.count` / `inventory.validate` (QR-05) |
+| **Transverse** (accessibilité, fenêtres réduites) | B-131 à B-134 | 12 | 05-A à 05-C | ADOPT inchangé |
+| **Exports CSV** | états CSV de B-101, B-115, B-130 | (inclus) | 05-C | ADAPT : montants avec devise par ligne, aucun total multi-devises |
+| **Magasins / fiscalité** | — (aucune planche) | 0 | 05-A | administration par la commande de maintenance ; sélecteur de magasin actif = GAP-05-12 |
+| **Import CSV** | — (aucune planche) | 0 | 05-D | GAP-05-15 |
+
+Contrôle (décompte scripté des `data-mount` du § 1, 30/10/2026) : Catalogue B-098 à B-111 (14 groupes, 37 états) + Stock B-112 à B-120 (9 groupes, 26 états) + Inventaires B-121 à B-124 (4 groupes, 11 états) + Fournisseurs B-125 à B-130 (6 groupes, 21 états) + Transverse B-131 à B-134 (4 groupes, 12 états) = **37 groupes, 107 états**, chaque état compté une seule fois. Index détaillé par état : `references/phase05/INDEX_LOT6.md`.
+
+## 5. Nouveaux états V2 sans planche (30/10/2026)
+
+Comme GAP-05-01 à 09 (§ 2), **aucune planche n'est fabriquée** : composition à partir des composants V2 existants et validation visuelle (G05-DESIGN).
+
+| ID | État | Lot | Décision |
+|---|---|---|---|
+| GAP-05-10 | grille des variantes d'un modèle (ajout, SKU, politique, archivage d'une variante) | 05-A | D-05-04 |
+| GAP-05-11 | tarif d'une variante : prix d'achat HT, coefficient, aperçu, enregistrement ; avec / sans `costs.read` | 05-A | D-05-16 |
+| GAP-05-12 | sélecteur du magasin actif ; affichage de la devise ; « TTC indisponible — fiscalité non validée » | 05-A | D-05-15 |
+| GAP-05-13 | « recalcul en attente », recalcul unitaire et par lot (aperçu + confirmation) ; prix manuel | 05-A | D-05-16 |
+| GAP-05-14 | référentiel verres : fabricants, gammes, indices, traitements | 05-A | D-05-21 |
+| GAP-05-15 | import CSV : dépôt, rapport de contrôle à blanc, application | 05-D | D-05-18 |
+| GAP-05-16 | fiche `order_only` « incomplète — fournisseur principal manquant » (liste, filtre, fiche) | 05-A | QR-01 |
+| GAP-05-17 | liste des alertes de stock faible et réglage du seuil par magasin | 05-B | D-05-19 |

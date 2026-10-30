@@ -20,6 +20,44 @@ Statuts : `PASS` (exécuté, preuve citée) ; `NOT_TESTED` (prévu, rien d'exéc
 | Q-05-012 | aucun fichier du propriétaire modifié | `git status --short` avant / après : seuls ajouts `docs/phase/05.md`, `docs/phase/05/`, `prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md` et modifications de `README.md`, `docs/phase/04.md`, `docs/ADR_ET_DECISIONS.md`, `docs/PERIMETRE_ET_SEQUENCE.md` | PASS (à la livraison) |
 | Q-05-013 | liens internes des documents 05 | vérification de chaque chemin relatif cité | PASS (à la livraison, voir [`GATES_AND_DECISIONS.md`](GATES_AND_DECISIONS.md) § Journal) |
 
+## 05-00 clôture — contrôles exécutés le 30/10/2026
+
+Toujours **aucun test applicatif exécuté** : .NET, PostgreSQL, frontend, HTTPS et natif restent `NOT_RERUN` depuis `dcc6f0d` (aucun code modifié). Q-05-005 (FAIL, constat) et Q-05-006 (NOT_DONE) du 29/10 sont conservés ; leur cause est levée par Q-05-015.
+
+| ID | Contrôle | Méthode | Résultat |
+|---|---|---|---|
+| Q-05-014 | `main` à jour | `git fetch origin --prune` ; `git rev-parse` ; `git rev-list --left-right --count main...origin/main` | PASS — `0a83a57a335369a5dfe54de66fd2fc376b6fb383` partout, 0 / 0 |
+| Q-05-015 | branche créée sans altérer les fichiers du propriétaire | `git switch -c feat/phase-05-catalogue-stock` ; SHA-256 de `apps/desktop/.env.development` avant / après | PASS — aucun conflit ; `58d1eb064bac4c3a57cf6eb1184a01fd500f39b816a6c1352d32c3fa56c3481d` identique ; fichier jamais indexé ni commité ; aucun `reset`, `clean`, `stash` |
+| Q-05-016 | historique du cadrage initial | commit `6c207f9` = documents 05-00 du 29/10 sans modification | PASS |
+| Q-05-017 | copies Lot 6 identiques aux originaux | SHA-256 de chaque fichier copié comparé à l'original du dossier du propriétaire | PASS — 15 / 15 identiques |
+| Q-05-018 | manifeste | `cd references/phase05 && sha256sum -c SHA256SUMS.txt` | PASS — 15 OK |
+| Q-05-019 | maquette authentique | SHA-256 = `registres/DESIGN_SOURCES_SHA256.csv` | PASS — `6ca2cec0…bc35e7`, 175 994 octets |
+| Q-05-020 | index Lot 6 | script : registres (Lot 6) ↔ `data-mount` de la maquette | PASS — 37 groupes, 107 états, 108 montages (107 + `notes`), 0 état absent |
+| Q-05-021 | références des Phases 02 à 04 intactes | `find references/phase02 phase03 phase04 -newermt 2026-10-29` | PASS — 0 fichier modifié sur 54 |
+| Q-05-022 | décompte par module de la matrice | script sur [`MATRICE_LOT6.md`](MATRICE_LOT6.md) § 1 | PASS — 37 + 26 + 11 + 21 + 12 = 107 (une première estimation manuelle erronée a été corrigée avant livraison) |
+| Q-05-023 | exemples d'arrondi de la spécification | `decimal` Python, demi vers le haut sur positifs | PASS — 103,125 → 103,13 ; 43,978 → 43,98 ; 24,00 |
+| Q-05-024 | liens internes des documents mis à jour | script : liens Markdown relatifs + chemins `docs/`, `prompts/`, `references/`, `registres/`, `src/`, `apps/` cités entre accents graves (dossiers « à créer » exclus), sur 16 documents (README, ADR, périmètre, `04.md`, `05.md`, `05/*.md`, `references/phase05/*.md`) | PASS — 192 liens, 262 chemins, 0 cassé (seul signalement : `docs/phase/01..16`, notation de plage préexistante dans `docs/PERIMETRE_ET_SEQUENCE.md` de `main`) |
+| Q-05-025 | aucune base, aucun processus, aucune migration | aucune commande `psql`, `dotnet`, `npm`, aucun arrêt de processus, aucun fichier `0007` | PASS (déclaratif) |
+
+## Plan de tests ajouté le 30/10/2026 (NOT_TESTED)
+
+| ID | Cas | Lot |
+|---|---|---|
+| Q-05-120 | prix HT = arrondi(achat × coefficient) : cas limites (demi-centimes, 4 décimales, grands montants), égalité C# ↔ `round(numeric, 2)` PostgreSQL | 05-A |
+| Q-05-121 | aperçu ≠ enregistrement → `409 price_preview_stale` ; aucune écriture | 05-A |
+| Q-05-122 | modification du prix d'achat seule : prix de vente inchangé, état `recalculation_pending` ; recalcul explicite unitaire et par lot | 05-A |
+| Q-05-123 | prix manuel sans `pricing.manual` → 403 ; avec : mode `manual`, historique | 05-A |
+| Q-05-124 | coefficient, prix d'achat, coefficient effectif, marge absents sans `costs.read` (toutes routes, exports) | 05-A / 05-C |
+| Q-05-125 | aucun montant sérialisé en nombre JSON ; aucun type flottant dans le schéma (requête sur `information_schema`) | 05-A |
+| Q-05-126 | prix en devise ≠ magasin → `422 currency_mismatch` et refus SQL (FK composite) ; aucun total multi-devises dans les listes / exports | 05-A |
+| Q-05-127 | TTC absent (`tax_not_validated`) sans fiscalité validée ; présent avec un taux de test fictif validé dans `mmv_v2_test` | 05-A |
+| Q-05-128 | historique des prix immuable ; vente (contrat `ICatalogQuery`) non affectée par un changement ultérieur | 05-A |
+| Q-05-129 | SKU unique toutes familles et magasins ; code-barres unique si présent | 05-A |
+| Q-05-130 | variante `order_only` sans principal : enregistrée, `incomplete` ; `ICatalogQuery` la signale (QR-01) | 05-A |
+| Q-05-131 | deux magasins fictifs EUR / MAD : prix, stock, seuils et alertes isolés par magasin | 05-B / 05-C |
+| Q-05-132 | sortie manuelle sous le réservé → `422 stock_reserved` (réservé injecté en test) | 05-B |
+| Q-05-133 | import : contrôle à blanc sans écriture ; application tout ou rien ; devise du fichier ≠ magasin refusée | 05-D |
+
 ## Plan de tests — métier (NOT_TESTED)
 
 | ID | Cas | Lot |

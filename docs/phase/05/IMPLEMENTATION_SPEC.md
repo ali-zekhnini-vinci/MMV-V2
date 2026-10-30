@@ -1,80 +1,93 @@
 # 05 — Spécification d'implémentation proposée
 
-**PROPOSED, 29/10/2026 — aucune implémentation avant validation du cadrage et GO de 05-A.**
+**PROPOSED — révision du 30/10/2026 après la validation métier ; aucune implémentation avant le GO de 05-A.** *Historique : version du 29/10/2026 au commit `6c207f9`.*
 
 ## 1. Architecture (ADR-001, ADR-003, inchangés)
 
-Monolithe modulaire existant, mêmes couches que Clients / Rendez-vous / Optique ; aucun microservice, aucune extension PostgreSQL, aucune dépendance nouvelle prévue (ADR-014).
+Monolithe modulaire existant, mêmes couches que Clients / Rendez-vous / Optique ; aucun microservice, aucune extension PostgreSQL, **aucune dépendance nouvelle** (ADR-014 : calcul décimal natif `decimal` côté serveur, aucune bibliothèque décimale côté poste puisque le poste ne calcule aucun montant).
 
-| Couche | Ajouts proposés (dossiers **à créer**, inexistants au 29/10/2026) |
+| Couche | Ajouts proposés (dossiers **à créer**, inexistants au 30/10/2026) |
 |---|---|
-| `src/MMV.Domain/Catalog/`, `Suppliers/`, `Stock/` | entités, politiques, calcul de disponibilité, règles d'archivage et de changement de politique, motifs |
-| `src/MMV.Application/Catalog/`, `Suppliers/`, `Stock/` | validateurs (attributs par catégorie, GTIN, identifiants légaux), cas d'usage, `ICatalogQuery`, `IStockLedger`, `IStockReservations` (interface) |
-| `src/MMV.Infrastructure/Catalog/`, `Stock/` | modèles EF Core 10 (schémas `catalog`, `stock`), stores, verrous SQL, migrations `0007` à `0009` (jamais au démarrage) |
-| `src/MMV.Api/Catalog/`, `Suppliers/`, `Stock/` | routes minimales, policies, filtrage des coûts à la projection, exports CSV |
-| `src/MMV.Domain/Identity/Permissions.cs` | douze permissions (D-05-11) ajoutées à `All` et `Grantable` |
-| `apps/desktop/src/catalog/`, `stock/` | écrans Lot 6, TanStack Query / Table, React Hook Form + Zod, composants existants (garde de navigation, confirmations Radix, états transverses) ; entrée de menu derrière `VITE_MMV_CATALOG_MODULE` |
+| `src/MMV.Domain/Stores/`, `Catalog/`, `Pricing/`, `Suppliers/`, `Stock/` | magasin et devise, familles, modèles / variantes, politiques, calcul de prix (`SalePriceCalculator` : produit exact + arrondi unique), état de prix, disponibilité, règles d'archivage et de changement de politique |
+| `src/MMV.Application/…` | validateurs (attributs par famille, SKU, code-barres, identifiants légaux, devise du magasin), cas d'usage, aperçu de prix, `ICatalogQuery`, `IStockLedger`, `IStockReservations` (interface) |
+| `src/MMV.Infrastructure/…` | modèles EF Core 10 (schémas `org`, `catalog`, `pricing`, `stock`, `imports`), stores, verrous SQL, migrations `0007` à `0010` (jamais au démarrage) |
+| `src/MMV.Api/…` | routes minimales, policies multi-permissions, projections avec / sans coûts, sérialisation des montants en chaînes, exports CSV |
+| `src/MMV.Maintenance` | commandes `stores create|archive`, `locations create`, fiscalité (`tax-categories set` seulement sur décision validée), permissions `grant|revoke` (existant) |
+| `src/MMV.Domain/Identity/Permissions.cs` | permissions de D-05-11 (liste QR-05) ajoutées à `All` et `Grantable` |
+| `apps/desktop/src/catalog/`, `pricing/`, `stock/`, `inventories/` | écrans Lot 6 + états GAP ; sélecteur de magasin actif ; montants formatés depuis les chaînes reçues, jamais calculés ; entrée de menu derrière `VITE_MMV_CATALOG_MODULE` |
 
 ## 2. Permissions et modèles d'attribution
 
-Droits effectifs = permissions serveur. Les profils du Lot 1 ne sont que des **modèles d'attribution suggérés** (à ratifier avec D-05-11) :
+Droits effectifs = permissions serveur. Liste **PROPOSED** (QR-05) ; les profils du Lot 1 ne sont que des modèles d'attribution suggérés :
 
 | Permission | Propriétaire | Responsable | Opticien | Vendeur | Technicien / accueil |
 |---|:-:|:-:|:-:|:-:|:-:|
 | `catalog.read` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `catalog.write` | ✓ | ✓ | ✓ | | |
 | `catalog.archive` | ✓ | ✓ | | | |
-| `catalog.costs.read` | ✓ | ✓ | ✓ | | |
-| `catalog.costs.write` | ✓ | ✓ | | | |
+| `catalog.configure` | ✓ | ✓ | | | |
+| `catalog.import` | ✓ | | | | |
+| `pricing.write` | ✓ | ✓ | | | |
+| `pricing.manual` | ✓ | ✓ | | | |
+| `costs.read` | ✓ | ✓ | ✓ | | |
+| `costs.write` | ✓ | ✓ | | | |
 | `suppliers.read` | ✓ | ✓ | ✓ | | |
 | `suppliers.write` | ✓ | ✓ | | | |
 | `stock.read` | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `stock.movements.write` | ✓ | ✓ | ✓ | | |
 | `stock.adjust` | ✓ | ✓ | | | |
-| `stock.inventory.count` | ✓ | ✓ | ✓ | ✓ | |
-| `stock.inventory.validate` | ✓ | ✓ | | | |
+| `inventory.count` | ✓ | ✓ | ✓ | ✓ | |
+| `inventory.validate` | ✓ | ✓ | | | |
 
-Attribution par `MMV.Maintenance permissions grant|revoke` (inchangé), après application de la migration correspondante.
+Attribution par `MMV.Maintenance permissions grant|revoke`, après application de la migration correspondante.
 
-## 3. Protection des prix d'achat
+## 3. Protection des prix d'achat et du coefficient
 
-1. Projection serveur distincte selon `catalog.costs.read` : les champs de coût ne sont **jamais sérialisés** sans le droit (pas de masquage côté poste, pas de `null` révélateur).
-2. Écriture de coût sans `catalog.costs.write` → `403 costs_forbidden`, transaction annulée.
-3. Exports CSV : mêmes projections.
-4. Audit : noms de champs seulement, jamais de valeur de coût ; valeurs dans `catalog.price_history` sous permission.
-5. Journaux techniques : aucune journalisation des corps (constat Q-04-010 à reconduire).
-6. Poste : aucun coût en cache persistant ; TanStack Query en mémoire, purge à la déconnexion (comportement existant).
-7. Tests : pour chaque route et export, absence des clés de coût sans le droit (Q-05-10x).
+1. Projection serveur distincte selon `costs.read` : prix d'achat, **coefficient** (prix HT ÷ coefficient = prix d'achat), coefficient effectif, marge, prix fournisseurs, coûts de réception ne sont **jamais sérialisés** sans le droit.
+2. Écriture d'un coût sans `costs.write` → `403 costs_forbidden`, transaction annulée.
+3. Exports CSV et rapports d'import : mêmes projections.
+4. Audit : noms de champs seulement ; valeurs dans `pricing.price_history` sous permission.
+5. Journaux techniques : aucune journalisation des corps (constat Q-04-010 reconduit).
+6. Poste : aucun coût en cache persistant ; purge à la déconnexion (comportement existant).
+7. Tests : absence des clés de coût sans le droit, pour chaque route et export (Q-05-108).
 
-## 4. Transactions et concurrence multi-postes
+## 4. Calcul des prix (D-05-16)
+
+- Domaine : `SalePriceCalculator.Compute(decimal purchaseHt, decimal coefficient, RoundingRule rule)` → produit exact puis **un seul arrondi** au centime (règle QR-09 : demi vers l'extérieur) ; aucune conversion `double`.
+- Aperçu et enregistrement appellent la même fonction ; l'enregistrement compare au `expectedSalePriceHt` (`409 price_preview_stale`).
+- État `recalculation_pending` calculé à la lecture (mode coefficient et prix stocké ≠ calcul courant) ; jamais corrigé automatiquement.
+- Contrôle croisé en test : résultat C# = `round(purchase * coefficient, 2)` PostgreSQL sur un jeu de cas limites (demi-centimes, grands montants, coefficient < 1, 4 décimales).
+- TTC : `TaxCalculator` appelé seulement avec un taux **validé** du magasin ; sinon `tax_not_validated`. Aucun taux en dur dans le code ni dans les tests (les tests utilisent des taux fictifs explicitement nommés comme tels, injectés dans la base de test).
+
+## 5. Transactions et concurrence multi-postes
 
 | Opération | Mécanisme |
 |---|---|
-| Modification d'article / fournisseur | concurrence optimiste `xmin` (`UPDATE … WHERE id = @id AND xmin = @version`), `409 version_conflict` |
-| Mouvement manuel, réception | transaction : article `FOR SHARE` (statut, politique) → solde `FOR UPDATE` → contrôle `on_hand + delta >= 0` → insertion du mouvement (avant / après) → mise à jour du solde → audit → validation. Tout ou rien |
-| Ajustement | idem + comparaison `expectedOnHand` à la valeur verrouillée → `409 stock_changed` |
-| Archivage / changement de politique | article `FOR NO KEY UPDATE` **avant** lecture du solde et des inventaires ouverts (leçon O-04-53) ; un mouvement concurrent attend ou échoue proprement |
-| Plusieurs articles (validation d'inventaire, futures ventes) | verrous des articles puis des soldes **dans l'ordre croissant des identifiants** ; ordre unique documenté pour toutes les phases (anti-interblocage) |
-| Ouverture d'inventaire | `pg_advisory_xact_lock` dédié + contrôle « un seul inventaire ouvert par article » |
-| Saisie d'une ligne d'inventaire | `xmin` de la ligne ; `expected_at_count` lu sous `FOR SHARE` du solde |
-| Validation d'inventaire | session `FOR UPDATE` (statut `open`) → articles et soldes ordonnés → comparaison de chaque solde à `expected_at_count` → mouvements `inventory_adjustment` → statut `validated` → audit ; `lock_timeout` borné |
-| Idempotence | `creation_request_id` / `last_request_id` (fiches, sessions), `(request_id, product_id)` unique (mouvements) ; réémission = résultat déjà enregistré |
-| Lecture « vue stock » | instantané (`asOf`), aucun temps réel ; les conflits apparaissent à l'action, jamais en silence |
+| Modification de modèle / variante / fournisseur / prix | concurrence optimiste `xmin`, `409 version_conflict` |
+| Mouvement manuel, réception | transaction : variante `FOR SHARE` (statut, politique) → solde (variante, emplacement) `FOR UPDATE` → contrôles `on_hand + delta >= 0` et `on_hand + delta >= reserved` → mouvement (avant / après) → solde → audit. Tout ou rien |
+| Ajustement | idem + comparaison `expectedOnHand` → `409 stock_changed` |
+| Archivage / changement de politique | variante `FOR NO KEY UPDATE` **avant** lecture des soldes et inventaires ouverts (leçon O-04-53) |
+| Plusieurs lignes (inventaire, futures ventes) | verrous dans l'ordre croissant (`variant_id`, `location_id`) ; ordre unique documenté pour toutes les phases |
+| Ouverture d'inventaire | `pg_advisory_xact_lock` dédié + contrôle « un seul inventaire ouvert par (variante, emplacement) » |
+| Validation d'inventaire | session `FOR UPDATE` → soldes ordonnés → comparaison à `expected_at_count` → mouvements `inventory_adjustment` → statut → audit ; `lock_timeout` borné |
+| Recalcul de prix par lot | prix concernés verrouillés dans l'ordre (`variant_id`) ; liste confirmée comparée à l'état courant |
+| Idempotence | `creation_request_id` / `last_request_id` ; `(request_id, variant_id, location_id)` unique (mouvements) |
 
-Niveau d'isolation : `READ COMMITTED` + verrous explicites (comme Phase 04) ; `SERIALIZABLE` non retenu (réessais applicatifs généralisés inutiles ici).
+Niveau d'isolation : `READ COMMITTED` + verrous explicites (comme Phase 04).
 
-## 5. Disponibilité
+## 6. Disponibilité
 
-Calcul unique dans le domaine (`Availability.From(policy, archived, onHand, reserved = 0, threshold)`), utilisé par la liste, la fiche, la vue stock, `ICatalogQuery` et les exports ; jamais recalculé par le poste.
+Calcul unique dans le domaine (`Availability.From(policy, archived, incomplete, onHand, reserved, threshold)`) utilisé par toutes les listes, la fiche, la vue stock, `ICatalogQuery` et les exports ; jamais recalculé par le poste.
 
-## 6. Maroc / Belgique et données sensibles
+## 7. Magasins, EUR / MAD et données sensibles
 
-- Devise de l'installation (paramètre de déploiement, comme le fuseau D-03-13) ; tout prix porte sa devise ; refus d'un prix dans une autre devise.
-- Format des montants à l'affichage selon la langue française de l'installation (`1 234,50 MAD` / `1 234,50 €`).
-- Identifiants légaux fournisseurs : contrôles de format seulement, aucune vérification en ligne.
+- Devise portée par le magasin, garantie par clé étrangère composite ; aucune conversion, aucun total multi-devises.
+- Formats d'affichage français : `1 234,50 €` / `1 234,50 MAD`, depuis la chaîne décimale reçue.
+- Pilotes fictifs BE-EUR / MA-MAD : **aucune création à ce stade** ; jeux de test créés et supprimés par les tests réels après chaque G05-SQL (résidu 0).
+- Identifiants légaux fournisseurs : contrôles de format seulement.
 - Aucune donnée client ni de santé dans les modules 05.
-- G05-LEGAL : traçabilité des dispositifs médicaux, conservation des pièces comptables et des inventaires.
+- G05-LEGAL / ADR-010 : fiscalité, traçabilité des dispositifs médicaux, conservation.
 
-## 7. Outillage de preuve (reconduit de la Phase 04)
+## 8. Outillage de preuve (reconduit de la Phase 04)
 
-Tests .NET unitaires et d'API ; tests PostgreSQL 18 réels sur `mmv_v2_test` (après chaque G05-SQL) avec **barrières déterministes** pour la concurrence et preuve « échoue avant / passe après » pour chaque correctif ; HTTPS réel ; Tauri natif ; captures navigateur comparées aux planches Lot 6 en clair / sombre, 1920×1080 et 1024×700 ; résidu de données de test = 0 en fin de session.
+Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; PostgreSQL 18 réel sur `mmv_v2_test` après chaque G05-SQL, **barrières déterministes** pour la concurrence ; HTTPS réel ; Tauri natif ; captures comparées aux planches Lot 6 (`references/phase05/lot6/`) en clair / sombre, 1920×1080 et 1024×700 ; résidu de données de test = 0.
