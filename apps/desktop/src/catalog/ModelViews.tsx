@@ -16,7 +16,7 @@ import {
 import {
   Badge, Dialog, ErrorBanner, ErrorState, Field, Loading, PageHeader, Panel, SelectField, StoreSelect,
 } from "./CatalogUi.tsx";
-import { useActiveStore, useCatalogQuery, useCatalogWrite } from "./catalogData.ts";
+import { useActiveStore, useCatalogPreview, useCatalogQuery, useCatalogWrite } from "./catalogData.ts";
 
 interface VariantDraft {
   sku: string;
@@ -374,7 +374,7 @@ function PricingPanel({ detail }: { detail: VariantDetail }) {
   const { store } = useActiveStore();
   const price = detail.row.price;
   const write = useCatalogWrite();
-  const preview = useCatalogWrite<{ computedSalePriceHt: string; belowCost: boolean; currency: string }>();
+  const preview = useCatalogPreview<{ computedSalePriceHt: string; belowCost: boolean; currency: string }>();
   const [purchase, setPurchase] = useState(price.purchasePriceHt ?? "");
   const [coefficient, setCoefficient] = useState(price.coefficient ?? "");
   const [manual, setManual] = useState("");
@@ -418,7 +418,7 @@ function PricingPanel({ detail }: { detail: VariantDetail }) {
           </div>
           <div className="cat-actions">
             <Button disabled={preview.isPending}
-              onClick={() => preview.mutate({ method: "POST", path: "/api/pricing/preview", body: { storeId: store.id, purchasePriceHt: decimalInput(purchase), coefficient: decimalInput(coefficient) } },
+              onClick={() => preview.mutate({ path: "/api/pricing/preview", body: { storeId: store.id, purchasePriceHt: decimalInput(purchase), coefficient: decimalInput(coefficient) } },
                 { onSuccess: (r) => { setPreviewed(r.computedSalePriceHt); setAcceptBelowCost(false); } })}>
               Aperçu
             </Button>

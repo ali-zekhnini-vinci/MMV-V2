@@ -1,7 +1,7 @@
 // Données serveur des écrans Catalogue & stock (TanStack Query) et magasin actif ; séparé des composants (Fast Refresh).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
-import { type Authorized, getCatalog, type Store, writeCatalog } from "../api/catalog.ts";
+import { type Authorized, getCatalog, previewCatalog, type Store, writeCatalog } from "../api/catalog.ts";
 import type { ApiError } from "../api/client.ts";
 import { unwrap } from "../api/queryClient.ts";
 import { useAuth } from "../auth/authContext.ts";
@@ -30,6 +30,14 @@ export function useCatalogWrite<T = unknown>() {
     mutationFn: async ({ method, path, body }: { method: "POST" | "PUT"; path: string; body: Record<string, unknown> }) =>
       unwrap(await writeCatalog<T>(authorized, method, path, body)),
     onSettled: () => void queryClient.invalidateQueries({ queryKey: [...KEY] }),
+  });
+}
+
+/** Aperçu serveur (aucune écriture, aucun `requestId`, aucune invalidation). */
+export function useCatalogPreview<T = unknown>() {
+  const authorized = useAuthorized();
+  return useMutation({
+    mutationFn: async ({ path, body }: { path: string; body: Record<string, unknown> }) => unwrap(await previewCatalog<T>(authorized, path, body)),
   });
 }
 

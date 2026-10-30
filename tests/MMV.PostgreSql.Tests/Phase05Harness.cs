@@ -104,11 +104,41 @@ internal sealed class Phase05Bench : IAsyncDisposable
     private readonly string _connection = Phase05Target.ConnectionString!;
     private readonly Dictionary<string, string> _tokens = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Processus MMV.Api RÉEL (Kestrel HTTPS) à interroger à la place du serveur en mémoire : variable
+    /// <c>MMV_PG05_API_BASE</c>, refusée hors <c>https://localhost:&lt;port&gt;</c> ou sur le port 7267 de l'API du propriétaire.
+    /// Le processus doit viser la même base (<c>ConnectionStrings__Mmv</c>) : comptes, magasins et purge restent écrits ici.
+    /// </summary>
+    public const string ApiBaseVariable = "MMV_PG05_API_BASE";
+
     private Phase05Bench(WebApplicationFactory<Program> factory, ITestOutputHelper output)
     {
         Factory = factory;
         _output = output;
-        Client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        RealApi = RealApiBase();
+        Client = RealApi is null
+            ? factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") })
+            : new HttpClient { BaseAddress = RealApi };
+    }
+
+    /// <summary>Base du processus réel, ou null (serveur en mémoire).</summary>
+    public Uri? RealApi { get; }
+
+    public static Uri? RealApiBase()
+    {
+        var value = Environment.GetEnvironmentVariable(ApiBaseVariable);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var uri = new Uri(value);
+        if (uri.Scheme != Uri.UriSchemeHttps || uri.Host != "localhost" || uri.IsDefaultPort || uri.Port == 7267 || uri.AbsolutePath != "/")
+        {
+            throw new InvalidOperationException($"{ApiBaseVariable} refusée : https://localhost:<port> attendu, port 7267 (API du propriétaire) exclu.");
+        }
+
+        return uri;
     }
 
     public WebApplicationFactory<Program> Factory { get; }
@@ -146,7 +176,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
         });
         var bench = new Phase05Bench(factory, output);
         await bench.SeedStoresAsync();
-        output.WriteLine($"banc Phase 05 sur {Phase05Target.Name}, suffixe {bench.Suffix}");
+        output.WriteLine($"banc Phase 05 sur {Phase05Target.Name}, suffixe {bench.Suffix}, HTTP : {bench.RealApi?.ToString() ?? "serveur en mémoire"}");
         return bench;
     }
 
@@ -174,6 +204,8 @@ internal sealed class Phase05Bench : IAsyncDisposable
         _tokens[name] = body.RootElement.GetProperty("accessToken").GetString()!;
         return name;
     }
+
+    public string TokenOf(string user) => _tokens[user];
 
     public Task<ApiResult> GetAsync(string user, string path) => SendAsync(user, HttpMethod.Get, path, null);
 

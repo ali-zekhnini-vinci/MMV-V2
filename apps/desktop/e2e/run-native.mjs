@@ -1751,6 +1751,229 @@ const scenarios = {
     await setZoom(page, 1);
     await setTheme(page, "light");
   },
+
+  /**
+   * Phase 05 — intégration finale (migration 0007 appliquée, GO G05-SQL du 30/10/2026) : Tauri → HTTPS → MMV.Api →
+   * PostgreSQL 18 (mmv_v2_test), données FICTIVES de l'outil de banc (deux magasins Belgique EUR / Maroc MAD, six familles,
+   * fournisseurs, réception partielle, inventaire ouvert). Création d'un produit, prix par coefficient (aperçu serveur,
+   * arrondi), autre magasin et autre devise, prix manuel, entrée et sortie refusée (stock négatif), réceptions, comptage
+   * d'inventaire, import CSV (aperçu, contrôle à blanc, application, réimport sans doublon, rejet), compte sans coûts,
+   * thème sombre. Chaque écriture de l'interface est relue par l'API réelle. Fichier MMV_E2E_CREDENTIALS_FILE :
+   * { suffix, agent, other, stores: { be, ma }, variants }.
+   */
+  async "catalogue-05"(page) {
+    const c = credentials();
+    const { agent, other: seller, suffix: sfx } = c;
+    const shot = (name, size) => capture(`p05_${name}`, size);
+    const sku = (code) => `N05-${sfx}-${code}`;
+    const h1Is = (title) => `document.querySelector('h1')?.textContent.trim() === ${J(title)}`;
+    const variantRow = async (account, code, store = c.stores.be) =>
+      (await apiGet(account, `/api/catalog/variants?storeId=${store}&q=${encodeURIComponent(sku(code))}`)).items?.[0];
+    const price = async (variantId, store) => (await apiGet(agent, `/api/pricing/variants/${variantId}?storeId=${store}`)).price;
+    const onHand = async (variantId) =>
+      (await apiGet(agent, `/api/stock/balances?storeId=${c.stores.be}&pageSize=200`)).items.filter((r) => r.variantId === variantId).reduce((s, r) => s + r.onHand, 0);
+    const subNav = (label) => `[...document.querySelectorAll('nav[aria-label="Sections"] a')].find(a => a.textContent.trim() === ${J(label)})`;
+    const rowButton = (rowText, label) =>
+      `(() => { const r = [...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(rowText)})); return r && [...r.querySelectorAll('button')].find(b => b.textContent.trim() === ${J(label)}); })()`;
+    const setActiveStore = async (name) => {
+      const ok = await page.evaluate(`(() => { const s = document.querySelector('select[aria-label="Magasin actif"]'); if (!s) return false;
+        const o = [...s.options].find(o => o.textContent.includes(${J(name)})); if (!o) return false;
+        Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`);
+      check(ok, `magasin actif : ${name}`);
+    };
+    const until = async (probe, label, timeoutMs = 10000) => {
+      const end = Date.now() + timeoutMs;
+      for (;;) {
+        if (await probe()) return check(true, label);
+        if (Date.now() > end) return check(false, label);
+        await page.sleep(300);
+      }
+    };
+    const uploadCsv = (name, content) => page.evaluate(`(() => { const input = document.querySelector('input[type=file]'); if (!input) return false;
+      const dt = new DataTransfer(); dt.items.add(new File([${J(content)}], ${J(name)}, { type: 'text/csv' })); input.files = dt.files;
+      input.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`).then((ok) => check(ok, `dépôt du fichier ${name} (sélecteur de fichier de l'interface)`));
+
+    log("PARCOURS 05", `API ${API}, suffixe ${sfx}, magasins fictifs Bruxelles (EUR) et Casablanca (MAD)`);
+    resize(1920, 1080);
+    await setZoom(page, 1);
+    await signIn(page, agent);
+    await setTheme(page, "light");
+
+    // 1. Catalogue : six familles, magasin actif, prix du magasin.
+    await click(page, `${navButton("Produits")}`, "menu Produits");
+    await page.waitFor(h1Is("Catalogue"), { label: "écran Catalogue" });
+    await page.waitFor(hasText(sku("MON")), { label: "variantes fictives listées" });
+    for (const code of ["MON", "SOL", "VER", "LEN", "ACC", "SRV"]) check(await page.evaluate(hasText(sku(code))), `famille affichée : ${sku(code)}`);
+    check(await page.evaluate(hasText("103,13")), "prix de vente BE (41,25 × 2,5 = 103,13 €) affiché");
+    shot("01_catalogue_six-familles_light_1920x1080");
+
+    // 2. Création d'un produit par l'interface.
+    await click(page, buttonByText("Nouveau produit"), "Nouveau produit");
+    await page.waitFor(h1Is("Nouveau produit"), { label: "formulaire Nouveau produit" });
+    await setSelect(page, "Famille", "Accessoires");
+    await fillField(page, "Marque", "Marque fictive");
+    await fillField(page, "Nom du modèle", `Cordon interface ${sfx}`);
+    await fillField(page, "SKU interne", sku("UI1"));
+    await fillField(page, "Libellé de la variante", "Cordon noir");
+    shot("02_nouveau-produit_light_1920x1080");
+    await click(page, buttonByText("Enregistrer"), "Enregistrer le produit");
+    await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(`Cordon interface ${sfx}`)})`, { label: "fiche du modèle créé" });
+    const created = await variantRow(agent, "UI1");
+    check(created?.familyCode === "accessories" && created?.stockPolicy === "stocked", "API : variante créée (accessoires, stockée)");
+
+    // 3. Prix par coefficient (aperçu serveur, un seul arrondi), magasin Belgique — EUR.
+    await page.waitFor(hasText("Prix par coefficient"), { label: "onglet Prix" });
+    await fillField(page, "Prix d'achat HT (EUR)", "41,25");
+    await fillField(page, "Coefficient", "2,5");
+    await click(page, buttonByText("Aperçu"), "Aperçu");
+    await page.waitFor(hasText("Prix calculé : 103,13"), { label: "aperçu 103,13 €" });
+    await click(page, buttonByText("Enregistrer ce prix"), "Enregistrer ce prix");
+    await until(async () => (await price(created.variantId, c.stores.be))?.salePriceHt === "103.13", "API : prix BE 103.13 EUR (achat 41.2500, coefficient 2.5000)");
+    await page.waitFor("document.querySelector('.cat-price')?.textContent.includes('103,13')", { label: "prix enregistré affiché (103,13 €)" });
+    shot("03_prix-coefficient-eur_light_1920x1080");
+
+    // 4. Autre magasin, autre devise, aucune conversion.
+    await setActiveStore("Casablanca");
+    await page.waitFor(hasText("Prix d'achat HT (MAD)"), { label: "tarif du magasin MAD" });
+    await fillField(page, "Prix d'achat HT (MAD)", "19,99");
+    await fillField(page, "Coefficient", "2,2");
+    await click(page, buttonByText("Aperçu"), "Aperçu MAD");
+    await page.waitFor(hasText("Prix calculé : 43,98"), { label: "aperçu 43,98 MAD" });
+    await click(page, buttonByText("Enregistrer ce prix"), "Enregistrer ce prix MAD");
+    await until(async () => (await price(created.variantId, c.stores.ma))?.salePriceHt === "43.98", "API : prix MA 43.98 MAD");
+    const be = await price(created.variantId, c.stores.be);
+    check(be.salePriceHt === "103.13" && be.currency === "EUR", "API : prix BE inchangé (103.13 EUR), aucune conversion");
+    shot("04_prix-coefficient-mad_light_1920x1080");
+
+    // 5. Prix manuel (droit pricing.manual) : coefficient conservé, mode manuel.
+    await setActiveStore("Bruxelles");
+    await page.waitFor(hasText("Prix de vente HT (EUR)"), { label: "prix manuel (EUR)" });
+    await fillField(page, "Prix de vente HT (EUR)", "99,90");
+    await fillField(page, "Motif (facultatif)", "Prix rond fictif");
+    await click(page, buttonByText("Appliquer le prix manuel"), "Appliquer le prix manuel");
+    await until(async () => (await price(created.variantId, c.stores.be))?.pricingMode === "manual", "API : mode manuel");
+    const manual = await price(created.variantId, c.stores.be);
+    check(manual.salePriceHt === "99.90" && manual.coefficient === "2.5000", "API : 99.90 EUR, coefficient 2.5000 conservé");
+    await page.waitFor(hasText("Prix manuel"), { label: "mode « Prix manuel » affiché" });
+    shot("05_prix-manuel_light_1920x1080");
+
+    // 6. Stock : entrée, puis sortie supérieure au stock refusée (rien écrit).
+    const monture = (await variantRow(agent, "MON")).variantId;
+    const before = await onHand(monture);
+    await click(page, `${navButton("Stock & inventaires")}`, "menu Stock & inventaires");
+    await page.waitFor(h1Is("Stock"), { label: "écran Stock" });
+    await page.waitFor(hasText(sku("MON")), { label: "solde de la monture" });
+    await click(page, rowButton(sku("MON"), "Entrée"), "Entrée (monture)");
+    await page.waitFor("!!document.querySelector('[role=dialog]')", { label: "dialogue Entrée" });
+    await fillField(page, "Quantité", "2");
+    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Confirmer')`, "Confirmer l'entrée");
+    await until(async () => (await onHand(monture)) === before + 2, `API : en main ${before} → ${before + 2}`);
+    await page.waitFor("!document.querySelector('[role=dialog]')", { label: "dialogue fermé" });
+    await click(page, rowButton(sku("MON"), "Sortie"), "Sortie (monture)");
+    await page.waitFor("!!document.querySelector('[role=dialog]')", { label: "dialogue Sortie" });
+    await fillField(page, "Quantité", String(before + 50));
+    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Confirmer')`, "Confirmer la sortie excessive");
+    await page.waitFor("!!document.querySelector('[role=dialog] [role=alert]')", { label: "refus affiché dans le dialogue" });
+    check((await onHand(monture)) === before + 2, "API : sortie refusée, stock inchangé, jamais négatif");
+    log("REFUS", await page.evaluate("document.querySelector('[role=dialog] [role=alert]').innerText.replace(/\\s+/g, ' ')"));
+    shot("06_sortie-refusee-stock-negatif_light_1920x1080");
+    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Annuler')`, "Annuler");
+
+    // 7. Réceptions : réception partielle (10 annoncés, 6 reçus) et reliquat.
+    await click(page, subNav("Réceptions"), "Réceptions");
+    await page.waitFor(hasText(`BL-FICTIF-${sfx}`), { label: "réception partielle listée" });
+    check(await page.evaluate(`!!${buttonByText("Recevoir le reliquat")}`), "action « Recevoir le reliquat » proposée");
+    shot("07_receptions-partielle_light_1920x1080");
+
+    // 8. Inventaire ouvert (famille Lunettes de soleil) : comptage d'une ligne, relu par l'API.
+    await click(page, subNav("Inventaires"), "Inventaires");
+    await page.waitFor("document.querySelectorAll('tbody tr.cat-row').length > 0", { label: "inventaire listé" });
+    await click(page, "document.querySelector('tbody tr.cat-row')", "ouvrir l'inventaire");
+    await page.waitFor(`!!document.querySelector(${J(`input[aria-label="Quantité constatée ${sku("SOL")}"]`)})`, { label: "ligne à compter" });
+    await page.evaluate(`document.querySelector(${J(`input[aria-label="Quantité constatée ${sku("SOL")}"]`)}).focus()`);
+    await page.type("2");
+    await click(page, `document.querySelector(${J(`input[aria-label="Quantité constatée ${sku("SOL")}"]`)}).closest('form').querySelector('button[type=submit]')`, "Compter");
+    const sessions = await apiGet(agent, `/api/inventories?storeId=${c.stores.be}`);
+    const sessionId = (sessions.items ?? sessions)[0].id;
+    await until(async () => (await apiGet(agent, `/api/inventories/${sessionId}`)).lines.some((l) => l.sku === sku("SOL") && l.countedQuantity === 2), "API : ligne comptée 2 (écart −1 à justifier)");
+    shot("08_inventaire-comptage_light_1920x1080");
+
+    // 9. Import CSV : aperçu, contrôle à blanc (rien écrit), application, réimport sans doublon, fichier rejeté.
+    const csv = `code;nom;pays\nIMPN${sfx}A;Fournisseur importé A;BE\nIMPN${sfx}B;Fournisseur importé B;MA\n`;
+    const imported = async () => (await apiGet(agent, `/api/suppliers?q=IMPN${sfx}&pageSize=50`)).items.filter((s) => s.code.startsWith(`IMPN${sfx}`)).length;
+    await click(page, `${navButton("Produits")}`, "menu Produits");
+    await click(page, subNav("Import CSV"), "Import CSV");
+    await page.waitFor(h1Is("Import CSV"), { label: "écran Import CSV" });
+    await setSelect(page, "Type", "Fournisseurs");
+    await uploadCsv("fournisseurs.csv", csv);
+    await page.waitFor(hasText("2. Aperçu et correspondance des colonnes"), { label: "aperçu et correspondance" });
+    await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler (à blanc)");
+    await page.waitFor(hasText("2 création(s)"), { label: "contrôle à blanc : 2 créations" });
+    check((await imported()) === 0, "API : contrôle à blanc, aucun fournisseur écrit");
+    shot("09_import-controle-a-blanc_light_1920x1080");
+    await click(page, buttonByText("Appliquer (tout ou rien)"), "Appliquer (tout ou rien)");
+    await until(async () => (await imported()) === 2, "API : 2 fournisseurs importés");
+    await page.waitFor(hasText("Appliqué"), { label: "lot appliqué" });
+    await click(page, subNav("Catalogue"), "Catalogue");
+    await click(page, subNav("Import CSV"), "Import CSV (nouveau dépôt)");
+    await page.waitFor(h1Is("Import CSV"), { label: "Import CSV (nouveau dépôt)" });
+    await setSelect(page, "Type", "Fournisseurs");
+    await uploadCsv("fournisseurs.csv", csv);
+    await page.waitFor(`!!${buttonByText("Contrôler (à blanc)")}`, { label: "lot réimporté" });
+    await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler le réimport");
+    await page.waitFor(hasText("2 inchangée(s)"), { label: "réimport : 2 inchangées" });
+    await click(page, buttonByText("Appliquer (tout ou rien)"), "Appliquer le réimport");
+    await page.waitFor("!!document.querySelector('[role=alert]')", { label: "réimport refusé" });
+    check((await imported()) === 2, "API : aucun doublon (toujours 2)");
+    await click(page, subNav("Catalogue"), "Catalogue");
+    await click(page, subNav("Import CSV"), "Import CSV (nouveau dépôt)");
+    await page.waitFor(h1Is("Import CSV"), { label: "Import CSV (nouveau dépôt)" });
+    await setSelect(page, "Type", "Catalogue (modèles et variantes)");
+    await uploadCsv("catalogue.csv", `famille;marque;modele;variante;sku;politique\naccessories;Marque;Import ${sfx};Rouge;IMPN-${sfx}-1;stocked\naccessories;Marque;Import ${sfx};=CMD();IMPN-${sfx}-2;stocked\n`);
+    await page.waitFor(`!!${buttonByText("Contrôler (à blanc)")}`, { label: "lot catalogue déposé" });
+    await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler le catalogue");
+    await page.waitFor(hasText("1 erreur(s)"), { label: "1 ligne en erreur (formule refusée)" });
+    check(await page.evaluate(isDisabled("Appliquer (tout ou rien)")), "application impossible tant qu'une ligne est en erreur (tout ou rien)");
+    check((await apiGet(agent, `/api/catalog/variants?storeId=${c.stores.be}&q=IMPN-${sfx}`)).items.length === 0, "API : aucune variante importée");
+    shot("10_import-rejet-tout-ou-rien_light_1920x1080");
+
+    // 10. Fournisseurs et référentiel des verres.
+    await click(page, subNav("Fournisseurs"), "Fournisseurs");
+    await page.waitFor(hasText("Fournisseur fictif Maroc"), { label: "fournisseurs listés" });
+    shot("11_fournisseurs_light_1920x1080");
+    await click(page, subNav("Référentiel verres"), "Référentiel verres");
+    await page.waitFor(hasText(`Gamme Démo ${sfx}`), { label: "gamme de verres listée" });
+    shot("12_referentiel-verres_light_1920x1080");
+
+    // 11. Thème sombre (fiche et catalogue), puis compte sans coûts.
+    await setTheme(page, "dark");
+    await click(page, subNav("Catalogue"), "Catalogue");
+    await page.waitFor(hasText(sku("MON")), { label: "catalogue (sombre)" });
+    shot("13_catalogue_dark_1920x1080");
+    await click(page, `[...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(sku("MON"))}))`, "fiche de la monture");
+    await page.waitFor(hasText("Prix d'achat HT"), { label: "fiche (sombre) avec coûts" });
+    shot("14_fiche-prix_dark_1920x1080");
+    resize(1366, 768);
+    shot("15_fiche-prix_dark_1366x768");
+    resize(1920, 1080);
+    await setTheme(page, "light");
+
+    await signIn(page, seller);
+    await click(page, `${navButton("Produits")}`, "menu Produits (vendeur)");
+    await page.waitFor(hasText(sku("MON")), { label: "catalogue (vendeur)" });
+    check(!(await page.evaluate(`!!${buttonByText("Nouveau produit")}`)), "vendeur : aucun « Nouveau produit » (catalog.write absent)");
+    await click(page, `[...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(sku("MON"))}))`, "fiche de la monture (vendeur)");
+    await page.waitFor(hasText("Prix de vente HT"), { label: "fiche (vendeur)" });
+    const body = await text(page);
+    check(!body.includes("Prix d'achat HT") && !body.includes("Coefficient effectif") && !body.includes("Marge HT") && !body.includes("41,25"), "vendeur : aucun coût affiché (prix d'achat, coefficient, marge)");
+    check(body.includes("103,13"), "vendeur : prix de vente affiché");
+    const raw = J(await apiGet(seller, `/api/catalog/variants/${monture}?storeId=${c.stores.be}`));
+    check(!raw.includes("purchasePriceHt") && !raw.includes("41.25"), "API (vendeur) : aucune clé de coût servie");
+    shot("16_vendeur-sans-couts_light_1920x1080");
+    await click(page, `${navButton("Stock & inventaires")}`, "menu Stock (vendeur)");
+    await page.waitFor(hasText(sku("MON")), { label: "stock (vendeur)" });
+    check(!(await page.evaluate(`!!${rowButton(sku("MON"), "Entrée")}`)), "vendeur : aucune action d'entrée/sortie (stock.movements.write absent)");
+  },
 };
 
 if (!scenarios[scenario]) {

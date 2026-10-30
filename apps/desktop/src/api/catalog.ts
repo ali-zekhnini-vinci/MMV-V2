@@ -20,6 +20,16 @@ export async function getCatalog<T>(authorized: Authorized, path: string): Promi
   return authorized((baseUrl, token) => requestJson<T>(baseUrl, path, { token, parse: (body) => anyObject(body) as T | null }));
 }
 
+/**
+ * Aperçu serveur (ex. POST /api/pricing/preview) : calcul sans écriture, donc SANS `requestId` — le serveur refuse tout
+ * membre inconnu (400 invalid_body, O-05-14). 200 attendu ; rejouable sans risque.
+ */
+export async function previewCatalog<T>(authorized: Authorized, path: string, body: Record<string, unknown>): Promise<ApiResult<T>> {
+  return authorized((baseUrl, token) =>
+    requestJson<T>(baseUrl, path, { method: "POST", body, token, parse: (b) => anyObject(b) as T | null, acceptedStatuses: [200], timeoutMs: WRITE_TIMEOUT_MS }),
+  );
+}
+
 /** Écriture : 200 ou 201 attendus ; rejouée une fois avec le même `requestId` si l'issue est incertaine. */
 export async function writeCatalog<T>(authorized: Authorized, method: "POST" | "PUT", path: string, body: Record<string, unknown>): Promise<ApiResult<T>> {
   const payload = { requestId: newRequestId(), ...body };

@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using Npgsql;
 using Xunit.Abstractions;
 
@@ -7,14 +10,21 @@ namespace MMV.PostgreSql.Tests;
 /// Inventaire EXACT des cinq schémas créés par 0007_CatalogStockModule (Phase 05), relu des catalogues PostgreSQL en
 /// session lecture seule : colonnes (type, nullabilité, défaut), contraintes (définition complète), index (définition),
 /// séquences, fonctions (empreinte du corps), déclencheurs (définition), propriétaire et droits. Comparé à l'instantané
-/// versionné <c>docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt</c>, qui constitue aussi le diff de schéma
-/// de la revue G05-SQL (0006 → 0007 n'ajoute que ces objets, plus la contrainte de permissions recréée).
+/// versionné <c>docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.applied.txt</c> (inventaire relu après
+/// application du script approuvé sur mmv_v2_test, 30/10/2026). L'inventaire de la revue G05-SQL
+/// (<c>0007_CatalogStockModule.schema-inventory.txt</c>, sous empreinte du manifeste, conservé tel quel) avait été relevé
+/// sur un cluster jetable où le script contenait encore des fins de ligne CRLF : seules les 8 empreintes de corps de
+/// fonction diffèrent (O-05-13), ce que vérifie <see cref="ReviewedInventory_DiffersOnlyByTheFunctionBodiesLineEndings"/>.
 /// Mise à jour volontaire : <c>MMV_UPDATE_PHASE05_SCHEMA=1</c>, puis relecture du diff.
 /// </summary>
 [Trait("Stage", "Phase05")]
 public sealed class Phase05SchemaTests(ITestOutputHelper output)
 {
-    public const string SnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt";
+    public const string SnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.applied.txt";
+
+    public const string ReviewedSnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt";
+
+    public const string ApprovedScriptRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql";
 
     private const string Schemas = "('catalog', 'imports', 'org', 'pricing', 'stock')";
 
@@ -41,6 +51,44 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
         output.WriteLine($"{actual.Count(c => c == '\n')} ligne(s) d'inventaire sur {Phase05Target.Name}");
         Assert.True(File.Exists(path), $"Instantané absent : {SnapshotRelativePath}");
         Assert.Equal((await File.ReadAllTextAsync(path)).ReplaceLineEndings("\n"), actual);
+    }
+
+    /// <summary>
+    /// O-05-13 : sans connexion. Les deux inventaires sont identiques hors section des fonctions ; dans l'inventaire
+    /// appliqué, chaque empreinte est le md5 du corps <c>$fn$…$fn$</c> du script approuvé (LF) et, dans l'inventaire de
+    /// revue, le md5 du même corps en CRLF.
+    /// </summary>
+    [Fact]
+    public void ReviewedInventory_DiffersOnlyByTheFunctionBodiesLineEndings()
+    {
+        var root = FindRepositoryRoot();
+        var applied = File.ReadAllLines(Path.Combine(root, SnapshotRelativePath));
+        var reviewed = File.ReadAllLines(Path.Combine(root, ReviewedSnapshotRelativePath));
+        var script = File.ReadAllText(Path.Combine(root, ApprovedScriptRelativePath));
+        var bodies = Regex.Matches(script, @"CREATE FUNCTION (\S+)\(\) RETURNS trigger LANGUAGE plpgsql AS \$fn\$(.*?)\$fn\$", RegexOptions.Singleline)
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+        // md5 de PostgreSQL (empreinte de l'inventaire), aucun usage cryptographique.
+#pragma warning disable CA5351
+        static string Md5(string text) => Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(text)));
+#pragma warning restore CA5351
+
+        Assert.Equal(reviewed.Length, applied.Length);
+        Assert.Equal(8, bodies.Count);
+        var differing = 0;
+        for (var i = 0; i < applied.Length; i++)
+        {
+            if (applied[i] == reviewed[i])
+            {
+                continue;
+            }
+
+            differing++;
+            var name = applied[i].Split(' ')[0];
+            Assert.Equal($"{name} returns=trigger md5={Md5(bodies[name])}", applied[i]);
+            Assert.Equal($"{name} returns=trigger md5={Md5(bodies[name].Replace("\n", "\r\n"))}", reviewed[i]);
+        }
+
+        Assert.Equal(8, differing);
     }
 
     internal static async Task<List<string>> InventoryAsync(NpgsqlConnection connection)
