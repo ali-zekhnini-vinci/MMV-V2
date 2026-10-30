@@ -343,7 +343,8 @@ namespace MMV.Infrastructure.Persistence.Migrations
                     b.HasIndex("CreatedByUserId")
                         .HasDatabaseName("ix_lens_references_created_by_user_id");
 
-                    b.HasIndex("ManufacturerId");
+                    b.HasIndex("ManufacturerId")
+                        .HasDatabaseName("ix_lens_references_manufacturer_id");
 
                     b.HasIndex("UpdatedByUserId")
                         .HasDatabaseName("ix_lens_references_updated_by_user_id");

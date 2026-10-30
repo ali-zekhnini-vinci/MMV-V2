@@ -1,5 +1,7 @@
 # 05 — Contrat d'API proposé (`/api/catalog`, `/api/pricing`, `/api/suppliers`, `/api/stock`, `/api/inventories`)
 
+> **Mise à jour 30/10/2026 (implémentation)** : ce document reste la proposition du cadrage (historique). L'implémentation réelle et ses écarts (migration unique 0007 au lieu de 0007–0010, table unique `catalog.lens_references`, réceptions `stock.receipts` / `receipt_lines`, exports CSV non livrés, routes `/api/imports/{id}/cancel` et `/api/pricing/recalculations` ajoutées) sont décrits dans [`DECISIONS_TECHNIQUES_05.md`](DECISIONS_TECHNIQUES_05.md), [`G05_SQL_DOSSIER.md`](G05_SQL_DOSSIER.md) et [`LIVRAISON_05.md`](LIVRAISON_05.md).
+
 **PROPOSED — révision du 30/10/2026 après la validation métier — rien n'est implémenté.** Dérivé des décisions approuvées de [`DECISIONS_05_METIER_PROPOSED.md`](DECISIONS_05_METIER_PROPOSED.md) et du modèle [`DATA_MODEL_PROPOSED.md`](DATA_MODEL_PROPOSED.md). *Historique : version du 29/10/2026 (articles uniques, prix TTC) au commit `6c207f9`.*
 
 ## 1. Règles transverses (reprises de `/api/clients` et `/api/optical`)

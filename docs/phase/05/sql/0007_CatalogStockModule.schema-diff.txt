@@ -1,0 +1,890 @@
+# 0006 -> 0007 : diff de pg_dump --schema-only (--no-owner --no-privileges), bases jetables du 30/10/2026
+# avant : 0001..0006 (scripts idempotents versionnes) ; apres : 0001..0007 (docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql)
+@@ -13,8 +13,13 @@
+ CREATE SCHEMA appointments;
+ CREATE SCHEMA audit;
+ CREATE SCHEMA auth;
++CREATE SCHEMA catalog;
+ CREATE SCHEMA clients;
++CREATE SCHEMA imports;
+ CREATE SCHEMA optical;
++CREATE SCHEMA org;
++CREATE SCHEMA pricing;
++CREATE SCHEMA stock;
+ CREATE FUNCTION audit.reject_event_mutation() RETURNS trigger
+     LANGUAGE plpgsql
+     AS $$
+@@ -22,6 +27,42 @@
+         RAISE EXCEPTION 'audit.events : journal en ajout seul (% refusé)', TG_OP USING ERRCODE = '42501';
+     END;
+     $$;
++CREATE FUNCTION catalog.reject_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        RAISE EXCEPTION '%.% : journal en ajout seul, modification refusee (%)', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION catalog.reject_delete() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        RAISE EXCEPTION '%.% : suppression refusee (%)', TG_TABLE_SCHEMA, TG_TABLE_NAME, TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION imports.reject_closed_batch_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP = 'UPDATE' AND OLD.status IN ('uploaded', 'checked') THEN
++            RETURN NEW;
++        END IF;
++        RAISE EXCEPTION 'imports.batches : lot clos fige ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION imports.reject_closed_row_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP IN ('INSERT', 'DELETE') AND EXISTS (
++            SELECT 1 FROM imports.batches b
++            WHERE b.id = CASE WHEN TG_OP = 'INSERT' THEN NEW.batch_id ELSE OLD.batch_id END AND b.status IN ('uploaded', 'checked')) THEN
++            RETURN CASE WHEN TG_OP = 'INSERT' THEN NEW ELSE OLD END;
++        END IF;
++        RAISE EXCEPTION 'imports.rows : rapport d''un lot clos fige (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
+ CREATE FUNCTION optical.reject_frozen_record_change() RETURNS trigger
+     LANGUAGE plpgsql
+     AS $$
+@@ -46,6 +87,52 @@
+         RAISE EXCEPTION 'optical : revision figee ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
+     END;
+     $$;
++CREATE FUNCTION org.reject_location_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP = 'UPDATE' AND NEW.store_id = OLD.store_id AND NEW.id = OLD.id THEN
++            RETURN NEW;
++        END IF;
++        RAISE EXCEPTION 'org.locations : magasin immuable, suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION org.reject_store_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP = 'UPDATE' AND NEW.currency_code = OLD.currency_code AND NEW.id = OLD.id THEN
++            RETURN NEW;
++        END IF;
++        RAISE EXCEPTION 'org.stores : devise immuable, suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION stock.reject_closed_session_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP = 'UPDATE' AND OLD.status = 'open' THEN
++            RETURN NEW;
++        END IF;
++        RAISE EXCEPTION 'stock.inventory_sessions : session close figee ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
++CREATE FUNCTION stock.reject_resolved_line_change() RETURNS trigger
++    LANGUAGE plpgsql
++    AS $$
++    BEGIN
++        IF TG_OP = 'INSERT' THEN
++            IF EXISTS (SELECT 1 FROM stock.inventory_sessions s WHERE s.id = NEW.session_id AND s.status = 'open') THEN
++                RETURN NEW;
++            END IF;
++        ELSIF TG_OP = 'UPDATE' AND OLD.resolution IS NULL
++            AND NEW.session_id = OLD.session_id AND NEW.variant_id = OLD.variant_id AND NEW.location_id = OLD.location_id
++            AND NOT EXISTS (SELECT 1 FROM stock.inventory_sessions s WHERE s.id = OLD.session_id AND s.status = 'abandoned') THEN
++            RETURN NEW;
++        END IF;
++        RAISE EXCEPTION 'stock.inventory_lines : ligne figee ou suppression refusee (%)', TG_OP USING ERRCODE = '42501';
++    END;
++    $$;
+ SET default_tablespace = '';
+ SET default_table_access_method = heap;
+ CREATE TABLE appointments.appointments (
+@@ -117,7 +204,7 @@
+ CREATE TABLE auth.user_permissions (
+     user_id uuid NOT NULL,
+     permission character varying(64) NOT NULL,
+-    CONSTRAINT ck_user_permissions_permission CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying, 'optical.read'::character varying, 'optical.prescriptions.write'::character varying, 'optical.measurements.write'::character varying, 'optical.invalidate'::character varying])::text[])))
++    CONSTRAINT ck_user_permissions_permission CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying, 'optical.read'::character varying, 'optical.prescriptions.write'::character varying, 'optical.measurements.write'::character varying, 'optical.invalidate'::character varying, 'catalog.read'::character varying, 'catalog.write'::character varying, 'catalog.archive'::character varying, 'catalog.configure'::character varying, 'catalog.import'::character varying, 'pricing.write'::character varying, 'pricing.manual'::character varying, 'costs.read'::character varying, 'costs.write'::character varying, 'suppliers.read'::character varying, 'suppliers.write'::character varying, 'stock.read'::character varying, 'stock.movements.write'::character varying, 'stock.adjust'::character varying, 'inventory.count'::character varying, 'inventory.validate'::character varying])::text[])))
+ );
+ CREATE TABLE auth.users (
+     id uuid NOT NULL,
+@@ -131,6 +218,135 @@
+     created_at_utc timestamp with time zone NOT NULL,
+     CONSTRAINT ck_users_failed_login_count CHECK ((failed_login_count >= 0))
+ );
++CREATE TABLE catalog.families (
++    code character varying(32) NOT NULL,
++    label_fr character varying(60) NOT NULL,
++    allowed_policies text[] NOT NULL,
++    sort_order integer NOT NULL,
++    CONSTRAINT ck_families_code_format CHECK (((code)::text ~ '^[a-z][a-z_]{0,31}$'::text)),
++    CONSTRAINT ck_families_policies CHECK (((allowed_policies <@ ARRAY['stocked'::text, 'order_only'::text, 'service'::text]) AND (cardinality(allowed_policies) >= 1)))
++);
++CREATE TABLE catalog.lens_references (
++    id uuid NOT NULL,
++    kind character varying(16) NOT NULL,
++    name character varying(120) NOT NULL,
++    name_key character varying(120) NOT NULL,
++    manufacturer_id uuid,
++    index_value numeric(4,3),
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    archived_at_utc timestamp with time zone,
++    archived_by_user_id uuid,
++    archive_reason character varying(500),
++    last_request_id uuid,
++    CONSTRAINT ck_lens_references_index_value CHECK (((((kind)::text = 'index'::text) = (index_value IS NOT NULL)) AND ((index_value IS NULL) OR ((index_value > (1)::numeric) AND (index_value < 2.5))))),
++    CONSTRAINT ck_lens_references_kind CHECK (((kind)::text = ANY ((ARRAY['manufacturer'::character varying, 'range'::character varying, 'index'::character varying, 'treatment'::character varying])::text[]))),
++    CONSTRAINT ck_lens_references_name CHECK ((btrim((name)::text) <> ''::text)),
++    CONSTRAINT ck_lens_references_parent CHECK (((((kind)::text = 'range'::text) AND (manufacturer_id IS NOT NULL)) OR ((kind)::text = 'treatment'::text) OR (((kind)::text = ANY ((ARRAY['manufacturer'::character varying, 'index'::character varying])::text[])) AND (manufacturer_id IS NULL))))
++);
++CREATE TABLE catalog.product_models (
++    id uuid NOT NULL,
++    family_code character varying(32) NOT NULL,
++    brand character varying(100),
++    name character varying(200) NOT NULL,
++    description character varying(2000),
++    lens_range_id uuid,
++    attributes jsonb NOT NULL,
++    creation_request_id uuid,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    archived_at_utc timestamp with time zone,
++    archived_by_user_id uuid,
++    archive_reason character varying(500),
++    last_request_id uuid,
++    CONSTRAINT ck_product_models_attributes CHECK ((jsonb_typeof(attributes) = 'object'::text)),
++    CONSTRAINT ck_product_models_lens_range CHECK ((((family_code)::text = 'ophthalmic_lenses'::text) = (lens_range_id IS NOT NULL))),
++    CONSTRAINT ck_product_models_name CHECK ((btrim((name)::text) <> ''::text))
++);
++CREATE TABLE catalog.product_variants (
++    id uuid NOT NULL,
++    model_id uuid NOT NULL,
++    sku character varying(64) NOT NULL,
++    sku_key character varying(64) NOT NULL,
++    manufacturer_reference character varying(64),
++    barcode character varying(14),
++    label character varying(200) NOT NULL,
++    attributes jsonb NOT NULL,
++    lens_index_id uuid,
++    stock_policy character varying(16) NOT NULL,
++    tax_category_code character varying(32),
++    creation_request_id uuid,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    archived_at_utc timestamp with time zone,
++    archived_by_user_id uuid,
++    archive_reason character varying(500),
++    last_request_id uuid,
++    CONSTRAINT ck_product_variants_attributes CHECK ((jsonb_typeof(attributes) = 'object'::text)),
++    CONSTRAINT ck_product_variants_barcode CHECK (((barcode IS NULL) OR ((barcode)::text ~ '^([0-9]{8}|[0-9]{12,14})$'::text))),
++    CONSTRAINT ck_product_variants_label CHECK ((btrim((label)::text) <> ''::text)),
++    CONSTRAINT ck_product_variants_policy CHECK (((stock_policy)::text = ANY ((ARRAY['stocked'::character varying, 'order_only'::character varying, 'service'::character varying])::text[]))),
++    CONSTRAINT ck_product_variants_sku CHECK (((btrim((sku)::text) <> ''::text) AND ((sku_key)::text = lower(btrim((sku)::text))))),
++    CONSTRAINT ck_product_variants_tax_category_format CHECK (((tax_category_code IS NULL) OR ((tax_category_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)))
++);
++CREATE TABLE catalog.suppliers (
++    id uuid NOT NULL,
++    code character varying(32) NOT NULL,
++    code_key character varying(32) NOT NULL,
++    name character varying(200) NOT NULL,
++    country_code character(2) NOT NULL,
++    contact_name character varying(120),
++    email character varying(254),
++    phone character varying(32),
++    address_line character varying(200),
++    postal_code character varying(16),
++    city character varying(100),
++    legal_identifiers jsonb NOT NULL,
++    notes character varying(2000),
++    creation_request_id uuid,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    archived_at_utc timestamp with time zone,
++    archived_by_user_id uuid,
++    archive_reason character varying(500),
++    last_request_id uuid,
++    CONSTRAINT ck_suppliers_code CHECK (((btrim((code)::text) <> ''::text) AND ((code_key)::text = lower(btrim((code)::text))))),
++    CONSTRAINT ck_suppliers_country_format CHECK ((country_code ~ '^[A-Z]{2}$'::text)),
++    CONSTRAINT ck_suppliers_legal_identifiers CHECK ((jsonb_typeof(legal_identifiers) = 'object'::text)),
++    CONSTRAINT ck_suppliers_name CHECK ((btrim((name)::text) <> ''::text))
++);
++CREATE TABLE catalog.variant_lens_treatments (
++    variant_id uuid NOT NULL,
++    treatment_id uuid NOT NULL
++);
++CREATE TABLE catalog.variant_suppliers (
++    variant_id uuid NOT NULL,
++    supplier_id uuid NOT NULL,
++    supplier_reference character varying(64),
++    supplier_price_ht numeric(14,4),
++    supplier_currency character(3),
++    lead_time_days integer,
++    is_primary boolean NOT NULL,
++    created_at_utc timestamp with time zone NOT NULL,
++    created_by_user_id uuid NOT NULL,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    removed_at_utc timestamp with time zone,
++    removed_by_user_id uuid,
++    last_request_id uuid,
++    CONSTRAINT ck_variant_suppliers_currency CHECK ((((supplier_price_ht IS NULL) = (supplier_currency IS NULL)) AND ((supplier_currency IS NULL) OR (supplier_currency ~ '^[A-Z]{3}$'::text)))),
++    CONSTRAINT ck_variant_suppliers_lead_time CHECK (((lead_time_days IS NULL) OR ((lead_time_days >= 0) AND (lead_time_days <= 365)))),
++    CONSTRAINT ck_variant_suppliers_price CHECK (((supplier_price_ht IS NULL) OR (supplier_price_ht >= (0)::numeric))),
++    CONSTRAINT ck_variant_suppliers_removed CHECK ((((removed_at_utc IS NULL) = (removed_by_user_id IS NULL)) AND ((removed_at_utc IS NULL) OR (NOT is_primary))))
++);
+ CREATE SEQUENCE clients.client_reference_seq
+     START WITH 1
+     INCREMENT BY 1
+@@ -162,6 +378,46 @@
+     CONSTRAINT ck_clients_reference_format CHECK (((reference)::text ~ '^CLI-[0-9]{6,18}$'::text)),
+     CONSTRAINT ck_clients_updated_after_created CHECK ((updated_at_utc >= created_at_utc))
+ );
++CREATE TABLE imports.batches (
++    id uuid NOT NULL,
++    kind character varying(16) NOT NULL,
++    store_id uuid,
++    file_name character varying(200) NOT NULL,
++    file_sha256 character(64) NOT NULL,
++    content text NOT NULL,
++    row_count integer NOT NULL,
++    mapping jsonb NOT NULL,
++    status character varying(16) NOT NULL,
++    contains_costs boolean NOT NULL,
++    contains_manual_prices boolean NOT NULL,
++    error_count integer,
++    uploaded_at_utc timestamp with time zone NOT NULL,
++    uploaded_by_user_id uuid NOT NULL,
++    checked_at_utc timestamp with time zone,
++    checked_by_user_id uuid,
++    applied_at_utc timestamp with time zone,
++    applied_by_user_id uuid,
++    creation_request_id uuid NOT NULL,
++    last_request_id uuid,
++    CONSTRAINT ck_batches_kind CHECK (((kind)::text = ANY ((ARRAY['catalog'::character varying, 'suppliers'::character varying, 'prices'::character varying])::text[]))),
++    CONSTRAINT ck_batches_lifecycle CHECK (((((status)::text = 'applied'::text) = (applied_at_utc IS NOT NULL)) AND ((applied_at_utc IS NULL) = (applied_by_user_id IS NULL)) AND ((checked_at_utc IS NULL) = (checked_by_user_id IS NULL)) AND ((applied_at_utc IS NULL) OR (checked_at_utc IS NOT NULL)))),
++    CONSTRAINT ck_batches_mapping CHECK ((jsonb_typeof(mapping) = 'object'::text)),
++    CONSTRAINT ck_batches_sha256 CHECK ((file_sha256 ~ '^[0-9a-f]{64}$'::text)),
++    CONSTRAINT ck_batches_size CHECK (((octet_length(content) <= 2097152) AND (row_count >= 0) AND (row_count <= 5000))),
++    CONSTRAINT ck_batches_status CHECK (((status)::text = ANY ((ARRAY['uploaded'::character varying, 'checked'::character varying, 'applied'::character varying, 'cancelled'::character varying])::text[]))),
++    CONSTRAINT ck_batches_store CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))
++);
++CREATE TABLE imports.rows (
++    batch_id uuid NOT NULL,
++    line_no integer NOT NULL,
++    values_json jsonb NOT NULL,
++    outcome character varying(16) NOT NULL,
++    errors jsonb NOT NULL,
++    target_key character varying(200),
++    CONSTRAINT ck_rows_json CHECK (((jsonb_typeof(values_json) = 'object'::text) AND (jsonb_typeof(errors) = 'array'::text))),
++    CONSTRAINT ck_rows_line_no CHECK ((line_no >= 1)),
++    CONSTRAINT ck_rows_outcome CHECK (((outcome)::text = ANY ((ARRAY['create'::character varying, 'update'::character varying, 'unchanged'::character varying, 'error'::character varying])::text[])))
++);
+ CREATE SEQUENCE optical.measurement_reference_seq
+     START WITH 1
+     INCREMENT BY 1
+@@ -342,10 +598,227 @@
+     CONSTRAINT ck_prescriptions_reference_format CHECK (((reference)::text ~ '^RX-[0-9]{6,18}$'::text)),
+     CONSTRAINT ck_prescriptions_updated_after_created CHECK ((updated_at_utc >= created_at_utc))
+ );
++CREATE TABLE org.locations (
++    id uuid NOT NULL,
++    store_id uuid NOT NULL,
++    code character varying(32) NOT NULL,
++    name character varying(120) NOT NULL,
++    is_default boolean NOT NULL,
++    created_at_utc timestamp with time zone NOT NULL,
++    archived_at_utc timestamp with time zone,
++    CONSTRAINT ck_locations_code_format CHECK (((code)::text ~ '^[A-Z0-9][A-Z0-9_-]{0,31}$'::text))
++);
++CREATE TABLE org.stores (
++    id uuid NOT NULL,
++    code character varying(32) NOT NULL,
++    name character varying(120) NOT NULL,
++    country_code character(2) NOT NULL,
++    currency_code character(3) NOT NULL,
++    fiscal_profile_status character varying(16) NOT NULL,
++    fiscal_validated_at_utc timestamp with time zone,
++    created_at_utc timestamp with time zone NOT NULL,
++    archived_at_utc timestamp with time zone,
++    CONSTRAINT ck_stores_code_format CHECK (((code)::text ~ '^[A-Z0-9][A-Z0-9_-]{0,31}$'::text)),
++    CONSTRAINT ck_stores_country_format CHECK ((country_code ~ '^[A-Z]{2}$'::text)),
++    CONSTRAINT ck_stores_currency CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar]))),
++    CONSTRAINT ck_stores_fiscal_status CHECK (((fiscal_profile_status)::text = ANY ((ARRAY['not_validated'::character varying, 'validated'::character varying])::text[]))),
++    CONSTRAINT ck_stores_fiscal_validation CHECK ((((fiscal_profile_status)::text = 'validated'::text) = (fiscal_validated_at_utc IS NOT NULL)))
++);
++CREATE TABLE pricing.price_history (
++    id uuid NOT NULL,
++    variant_id uuid NOT NULL,
++    store_id uuid,
++    currency_code character(3) NOT NULL,
++    field character varying(32) NOT NULL,
++    supplier_id uuid,
++    old_value numeric(14,4),
++    new_value numeric(14,4),
++    old_mode character varying(16),
++    new_mode character varying(16),
++    origin character varying(16) NOT NULL,
++    reason character varying(500),
++    changed_at_utc timestamp with time zone NOT NULL,
++    changed_by_user_id uuid NOT NULL,
++    request_id uuid NOT NULL,
++    CONSTRAINT ck_price_history_currency CHECK ((currency_code ~ '^[A-Z]{3}$'::text)),
++    CONSTRAINT ck_price_history_field CHECK (((field)::text = ANY ((ARRAY['purchase_price_ht'::character varying, 'coefficient'::character varying, 'pricing_mode'::character varying, 'sale_price_ht'::character varying, 'supplier_price_ht'::character varying])::text[]))),
++    CONSTRAINT ck_price_history_mode CHECK (((((field)::text = 'pricing_mode'::text) = (new_mode IS NOT NULL)) AND ((old_mode IS NULL) OR ((field)::text = 'pricing_mode'::text)))),
++    CONSTRAINT ck_price_history_origin CHECK (((origin)::text = ANY ((ARRAY['edit'::character varying, 'recalculation'::character varying, 'manual_price'::character varying, 'import'::character varying, 'receipt'::character varying])::text[]))),
++    CONSTRAINT ck_price_history_scope CHECK (((((field)::text = 'supplier_price_ht'::text) = (supplier_id IS NOT NULL)) AND (((field)::text = 'supplier_price_ht'::text) OR (store_id IS NOT NULL))))
++);
++CREATE TABLE pricing.tax_categories (
++    store_id uuid NOT NULL,
++    code character varying(32) NOT NULL,
++    label character varying(120) NOT NULL,
++    rate numeric(7,4),
++    legal_reference character varying(200),
++    validated_at_utc timestamp with time zone,
++    validated_by_user_id uuid,
++    CONSTRAINT ck_tax_categories_code_format CHECK (((code)::text ~ '^[a-z][a-z_]{0,31}$'::text)),
++    CONSTRAINT ck_tax_categories_rate CHECK (((rate IS NULL) OR ((rate >= (0)::numeric) AND (rate < (1)::numeric)))),
++    CONSTRAINT ck_tax_categories_validation CHECK ((((rate IS NULL) = (validated_at_utc IS NULL)) AND ((validated_at_utc IS NULL) = (validated_by_user_id IS NULL))))
++);
++CREATE TABLE pricing.variant_store_prices (
++    variant_id uuid NOT NULL,
++    store_id uuid NOT NULL,
++    currency_code character(3) NOT NULL,
++    purchase_price_ht numeric(14,4),
++    coefficient numeric(8,4),
++    pricing_mode character varying(16) NOT NULL,
++    sale_price_ht numeric(12,2),
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    last_request_id uuid,
++    CONSTRAINT ck_variant_store_prices_coefficient CHECK (((coefficient IS NULL) OR ((coefficient > (0)::numeric) AND (coefficient <= (100)::numeric)))),
++    CONSTRAINT ck_variant_store_prices_coefficient_mode CHECK ((((pricing_mode)::text = 'manual'::text) OR (sale_price_ht IS NULL) OR ((purchase_price_ht IS NOT NULL) AND (coefficient IS NOT NULL)))),
++    CONSTRAINT ck_variant_store_prices_mode CHECK (((pricing_mode)::text = ANY ((ARRAY['coefficient'::character varying, 'manual'::character varying])::text[]))),
++    CONSTRAINT ck_variant_store_prices_purchase CHECK (((purchase_price_ht IS NULL) OR (purchase_price_ht >= (0)::numeric))),
++    CONSTRAINT ck_variant_store_prices_sale CHECK (((sale_price_ht IS NULL) OR (sale_price_ht >= (0)::numeric)))
++);
+ CREATE TABLE public."__EFMigrationsHistory" (
+     "MigrationId" character varying(150) NOT NULL,
+     "ProductVersion" character varying(32) NOT NULL
+ );
++CREATE TABLE stock.balances (
++    variant_id uuid NOT NULL,
++    location_id uuid NOT NULL,
++    on_hand integer NOT NULL,
++    reserved integer DEFAULT 0 NOT NULL,
++    last_movement_seq bigint,
++    updated_at_utc timestamp with time zone NOT NULL,
++    CONSTRAINT ck_balances_on_hand CHECK ((on_hand >= 0)),
++    CONSTRAINT ck_balances_reserved CHECK (((reserved >= 0) AND (reserved <= on_hand)))
++);
++CREATE TABLE stock.inventory_lines (
++    session_id uuid NOT NULL,
++    variant_id uuid NOT NULL,
++    location_id uuid NOT NULL,
++    expected_at_open integer NOT NULL,
++    expected_at_count integer,
++    counted_quantity integer,
++    counted_by_user_id uuid,
++    counted_at_utc timestamp with time zone,
++    last_request_id uuid,
++    reason_code character varying(32),
++    comment character varying(500),
++    resolution character varying(16),
++    applied_delta integer,
++    movement_id uuid,
++    CONSTRAINT ck_inventory_lines_applied CHECK ((((movement_id IS NOT NULL) = ((applied_delta IS NOT NULL) AND (applied_delta <> 0))) AND ((movement_id IS NULL) OR ((resolution)::text = ANY ((ARRAY['applied'::character varying, 'set_to_zero'::character varying])::text[]))))),
++    CONSTRAINT ck_inventory_lines_count CHECK ((((counted_quantity IS NULL) = (expected_at_count IS NULL)) AND ((counted_quantity IS NULL) = (counted_at_utc IS NULL)) AND ((counted_at_utc IS NULL) = (counted_by_user_id IS NULL)))),
++    CONSTRAINT ck_inventory_lines_quantities CHECK (((expected_at_open >= 0) AND ((counted_quantity IS NULL) OR ((counted_quantity >= 0) AND (counted_quantity <= 1000000))))),
++    CONSTRAINT ck_inventory_lines_reason CHECK ((((reason_code IS NULL) OR ((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)) AND ((comment IS NULL) OR (reason_code IS NOT NULL)) AND (((reason_code)::text IS DISTINCT FROM 'other'::text) OR (comment IS NOT NULL)))),
++    CONSTRAINT ck_inventory_lines_resolution CHECK (((resolution IS NULL) OR ((resolution)::text = ANY ((ARRAY['applied'::character varying, 'no_difference'::character varying, 'excluded'::character varying, 'set_to_zero'::character varying])::text[]))))
++);
++CREATE SEQUENCE stock.inventory_number_seq
++    START WITH 1
++    INCREMENT BY 1
++    NO MINVALUE
++    MAXVALUE 999999999999999999
++    CACHE 1;
++CREATE TABLE stock.inventory_sessions (
++    id uuid NOT NULL,
++    number character varying(24) DEFAULT ('INV-'::text || to_char(nextval('stock.inventory_number_seq'::regclass), 'FM999999999999000000'::text)) NOT NULL,
++    store_id uuid NOT NULL,
++    location_ids uuid[] NOT NULL,
++    scope_type character varying(16) NOT NULL,
++    scope_family_code character varying(32),
++    blind boolean NOT NULL,
++    status character varying(16) NOT NULL,
++    opened_at_utc timestamp with time zone NOT NULL,
++    opened_by_user_id uuid NOT NULL,
++    validated_at_utc timestamp with time zone,
++    validated_by_user_id uuid,
++    uncounted_resolution character varying(16),
++    abandoned_at_utc timestamp with time zone,
++    abandoned_by_user_id uuid,
++    abandon_reason character varying(500),
++    creation_request_id uuid NOT NULL,
++    last_request_id uuid,
++    CONSTRAINT ck_inventory_sessions_lifecycle CHECK (((((status)::text = 'validated'::text) = (validated_at_utc IS NOT NULL)) AND ((validated_at_utc IS NULL) = (validated_by_user_id IS NULL)) AND ((validated_at_utc IS NULL) = (uncounted_resolution IS NULL)) AND (((status)::text = 'abandoned'::text) = (abandoned_at_utc IS NOT NULL)) AND ((abandoned_at_utc IS NULL) = (abandoned_by_user_id IS NULL)) AND ((abandoned_at_utc IS NULL) = (abandon_reason IS NULL)))),
++    CONSTRAINT ck_inventory_sessions_locations CHECK ((cardinality(location_ids) >= 1)),
++    CONSTRAINT ck_inventory_sessions_number_format CHECK (((number)::text ~ '^INV-[0-9]{6,18}$'::text)),
++    CONSTRAINT ck_inventory_sessions_scope CHECK ((((scope_type)::text = ANY ((ARRAY['full'::character varying, 'family'::character varying, 'selection'::character varying])::text[])) AND (((scope_type)::text = 'family'::text) = (scope_family_code IS NOT NULL)))),
++    CONSTRAINT ck_inventory_sessions_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'validated'::character varying, 'abandoned'::character varying])::text[]))),
++    CONSTRAINT ck_inventory_sessions_uncounted CHECK (((uncounted_resolution IS NULL) OR ((uncounted_resolution)::text = ANY ((ARRAY['exclude'::character varying, 'set_to_zero'::character varying])::text[]))))
++);
++CREATE TABLE stock.movements (
++    id uuid NOT NULL,
++    seq bigint NOT NULL,
++    variant_id uuid NOT NULL,
++    location_id uuid NOT NULL,
++    movement_type character varying(32) NOT NULL,
++    quantity_delta integer NOT NULL,
++    quantity_before integer NOT NULL,
++    quantity_after integer NOT NULL,
++    reason_code character varying(32) NOT NULL,
++    comment character varying(500),
++    supplier_id uuid,
++    unit_cost_ht numeric(14,4),
++    currency_code character(3),
++    source_type character varying(32),
++    source_id uuid,
++    performed_by_user_id uuid NOT NULL,
++    performed_at_utc timestamp with time zone NOT NULL,
++    request_id uuid NOT NULL,
++    CONSTRAINT ck_movements_delta CHECK (((quantity_delta <> 0) AND (quantity_after = (quantity_before + quantity_delta)) AND (quantity_before >= 0) AND (quantity_after >= 0))),
++    CONSTRAINT ck_movements_reason CHECK ((((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text) AND (((reason_code)::text <> 'other'::text) OR (comment IS NOT NULL)))),
++    CONSTRAINT ck_movements_receipt CHECK (((((movement_type)::text = 'receipt'::text) = (supplier_id IS NOT NULL)) AND ((unit_cost_ht IS NULL) OR (((movement_type)::text = 'receipt'::text) AND (unit_cost_ht >= (0)::numeric))) AND ((unit_cost_ht IS NULL) = (currency_code IS NULL)))),
++    CONSTRAINT ck_movements_sign CHECK (((((movement_type)::text <> ALL ((ARRAY['receipt'::character varying, 'manual_in'::character varying])::text[])) OR (quantity_delta > 0)) AND (((movement_type)::text <> 'manual_out'::text) OR (quantity_delta < 0)))),
++    CONSTRAINT ck_movements_source CHECK ((((source_type IS NULL) = (source_id IS NULL)) AND ((source_type IS NULL) OR ((source_type)::text = ANY ((ARRAY['receipt'::character varying, 'inventory_session'::character varying])::text[]))))),
++    CONSTRAINT ck_movements_type CHECK (((movement_type)::text = ANY ((ARRAY['receipt'::character varying, 'manual_in'::character varying, 'manual_out'::character varying, 'adjustment'::character varying, 'inventory_adjustment'::character varying])::text[])))
++);
++ALTER TABLE stock.movements ALTER COLUMN seq ADD GENERATED ALWAYS AS IDENTITY (
++    SEQUENCE NAME stock.movements_seq_seq
++    START WITH 1
++    INCREMENT BY 1
++    NO MINVALUE
++    NO MAXVALUE
++    CACHE 1
++);
++CREATE TABLE stock.receipt_lines (
++    receipt_id uuid NOT NULL,
++    line_no integer NOT NULL,
++    variant_id uuid NOT NULL,
++    announced_quantity integer,
++    received_quantity integer NOT NULL,
++    unit_cost_ht numeric(14,4),
++    movement_id uuid,
++    CONSTRAINT ck_receipt_lines_cost CHECK (((unit_cost_ht IS NULL) OR (unit_cost_ht >= (0)::numeric))),
++    CONSTRAINT ck_receipt_lines_line_no CHECK ((line_no >= 1)),
++    CONSTRAINT ck_receipt_lines_movement CHECK (((received_quantity > 0) = (movement_id IS NOT NULL))),
++    CONSTRAINT ck_receipt_lines_quantities CHECK (((received_quantity >= 0) AND ((announced_quantity IS NULL) OR (announced_quantity >= 0)) AND ((received_quantity > 0) OR (COALESCE(announced_quantity, 0) > 0))))
++);
++CREATE SEQUENCE stock.receipt_number_seq
++    START WITH 1
++    INCREMENT BY 1
++    NO MINVALUE
++    MAXVALUE 999999999999999999
++    CACHE 1;
++CREATE TABLE stock.receipts (
++    id uuid NOT NULL,
++    number character varying(24) DEFAULT ('REC-'::text || to_char(nextval('stock.receipt_number_seq'::regclass), 'FM999999999999000000'::text)) NOT NULL,
++    store_id uuid NOT NULL,
++    location_id uuid NOT NULL,
++    supplier_id uuid NOT NULL,
++    currency_code character(3) NOT NULL,
++    supplier_document_reference character varying(64),
++    notes character varying(500),
++    completes_receipt_id uuid,
++    received_at_utc timestamp with time zone NOT NULL,
++    received_by_user_id uuid NOT NULL,
++    request_id uuid NOT NULL,
++    CONSTRAINT ck_receipts_number_format CHECK (((number)::text ~ '^REC-[0-9]{6,18}$'::text))
++);
++CREATE TABLE stock.variant_store_settings (
++    variant_id uuid NOT NULL,
++    store_id uuid NOT NULL,
++    low_stock_threshold integer,
++    updated_at_utc timestamp with time zone NOT NULL,
++    updated_by_user_id uuid NOT NULL,
++    last_request_id uuid,
++    CONSTRAINT ck_variant_store_settings_threshold CHECK (((low_stock_threshold IS NULL) OR ((low_stock_threshold >= 0) AND (low_stock_threshold <= 100000))))
++);
+ ALTER TABLE ONLY appointments.appointments
+     ADD CONSTRAINT pk_appointments PRIMARY KEY (id);
+ ALTER TABLE ONLY appointments.responsibles
+@@ -360,8 +833,26 @@
+     ADD CONSTRAINT pk_user_permissions PRIMARY KEY (user_id, permission);
+ ALTER TABLE ONLY auth.users
+     ADD CONSTRAINT pk_users PRIMARY KEY (id);
++ALTER TABLE ONLY catalog.families
++    ADD CONSTRAINT pk_families PRIMARY KEY (code);
++ALTER TABLE ONLY catalog.lens_references
++    ADD CONSTRAINT pk_lens_references PRIMARY KEY (id);
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT pk_product_models PRIMARY KEY (id);
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT pk_product_variants PRIMARY KEY (id);
++ALTER TABLE ONLY catalog.suppliers
++    ADD CONSTRAINT pk_suppliers PRIMARY KEY (id);
++ALTER TABLE ONLY catalog.variant_lens_treatments
++    ADD CONSTRAINT pk_variant_lens_treatments PRIMARY KEY (variant_id, treatment_id);
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT pk_variant_suppliers PRIMARY KEY (variant_id, supplier_id);
+ ALTER TABLE ONLY clients.clients
+     ADD CONSTRAINT pk_clients PRIMARY KEY (id);
++ALTER TABLE ONLY imports.batches
++    ADD CONSTRAINT pk_batches PRIMARY KEY (id);
++ALTER TABLE ONLY imports.rows
++    ADD CONSTRAINT pk_rows PRIMARY KEY (batch_id, line_no);
+ ALTER TABLE ONLY optical.measurement_revisions
+     ADD CONSTRAINT pk_measurement_revisions PRIMARY KEY (id);
+ ALTER TABLE ONLY optical.measurements
+@@ -370,8 +861,34 @@
+     ADD CONSTRAINT pk_prescription_revisions PRIMARY KEY (id);
+ ALTER TABLE ONLY optical.prescriptions
+     ADD CONSTRAINT pk_prescriptions PRIMARY KEY (id);
++ALTER TABLE ONLY org.stores
++    ADD CONSTRAINT ak_stores_id_currency UNIQUE (id, currency_code);
++ALTER TABLE ONLY org.locations
++    ADD CONSTRAINT pk_locations PRIMARY KEY (id);
++ALTER TABLE ONLY org.stores
++    ADD CONSTRAINT pk_stores PRIMARY KEY (id);
++ALTER TABLE ONLY pricing.price_history
++    ADD CONSTRAINT pk_price_history PRIMARY KEY (id);
++ALTER TABLE ONLY pricing.tax_categories
++    ADD CONSTRAINT pk_tax_categories PRIMARY KEY (store_id, code);
++ALTER TABLE ONLY pricing.variant_store_prices
++    ADD CONSTRAINT pk_variant_store_prices PRIMARY KEY (variant_id, store_id);
+ ALTER TABLE ONLY public."__EFMigrationsHistory"
+     ADD CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId");
++ALTER TABLE ONLY stock.balances
++    ADD CONSTRAINT pk_balances PRIMARY KEY (variant_id, location_id);
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT pk_inventory_lines PRIMARY KEY (session_id, variant_id, location_id);
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT pk_inventory_sessions PRIMARY KEY (id);
++ALTER TABLE ONLY stock.movements
++    ADD CONSTRAINT pk_movements PRIMARY KEY (id);
++ALTER TABLE ONLY stock.receipt_lines
++    ADD CONSTRAINT pk_receipt_lines PRIMARY KEY (receipt_id, line_no);
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT pk_receipts PRIMARY KEY (id);
++ALTER TABLE ONLY stock.variant_store_settings
++    ADD CONSTRAINT pk_variant_store_settings PRIMARY KEY (variant_id, store_id);
+ CREATE INDEX ix_appointments_cancelled_by_user_id ON appointments.appointments USING btree (cancelled_by_user_id);
+ CREATE INDEX ix_appointments_client_starts_at ON appointments.appointments USING btree (client_id, starts_at_utc);
+ CREATE INDEX ix_appointments_created_by_user_id ON appointments.appointments USING btree (created_by_user_id);
+@@ -385,11 +902,49 @@
+ CREATE INDEX ix_sessions_user_id ON auth.sessions USING btree (user_id);
+ CREATE UNIQUE INDEX ux_sessions_token_hash ON auth.sessions USING btree (token_hash);
+ CREATE UNIQUE INDEX ux_users_normalized_user_name ON auth.users USING btree (normalized_user_name);
++CREATE INDEX ix_lens_references_archived_by_user_id ON catalog.lens_references USING btree (archived_by_user_id);
++CREATE INDEX ix_lens_references_created_by_user_id ON catalog.lens_references USING btree (created_by_user_id);
++CREATE INDEX ix_lens_references_manufacturer_id ON catalog.lens_references USING btree (manufacturer_id);
++CREATE INDEX ix_lens_references_updated_by_user_id ON catalog.lens_references USING btree (updated_by_user_id);
++CREATE INDEX ix_product_models_archived_by_user_id ON catalog.product_models USING btree (archived_by_user_id);
++CREATE INDEX ix_product_models_created_by_user_id ON catalog.product_models USING btree (created_by_user_id);
++CREATE INDEX ix_product_models_family_name ON catalog.product_models USING btree (family_code, name);
++CREATE INDEX ix_product_models_lens_range_id ON catalog.product_models USING btree (lens_range_id);
++CREATE INDEX ix_product_models_updated_by_user_id ON catalog.product_models USING btree (updated_by_user_id);
++CREATE INDEX ix_product_variants_archived_by_user_id ON catalog.product_variants USING btree (archived_by_user_id);
++CREATE INDEX ix_product_variants_created_by_user_id ON catalog.product_variants USING btree (created_by_user_id);
++CREATE INDEX ix_product_variants_lens_index_id ON catalog.product_variants USING btree (lens_index_id);
++CREATE INDEX ix_product_variants_model_id ON catalog.product_variants USING btree (model_id);
++CREATE INDEX ix_product_variants_updated_by_user_id ON catalog.product_variants USING btree (updated_by_user_id);
++CREATE INDEX ix_suppliers_archived_by_user_id ON catalog.suppliers USING btree (archived_by_user_id);
++CREATE INDEX ix_suppliers_created_by_user_id ON catalog.suppliers USING btree (created_by_user_id);
++CREATE INDEX ix_suppliers_name ON catalog.suppliers USING btree (name);
++CREATE INDEX ix_suppliers_updated_by_user_id ON catalog.suppliers USING btree (updated_by_user_id);
++CREATE INDEX ix_variant_lens_treatments_treatment_id ON catalog.variant_lens_treatments USING btree (treatment_id);
++CREATE INDEX ix_variant_suppliers_created_by_user_id ON catalog.variant_suppliers USING btree (created_by_user_id);
++CREATE INDEX ix_variant_suppliers_removed_by_user_id ON catalog.variant_suppliers USING btree (removed_by_user_id);
++CREATE INDEX ix_variant_suppliers_supplier_id ON catalog.variant_suppliers USING btree (supplier_id);
++CREATE INDEX ix_variant_suppliers_updated_by_user_id ON catalog.variant_suppliers USING btree (updated_by_user_id);
++CREATE UNIQUE INDEX ux_lens_references_kind_parent_name ON catalog.lens_references USING btree (kind, manufacturer_id, name_key) NULLS NOT DISTINCT;
++CREATE UNIQUE INDEX ux_product_models_creation_request_id ON catalog.product_models USING btree (creation_request_id);
++CREATE UNIQUE INDEX ux_product_variants_barcode ON catalog.product_variants USING btree (barcode) WHERE (barcode IS NOT NULL);
++CREATE UNIQUE INDEX ux_product_variants_creation_request_id ON catalog.product_variants USING btree (creation_request_id) WHERE (creation_request_id IS NOT NULL);
++CREATE UNIQUE INDEX ux_product_variants_sku ON catalog.product_variants USING btree (sku_key);
++CREATE UNIQUE INDEX ux_suppliers_code ON catalog.suppliers USING btree (code_key);
++CREATE UNIQUE INDEX ux_suppliers_creation_request_id ON catalog.suppliers USING btree (creation_request_id);
++CREATE UNIQUE INDEX ux_variant_suppliers_one_primary ON catalog.variant_suppliers USING btree (variant_id) WHERE is_primary;
+ CREATE INDEX ix_clients_active_name ON clients.clients USING btree (last_name, first_name, id) WHERE (archived_at_utc IS NULL);
+ CREATE INDEX ix_clients_created_at ON clients.clients USING btree (created_at_utc, id);
+ CREATE INDEX ix_clients_created_by_user_id ON clients.clients USING btree (created_by_user_id);
+ CREATE INDEX ix_clients_updated_by_user_id ON clients.clients USING btree (updated_by_user_id);
+ CREATE UNIQUE INDEX ux_clients_reference ON clients.clients USING btree (reference);
++CREATE INDEX ix_batches_applied_by_user_id ON imports.batches USING btree (applied_by_user_id);
++CREATE INDEX ix_batches_checked_by_user_id ON imports.batches USING btree (checked_by_user_id);
++CREATE INDEX ix_batches_store_id ON imports.batches USING btree (store_id);
++CREATE INDEX ix_batches_uploaded_at ON imports.batches USING btree (uploaded_at_utc);
++CREATE INDEX ix_batches_uploaded_by_user_id ON imports.batches USING btree (uploaded_by_user_id);
++CREATE UNIQUE INDEX ux_batches_applied_file ON imports.batches USING btree (file_sha256, kind, store_id) NULLS NOT DISTINCT WHERE ((status)::text = 'applied'::text);
++CREATE UNIQUE INDEX ux_batches_creation_request_id ON imports.batches USING btree (creation_request_id);
+ CREATE INDEX ix_measurement_revisions_confirmed_by_user_id ON optical.measurement_revisions USING btree (confirmed_by_user_id);
+ CREATE INDEX ix_measurement_revisions_discarded_by_user_id ON optical.measurement_revisions USING btree (discarded_by_user_id);
+ CREATE INDEX ix_measurement_revisions_measured_by_user_id ON optical.measurement_revisions USING btree (measured_by_user_id);
+@@ -417,8 +972,66 @@
+ CREATE UNIQUE INDEX ux_prescription_revisions_open_draft ON optical.prescription_revisions USING btree (prescription_id) WHERE ((status)::text = 'draft'::text);
+ CREATE UNIQUE INDEX ux_prescriptions_creation_request_id ON optical.prescriptions USING btree (creation_request_id);
+ CREATE UNIQUE INDEX ux_prescriptions_reference ON optical.prescriptions USING btree (reference);
++CREATE UNIQUE INDEX ux_locations_one_default ON org.locations USING btree (store_id) WHERE (is_default AND (archived_at_utc IS NULL));
++CREATE UNIQUE INDEX ux_locations_store_code ON org.locations USING btree (store_id, code);
++CREATE UNIQUE INDEX ux_stores_code ON org.stores USING btree (code);
++CREATE INDEX ix_price_history_changed_by_user_id ON pricing.price_history USING btree (changed_by_user_id);
++CREATE INDEX ix_price_history_store_id ON pricing.price_history USING btree (store_id);
++CREATE INDEX ix_price_history_supplier_id ON pricing.price_history USING btree (supplier_id);
++CREATE INDEX ix_price_history_variant_store_changed ON pricing.price_history USING btree (variant_id, store_id, changed_at_utc);
++CREATE INDEX ix_tax_categories_validated_by_user_id ON pricing.tax_categories USING btree (validated_by_user_id);
++CREATE INDEX ix_variant_store_prices_store_currency ON pricing.variant_store_prices USING btree (store_id, currency_code);
++CREATE INDEX ix_variant_store_prices_updated_by_user_id ON pricing.variant_store_prices USING btree (updated_by_user_id);
++CREATE INDEX ix_balances_location_id ON stock.balances USING btree (location_id);
++CREATE INDEX ix_inventory_lines_counted_by_user_id ON stock.inventory_lines USING btree (counted_by_user_id);
++CREATE INDEX ix_inventory_lines_location_id ON stock.inventory_lines USING btree (location_id);
++CREATE INDEX ix_inventory_lines_variant_location ON stock.inventory_lines USING btree (variant_id, location_id);
++CREATE INDEX ix_inventory_sessions_abandoned_by_user_id ON stock.inventory_sessions USING btree (abandoned_by_user_id);
++CREATE INDEX ix_inventory_sessions_opened_by_user_id ON stock.inventory_sessions USING btree (opened_by_user_id);
++CREATE INDEX ix_inventory_sessions_scope_family_code ON stock.inventory_sessions USING btree (scope_family_code);
++CREATE INDEX ix_inventory_sessions_store_status ON stock.inventory_sessions USING btree (store_id, status);
++CREATE INDEX ix_inventory_sessions_validated_by_user_id ON stock.inventory_sessions USING btree (validated_by_user_id);
++CREATE INDEX ix_movements_location_id ON stock.movements USING btree (location_id);
++CREATE INDEX ix_movements_performed_at ON stock.movements USING btree (performed_at_utc);
++CREATE INDEX ix_movements_performed_by_user_id ON stock.movements USING btree (performed_by_user_id);
++CREATE INDEX ix_movements_source ON stock.movements USING btree (source_type, source_id);
++CREATE INDEX ix_movements_supplier_id ON stock.movements USING btree (supplier_id);
++CREATE INDEX ix_movements_variant_location_seq ON stock.movements USING btree (variant_id, location_id, seq DESC);
++CREATE INDEX ix_receipt_lines_variant_id ON stock.receipt_lines USING btree (variant_id);
++CREATE INDEX ix_receipts_completes_receipt_id ON stock.receipts USING btree (completes_receipt_id);
++CREATE INDEX ix_receipts_location_id ON stock.receipts USING btree (location_id);
++CREATE INDEX ix_receipts_received_by_user_id ON stock.receipts USING btree (received_by_user_id);
++CREATE INDEX ix_receipts_store_currency ON stock.receipts USING btree (store_id, currency_code);
++CREATE INDEX ix_receipts_store_received ON stock.receipts USING btree (store_id, received_at_utc);
++CREATE INDEX ix_receipts_supplier_id ON stock.receipts USING btree (supplier_id);
++CREATE INDEX ix_variant_store_settings_store_id ON stock.variant_store_settings USING btree (store_id);
++CREATE INDEX ix_variant_store_settings_updated_by_user_id ON stock.variant_store_settings USING btree (updated_by_user_id);
++CREATE UNIQUE INDEX ux_inventory_lines_movement_id ON stock.inventory_lines USING btree (movement_id) WHERE (movement_id IS NOT NULL);
++CREATE UNIQUE INDEX ux_inventory_sessions_creation_request_id ON stock.inventory_sessions USING btree (creation_request_id);
++CREATE UNIQUE INDEX ux_inventory_sessions_number ON stock.inventory_sessions USING btree (number);
++CREATE UNIQUE INDEX ux_movements_request_variant_location ON stock.movements USING btree (request_id, variant_id, location_id);
++CREATE UNIQUE INDEX ux_movements_seq ON stock.movements USING btree (seq);
++CREATE UNIQUE INDEX ux_receipt_lines_movement_id ON stock.receipt_lines USING btree (movement_id) WHERE (movement_id IS NOT NULL);
++CREATE UNIQUE INDEX ux_receipts_number ON stock.receipts USING btree (number);
++CREATE UNIQUE INDEX ux_receipts_request_id ON stock.receipts USING btree (request_id);
+ CREATE TRIGGER trg_events_append_only BEFORE DELETE OR UPDATE ON audit.events FOR EACH ROW EXECUTE FUNCTION audit.reject_event_mutation();
+ CREATE TRIGGER trg_events_no_truncate BEFORE TRUNCATE ON audit.events FOR EACH STATEMENT EXECUTE FUNCTION audit.reject_event_mutation();
++CREATE TRIGGER trg_families_no_delete BEFORE DELETE ON catalog.families FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_families_no_truncate BEFORE TRUNCATE ON catalog.families FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_lens_references_no_delete BEFORE DELETE ON catalog.lens_references FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_lens_references_no_truncate BEFORE TRUNCATE ON catalog.lens_references FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_product_models_no_delete BEFORE DELETE ON catalog.product_models FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_product_models_no_truncate BEFORE TRUNCATE ON catalog.product_models FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_product_variants_no_delete BEFORE DELETE ON catalog.product_variants FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_product_variants_no_truncate BEFORE TRUNCATE ON catalog.product_variants FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_suppliers_no_delete BEFORE DELETE ON catalog.suppliers FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_suppliers_no_truncate BEFORE TRUNCATE ON catalog.suppliers FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_variant_suppliers_no_delete BEFORE DELETE ON catalog.variant_suppliers FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_variant_suppliers_no_truncate BEFORE TRUNCATE ON catalog.variant_suppliers FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_batches_frozen BEFORE DELETE OR UPDATE ON imports.batches FOR EACH ROW EXECUTE FUNCTION imports.reject_closed_batch_change();
++CREATE TRIGGER trg_batches_no_truncate BEFORE TRUNCATE ON imports.batches FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_rows_frozen BEFORE INSERT OR DELETE OR UPDATE ON imports.rows FOR EACH ROW EXECUTE FUNCTION imports.reject_closed_row_change();
++CREATE TRIGGER trg_rows_no_truncate BEFORE TRUNCATE ON imports.rows FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
+ CREATE TRIGGER trg_measurement_revisions_frozen BEFORE DELETE OR UPDATE ON optical.measurement_revisions FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_revision_change();
+ CREATE TRIGGER trg_measurement_revisions_no_truncate BEFORE TRUNCATE ON optical.measurement_revisions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_revision_change();
+ CREATE TRIGGER trg_measurements_frozen BEFORE DELETE OR UPDATE ON optical.measurements FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_record_change();
+@@ -427,6 +1040,30 @@
+ CREATE TRIGGER trg_prescription_revisions_no_truncate BEFORE TRUNCATE ON optical.prescription_revisions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_revision_change();
+ CREATE TRIGGER trg_prescriptions_frozen BEFORE DELETE OR UPDATE ON optical.prescriptions FOR EACH ROW EXECUTE FUNCTION optical.reject_frozen_record_change();
+ CREATE TRIGGER trg_prescriptions_no_truncate BEFORE TRUNCATE ON optical.prescriptions FOR EACH STATEMENT EXECUTE FUNCTION optical.reject_frozen_record_change();
++CREATE TRIGGER trg_locations_guard BEFORE DELETE OR UPDATE ON org.locations FOR EACH ROW EXECUTE FUNCTION org.reject_location_change();
++CREATE TRIGGER trg_locations_no_truncate BEFORE TRUNCATE ON org.locations FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_stores_guard BEFORE DELETE OR UPDATE ON org.stores FOR EACH ROW EXECUTE FUNCTION org.reject_store_change();
++CREATE TRIGGER trg_stores_no_truncate BEFORE TRUNCATE ON org.stores FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_price_history_append_only BEFORE DELETE OR UPDATE ON pricing.price_history FOR EACH ROW EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_price_history_no_truncate BEFORE TRUNCATE ON pricing.price_history FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_tax_categories_no_delete BEFORE DELETE ON pricing.tax_categories FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_tax_categories_no_truncate BEFORE TRUNCATE ON pricing.tax_categories FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_variant_store_prices_no_delete BEFORE DELETE ON pricing.variant_store_prices FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_variant_store_prices_no_truncate BEFORE TRUNCATE ON pricing.variant_store_prices FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_balances_no_delete BEFORE DELETE ON stock.balances FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_balances_no_truncate BEFORE TRUNCATE ON stock.balances FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_inventory_lines_frozen BEFORE INSERT OR DELETE OR UPDATE ON stock.inventory_lines FOR EACH ROW EXECUTE FUNCTION stock.reject_resolved_line_change();
++CREATE TRIGGER trg_inventory_lines_no_truncate BEFORE TRUNCATE ON stock.inventory_lines FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_inventory_sessions_frozen BEFORE DELETE OR UPDATE ON stock.inventory_sessions FOR EACH ROW EXECUTE FUNCTION stock.reject_closed_session_change();
++CREATE TRIGGER trg_inventory_sessions_no_truncate BEFORE TRUNCATE ON stock.inventory_sessions FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_movements_append_only BEFORE DELETE OR UPDATE ON stock.movements FOR EACH ROW EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_movements_no_truncate BEFORE TRUNCATE ON stock.movements FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_receipt_lines_append_only BEFORE DELETE OR UPDATE ON stock.receipt_lines FOR EACH ROW EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_receipt_lines_no_truncate BEFORE TRUNCATE ON stock.receipt_lines FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_receipts_append_only BEFORE DELETE OR UPDATE ON stock.receipts FOR EACH ROW EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_receipts_no_truncate BEFORE TRUNCATE ON stock.receipts FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change();
++CREATE TRIGGER trg_variant_store_settings_no_delete BEFORE DELETE ON stock.variant_store_settings FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete();
++CREATE TRIGGER trg_variant_store_settings_no_truncate BEFORE TRUNCATE ON stock.variant_store_settings FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete();
+ ALTER TABLE ONLY appointments.appointments
+     ADD CONSTRAINT fk_appointments_cancelled_by_users FOREIGN KEY (cancelled_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY appointments.appointments
+@@ -447,10 +1084,68 @@
+     ADD CONSTRAINT fk_sessions_users FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ ALTER TABLE ONLY auth.user_permissions
+     ADD CONSTRAINT fk_user_permissions_users FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
++ALTER TABLE ONLY catalog.lens_references
++    ADD CONSTRAINT fk_lens_references_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.lens_references
++    ADD CONSTRAINT fk_lens_references_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.lens_references
++    ADD CONSTRAINT fk_lens_references_manufacturer FOREIGN KEY (manufacturer_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.lens_references
++    ADD CONSTRAINT fk_lens_references_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT fk_product_models_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT fk_product_models_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT fk_product_models_families FOREIGN KEY (family_code) REFERENCES catalog.families(code) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT fk_product_models_lens_range FOREIGN KEY (lens_range_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_models
++    ADD CONSTRAINT fk_product_models_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT fk_product_variants_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT fk_product_variants_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT fk_product_variants_lens_index FOREIGN KEY (lens_index_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT fk_product_variants_models FOREIGN KEY (model_id) REFERENCES catalog.product_models(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.product_variants
++    ADD CONSTRAINT fk_product_variants_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.suppliers
++    ADD CONSTRAINT fk_suppliers_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.suppliers
++    ADD CONSTRAINT fk_suppliers_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.suppliers
++    ADD CONSTRAINT fk_suppliers_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_lens_treatments
++    ADD CONSTRAINT fk_variant_lens_treatments_treatment FOREIGN KEY (treatment_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_lens_treatments
++    ADD CONSTRAINT fk_variant_lens_treatments_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE CASCADE;
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT fk_variant_suppliers_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT fk_variant_suppliers_removed_by_users FOREIGN KEY (removed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT fk_variant_suppliers_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT fk_variant_suppliers_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY catalog.variant_suppliers
++    ADD CONSTRAINT fk_variant_suppliers_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY clients.clients
+     ADD CONSTRAINT fk_clients_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY clients.clients
+     ADD CONSTRAINT fk_clients_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY imports.batches
++    ADD CONSTRAINT fk_batches_applied_by_users FOREIGN KEY (applied_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY imports.batches
++    ADD CONSTRAINT fk_batches_checked_by_users FOREIGN KEY (checked_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY imports.batches
++    ADD CONSTRAINT fk_batches_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY imports.batches
++    ADD CONSTRAINT fk_batches_uploaded_by_users FOREIGN KEY (uploaded_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY imports.rows
++    ADD CONSTRAINT fk_rows_batches FOREIGN KEY (batch_id) REFERENCES imports.batches(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY optical.measurement_revisions
+     ADD CONSTRAINT fk_measurement_revisions_confirmed_by_users FOREIGN KEY (confirmed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY optical.measurement_revisions
+@@ -489,4 +1184,78 @@
+     ADD CONSTRAINT fk_prescriptions_invalidated_by_users FOREIGN KEY (invalidated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
+ ALTER TABLE ONLY optical.prescriptions
+     ADD CONSTRAINT fk_prescriptions_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY org.locations
++    ADD CONSTRAINT fk_locations_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.price_history
++    ADD CONSTRAINT fk_price_history_changed_by_users FOREIGN KEY (changed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.price_history
++    ADD CONSTRAINT fk_price_history_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.price_history
++    ADD CONSTRAINT fk_price_history_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.price_history
++    ADD CONSTRAINT fk_price_history_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.tax_categories
++    ADD CONSTRAINT fk_tax_categories_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.tax_categories
++    ADD CONSTRAINT fk_tax_categories_validated_by_users FOREIGN KEY (validated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.variant_store_prices
++    ADD CONSTRAINT fk_variant_store_prices_store_currency FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.variant_store_prices
++    ADD CONSTRAINT fk_variant_store_prices_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY pricing.variant_store_prices
++    ADD CONSTRAINT fk_variant_store_prices_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.balances
++    ADD CONSTRAINT fk_balances_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.balances
++    ADD CONSTRAINT fk_balances_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT fk_inventory_lines_counted_by_users FOREIGN KEY (counted_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT fk_inventory_lines_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT fk_inventory_lines_movements FOREIGN KEY (movement_id) REFERENCES stock.movements(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT fk_inventory_lines_sessions FOREIGN KEY (session_id) REFERENCES stock.inventory_sessions(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_lines
++    ADD CONSTRAINT fk_inventory_lines_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT fk_inventory_sessions_abandoned_by_users FOREIGN KEY (abandoned_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT fk_inventory_sessions_families FOREIGN KEY (scope_family_code) REFERENCES catalog.families(code) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT fk_inventory_sessions_opened_by_users FOREIGN KEY (opened_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT fk_inventory_sessions_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.inventory_sessions
++    ADD CONSTRAINT fk_inventory_sessions_validated_by_users FOREIGN KEY (validated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.movements
++    ADD CONSTRAINT fk_movements_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.movements
++    ADD CONSTRAINT fk_movements_performed_by_users FOREIGN KEY (performed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.movements
++    ADD CONSTRAINT fk_movements_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.movements
++    ADD CONSTRAINT fk_movements_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipt_lines
++    ADD CONSTRAINT fk_receipt_lines_movements FOREIGN KEY (movement_id) REFERENCES stock.movements(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipt_lines
++    ADD CONSTRAINT fk_receipt_lines_receipts FOREIGN KEY (receipt_id) REFERENCES stock.receipts(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipt_lines
++    ADD CONSTRAINT fk_receipt_lines_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT fk_receipts_completes FOREIGN KEY (completes_receipt_id) REFERENCES stock.receipts(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT fk_receipts_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT fk_receipts_received_by_users FOREIGN KEY (received_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT fk_receipts_store_currency FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.receipts
++    ADD CONSTRAINT fk_receipts_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.variant_store_settings
++    ADD CONSTRAINT fk_variant_store_settings_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.variant_store_settings
++    ADD CONSTRAINT fk_variant_store_settings_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT;
++ALTER TABLE ONLY stock.variant_store_settings
++    ADD CONSTRAINT fk_variant_store_settings_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT;
+ \unrestrict mmv05

@@ -120,3 +120,7 @@ Toujours **aucun test applicatif exécuté** : .NET, PostgreSQL, frontend, HTTPS
 ## Plan de tests — interface, HTTPS, natif
 
 Captures comparées aux planches Lot 6 (clair / sombre, 1920×1080, 1024×700), parcours clavier B-132 à B-134, états transverses ; HTTPS réel (HTTP en clair refusé) ; Tauri natif sur les parcours principaux de chaque sous-lot ; résidu de test 0.
+
+## Implémentation — résultats du 30/10/2026
+
+Détail : [`LIVRAISON_05.md`](LIVRAISON_05.md) § 2. Résumé : `MMV.Api.Tests` 499/499 PASS ; `MMV.Maintenance.Tests` 50/50 PASS ; `MMV.PostgreSql.Tests --filter Stage=Phase05` 8/8 PASS **sur cluster jetable** (pas sur `mmv_v2_test`) ; script 0007 idempotent rejoué, `verify.sql` 27/27 OK (jetable) ; `tsc` / `eslint` PASS ; Vitest 308/309 (1 FAIL préexistant dû à `.env.development` du propriétaire, O-05-11). NOT_TESTED : application sur les bases du propriétaire, suites PostgreSQL complètes sur `mmv_v2_test`, HTTPS en processus réel, Tauri natif, captures Lot 6. Les plans « NOT_TESTED » ci-dessus restent valables pour la cible officielle.

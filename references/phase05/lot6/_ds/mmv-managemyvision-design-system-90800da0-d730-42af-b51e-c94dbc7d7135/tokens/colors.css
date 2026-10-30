@@ -1,0 +1,119 @@
+/* ============================================================
+   MMV — Color tokens
+   Base palette from the MMV brand spec (Identité visuelle),
+   semantic aliases for light (default) and dark themes.
+   Toggle dark with  <html data-theme="dark">  or class .theme-dark
+   ============================================================ */
+:root{
+  /* --- Base palette (brand-fixed, theme-independent) --- */
+  --mmv-blue-electric:#0066FF;   /* Bleu électrique principal — primary accent   */
+  --mmv-blue-night:#0B1D3A;      /* Bleu nuit — deepest brand navy               */
+  --mmv-blue-secondary:#24B6FF;  /* Bleu secondaire — highlights, links          */
+  --mmv-teal:#00C2A8;            /* Accent médical — reassurance / positive       */
+  --mmv-gray-light:#F2F4F7;      /* Gris clair                                   */
+  --mmv-gray-medium:#8A95A6;     /* Gris moyen                                   */
+  --mmv-white:#FFFFFF;
+
+  /* --- Accent scale (interaction states from the button spec) --- */
+  --accent:#0066FF;
+  --accent-hover:#3385FF;        /* Survol — lighter                             */
+  --accent-pressed:#0B1D3A;      /* Pressé — deep navy                           */
+  --accent-contrast:#FFFFFF;
+  --accent-soft:#E6F0FF;         /* tinted fill: icon buttons, avatars, chips    */
+  --accent-soft-border:#CBDFFF;
+  --brand-secondary:#24B6FF;
+  --brand-teal:#00C2A8;
+
+  /* --- Surfaces --- */
+  --surface-page:#F2F4F7;        /* app background                               */
+  --surface-card:#FFFFFF;        /* cards, panels                               */
+  --surface-raised:#FFFFFF;      /* elevated (pairs with shadow)                 */
+  --surface-sunken:#F2F4F7;      /* inset wells, input backgrounds              */
+  --surface-hover:#F6F8FB;       /* row / item hover                            */
+  --surface-selected:#EAF2FF;    /* selected row / active nav                    */
+  --surface-overlay:rgba(11,29,58,0.45); /* modal scrim                         */
+
+  /* --- Text --- */
+  --text-primary:#0B1D3A;
+  --text-secondary:#5B6675;
+  --text-tertiary:#8A95A6;
+  --text-disabled:#B4BCC8;
+  --text-on-accent:#FFFFFF;
+  --text-link:#0066FF;
+  --text-link-hover:#0B1D3A;
+
+  /* --- Borders --- */
+  --border:#E4E8EE;
+  --border-strong:#CDD4DE;
+  --border-focus:#0066FF;
+
+  /* --- Semantic status --- */
+  --success:#12B76A;
+  --success-soft:#E7F7EF;
+  --success-text:#087443;
+  --warning:#F79009;
+  --warning-soft:#FEF1E2;
+  --warning-text:#B54708;
+  --error:#F0384B;
+  --error-soft:#FDECEE;
+  --error-text:#C01427;
+  --info:#0EA5E9;
+  --info-soft:#E4F5FD;
+  --info-text:#0A6E9E;
+
+  /* --- Data-viz sequence (dashboards, charts) --- */
+  --data-1:#0066FF;
+  --data-2:#24B6FF;
+  --data-3:#00C2A8;
+  --data-4:#7A5AF8;
+  --data-5:#F79009;
+
+  color-scheme:light;
+}
+
+/* ===================== DARK THEME ===================== */
+:root[data-theme="dark"],.theme-dark{
+  --accent:#0066FF;
+  --accent-hover:#3385FF;
+  --accent-pressed:#0A5AE0;
+  --accent-contrast:#FFFFFF;
+  --accent-soft:rgba(0,102,255,0.18);
+  --accent-soft-border:rgba(0,102,255,0.40);
+  --brand-secondary:#24B6FF;
+  --brand-teal:#00C2A8;
+
+  --surface-page:#0B111C;        /* Fond principal        */
+  --surface-card:#121A26;        /* Surface               */
+  --surface-raised:#192234;      /* Surface élevée        */
+  --surface-sunken:#0F1722;
+  --surface-hover:#182130;
+  --surface-selected:#152744;
+  --surface-overlay:rgba(0,0,0,0.60);
+
+  --text-primary:#E6ECF5;        /* Texte principal       */
+  --text-secondary:#A9B3C7;      /* Texte secondaire      */
+  --text-tertiary:#7C8798;
+  --text-disabled:#4A5768;
+  --text-on-accent:#FFFFFF;
+  --text-link:#24B6FF;
+  --text-link-hover:#7FD0FF;
+
+  --border:#243044;              /* Bordures / séparateurs */
+  --border-strong:#33415A;
+  --border-focus:#3385FF;
+
+  --success:#2DD48A;
+  --success-soft:rgba(45,212,138,0.16);
+  --success-text:#5EE3A8;
+  --warning:#FBB040;
+  --warning-soft:rgba(251,176,64,0.16);
+  --warning-text:#FBC77A;
+  --error:#FF5B6B;
+  --error-soft:rgba(255,91,107,0.16);
+  --error-text:#FF8A96;
+  --info:#38BDF8;
+  --info-soft:rgba(56,189,248,0.16);
+  --info-text:#7DD3FC;
+
+  color-scheme:dark;
+}

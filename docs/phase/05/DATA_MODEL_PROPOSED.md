@@ -1,5 +1,7 @@
 # 05 — Modèle de données proposé (aucune migration)
 
+> **Mise à jour 30/10/2026 (implémentation)** : ce document reste la proposition du cadrage (historique). L'implémentation réelle et ses écarts (migration unique 0007 au lieu de 0007–0010, table unique `catalog.lens_references`, réceptions `stock.receipts` / `receipt_lines`, exports CSV non livrés, routes `/api/imports/{id}/cancel` et `/api/pricing/recalculations` ajoutées) sont décrits dans [`DECISIONS_TECHNIQUES_05.md`](DECISIONS_TECHNIQUES_05.md), [`G05_SQL_DOSSIER.md`](G05_SQL_DOSSIER.md) et [`LIVRAISON_05.md`](LIVRAISON_05.md).
+
 **PROPOSED — révision du 30/10/2026 après la validation métier (G05-METIER).** Aucune table, aucun schéma, aucune migration n'existe ; aucune migration `0007` n'est générée. Le modèle dérive **exclusivement** des décisions approuvées ([`DECISIONS_05_METIER_PROPOSED.md`](DECISIONS_05_METIER_PROPOSED.md) : D-05-02, 03, 04, 05, 06, 14 à 21) et de l'architecture MMV V2 ; aucun nom, champ ou énumération n'est repris du Lot 6 ni de l'ancien logiciel (D-05-01). Les points marqués **(QR-nn)** dépendent d'une question encore ouverte.
 
 *Historique : la version du 29/10/2026 (article unique, prix TTC, devise de l'installation, multi-magasin hors périmètre) est conservée au commit `6c207f9` ; elle est remplacée par celle-ci.*

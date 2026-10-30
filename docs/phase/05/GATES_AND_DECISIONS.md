@@ -82,3 +82,28 @@ Mise à jour 30/10/2026 : BL-05-01 confirmé par Q12 (commandes fournisseurs com
 
 - 29/10/2026 : mandat 05-00 reçu ; `git fetch` ; fusion de la Phase 04 vérifiée (`0a83a57`, `dcc6f0d` inclus, arbre identique) ; arbre de travail non propre constaté (O-05-02), branche non créée ; Lot 6 authentifié (SHA-256 = registre) ; 37 groupes / 107 états cartographiés ; constat O-05-01 ; documents `docs/phase/05/` rédigés comme fichiers non suivis sur `main` (aucun commit) ; liens internes vérifiés ; aucune base, aucun processus, aucun fichier du propriétaire touchés. **STOP revue métier du propriétaire.**
 - 30/10/2026 : réponses Q01–Q20 reçues, GO finalisation 05-00. `git fetch` : `main` = `origin/main` = `0a83a57`, 0 / 0. Branche `feat/phase-05-catalogue-stock` créée (`git switch -c`, aucun conflit, `.env.development` inchangé). Commit `6c207f9` : cadrage du 29/10 versionné **tel que livré** (historique). Lot 6 copié dans `references/phase05/lot6/` (15 fichiers, empreintes identiques aux originaux), index et manifeste générés. Registre D-05 mis à jour (APPROVED / PROPOSED / SUPERSEDED, D-05-14 à D-05-21 nouvelles, QR-01 à QR-13) ; modèle, API, spécification, QA, matrice révisés ; liens vérifiés. Aucune migration, aucune base, aucun processus touchés. **STOP : revue d'implémentation du propriétaire ; aucun développement sans GO 05-A.**
+
+## Mise à jour des gates — 30/10/2026 (implémentation)
+
+GO officiel d'implémentation complète ([`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE05_2026-10-30.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE05_2026-10-30.md)) : sous-lots 05-A à 05-D autorisés sans GO intermédiaire ; seul arrêt obligatoire G05-SQL.
+
+| Gate | État au 30/10/2026 (implémentation) |
+|---|---|
+| G05-A, 05-B, 05-C, 05-D | **IMPLEMENTED** (étapes internes ; [`LIVRAISON_05.md`](LIVRAISON_05.md)) |
+| G05-SQL (unique, remplace G05-SQL-A/B/C/D) | **OWNER_REVIEW_REQUIRED** — [`G05_SQL_DOSSIER.md`](G05_SQL_DOSSIER.md), manifeste [`sql/0007_MANIFEST.sha256`](sql/0007_MANIFEST.sha256) ; rien d'appliqué |
+| G05-METIER (QR-01 à QR-13, D-05-07 / 09 / 13) | appliqués selon les règles du mandat ou des choix conservateurs **non ratifiés** ([`DECISIONS_TECHNIQUES_05.md`](DECISIONS_TECHNIQUES_05.md)) ; statuts du registre métier inchangés |
+| G05-DESIGN | **OPEN** — écrans composés avec les composants V2 ; captures et revue visuelle NOT_TESTED |
+| G05-FISCAL, G05-LEGAL | **OPEN** (inchangés) ; aucune vente réelle possible |
+| G05-FINAL | NOT_STARTED |
+
+Points ouverts ajoutés :
+
+| ID | Point | Proposition | Décideur |
+|---|---|---|---|
+| O-05-10 | Maquette Lot 6 non versionnée : identifiants de l'ancien logiciel et coordonnées de fournisseurs dans le HTML et ses captures | conserver hors Git (procédure de récupération dans `references/phase05/README.md`) ou fournir une version expurgée | propriétaire |
+| O-05-11 | Test Vitest `realAppIsolation` en échec à cause de la modification locale de `.env.development` (`VITE_MMV_OPTICAL_MODULE`) | modification du propriétaire, non touchée ; décider de la valider ou de la retirer | propriétaire |
+| O-05-12 | Hypothèses non ratifiées (attributs, motifs, plafonds, compteur ≠ validateur non imposé…) | [`DECISIONS_TECHNIQUES_05.md`](DECISIONS_TECHNIQUES_05.md) § 3 | propriétaire |
+
+Backlog ajouté : BL-05-09 (exports CSV), BL-05-10 (écrans fiscaux après ADR-010) — [`docs/PERIMETRE_ET_SEQUENCE.md`](../../PERIMETRE_ET_SEQUENCE.md).
+
+- 30/10/2026 (implémentation) : branche vérifiée (`feat/phase-05-catalogue-stock` descend de `0a83a57`) ; domaine, application, infrastructure, API, maintenance, écrans React, tests ; cluster PostgreSQL 18 jetable (port 55433) pour les essais ; aucune connexion à `mmv_v2_dev` / `mmv_v2_test` ; aucun processus du propriétaire arrêté (API observée sur 7267) ; `.env.development` intact ; références `references/phase05/` versionnées partiellement. **STOP G05-SQL — `PHASE05_IMPLEMENTED — OWNER_G05_SQL_REVIEW_REQUIRED`.**

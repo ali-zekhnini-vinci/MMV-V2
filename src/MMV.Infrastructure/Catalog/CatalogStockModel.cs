@@ -152,6 +152,7 @@ internal static class CatalogStockModel
             reference.HasOne<LensReference>().WithMany().HasForeignKey(r => r.ManufacturerId)
                 .HasConstraintName("fk_lens_references_manufacturer").OnDelete(DeleteBehavior.Restrict);
             // Unicité (type, fabricant, nom normalisé) ; fabricant absent compté comme une valeur (NULLS NOT DISTINCT).
+            reference.HasIndex(r => r.ManufacturerId).HasDatabaseName("ix_lens_references_manufacturer_id");
             reference.HasIndex(r => new { r.KindCode, r.ManufacturerId, r.NameKey }).IsUnique().AreNullsDistinct(false)
                 .HasDatabaseName("ux_lens_references_kind_parent_name");
         });

@@ -1237,7 +1237,7 @@ namespace MMV.Infrastructure.Persistence.Migrations
                 column: "created_by_user_id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_lens_references_manufacturer_id",
+                name: "ix_lens_references_manufacturer_id",
                 schema: "catalog",
                 table: "lens_references",
                 column: "manufacturer_id");

@@ -51,3 +51,7 @@ Aucune lecture de l'ancien dépôt, de son code, de ses DTO, de son modèle de d
 Fichiers générés (non sources) : `README.md` (contenu, statut, limites, consultation), `INDEX_LOT6.md` (37 groupes, 107 états, `data-mount`, module V2 indicatif), `SHA256SUMS.txt`.
 
 Écartés : `MMV.zip` (3,6 Mo, archive des Lots 1 à 6 ; ses entrées Lot 6 ont les mêmes empreintes que les copies), `scraps/check-list.png` (non rattaché au Lot 6), `_ds/…/readme.md`, `_ds_manifest.json`, `_adherence.oxlintrc.json`, `assets/logo-monogram.png` (non chargés par la maquette). `support.js` et les fichiers `_ds` copiés sont identiques à ceux de `references/phase03/lot2/` (doublon de ~ 370 Ko accepté pour que la maquette reste consultable par chemins relatifs). Aucune autre référence Lot 6 trouvée dans `Downloads/`. Aucun état sans planche fabriqué.
+
+## Mise à jour 30/10/2026 (implémentation) — versionnement partiel de `references/phase05/`
+
+Versionnés : `README.md`, `INDEX_LOT6.md`, `SHA256SUMS.txt`, `.gitignore`, `lot6/support.js`, `lot6/_ds/…`. **Non versionnés** (identifiants de l'ancien logiciel et coordonnées de fournisseurs dont le caractère fictif n'est pas établi) : `lot6/MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html`, `lot6/scraps/*.png` — récupération et contrôle d'empreinte : `references/phase05/README.md` § « Versionnement ». Empreintes inchangées. Aucune source supplémentaire lue pour l'implémentation ; ancien dépôt non consulté.
