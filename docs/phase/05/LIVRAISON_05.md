@@ -38,7 +38,7 @@ Choix techniques et hypothèses non ratifiées : [`DECISIONS_TECHNIQUES_05.md`](
 
 | Test | Cause |
 |---|---|
-| `apps/desktop/src/optical/realAppIsolation.test.tsx` — « le banc est une page distincte… aucune activation par défaut » | **Préexistant, non causé par la Phase 05** : la modification locale du propriétaire de `apps/desktop/.env.development` ajoute `VITE_MMV_OPTICAL_MODULE`, que le test interdit. Fichier non modifié par l'agent (consigne). Un premier passage complet de Vitest a aussi montré 3 délais dépassés non reproduits au passage suivant (charge machine, cf. O-04-51). |
+| `apps/desktop/src/optical/realAppIsolation.test.tsx` — « le banc est une page distincte… aucune activation par défaut » | **Préexistant, non causé par la Phase 05** : la modification locale du propriétaire de `apps/desktop/.env.development` ajoute `VITE_MMV_OPTICAL_MODULE`, que le test interdit. Fichier non modifié par l'agent (consigne). Sur 3 passages complets de Vitest, 2 ont en outre montré 3 tests lents en échec (`Shell.test.tsx` « Rendez-vous : system.admin seul… », `ClientHistoryTab.test.tsx` « Voir le rendez-vous… », `realAppIsolation.test.tsx` « application réelle AVEC interrupteur… », 6 à 9 s chacun) ; relancés seuls, ils passent (charge machine, cf. O-04-51). Preuve : `evidence/P05_vitest*.txt` de l'archive. |
 
 ### NOT_TESTED
 
