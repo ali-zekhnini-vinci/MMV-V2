@@ -173,3 +173,9 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - **ADR-010 reste `OPEN DECISION`.** Précisé par le propriétaire : devise et fiscalité **configurables par magasin**, devise portée par le magasin (EUR pour la Belgique, MAD pour le Maroc), **aucune conversion automatique**. Non ratifiés : régimes, taux, catégories fiscales, arrondi de la taxe ; aucun taux n'est inventé ; TTC et ventes réelles bloqués tant que la fiscalité du magasin n'est pas validée.
 - **ADR-003** respecté (montants en `numeric`, aucun flottant, aucune extension) ; **ADR-014** : aucune dépendance proposée (calcul décimal serveur natif, le poste ne calcule aucun montant). ADR-001, ADR-007, ADR-014 restent `PROPOSED`. Aucun ADR modifié.
 - **D-000 / `NEW_RULES_ONLY`** : D-05-01 `APPROVED` — Lot 6 référence visuelle et ergonomique seulement ; ancien dépôt jamais consulté.
+
+## Note datée — 30/10/2026 (Phase 05, G05-SQL accordée, intégration finale)
+
+- Mandat : [`prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md`](../prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md). Migration `0007_CatalogStockModule` **appliquée** (`mmv_v2_dev` puis `mmv_v2_test`) par le seul script approuvé (`39c9c224…1eb6`), `lock_timeout` 5 s ; retour arrière = restauration de la sauvegarde prise avant application (aucun `Down` exécutable ; restauration complète non éprouvée, BL-04-05). Rapport : [`docs/phase/05/LIVRAISON_05_FINAL.md`](phase/05/LIVRAISON_05_FINAL.md).
+- Contrat de l'API inchangé ; correctif du poste seulement (O-05-14 : l'aperçu de prix part sans `requestId`, conformément au contrat). Aucun ADR modifié, aucune dépendance ajoutée.
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; **ADR-010 `OPEN DECISION`** (fiscalité EUR / MAD, TTC indisponible) ; rôle SQL applicatif distinct toujours au backlog (BL-04-04, R-F-03).

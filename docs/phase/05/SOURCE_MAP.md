@@ -55,3 +55,15 @@ Fichiers générés (non sources) : `README.md` (contenu, statut, limites, consu
 ## Mise à jour 30/10/2026 (implémentation) — versionnement partiel de `references/phase05/`
 
 Versionnés : `README.md`, `INDEX_LOT6.md`, `SHA256SUMS.txt`, `.gitignore`, `lot6/support.js`, `lot6/_ds/…`. **Non versionnés** (identifiants de l'ancien logiciel et coordonnées de fournisseurs dont le caractère fictif n'est pas établi) : `lot6/MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html`, `lot6/scraps/*.png` — récupération et contrôle d'empreinte : `references/phase05/README.md` § « Versionnement ». Empreintes inchangées. Aucune source supplémentaire lue pour l'implémentation ; ancien dépôt non consulté.
+
+## Mise à jour 30/10/2026 (G05-SQL accordée, intégration finale)
+
+| Source | Usage |
+|---|---|
+| `prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md` | mandat (copie versionnée du message du propriétaire) |
+| `MMV_V2_AUDIT_G05_SQL_0007_2026-10-30.md` | **non disponible** dans l'espace de travail, non lu (O-05-18) |
+| `docs/phase/05/sql/0007_MANIFEST.sha256` et les 12 fichiers qu'il couvre | précontrôle 12 / 12 OK ; aucun de ces fichiers modifié |
+| `mmv_v2_dev`, `mmv_v2_test` (PostgreSQL 18.6, 5433) | lectures de contrôle en session lecture seule ; écritures : script approuvé (dev, test), données fictives de banc (test seulement), purgées |
+| `docs/phase/04/LIVRAISON_04C.md`, `evidence/P04C_harness_c04http.cs.txt`, `apps/desktop/e2e/run-native.mjs` | procédés de banc reconduits (API copiée hors dépôt, Tauri renommé, CDP) |
+
+Produits (nouveaux, versionnés) : [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) ; `sql/0007_CatalogStockModule.schema-inventory.applied.txt` (relu sur `mmv_v2_test` après application, SHA-256 `5bf96490ef341638ae2072e3a4ffaeff788b9b9970134f6ac4972dde153c3d63`, **hors manifeste 0007**, O-05-13) ; `evidence/P05F_*` (précontrôles, application, `verify.sql`, empreintes de contenu, PostgreSQL, .NET, frontend, natif, journal de l'API de banc, outil de banc, 16 captures).

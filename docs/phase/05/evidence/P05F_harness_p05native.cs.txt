@@ -1,0 +1,277 @@
+#:project C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/src/MMV.Infrastructure/MMV.Infrastructure.csproj
+#:package Microsoft.Extensions.Configuration.UserSecrets@10.0.4
+#:property TreatWarningsAsErrors=false
+#:property PublishAot=false
+#:property NoWarn=CA1303;CA1307;CA1031;CA2007;CA1849;CA1861;CA2000;CA1859;CA1822;CA1305;CA1310;CA1304;CA1311;CA1862;CA2234;CA1515;CA1050
+// Banc natif Phase 05 (outil JETABLE, hors dépôt) : données FICTIVES sur mmv_v2_test UNIQUEMENT (0007 appliquée, GO G05-SQL
+// du 30/10/2026). Comptes p05n-*-<suffixe>, magasins T05N*<suffixe> (Belgique EUR, Maroc MAD), catalogue via l'API HTTPS réelle.
+//   seed <api> <fichier identifiants>   comptes + magasins + catalogue / prix / stock / réception partielle / inventaire
+//   cleanup <suffixe>                   purge des données du suffixe (déclencheurs désactivés DANS la transaction)
+//   residue                             lignes métier restantes de mmv_v2_test (hors familles et historique EF)
+// Cible relue côté serveur avant toute écriture ; aucun mot de passe ni chaîne de connexion affichés.
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Identity;
+using MMV.Domain.Identity;
+using MMV.Domain.Stores;
+using MMV.Infrastructure;
+using MMV.Infrastructure.Persistence;
+using Npgsql;
+
+var raw = new ConfigurationBuilder().AddUserSecrets("mmv-v2-postgresql-tests").Build()["ConnectionStrings:MmvTest"]
+          ?? throw new InvalidOperationException("ConnectionStrings:MmvTest absente.");
+var builder = new NpgsqlConnectionStringBuilder(raw);
+if (builder.Host is not ("localhost" or "127.0.0.1" or "::1") || builder.Port != 5433 || builder.Database != "mmv_v2_test" || builder.Username != "mmv_v2_test")
+{
+    throw new InvalidOperationException("Cible refusée (mmv_v2_test sur 5433 attendu).");
+}
+
+await using (var probe = new NpgsqlConnection(builder.ConnectionString))
+{
+    await probe.OpenAsync();
+    await using var identity = new NpgsqlCommand("SELECT current_database() || '|' || current_user || '|' || inet_server_port() || '|' || current_setting('server_version_num')", probe);
+    var value = (string)(await identity.ExecuteScalarAsync())!;
+    var parts = value.Split('|');
+    if (parts[0] != "mmv_v2_test" || parts[1] != "mmv_v2_test" || parts[2] != "5433" || int.Parse(parts[3]) < 180000)
+    {
+        throw new InvalidOperationException($"Identité serveur refusée : {value}");
+    }
+
+    Console.WriteLine($"CIBLE : {value}");
+}
+
+var services = new ServiceCollection()
+    .AddInfrastructure(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = builder.ConnectionString }).Build())
+    .BuildServiceProvider();
+
+switch (args)
+{
+    case ["seed", var api, var file]:
+        await SeedAsync(new Uri(api), file);
+        return 0;
+    case ["cleanup", var suffix]:
+        await CleanupAsync(suffix);
+        return 0;
+    case ["residue"]:
+        Console.WriteLine($"RÉSIDUS mmv_v2_test = {await ResidueAsync()}");
+        return 0;
+    default:
+        Console.Error.WriteLine("usage : seed <api> <fichier> | cleanup <suffixe> | residue");
+        return 2;
+}
+
+async Task<(Guid Id, string UserName, string Password)> UserAsync(string role, string display, string suffix, IEnumerable<string> permissions)
+{
+    using var scope = services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var userName = $"p05n-{role}-{suffix}".ToLowerInvariant();
+    var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(18));
+    var user = new UserAccount(Guid.CreateVersion7(), userName, display, DateTimeOffset.UtcNow);
+    user.SetPasswordHash(scope.ServiceProvider.GetRequiredService<IPasswordHashing>().Hash(user, password));
+    foreach (var permission in permissions)
+    {
+        user.Grant(permission);
+    }
+
+    context.Users.Add(user);
+    await context.SaveChangesAsync();
+    return (user.Id, userName, password);
+}
+
+async Task SeedAsync(Uri api, string file)
+{
+    var suffix = Guid.NewGuid().ToString("N")[..6].ToUpperInvariant();
+    var admin = await UserAsync("admin", "Responsable Fictif", suffix, [.. Permissions.Phase05, Permissions.AuditRead]);
+    var reader = await UserAsync("vendeur", "Vendeur Fictif", suffix, [Permissions.CatalogRead, Permissions.StockRead, Permissions.SuppliersRead]);
+
+    Guid be, ma, beShop, beBack, maShop;
+    using (var scope = services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+        var now = DateTimeOffset.UtcNow;
+        var storeBe = Store.Create(Guid.CreateVersion7(), $"T05NBE{suffix}", "Magasin fictif Bruxelles", "BE", Currencies.Euro, now);
+        var storeMa = Store.Create(Guid.CreateVersion7(), $"T05NMA{suffix}", "Magasin fictif Casablanca", "MA", Currencies.Dirham, now);
+        context.Stores.AddRange(storeBe, storeMa);
+        var l1 = Location.Create(Guid.CreateVersion7(), storeBe.Id, "MAGASIN", "Magasin", true, now);
+        var l2 = Location.Create(Guid.CreateVersion7(), storeBe.Id, "RESERVE", "Réserve", false, now);
+        var l3 = Location.Create(Guid.CreateVersion7(), storeMa.Id, "MAGASIN", "Magasin", true, now);
+        context.Locations.AddRange(l1, l2, l3);
+        await context.SaveChangesAsync();
+        (be, ma, beShop, beBack, maShop) = (storeBe.Id, storeMa.Id, l1.Id, l2.Id, l3.Id);
+    }
+
+    using var http = new HttpClient { BaseAddress = api };
+    using (var login = await http.PostAsJsonAsync("/api/auth/login", new { userName = admin.UserName, password = admin.Password }))
+    {
+        login.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
+        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body.RootElement.GetProperty("accessToken").GetString());
+    }
+
+    async Task<JsonElement> Send(HttpMethod method, string path, object body)
+    {
+        using var response = await http.SendAsync(new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) });
+        var text = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException($"{method} {path} -> {(int)response.StatusCode} {text}");
+        }
+
+        return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
+    }
+
+    async Task<JsonElement> Get(string path)
+    {
+        using var response = await http.GetAsync(path);
+        response.EnsureSuccessStatusCode();
+        return JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.Clone();
+    }
+
+    var supplierBe = (await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = $"FBE{suffix}", name = "Fournisseur fictif Belgique", countryCode = "BE", city = "Ville-Démo" })).GetProperty("id").GetGuid();
+    await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = $"FMA{suffix}", name = "Fournisseur fictif Maroc", countryCode = "MA", legalIdentifiers = new { ice = "001234567000089" } });
+    var manufacturer = (await Send(HttpMethod.Post, "/api/catalog/lens-references/manufacturers", new { requestId = Guid.NewGuid(), name = $"Verrier fictif {suffix}" })).GetProperty("id").GetGuid();
+    var range = (await Send(HttpMethod.Post, "/api/catalog/lens-references/ranges", new { requestId = Guid.NewGuid(), name = $"Gamme Démo {suffix}", manufacturerId = manufacturer })).GetProperty("id").GetGuid();
+    var index = (await Send(HttpMethod.Post, "/api/catalog/lens-references/indices", new { requestId = Guid.NewGuid(), name = $"Indice 1.60 {suffix}", indexValue = "1.6" })).GetProperty("id").GetGuid();
+    var treatment = (await Send(HttpMethod.Post, "/api/catalog/lens-references/treatments", new { requestId = Guid.NewGuid(), name = $"Antireflet démo {suffix}" })).GetProperty("id").GetGuid();
+
+    var variants = new Dictionary<string, Guid>(StringComparer.Ordinal);
+    foreach (var (family, name, sku, policy, label) in new[]
+    {
+        ("optical_frames", "Monture Atelier", $"N05-{suffix}-MON", "stocked", "Noir 52-18"),
+        ("sunglasses", "Solaire Riviera", $"N05-{suffix}-SOL", "stocked", "Écaille 54"),
+        ("ophthalmic_lenses", "Verre unifocal démo", $"N05-{suffix}-VER", "order_only", "Indice 1.60 antireflet"),
+        ("contact_lenses_solutions", "Solution multifonction", $"N05-{suffix}-LEN", "stocked", "Flacon 360 ml"),
+        ("accessories", "Étui rigide", $"N05-{suffix}-ACC", "stocked", "Bleu"),
+        ("services", "Ajustage", $"N05-{suffix}-SRV", "service", "Ajustage monture"),
+    })
+    {
+        var lens = family == "ophthalmic_lenses";
+        var model = await Send(HttpMethod.Post, "/api/catalog/models", new
+        {
+            requestId = Guid.NewGuid(), familyCode = family, brand = "Marque fictive", name = $"{name} {suffix}", lensRangeId = lens ? range : (Guid?)null,
+            variants = new[] { new { sku, label, stockPolicy = policy, lensIndexId = lens ? index : (Guid?)null, treatmentIds = lens ? new[] { treatment } : null } },
+        });
+        var detail = await Get($"/api/catalog/models/{model.GetProperty("id").GetGuid()}?storeId={be}");
+        variants[family] = detail.GetProperty("variants")[0].GetProperty("row").GetProperty("variantId").GetGuid();
+    }
+
+    // Tarifs BE (EUR) et MA (MAD) de la monture ; prix manuel sur la solaire ; stock, réception partielle, inventaire ouvert.
+    await Send(HttpMethod.Put, $"/api/pricing/variants/{variants["optical_frames"]}", new { requestId = Guid.NewGuid(), storeId = be, purchasePriceHt = "41.25", coefficient = "2.5", expectedSalePriceHt = "103.13" });
+    await Send(HttpMethod.Put, $"/api/pricing/variants/{variants["optical_frames"]}", new { requestId = Guid.NewGuid(), storeId = ma, purchasePriceHt = "400", coefficient = "2.2", expectedSalePriceHt = "880.00" });
+    await Send(HttpMethod.Put, $"/api/pricing/variants/{variants["sunglasses"]}", new { requestId = Guid.NewGuid(), storeId = be, purchasePriceHt = "30", coefficient = "2.8", expectedSalePriceHt = "84.00" });
+    var sunPrice = await Get($"/api/pricing/variants/{variants["sunglasses"]}?storeId={be}");
+    await Send(HttpMethod.Put, $"/api/pricing/variants/{variants["sunglasses"]}/manual-price", new { requestId = Guid.NewGuid(), storeId = be, version = sunPrice.GetProperty("price").GetProperty("version").GetUInt32(), salePriceHt = "79.90", reason = "Prix rond fictif" });
+    await Send(HttpMethod.Post, "/api/stock/movements", new { requestId = Guid.NewGuid(), variantId = variants["optical_frames"], locationId = beShop, type = "manual_in", quantity = 8, reasonCode = "found" });
+    await Send(HttpMethod.Post, "/api/stock/movements", new { requestId = Guid.NewGuid(), variantId = variants["sunglasses"], locationId = beShop, type = "manual_in", quantity = 3, reasonCode = "found" });
+    await Send(HttpMethod.Post, "/api/stock/movements", new { requestId = Guid.NewGuid(), variantId = variants["contact_lenses_solutions"], locationId = beBack, type = "manual_in", quantity = 12, reasonCode = "found" });
+    await Send(HttpMethod.Post, "/api/stock/receipts", new { requestId = Guid.NewGuid(), locationId = beShop, supplierId = supplierBe, supplierDocumentReference = $"BL-FICTIF-{suffix}", lines = new[] { new { variantId = variants["accessories"], announcedQuantity = 10, receivedQuantity = 6, unitCostHt = "4.10" } } });
+    await Send(HttpMethod.Post, "/api/inventories", new { requestId = Guid.NewGuid(), storeId = be, locationIds = new[] { beShop }, scopeType = "family", scopeFamilyCode = "sunglasses" });
+    await Send(HttpMethod.Post, "/api/auth/logout", new { });
+
+    var credentials = new
+    {
+        suffix,
+        agent = new { userName = admin.UserName, password = admin.Password, displayName = "Responsable Fictif" },
+        other = new { userName = reader.UserName, password = reader.Password, displayName = "Vendeur Fictif" },
+        stores = new { be, ma },
+        variants,
+    };
+    await File.WriteAllTextAsync(file, JsonSerializer.Serialize(credentials));
+    Console.WriteLine($"SEED OK : suffixe {suffix}, 2 comptes, 2 magasins (EUR / MAD), 6 familles, 2 fournisseurs, réception partielle, inventaire ouvert ; identifiants : {Path.GetFileName(file)}");
+}
+
+async Task CleanupAsync(string suffix)
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    var users = new List<Guid>();
+    await using (var read = new NpgsqlCommand("SELECT id FROM auth.users WHERE user_name LIKE @p", connection))
+    {
+        read.Parameters.AddWithValue("p", $"p05n-%-{suffix.ToLowerInvariant()}");
+        await using var reader = await read.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            users.Add(reader.GetGuid(0));
+        }
+    }
+
+    var stores = new List<Guid>();
+    await using (var read = new NpgsqlCommand("SELECT id FROM org.stores WHERE code IN (@a, @b)", connection))
+    {
+        read.Parameters.AddWithValue("a", $"T05NBE{suffix}");
+        read.Parameters.AddWithValue("b", $"T05NMA{suffix}");
+        await using var reader = await read.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            stores.Add(reader.GetGuid(0));
+        }
+    }
+
+    string[] guarded =
+    [
+        "audit.events", "imports.rows", "imports.batches", "stock.inventory_lines", "stock.inventory_sessions", "stock.receipt_lines", "stock.receipts",
+        "stock.movements", "stock.balances", "stock.variant_store_settings", "pricing.price_history", "pricing.variant_store_prices", "pricing.tax_categories",
+        "catalog.variant_suppliers", "catalog.product_variants", "catalog.product_models", "catalog.lens_references", "catalog.suppliers", "org.locations", "org.stores",
+    ];
+    await using var transaction = await connection.BeginTransactionAsync();
+    async Task Run(string sql)
+    {
+        await using var command = new NpgsqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("u", users.ToArray());
+        command.Parameters.AddWithValue("s", stores.ToArray());
+        await command.ExecuteNonQueryAsync();
+    }
+
+    foreach (var table in guarded)
+    {
+        await Run($"ALTER TABLE {table} DISABLE TRIGGER USER");
+    }
+
+    await Run("DELETE FROM imports.rows WHERE batch_id IN (SELECT id FROM imports.batches WHERE uploaded_by_user_id = ANY(@u))");
+    await Run("DELETE FROM imports.batches WHERE uploaded_by_user_id = ANY(@u)");
+    await Run("DELETE FROM stock.inventory_lines WHERE session_id IN (SELECT id FROM stock.inventory_sessions WHERE store_id = ANY(@s))");
+    await Run("DELETE FROM stock.inventory_sessions WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM stock.receipt_lines WHERE receipt_id IN (SELECT id FROM stock.receipts WHERE store_id = ANY(@s))");
+    await Run("DELETE FROM stock.receipts WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM stock.movements WHERE location_id IN (SELECT id FROM org.locations WHERE store_id = ANY(@s))");
+    await Run("DELETE FROM stock.balances WHERE location_id IN (SELECT id FROM org.locations WHERE store_id = ANY(@s))");
+    await Run("DELETE FROM stock.variant_store_settings WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM pricing.price_history WHERE changed_by_user_id = ANY(@u)");
+    await Run("DELETE FROM pricing.variant_store_prices WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM pricing.tax_categories WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM catalog.variant_suppliers WHERE created_by_user_id = ANY(@u)");
+    await Run("DELETE FROM catalog.variant_lens_treatments WHERE variant_id IN (SELECT id FROM catalog.product_variants WHERE created_by_user_id = ANY(@u))");
+    await Run("DELETE FROM catalog.product_variants WHERE created_by_user_id = ANY(@u)");
+    await Run("DELETE FROM catalog.product_models WHERE created_by_user_id = ANY(@u)");
+    await Run("DELETE FROM catalog.lens_references WHERE created_by_user_id = ANY(@u) AND kind <> 'manufacturer'");
+    await Run("DELETE FROM catalog.lens_references WHERE created_by_user_id = ANY(@u)");
+    await Run("DELETE FROM catalog.suppliers WHERE created_by_user_id = ANY(@u)");
+    await Run("DELETE FROM org.locations WHERE store_id = ANY(@s)");
+    await Run("DELETE FROM org.stores WHERE id = ANY(@s)");
+    await Run("DELETE FROM audit.events WHERE actor_user_id = ANY(@u)");
+    await Run("DELETE FROM auth.users WHERE id = ANY(@u)");
+    foreach (var table in guarded)
+    {
+        await Run($"ALTER TABLE {table} ENABLE TRIGGER USER");
+    }
+
+    await transaction.CommitAsync();
+    Console.WriteLine($"PURGE {suffix} : {users.Count} compte(s), {stores.Count} magasin(s) ; résidus mmv_v2_test = {await ResidueAsync()}");
+}
+
+async Task<long> ResidueAsync()
+{
+    await using var connection = new NpgsqlConnection(builder.ConnectionString);
+    await connection.OpenAsync();
+    const string Tables = "auth.users,auth.sessions,auth.user_permissions,audit.events,clients.clients,appointments.appointments,appointments.responsibles,"
+        + "optical.prescriptions,optical.prescription_revisions,optical.measurements,optical.measurement_revisions,org.stores,org.locations,catalog.lens_references,"
+        + "catalog.product_models,catalog.product_variants,catalog.variant_lens_treatments,catalog.suppliers,catalog.variant_suppliers,pricing.variant_store_prices,"
+        + "pricing.price_history,pricing.tax_categories,stock.variant_store_settings,stock.balances,stock.movements,stock.receipts,stock.receipt_lines,"
+        + "stock.inventory_sessions,stock.inventory_lines,imports.batches,imports.rows";
+    await using var residue = new NpgsqlCommand(string.Join(" + ", Tables.Split(',').Select(t => $"(SELECT count(*) FROM {t})")).Insert(0, "SELECT "), connection);
+    return (long)(await residue.ExecuteScalarAsync())!;
+}

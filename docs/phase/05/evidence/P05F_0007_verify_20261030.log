@@ -1,0 +1,63 @@
+# verify.sql (lecture seule) — mmv_v2_dev, 30/10/2026 après COMMIT
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+port|5433|5433|OK
+migrations (7, dernière 0007)|7|20261030005557_CatalogStockModule|7|20261030005557_CatalogStockModule|OK
+schémas Phase 05|catalog,imports,org,pricing,stock|catalog,imports,org,pricing,stock|OK
+tables org|locations,stores|locations,stores|OK
+tables catalog|families,lens_references,product_models,product_variants,suppliers,variant_lens_treatments,variant_suppliers|families,lens_references,product_models,product_variants,suppliers,variant_lens_treatments,variant_suppliers|OK
+tables pricing|price_history,tax_categories,variant_store_prices|price_history,tax_categories,variant_store_prices|OK
+tables stock|balances,inventory_lines,inventory_sessions,movements,receipt_lines,receipts,variant_store_settings|balances,inventory_lines,inventory_sessions,movements,receipt_lines,receipts,variant_store_settings|OK
+tables imports|batches,rows|batches,rows|OK
+index (5 schémas)|102|102|OK
+séquences stock (réceptions, inventaires, identité des mouvements)|3|3|OK
+contraintes CHECK|77|77|OK
+clés étrangères (65 RESTRICT, 1 CASCADE variant_lens_treatments)|66|65|1|66|65|1|OK
+déclencheurs utilisateur activés|40|40|40|40|OK
+fonctions|catalog.reject_change,catalog.reject_delete,imports.reject_closed_batch_change,imports.reject_closed_row_change,org.reject_location_change,org.reject_store_change,stock.reject_closed_session_change,stock.reject_resolved_line_change|catalog.reject_change,catalog.reject_delete,imports.reject_closed_batch_change,imports.reject_closed_row_change,org.reject_location_change,org.reject_store_change,stock.reject_closed_session_change,stock.reject_resolved_line_change|OK
+aucun montant en flottant (real, double precision, money)|0|0|OK
+montants numeric à échelle fixe|numeric(12,2):1,numeric(14,4):6,numeric(4,3):1,numeric(7,4):1,numeric(8,4):1|numeric(12,2):1,numeric(14,4):6,numeric(4,3):1,numeric(7,4):1,numeric(8,4):1|OK
+stock négatif interdit (contrainte)|CHECK ((on_hand >= 0))|CHECK ((on_hand >= 0))|OK
+devise du prix = devise du magasin (clé composite)|FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT|FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT|OK
+devises admises|CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar])))|CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar])))|OK
+six familles insérées|accessories,contact_lenses_solutions,ophthalmic_lenses,optical_frames,services,sunglasses|accessories,contact_lenses_solutions,ophthalmic_lenses,optical_frames,services,sunglasses|OK
+prestations : politique service seulement|{service}|{service}|OK
+aucun magasin, aucun taux, aucune donnée pilote|0|0|0|0|0|0|0|0|0|0|OK
+contrainte des permissions : 16 droits Phase 05 ajoutés|16|16|OK
+droits existants conservés (12)|12|12|OK
+propriétaire des objets = rôle applicatif|0|0|OK
+aucune extension|0|0|OK
+COMMIT
+
+# verify.sql (lecture seule) — mmv_v2_test, 30/10/2026 après COMMIT
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+port|5433|5433|OK
+migrations (7, dernière 0007)|7|20261030005557_CatalogStockModule|7|20261030005557_CatalogStockModule|OK
+schémas Phase 05|catalog,imports,org,pricing,stock|catalog,imports,org,pricing,stock|OK
+tables org|locations,stores|locations,stores|OK
+tables catalog|families,lens_references,product_models,product_variants,suppliers,variant_lens_treatments,variant_suppliers|families,lens_references,product_models,product_variants,suppliers,variant_lens_treatments,variant_suppliers|OK
+tables pricing|price_history,tax_categories,variant_store_prices|price_history,tax_categories,variant_store_prices|OK
+tables stock|balances,inventory_lines,inventory_sessions,movements,receipt_lines,receipts,variant_store_settings|balances,inventory_lines,inventory_sessions,movements,receipt_lines,receipts,variant_store_settings|OK
+tables imports|batches,rows|batches,rows|OK
+index (5 schémas)|102|102|OK
+séquences stock (réceptions, inventaires, identité des mouvements)|3|3|OK
+contraintes CHECK|77|77|OK
+clés étrangères (65 RESTRICT, 1 CASCADE variant_lens_treatments)|66|65|1|66|65|1|OK
+déclencheurs utilisateur activés|40|40|40|40|OK
+fonctions|catalog.reject_change,catalog.reject_delete,imports.reject_closed_batch_change,imports.reject_closed_row_change,org.reject_location_change,org.reject_store_change,stock.reject_closed_session_change,stock.reject_resolved_line_change|catalog.reject_change,catalog.reject_delete,imports.reject_closed_batch_change,imports.reject_closed_row_change,org.reject_location_change,org.reject_store_change,stock.reject_closed_session_change,stock.reject_resolved_line_change|OK
+aucun montant en flottant (real, double precision, money)|0|0|OK
+montants numeric à échelle fixe|numeric(12,2):1,numeric(14,4):6,numeric(4,3):1,numeric(7,4):1,numeric(8,4):1|numeric(12,2):1,numeric(14,4):6,numeric(4,3):1,numeric(7,4):1,numeric(8,4):1|OK
+stock négatif interdit (contrainte)|CHECK ((on_hand >= 0))|CHECK ((on_hand >= 0))|OK
+devise du prix = devise du magasin (clé composite)|FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT|FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT|OK
+devises admises|CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar])))|CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar])))|OK
+six familles insérées|accessories,contact_lenses_solutions,ophthalmic_lenses,optical_frames,services,sunglasses|accessories,contact_lenses_solutions,ophthalmic_lenses,optical_frames,services,sunglasses|OK
+prestations : politique service seulement|{service}|{service}|OK
+aucun magasin, aucun taux, aucune donnée pilote|0|0|0|0|0|0|0|0|0|0|OK
+contrainte des permissions : 16 droits Phase 05 ajoutés|16|16|OK
+droits existants conservés (12)|12|12|OK
+propriétaire des objets = rôle applicatif|0|0|OK
+aucune extension|0|0|OK
+COMMIT

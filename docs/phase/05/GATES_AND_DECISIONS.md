@@ -107,3 +107,33 @@ Points ouverts ajoutés :
 Backlog ajouté : BL-05-09 (exports CSV), BL-05-10 (écrans fiscaux après ADR-010) — [`docs/PERIMETRE_ET_SEQUENCE.md`](../../PERIMETRE_ET_SEQUENCE.md).
 
 - 30/10/2026 (implémentation) : branche vérifiée (`feat/phase-05-catalogue-stock` descend de `0a83a57`) ; domaine, application, infrastructure, API, maintenance, écrans React, tests ; cluster PostgreSQL 18 jetable (port 55433) pour les essais ; aucune connexion à `mmv_v2_dev` / `mmv_v2_test` ; aucun processus du propriétaire arrêté (API observée sur 7267) ; `.env.development` intact ; références `references/phase05/` versionnées partiellement. **STOP G05-SQL — `PHASE05_IMPLEMENTED — OWNER_G05_SQL_REVIEW_REQUIRED`.**
+
+## Mise à jour des gates — 30/10/2026 (G05-SQL accordée, intégration finale)
+
+Mandat : [`prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md`](../../../prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md) — GO conditionnel du propriétaire sur le seul script `sql/0007_CatalogStockModule.idempotent.sql` (`39c9c224…1eb6`). Rapport : [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md). Les tableaux ci-dessus sont conservés tels quels (historique).
+
+| Gate | État au 30/10/2026 (intégration finale) |
+|---|---|
+| G05-SQL | **PASSED** — GO du propriétaire ; précontrôles conformes ; 0007 **appliquée** sur `mmv_v2_dev` (15:15:41) puis `mmv_v2_test` (15:16:07), `verify.sql` 27 / 27 ×2, données antérieures inchangées. [`G05_SQL_DOSSIER.md`](G05_SQL_DOSSIER.md) est couvert par le manifeste revu : il reste **figé** et son « `NOT_APPLIED` » est l'état au moment de la revue — état courant : appliquée |
+| G05-A, 05-B, 05-C, 05-D | **PASS sur cible réelle** — PostgreSQL `mmv_v2_test` 82 / 82 (dont HTTPS réel), Tauri natif 79 contrôles |
+| G05-METIER (QR-01 à QR-13, D-05-07 / 09 / 13) | inchangé : choix conservateurs **non ratifiés** (R-F-06) |
+| G05-DESIGN | **OPEN** — 16 captures clair / sombre livrées ; conformité au Lot 6 à confirmer par le propriétaire |
+| G05-FISCAL, G05-LEGAL | **OPEN** (inchangés) ; aucune vente ni donnée réelle |
+| G05-FINAL | **`PHASE05_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`** — audit final du propriétaire ; aucun push / PR / merge |
+
+Points ouverts — mise à jour :
+
+| ID | Point | État / proposition | Décideur |
+|---|---|---|---|
+| O-05-11 | Vitest dépendant de `.env.development` du poste | **CLOSED (correctif)** — contrôle sur les `.env*` versionnés (index Git) + neutralisation des interrupteurs dans `src/test/setup.ts` ; `.env.development` non touché ; 311 / 311 ×2 ([`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) § 5). La modification locale du propriétaire reste à valider ou retirer par lui | — |
+| O-05-13 | Inventaire de schéma revu relevé sur un script CRLF : 8 empreintes de fonction ≠ base réelle (conforme au script LF approuvé) | **CLOSED (tests)** — inventaire revu conservé sous empreinte ; inventaire appliqué ajouté et vérifié par test ; à relire par l'auditeur | propriétaire (relecture) |
+| O-05-14 | Aperçu de prix de l'interface refusé par l'API réelle (`requestId` en trop, 400 `invalid_body`) | **CLOSED (correctif)** — `previewCatalog` sans `requestId` ; test de non-régression ; API et SQL inchangés | — |
+| O-05-15 | HTTP en clair : un compte **sans** le droit d'une route reçoit `403 forbidden` au lieu de `403 https_required` (l'autorisation précède le filtre HTTPS du groupe, ordre des Phases 02–04) ; aucune donnée servie | conserver (refus dans les deux cas) ou placer le contrôle HTTPS avant l'autorisation — décision du propriétaire | propriétaire |
+| O-05-16 | Avertissement EF Core `QuerySplittingBehavior` (requête multi-collections) au journal de l'API | mesurer en pilote ; `AsSplitQuery` éventuel sans changement de schéma | technique |
+| O-05-17 | Thème sombre : logo du shell sur fond blanc (`Sidebar.tsx`, non modifié par la Phase 05) | préexistant ; à traiter avec G05-DESIGN ou un lot d'interface | propriétaire |
+| O-05-18 | Rapport `MMV_V2_AUDIT_G05_SQL_0007_2026-10-30.md` annoncé comme joint, absent de l'espace de travail | non lu ; le transmettre si des points d'audit doivent être vérifiés en plus du mandat | propriétaire |
+| O-05-19 | Stock réservé : aucune API de réservation avant la Phase 06 ; la règle est éprouvée en posant `reserved` par SQL sur `mmv_v2_test` | à rejouer par l'API de réservation en Phase 06 (BL-05-02) | technique |
+
+Réserves maintenues (R-F-01 à R-F-08, [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) § 7) ; backlog ajouté : BL-05-11 (contrainte emplacement ↔ magasin), BL-05-12 (conservation des contenus CSV) — [`docs/PERIMETRE_ET_SEQUENCE.md`](../../PERIMETRE_ET_SEQUENCE.md).
+
+- 30/10/2026 (intégration finale) : précontrôles conformes ; sauvegardes `mmv_v2_dev` / `mmv_v2_test` hors dépôt (lisibles, restauration non éprouvée) ; 0007 appliquée dev puis test ; inventaire et contraintes rejoués (O-05-13) ; suites PostgreSQL complètes sur `mmv_v2_test` via MMV.Api réel ; Tauri natif ; correctifs O-05-11 et O-05-14 ; données fictives purgées (résidu 0) ; processus du propriétaire (MMV.Api 7267) jamais touchés ; `.env.development` intact. **STOP — `PHASE05_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`.**

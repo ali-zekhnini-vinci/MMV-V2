@@ -2,6 +2,8 @@
 
 **Statut : `PHASE05_IMPLEMENTED — OWNER_G05_SQL_REVIEW_REQUIRED`.**
 
+> *Note datée 30/10/2026 (intégration finale) :* G05-SQL accordée ; 0007 **appliquée** sur `mmv_v2_dev` et `mmv_v2_test` ; les NOT_TESTED du § 2 ont été exécutés (PostgreSQL complet sur `mmv_v2_test`, HTTPS réel, Tauri natif, captures) et l'échec Vitest O-05-11 corrigé — [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md). Statut courant : `PHASE05_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`. Le présent rapport est conservé tel quel.
+
 Mandat : [`prompts/MMV_V2_GO_IMPLEMENTATION_PHASE05_2026-10-30.md`](../../../prompts/MMV_V2_GO_IMPLEMENTATION_PHASE05_2026-10-30.md). Branche locale `feat/phase-05-catalogue-stock` (partie de `main` = `0a83a57`, Phase 04 fusionnée par la PR #5) ; commits locaux seulement, aucun push, PR ni merge. `apps/desktop/.env.development` (modification locale du propriétaire) intact et non commité. Ancien logiciel MMV non consulté. Phase 06 non commencée.
 
 ## 1. Livré

@@ -124,3 +124,32 @@ Captures comparées aux planches Lot 6 (clair / sombre, 1920×1080, 1024×700), 
 ## Implémentation — résultats du 30/10/2026
 
 Détail : [`LIVRAISON_05.md`](LIVRAISON_05.md) § 2. Résumé : `MMV.Api.Tests` 499/499 PASS ; `MMV.Maintenance.Tests` 50/50 PASS ; `MMV.PostgreSql.Tests --filter Stage=Phase05` 8/8 PASS **sur cluster jetable** (pas sur `mmv_v2_test`) ; script 0007 idempotent rejoué, `verify.sql` 27/27 OK (jetable) ; `tsc` / `eslint` PASS ; Vitest 308/309 (1 FAIL préexistant dû à `.env.development` du propriétaire, O-05-11). NOT_TESTED : application sur les bases du propriétaire, suites PostgreSQL complètes sur `mmv_v2_test`, HTTPS en processus réel, Tauri natif, captures Lot 6. Les plans « NOT_TESTED » ci-dessus restent valables pour la cible officielle.
+
+## Intégration finale — résultats du 30/10/2026 (0007 appliquée, `mmv_v2_test`)
+
+Détail et preuves : [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) §§ 1 à 4. Le résumé précédent est conservé tel quel (historique).
+
+| Contrôle | Statut |
+|---|---|
+| Précontrôles G05-SQL (empreintes 12 / 12, scripts régénérés identiques, PostgreSQL 18.6 / 5433, identités, 0001–0006 sans 0007, dérive nulle, sauvegardes) | PASS |
+| Application 0007 `mmv_v2_dev` puis `mmv_v2_test`, `verify.sql` | PASS — 27 / 27 ×2 ; données antérieures inchangées (empreintes de contenu) |
+| Inventaire exact du schéma sur la base réelle | PASS — inventaire appliqué ; écart de 8 empreintes de fonction avec l'inventaire revu expliqué et testé (O-05-13) |
+| `MMV.PostgreSql.Tests` complet, banc Phase 05 servi par MMV.Api réel (HTTPS) | PASS — 82 / 82, résidu 0 ; rejoué après la dernière modification : 81 / 82 + 1 ignoré (processus réel arrêté) |
+| HTTP en clair (Phase 05) | PASS — refus `403 https_required`, rien écrit (O-05-15 : `403 forbidden` sans le droit) |
+| `MMV.Api.Tests`, `MMV.Maintenance.Tests`, `Invoke-MmvSqlScript.Tests.ps1` | PASS — 499 / 499, 50 / 50, 16 / 16 |
+| Vitest | PASS — 311 / 311, deux passages, aucun échec de délai (O-05-11 corrigé) |
+| Tauri natif `catalogue-05` | PASS — 79 contrôles, 16 captures (clair 1920×1080, sombre 1920×1080 et 1366×768) |
+| Captures 1024×700, parcours clavier B-132 à B-134 | NOT_TESTED |
+| Conformité visuelle aux planches Lot 6 | NOT_TESTED par l'agent — revue du propriétaire (G05-DESIGN) |
+
+Concurrence (plan Q-05-401 à 410) sur PostgreSQL réel :
+
+| ID | Statut |
+|---|---|
+| Q-05-401 | PASS — deux sorties simultanées, 5 tours : une seule aboutit, solde ≥ 0 |
+| Q-05-402 | PASS en séquence (quantité attendue périmée → `stock_changed`) ; simultanéité stricte NOT_TESTED |
+| Q-05-403, Q-05-404 | PASS en séquence (archivage et changement de politique refusés tant que du stock existe) ; course NOT_TESTED |
+| Q-05-405 | PASS en séquence (sortie pendant le comptage → ligne signalée, acceptation explicite, écart appliqué au stock courant) |
+| Q-05-406, Q-05-407, Q-05-410 | NOT_TESTED |
+| Q-05-408 | PASS — version périmée `409` (prix, ligne d'inventaire comptée deux fois) |
+| Q-05-409 | PASS en séquence (`inventory_open` sur périmètre recouvrant) ; ouvertures strictement simultanées NOT_TESTED |

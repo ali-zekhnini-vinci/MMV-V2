@@ -1,0 +1,21 @@
+diff --git a/docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt b/docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.applied.txt
+index 2c035e3..1dbcafc 100644
+--- a/docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt
++++ b/docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.applied.txt
+@@ -650,8 +650,8 @@ stock.receipt_number_seq type=bigint start=1 increment=1 min=1 max=9999999999999
+-catalog.reject_change returns=trigger md5=e71c56c16f74b3bb1f3a09bda12d7cb6
+-catalog.reject_delete returns=trigger md5=ab5e33d93d21746977f2461a51199c54
+-imports.reject_closed_batch_change returns=trigger md5=ff901600685705a998daf630ec4758a0
+-imports.reject_closed_row_change returns=trigger md5=03f64a3f0748969045d299f714d94ef8
+-org.reject_location_change returns=trigger md5=e14c197f0861ebd579ad522240a748a5
+-org.reject_store_change returns=trigger md5=fde8f6ac7fc45b7dccb40da6ababcf09
+-stock.reject_closed_session_change returns=trigger md5=20f267d394a345b60849fcb4aa15f4b9
+-stock.reject_resolved_line_change returns=trigger md5=42ae33340f478028842f4b5bacafffa6
++catalog.reject_change returns=trigger md5=68ff056d09a139de9cd717272c1b2f51
++catalog.reject_delete returns=trigger md5=342e756420ab4416b8000a67b3c9abb1
++imports.reject_closed_batch_change returns=trigger md5=cf54a0081be1a502c3694b37bedb3627
++imports.reject_closed_row_change returns=trigger md5=f4de5ad945f0649feb3bba0694be220a
++org.reject_location_change returns=trigger md5=ec2fc5a93449333a8a480147075a5bc2
++org.reject_store_change returns=trigger md5=4254fdc8ecc4ceb6d49937623cd0f68e
++stock.reject_closed_session_change returns=trigger md5=e85c824443db1e77622168779bbb43d4
++stock.reject_resolved_line_change returns=trigger md5=e282ca6e85f7192d70df4b5df5e8848a

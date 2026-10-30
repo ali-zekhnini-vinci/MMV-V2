@@ -1,0 +1,17 @@
+# .NET — arbre final (30/10/2026), --artifacts-path bin/g05, -p:NuGetAudit=false
+## dotnet build MMV.slnx (avertissements = erreurs)
+    0 Avertissement(s)
+    0 Erreur(s)
+## MMV.Api.Tests
+Réussi!  - échec :     0, réussite :   499, ignorée(s) :     0, total :   499, durée : 1 m 21 s - MMV.Api.Tests.dll (net10.0)
+## MMV.Maintenance.Tests
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+## MMV.PostgreSql.Tests (mmv_v2_test, MMV_PG05_API_BASE=https://localhost:7367/, MMV_PG05_API_PLAIN=http://localhost:5367/)
+Réussi : 82 ; Échoué : 0 ; Ignoré : 0 ; purges « résidu = 0 » : 12
+Détail : P05F_postgresql_20261030.log
+## scripts/tests/Invoke-MmvSqlScript.Tests.ps1
+16 PASS / 0 FAIL — TOUS LES TESTS RÉUSSIS
+## Rejeu après la dernière modification (commentaires seuls : renumérotation O-05-13 / O-05-14), processus réel arrêté
+dotnet build MMV.slnx : 0 avertissement, 0 erreur
+Réussi!  - échec :     0, réussite :    81, ignorée(s) :     1, total :    82, durée : 21 s - MMV.PostgreSql.Tests.dll (net10.0)
+(1 ignoré = Phase05RealHttpsTests : processus réel non désigné ; couvert par le passage précédent, 82 / 82, sur le processus réel)

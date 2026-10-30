@@ -57,6 +57,7 @@ Attribution par `MMV.Maintenance permissions grant|revoke`, après application d
 
 - Domaine : `SalePriceCalculator.Compute(decimal purchaseHt, decimal coefficient, RoundingRule rule)` → produit exact puis **un seul arrondi** au centime (règle QR-09 : demi vers l'extérieur) ; aucune conversion `double`.
 - Aperçu et enregistrement appellent la même fonction ; l'enregistrement compare au `expectedSalePriceHt` (`409 price_preview_stale`).
+  *Note datée 30/10/2026 (intégration finale, O-05-14) :* le poste envoie l'aperçu **sans `requestId`** (`previewCatalog`, `apps/desktop/src/api/catalog.ts`), conformément au contrat `{ storeId, purchasePriceHt, coefficient }` ([`API_PROPOSED.md`](API_PROPOSED.md)) ; le serveur refuse tout membre inconnu.
 - État `recalculation_pending` calculé à la lecture (mode coefficient et prix stocké ≠ calcul courant) ; jamais corrigé automatiquement.
 - Contrôle croisé en test : résultat C# = `round(purchase * coefficient, 2)` PostgreSQL sur un jeu de cas limites (demi-centimes, grands montants, coefficient < 1, 4 décimales).
 - TTC : `TaxCalculator` appelé seulement avec un taux **validé** du magasin ; sinon `tax_not_validated`. Aucun taux en dur dans le code ni dans les tests (les tests utilisent des taux fictifs explicitement nommés comme tels, injectés dans la base de test).
