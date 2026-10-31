@@ -1,172 +1,182 @@
-// Liste du catalogue (Lot 6 B-098 à B-101 : recherche, filtres, tri, états vide / chargement / erreur) au niveau
-// variante pour le magasin actif : prix de vente HT dans la devise du magasin, disponibilité calculée par le serveur,
-// colonnes de coût seulement si le serveur les a servies (costs.read).
-import { Plus, SearchX } from "lucide-react";
+// Liste du catalogue — Lot 6 groupes 01–14 (catLight/catDark, recherche, filtres, tri, liste compacte, vide, aucun
+// résultat, chargement, erreur) au niveau VARIANTE pour le magasin actif : prix de vente HT dans la devise du magasin,
+// disponibilité calculée par le serveur, colonnes de coût seulement si le serveur les a servies (costs.read).
+// Adaptations V2 : six familles (au lieu des catégories figées), politique de stock par variante, fournisseur principal
+// (plusieurs fournisseurs possibles), coefficient, statut archivé (pas de suppression). Export CSV du Lot 6 = cible non
+// livrée : à sa place, l'import CSV contrôlé (05-D) pour les comptes autorisés.
+import { Box, CircleCheck, FileUp, Layers, Plus, RotateCcw, Rows3, SearchX, Tag, Truck } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { type Family, type Page, query, type VariantRow } from "../api/catalog.ts";
-import { StateBlock } from "../clients/ClientStates.tsx";
+import { type Family, type Page, query, type SupplierRow, type VariantRow } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
 import { useCatalogAccess } from "./catalogAccess.ts";
-import { AVAILABILITY_LABELS, AVAILABILITY_TONES, formatMoney, POLICY_LABELS, PRICE_STATUS_LABELS } from "./catalogFormat.ts";
+import { AVAILABILITY_LABELS, formatMoney, POLICY_LABELS, PRICE_STATUS_LABELS } from "./catalogFormat.ts";
+import { availabilityBadge, stockTone } from "./catalogStatus.ts";
 import {
-  Badge, ErrorState, Loading, PageHeader, Pager, StoreSelect,
+  Badge, EmptyState, ErrorState, FamilyTag, FilterChip, Loading, PageHeader, RowChevron, SearchBox, SortChip, SortHeader, StockCell, TableFoot, TablePanel,
+  ToggleChip, Toolbar, ToolbarSpacer,
 } from "./CatalogUi.tsx";
-import { useActiveStore, useCatalogQuery } from "./catalogData.ts";
+import { rowLink, useActiveStore, useCatalogQuery } from "./catalogData.ts";
 
 interface Filters {
   q: string;
   familyCode: string;
+  supplierId: string;
   policy: string;
   status: string;
   availability: string;
-  incomplete: string;
   sort: string;
   dir: string;
   page: number;
 }
 
-const INITIAL: Filters = { q: "", familyCode: "", policy: "", status: "active", availability: "", incomplete: "", sort: "name", dir: "asc", page: 1 };
+const INITIAL: Filters = { q: "", familyCode: "", supplierId: "", policy: "", status: "active", availability: "", sort: "name", dir: "asc", page: 1 };
+
+const SORTS = [
+  { value: "name:asc", label: "Nom (A → Z)" },
+  { value: "sku:asc", label: "Référence" },
+  { value: "family:asc", label: "Famille" },
+  { value: "price:desc", label: "Prix de vente ↓" },
+  { value: "price:asc", label: "Prix de vente ↑" },
+  { value: "stock:asc", label: "Stock disponible ↑" },
+  { value: "updated:desc", label: "Dernières modifications" },
+];
 
 export function CatalogListView() {
   const access = useCatalogAccess();
   const navigate = useNavigate();
   const { store } = useActiveStore();
   const [filters, setFilters] = useState<Filters>(INITIAL);
-  const [search, setSearch] = useState("");
+  const [compact, setCompact] = useState(false);
   const families = useCatalogQuery<Family[]>("/api/catalog/families");
+  const suppliers = useCatalogQuery<Page<SupplierRow>>(access.suppliersRead ? "/api/suppliers?status=active&pageSize=200" : null);
   const list = useCatalogQuery<Page<VariantRow>>(
     store ? `/api/catalog/variants${query({ storeId: store.id, ...filters, pageSize: 50 })}` : null,
   );
   const set = (patch: Partial<Filters>) => setFilters((current) => ({ ...current, page: 1, ...patch }));
   const sortBy = (sort: string) => set({ sort, dir: filters.sort === sort && filters.dir === "asc" ? "desc" : "asc" });
-  const familyLabel = (code: string) => (Array.isArray(families.data) ? families.data.find((f) => f.code === code)?.label : undefined) ?? code;
-  const costs = list.data?.items.some((item) => item.price.costsVisible) ?? access.costsRead;
+  const familyList = Array.isArray(families.data) ? families.data : [];
+  const costs = !compact && (list.data?.items.some((item) => item.price.costsVisible) ?? access.costsRead);
+  const showSupplier = access.suppliersRead && !compact;
+  const filtered = filters.q !== "" || filters.familyCode !== "" || filters.supplierId !== "" || filters.policy !== "" || filters.availability !== "" || filters.status !== "active";
+  const open = (href: string) => navigate(href);
 
   return (
-    <section aria-labelledby="catalog-title">
+    <section className="cat-screen" aria-labelledby="catalog-title">
       <PageHeader
-        title="Catalogue"
-        subtitle={store ? `Prix et disponibilités du magasin ${store.name} (${store.currency}) — aucun montant converti.` : undefined}
+        title="Produits"
         actions={
           <>
-            <StoreSelect />
+            {access.catalogImport && (
+              <Button onClick={() => navigate("/produits/import")}>
+                <FileUp size={16} aria-hidden="true" />
+                Importer un CSV
+              </Button>
+            )}
             {access.catalogWrite && (
               <Button variant="primary" onClick={() => navigate("/produits/nouveau")}>
-                <Plus size={16} aria-hidden="true" />
+                <Plus size={18} aria-hidden="true" />
                 Nouveau produit
               </Button>
             )}
           </>
         }
       />
-      <form
-        className="cat-toolbar"
-        role="search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          set({ q: search.trim() });
-        }}
-      >
-        <input className="cat-input cat-toolbar__search" placeholder="SKU, désignation, marque, code-barres…" aria-label="Rechercher" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <select className="cat-input" aria-label="Famille" value={filters.familyCode} onChange={(e) => set({ familyCode: e.target.value })}>
-          <option value="">Toutes les familles</option>
-          {Array.isArray(families.data) && families.data.map((family) => (
-            <option key={family.code} value={family.code}>
-              {family.label}
-            </option>
-          ))}
-        </select>
-        <select className="cat-input" aria-label="Politique" value={filters.policy} onChange={(e) => set({ policy: e.target.value })}>
-          <option value="">Toutes politiques</option>
-          {Object.entries(POLICY_LABELS).map(([code, label]) => (
-            <option key={code} value={code}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select className="cat-input" aria-label="Disponibilité" value={filters.availability} onChange={(e) => set({ availability: e.target.value })}>
-          <option value="">Toutes disponibilités</option>
-          {Object.entries(AVAILABILITY_LABELS).filter(([code]) => code !== "archived").map(([code, label]) => (
-            <option key={code} value={code}>
-              {label}
-            </option>
-          ))}
-        </select>
-        <select className="cat-input" aria-label="Statut" value={filters.status} onChange={(e) => set({ status: e.target.value })}>
-          <option value="active">Actifs</option>
-          <option value="archived">Archivés</option>
-          <option value="all">Tous</option>
-        </select>
-        <Button type="submit">Rechercher</Button>
-      </form>
+      <Toolbar>
+        <SearchBox value={filters.q} onSearch={(q) => set({ q })} placeholder="Rechercher par référence, nom, marque ou code-barres…" label="Rechercher" />
+        <FilterChip icon={Tag} label="Famille" value={filters.familyCode} onChange={(familyCode) => set({ familyCode })}
+          options={[{ value: "", label: "Toutes les familles" }, ...familyList.map((f) => ({ value: f.code, label: f.label }))]} />
+        {access.suppliersRead && (
+          <FilterChip icon={Truck} label="Fournisseur" value={filters.supplierId} onChange={(supplierId) => set({ supplierId })}
+            options={[{ value: "", label: "Tous les fournisseurs" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: s.name }))]} />
+        )}
+        <FilterChip icon={CircleCheck} label="Disponibilité" value={filters.availability} onChange={(availability) => set({ availability })}
+          options={[{ value: "", label: "Toutes" }, ...Object.entries(AVAILABILITY_LABELS).filter(([code]) => code !== "archived").map(([value, label]) => ({ value, label }))]} />
+        <FilterChip icon={Layers} label="Politique" value={filters.policy} onChange={(policy) => set({ policy })}
+          options={[{ value: "", label: "Toutes les politiques" }, ...Object.entries(POLICY_LABELS).map(([value, label]) => ({ value, label }))]} />
+        <ToolbarSpacer />
+        <ToggleChip icon={Rows3} label="Compact" on={compact} onToggle={() => setCompact(!compact)} />
+        <FilterChip icon={Box} label="Statut" value={filters.status} defaultValue="active" onChange={(status) => set({ status })}
+          options={[{ value: "active", label: "Actifs" }, { value: "archived", label: "Archivés" }, { value: "all", label: "Tous" }]} />
+        <SortChip value={`${filters.sort}:${filters.dir}`} options={SORTS} onChange={(value) => { const [sort, dir] = value.split(":"); set({ sort, dir }); }} />
+      </Toolbar>
 
       {list.isPending ? (
         <Loading label="Chargement du catalogue…" />
       ) : list.isError ? (
-        <ErrorState error={list.error} onRetry={() => void list.refetch()} />
+        <ErrorState error={list.error} title="Impossible de charger le catalogue" onRetry={() => void list.refetch()} />
       ) : list.data.totalCount === 0 ? (
-        <StateBlock tone="info" icon={SearchX} title={filters.q ? `Aucun résultat pour « ${filters.q} »` : "Aucun produit"}>
-          <p>{filters.q || filters.familyCode || filters.policy || filters.availability ? "Élargissez la recherche ou les filtres." : "Le catalogue est vide pour ces critères."}</p>
-        </StateBlock>
+        filtered ? (
+          <EmptyState tone="info" icon={SearchX} title="Aucun résultat"
+            action={<Button onClick={() => setFilters(INITIAL)}><RotateCcw size={16} aria-hidden="true" />Réinitialiser les filtres</Button>}>
+            {filters.q ? `Aucun produit ne correspond à « ${filters.q} ». Vérifiez l'orthographe ou réinitialisez les filtres.` : "Aucun produit ne correspond à ces filtres."}
+          </EmptyState>
+        ) : (
+          <EmptyState icon={Box} title="Aucun produit dans le catalogue"
+            action={access.catalogWrite && <Button variant="primary" onClick={() => navigate("/produits/nouveau")}><Plus size={18} aria-hidden="true" />Nouveau produit</Button>}>
+            Commencez par ajouter votre premier produit (modèle et variantes) pour construire le catalogue.
+          </EmptyState>
+        )
       ) : (
-        <>
-          <div className="cat-table-wrap">
-            <table className="cat-table">
-              <thead>
-                <tr>
-                  <SortHeader label="SKU" sort="sku" filters={filters} onSort={sortBy} />
-                  <SortHeader label="Désignation" sort="name" filters={filters} onSort={sortBy} />
-                  <SortHeader label="Famille" sort="family" filters={filters} onSort={sortBy} />
-                  <th scope="col">Politique</th>
-                  <SortHeader label="Prix de vente HT" sort="price" filters={filters} onSort={sortBy} numeric />
-                  {costs && <th scope="col" className="cat-num">Prix d&apos;achat HT</th>}
-                  {costs && <th scope="col" className="cat-num">Coef.</th>}
-                  {access.stockRead && <SortHeader label="Disponible" sort="stock" filters={filters} onSort={sortBy} numeric />}
-                  <th scope="col">Disponibilité</th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.data.items.map((row) => (
-                  <tr key={row.variantId} className="cat-row" tabIndex={0} onClick={() => navigate(`/produits/modele/${row.modelId}?variante=${row.variantId}`)}
-                    onKeyDown={(e) => e.key === "Enter" && navigate(`/produits/modele/${row.modelId}?variante=${row.variantId}`)}>
-                    <td className="cat-mono">{row.sku}</td>
+        <TablePanel fill
+          foot={
+            <TableFoot icon={Box} page={list.data.page} pageSize={list.data.pageSize} total={list.data.totalCount} onPage={(page) => setFilters((c) => ({ ...c, page }))}
+              right={store && <span className="clients-muted">Prix HT · {store.currency} · aucun montant converti</span>}>
+              {list.data.totalCount} variante{list.data.totalCount > 1 ? "s" : ""} · {SORTS.find((s) => s.value === `${filters.sort}:${filters.dir}`)?.label.toLowerCase() ?? "tri par nom"}{compact ? " · affichage compact" : ""}
+            </TableFoot>
+          }
+        >
+          <table className={compact ? "clients-table cat-table cat-table--compact" : "clients-table cat-table"}>
+            <thead>
+              <tr>
+                <SortHeader label="Référence" sort="sku" current={filters.sort} dir={filters.dir} onSort={sortBy} />
+                <SortHeader label="Nom" sort="name" current={filters.sort} dir={filters.dir} onSort={sortBy} />
+                {!compact && <SortHeader label="Famille" sort="family" current={filters.sort} dir={filters.dir} onSort={sortBy} className="cat-hide-sm" />}
+                {showSupplier && <th scope="col" className="cat-hide-md">Fournisseur</th>}
+                {costs && <th scope="col" className="cat-num cat-hide-sm">Prix d&apos;achat HT</th>}
+                {costs && <th scope="col" className="cat-num cat-hide-sm">Coef.</th>}
+                <SortHeader label="Prix de vente HT" sort="price" current={filters.sort} dir={filters.dir} onSort={sortBy} numeric />
+                {access.stockRead && <SortHeader label="Stock" sort="stock" current={filters.sort} dir={filters.dir} onSort={sortBy} numeric />}
+                <th scope="col">Statut</th>
+                <th scope="col"><span className="sr-only">Ouvrir</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.data.items.map((row) => {
+                const badge = availabilityBadge(row.availability);
+                return (
+                  <tr key={row.variantId} className={row.status === "archived" ? "is-archived" : undefined} {...rowLink(`/produits/modele/${row.modelId}?variante=${row.variantId}`, open)}>
+                    <td><span className="cat-ref">{row.sku}</span></td>
                     <td>
-                      <span className="cat-strong">{row.modelName}</span>
-                      <span className="cat-muted"> · {row.label}{row.brand ? ` · ${row.brand}` : ""}</span>
+                      <div className="clients-cell__name">{row.modelName}</div>
+                      {!compact && <div className="cat-sub">{[row.label, row.brand].filter(Boolean).join(" · ")}</div>}
                     </td>
-                    <td>{familyLabel(row.familyCode)}</td>
-                    <td>{POLICY_LABELS[row.stockPolicy]}</td>
+                    {!compact && <td className="cat-hide-sm"><FamilyTag code={row.familyCode} /></td>}
+                    {showSupplier && (
+                      <td className="cat-hide-md">
+                        {row.primarySupplier ? <span className="cat-secondary">{row.primarySupplier.name}</span> : row.isIncomplete ? <Badge tone="warn">Fiche incomplète</Badge> : <span className="clients-muted">—</span>}
+                      </td>
+                    )}
+                    {costs && <td className="cat-num cat-secondary cat-hide-sm">{formatMoney(row.price.purchasePriceHt ?? null, row.price.currency)}</td>}
+                    {costs && <td className="cat-num cat-secondary cat-hide-sm">{row.price.coefficient ? `× ${row.price.coefficient.replace(".", ",")}` : "—"}</td>}
                     <td className="cat-num">
-                      {formatMoney(row.price.salePriceHt, row.price.currency)}
-                      {row.price.priceStatus !== "up_to_date" && <div className="cat-muted">{PRICE_STATUS_LABELS[row.price.priceStatus]}</div>}
+                      <span className="cat-strong">{formatMoney(row.price.salePriceHt, row.price.currency)}</span>
+                      {row.price.priceStatus !== "up_to_date" && <div className="cat-sub">{PRICE_STATUS_LABELS[row.price.priceStatus]}</div>}
                     </td>
-                    {costs && <td className="cat-num">{formatMoney(row.price.purchasePriceHt ?? null, row.price.currency)}</td>}
-                    {costs && <td className="cat-num">{row.price.coefficient ?? "—"}</td>}
-                    {access.stockRead && <td className="cat-num">{row.stock ? row.stock.available : "—"}</td>}
-                    <td>
-                      <Badge tone={AVAILABILITY_TONES[row.availability]}>{AVAILABILITY_LABELS[row.availability]}</Badge>
-                    </td>
+                    {access.stockRead && (
+                      <td className="cat-num">
+                        {row.stock ? <StockCell value={row.stock.available} tone={stockTone(row.availability)} /> : <span className="clients-muted" title={POLICY_LABELS[row.stockPolicy]}>—</span>}
+                      </td>
+                    )}
+                    <td><Badge tone={badge.tone} icon={badge.icon}>{AVAILABILITY_LABELS[row.availability]}</Badge></td>
+                    <td><RowChevron /></td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pager page={list.data.page} pageSize={list.data.pageSize} total={list.data.totalCount} onPage={(page) => setFilters((c) => ({ ...c, page }))} />
-        </>
+                );
+              })}
+            </tbody>
+          </table>
+        </TablePanel>
       )}
     </section>
-  );
-}
-
-function SortHeader({ label, sort, filters, onSort, numeric }: { label: string; sort: string; filters: Filters; onSort: (sort: string) => void; numeric?: boolean }) {
-  const active = filters.sort === sort;
-  return (
-    <th scope="col" className={numeric ? "cat-num" : undefined} aria-sort={active ? (filters.dir === "asc" ? "ascending" : "descending") : "none"}>
-      <button type="button" className="cat-sort" onClick={() => onSort(sort)}>
-        {label}
-        {active && <span aria-hidden="true">{filters.dir === "asc" ? " ▲" : " ▼"}</span>}
-      </button>
-    </th>
   );
 }

@@ -1761,20 +1761,609 @@ const scenarios = {
    * thème sombre. Chaque écriture de l'interface est relue par l'API réelle. Fichier MMV_E2E_CREDENTIALS_FILE :
    * { suffix, agent, other, stores: { be, ma }, variants }.
    */
+  // G05-DESIGN (31/10/2026) : captures appariées au Lot 6 (cadres data-mount), écrans RÉELS branchés à MMV.Api sur données
+  // fictives (banc p05native, suffixe des identifiants). Option `--only a,b` : sous-ensemble de groupes (cat, prod, det,
+  // stock, mov, rec, inv, sup, lens, imp, vendeur, sizes, zoom). Aucune écriture sauf les écrans de saisie ouverts puis
+  // ANNULÉS (aucun enregistrement), hormis le comptage d'inventaire déjà prévu par le parcours catalogue-05.
+  async "design-05"(page) {
+    const c = credentials();
+    const { agent, other: seller, suffix: sfx } = c;
+    const only = (option("--only", "") || "").split(",").filter(Boolean);
+    const want = (group) => only.length === 0 || only.includes(group);
+    const sku = (code) => `N05-${sfx}-${code}`;
+    const h1Is = (title) => `document.querySelector('h1')?.textContent.trim().startsWith(${J(title)})`;
+    const subNav = (label) => `[...document.querySelectorAll('nav[aria-label="Sections"] a')].find(a => a.textContent.trim() === ${J(label)})`;
+    const byLabel = (label) => `[...document.querySelectorAll('button')].find(b => (b.getAttribute('aria-label') || '').startsWith(${J(label)}))`;
+    const rowWith = (text) => `[...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(text)}))`;
+    const inModal = (label) => `[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent.trim() === ${J(label)})`;
+    const settle = () => page.sleep(450);
+    let theme = "light";
+    let size = "1920x1080";
+    let zoom = "";
+    const shot = async (frame) => { await settle(); capture(`${frame}_${theme}_${size}${zoom}`); };
+    const openMenu = async (expression, label) => {
+      await page.evaluate(`(${expression}).focus()`);
+      await page.press("Enter");
+      await page.waitFor("!!document.querySelector('[role=menu]')", { label: `menu ${label}` });
+    };
+    const closeMenu = async () => { await page.press("Escape"); await page.sleep(200); };
+    const closeModal = async () => { await page.press("Escape"); await page.waitFor("!document.querySelector('[role=alertdialog]')", { label: "modale fermée" }); };
+    const products = async () => {
+      await click(page, navButton("Produits"), "menu Produits");
+      await page.waitFor(`!!${subNav("Catalogue")}`, { label: "sections Produits" });
+      await click(page, subNav("Catalogue"), "Catalogue");
+      await page.waitFor(h1Is("Produits"), { label: "écran Produits" });
+      // Le catalogue conserve recherche et filtres tant qu'il reste monté : retour à l'état initial.
+      await page.evaluate("document.querySelector('.clients-search__clear')?.click()");
+      for (const name of ["Famille :", "Disponibilité :", "Trier : Prix"]) {
+        if (await page.evaluate(`!!${byLabel(name)}`)) {
+          await openMenu(byLabel(name), name);
+          await click(page, `[...document.querySelectorAll('[role=menuitemradio]')][0]`, `${name} réinitialisé`);
+        }
+      }
+      await page.waitFor(hasText(sku("MON")), { label: "variantes listées" });
+    };
+    const stock = async (section = "Stock") => {
+      await click(page, navButton("Stock & inventaires"), "menu Stock & inventaires");
+      await page.waitFor(`!!${subNav(section)}`, { label: "sections Stock" });
+      await click(page, subNav(section), section);
+    };
+    const until05 = async (probe, label, timeoutMs = 10000) => {
+      const end = Date.now() + timeoutMs;
+      for (;;) {
+        if (await probe()) return check(true, label);
+        if (Date.now() > end) return check(false, label);
+        await page.sleep(300);
+      }
+    };
+    const openInventory = async () => {
+      await stock("Inventaires");
+      await page.waitFor("document.querySelectorAll('tbody tr.cat-row').length > 0", { label: "inventaires listés" });
+      await click(page, "document.querySelector('tbody tr.cat-row')", "inventaire");
+      await page.waitFor(hasText("Progression de la saisie"), { label: "inventaire" });
+    };
+    const fiche = async (code = "MON") => {
+      await products();
+      await click(page, rowWith(sku(code)), `fiche ${code}`);
+      await page.waitFor("document.body.innerText.includes('Prix & disponibilité') && !!document.querySelector('[data-testid=sale-price]')", { label: "fiche produit" });
+    };
+
+    log("DESIGN 05", `API ${API}, suffixe ${sfx}`);
+    resize(1920, 1080);
+    await setZoom(page, 1);
+    await signIn(page, agent);
+
+    for (const t of ["light", "dark"]) {
+      theme = t;
+      await setTheme(page, t);
+      if (want("cat")) {
+        await products();
+        await shot("01_catLight");
+        await page.evaluate(`(() => { const i = document.querySelector('input[aria-label="Rechercher"]'); i.focus(); i.select(); })()`);
+        await page.type("Monture");
+        await page.press("Enter");
+        await page.waitFor(`document.body.innerText.includes('Monture Atelier') && !document.body.innerText.includes('Cordon sport')`, { label: "recherche « Monture »" });
+        await shot("03_catSearch");
+        await click(page, `document.querySelector('.clients-search__clear')`, "effacer la recherche");
+        await openMenu(byLabel("Famille"), "Famille");
+        await shot("04_catFilters-menu");
+        await click(page, `[...document.querySelectorAll('[role=menuitemradio]')].find(i => i.textContent.includes('Montures'))`, "famille Montures");
+        await page.waitFor(`!!${byLabel("Famille :")}`, { label: "filtre Famille actif" });
+        await shot("05_catFilters-actifs");
+        await openMenu(byLabel("Famille"), "Famille");
+        await click(page, `[...document.querySelectorAll('[role=menuitemradio]')][0]`, "toutes familles");
+        await openMenu(byLabel("Trier"), "Trier");
+        await click(page, `[...document.querySelectorAll('[role=menuitemradio]')].find(i => i.textContent.includes('Prix de vente ↓'))`, "tri prix décroissant");
+        await page.waitFor(`document.querySelector('th[aria-sort]')?.textContent.includes('Prix de vente')`, { label: "tri prix" });
+        await shot("08_catSort");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Compact')`, "liste compacte");
+        await page.waitFor("!!document.querySelector('table.cat-table--compact')", { label: "densité réduite" });
+        await shot("09_catCompact");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Compact')`, "liste normale");
+        await page.evaluate(`(() => { const i = document.querySelector('input[aria-label="Rechercher"]'); i.focus(); })()`);
+        await page.type("zzz-aucun");
+        await page.press("Enter");
+        await page.waitFor(hasText("Aucun résultat"), { label: "aucun résultat" });
+        await shot("11_catNoResult");
+      }
+      if (want("prod")) {
+        await products();
+        await click(page, buttonByText("Nouveau produit"), "Nouveau produit");
+        await page.waitFor(h1Is("Nouveau produit"), { label: "Nouveau produit" });
+        await shot("15_prodNew");
+        await click(page, buttonByText("Créer le produit"), "Créer (vide)");
+        await page.waitFor(hasText("Le formulaire contient des erreurs"), { label: "erreurs sous champ" });
+        await shot("17_prodErrors");
+        await fillField(page, "Nom du modèle", "Modèle fictif non enregistré");
+        await shot("19_prodUnsaved");
+        await click(page, buttonByText("Annuler"), "Annuler (formulaire modifié)");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation de fermeture" });
+        await shot("20_prodClose");
+        await click(page, inModal("Fermer sans enregistrer"), "Fermer sans enregistrer");
+        await page.waitFor(h1Is("Produits"), { label: "retour catalogue" });
+      }
+      if (want("det")) {
+        await fiche("MON");
+        await shot("25_detLight");
+        await click(page, buttonByText("Modifier le prix"), "Modifier le prix");
+        await page.waitFor(hasText("Aperçu du prix de vente HT"), { label: "éditeur de prix" });
+        await shot("28_detPrix-coefficient");
+        await openMenu(`document.querySelector('[aria-label="Autres actions"]')`, "Autres actions");
+        await shot("35_delMenu");
+        await click(page, `[...document.querySelectorAll('[role=menuitem]')].find(i => i.textContent.includes('Archiver le modèle'))`, "Archiver le modèle");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'archivage" });
+        await shot("36_delConfirm");
+        await closeModal();
+        await click(page, buttonByText("Modifier"), "Modifier le modèle");
+        await page.waitFor(h1Is("Modifier"), { label: "modification du modèle" });
+        await shot("18_prodEdit");
+        await click(page, buttonByText("Annuler"), "Annuler");
+        await fiche("X03");
+        await shot("32_detRupture");
+      }
+      if (want("stock")) {
+        await stock();
+        await page.waitFor(hasText(sku("MON")), { label: "stock listé" });
+        await shot("43_stockLight");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Stock faible')`, "Stock faible");
+        await page.waitFor(`[...document.querySelectorAll('tbody tr')].every(r => r.textContent.includes('Stock faible'))`, { label: "filtre stock faible" });
+        await shot("45_stockLow");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Stock faible')`, "Stock faible (retrait)");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Rupture')`, "Rupture");
+        await page.waitFor(`document.querySelectorAll('tbody tr').length > 0 && [...document.querySelectorAll('tbody tr')].every(r => r.textContent.includes('Rupture'))`, { label: "filtre rupture" });
+        await shot("46_stockRupture");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Rupture')`, "Rupture (retrait)");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Par famille')`, "Par famille");
+        await page.waitFor("!!document.querySelector('tr.cat-group-row')", { label: "regroupement par famille" });
+        await shot("47_stockByCat");
+        await click(page, `[...document.querySelectorAll('button[aria-pressed]')].find(b => b.textContent.trim() === 'Par famille')`, "Par famille (retrait)");
+        await click(page, `(${rowWith(sku("MON"))}).querySelector('button[aria-label="Entrée"]')`, "Entrée (monture)");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "modale Entrée" });
+        await fillField(page, "Quantité à ajouter", "2");
+        await setSelect(page, "Motif", "Article retrouvé");
+        await shot("61_movEntry");
+        await click(page, `[...document.querySelectorAll('[role=alertdialog] [role=tab]')].find(t => t.textContent.trim() === 'Sortie')`, "onglet Sortie");
+        await fillField(page, "Quantité à retirer", "500");
+        await setSelect(page, "Motif", "Casse");
+        await shot("62_movExit");
+        await click(page, inModal("Enregistrer le mouvement"), "Sortie excessive");
+        await page.waitFor(hasText("Stock insuffisant"), { label: "refus stock négatif" });
+        await shot("69_movErrBiz");
+        await click(page, `[...document.querySelectorAll('[role=alertdialog] [role=tab]')].find(t => t.textContent.trim() === 'Ajustement')`, "onglet Ajustement");
+        await fillField(page, "Nouvelle quantité constatée", "7");
+        await shot("63_movAdjust");
+        await click(page, inModal("Ajuster le stock"), "Ajuster (motif manquant)");
+        await page.waitFor(hasText("Le motif est obligatoire."), { label: "motif obligatoire" });
+        await shot("65_movReasonReq");
+        await setSelect(page, "Motif", "Correction après comptage");
+        await click(page, inModal("Ajuster le stock"), "Ajuster");
+        await page.waitFor(hasText("Confirmer l'ajustement ?"), { label: "confirmation d'ajustement" });
+        await shot("64_movAdjustConfirm");
+        await page.press("Escape"); // confirmation → retour à la saisie
+        await page.waitFor(hasText("Ajustement de stock"), { label: "retour à la saisie" });
+        await closeModal();
+      }
+      if (want("mov")) {
+        await stock("Mouvements");
+        await page.waitFor(h1Is("Mouvements de stock"), { label: "Mouvements" });
+        await page.waitFor("document.querySelectorAll('tbody tr').length > 0", { label: "mouvements listés" });
+        await shot("55_movLight");
+        await openMenu(byLabel("Type"), "Type");
+        await click(page, `[...document.querySelectorAll('[role=menuitemradio]')].find(i => i.textContent.includes('Entrée manuelle'))`, "Type = Entrée manuelle");
+        await page.waitFor(`!!${byLabel("Type :")}`, { label: "filtre Type actif" });
+        await shot("57_movFilters");
+        await openMenu(byLabel("Type"), "Type");
+        await click(page, `[...document.querySelectorAll('[role=menuitemradio]')][0]`, "tous les types");
+        await click(page, "document.querySelector('tbody tr')", "détail d'un mouvement");
+        await page.waitFor(hasText("Détail du mouvement"), { label: "détail du mouvement" });
+        await shot("60_movDetail");
+        await closeModal();
+      }
+      if (want("rec")) {
+        await stock("Réceptions");
+        await page.waitFor(hasText(`BL-FICTIF-${sfx}`), { label: "réceptions" });
+        await shot("V2_recList");
+        await click(page, buttonByText("Nouvelle réception"), "Nouvelle réception");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "modale réception" });
+        await shot("V2_recNew");
+        await closeModal();
+      }
+      if (want("inv")) {
+        await stock("Inventaires");
+        await page.waitFor("document.querySelectorAll('tbody tr.cat-row').length > 0", { label: "inventaires" });
+        await shot("71_invList");
+        await click(page, buttonByText("Nouvel inventaire"), "Nouvel inventaire");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "modale nouvel inventaire" });
+        await shot("72_invNew");
+        await closeModal();
+        await click(page, "document.querySelector('tbody tr.cat-row')", "ouvrir l'inventaire");
+        await page.waitFor(hasText("Progression de la saisie"), { label: "inventaire en cours" });
+        for (const [code, qty] of [["SOL", "2"], ["X01", "14"], ["X02", "5"]]) {
+          const input = `input[aria-label="Quantité constatée ${sku(code)}"]`;
+          if (!(await page.evaluate(`!!document.querySelector(${J(input)})`))) continue;
+          await page.evaluate(`(() => { const i = document.querySelector(${J(input)}); i.focus(); i.select(); })()`);
+          await page.type(qty);
+          await click(page, `document.querySelector(${J(input)}).closest('form').querySelector('button[type=submit]')`, `compter ${code} = ${qty}`);
+          await page.waitFor(`!document.querySelector(${J(input)})`, { label: `${code} compté` });
+        }
+        await page.evaluate(`document.querySelector(${J(`input[aria-label="Quantité constatée ${sku("X04")}"]`)})?.focus()`);
+        await shot("73_invInProgress");
+        await shot("74_invCount");
+        await click(page, buttonByText("Comparer les quantités"), "Comparer");
+        await shot("75_invCompare");
+        await click(page, `[...document.querySelectorAll('[role=tab]')].find(t => t.textContent.startsWith('Écarts'))`, "Écarts");
+        await page.waitFor(`!!document.querySelector(${J(`select[aria-label="Motif ${sku("SOL")}"]`)})`, { label: "écart à justifier" });
+        await setSelect(page, `Motif ${sku("SOL")}`, "Casse").catch(() => undefined);
+        await page.evaluate(`(() => { const s = document.querySelector(${J(`select[aria-label="Motif ${sku("SOL")}"]`)}); const o = [...s.options].find(o => o.textContent === 'Casse');
+          Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, o.value); s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+        await page.waitFor(`[...document.querySelectorAll('tbody tr')].some(r => r.textContent.includes(${J(sku("SOL"))}) && r.querySelector('select')?.value === 'breakage')`, { label: "motif enregistré" });
+        await shot("76_invDiffs");
+        await click(page, buttonByText("Valider les ajustements"), "Valider");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation des ajustements" });
+        await shot("77_invConfirm");
+        await closeModal();
+        await click(page, buttonByText("Abandonner"), "Abandonner");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'abandon" });
+        await shot("79_invAbandon");
+        await closeModal();
+      }
+      if (want("sup")) {
+        await products();
+        await click(page, subNav("Fournisseurs"), "Fournisseurs");
+        await page.waitFor(hasText("Distributeur fictif Atlas"), { label: "fournisseurs" });
+        await shot("82_supList");
+        await click(page, buttonByText("Nouveau fournisseur"), "Nouveau fournisseur");
+        await page.waitFor(h1Is("Nouveau fournisseur"), { label: "formulaire fournisseur" });
+        await shot("86_supNew");
+        await click(page, buttonByText("Créer le fournisseur"), "Créer (vide)");
+        await page.waitFor(hasText("Le formulaire contient des erreurs"), { label: "erreurs fournisseur" });
+        await shot("87_supErrors");
+        await click(page, subNav("Fournisseurs"), "Fournisseurs (quitter)");
+        if (await page.evaluate("!!document.querySelector('[role=alertdialog]')")) await click(page, inModal("Fermer sans enregistrer"), "Fermer sans enregistrer");
+        await page.waitFor(hasText("Distributeur fictif Atlas"), { label: "fournisseurs" });
+        await click(page, rowWith("Fournisseur fictif Belgique"), "fiche fournisseur");
+        await page.waitFor(hasText("Coordonnées"), { label: "détail fournisseur" });
+        await shot("90_supDetail");
+        await click(page, buttonByText("Archiver"), "Archiver le fournisseur");
+        await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation d'archivage" });
+        await shot("94_supArchive");
+        await closeModal();
+      }
+      if (want("lens")) {
+        await products();
+        await click(page, subNav("Référentiel verres"), "Référentiel verres");
+        await page.waitFor(hasText(`Gamme Démo ${sfx}`), { label: "référentiel" });
+        await shot("V2_lens");
+      }
+      if (want("imp")) {
+        await products();
+        await click(page, subNav("Import CSV"), "Import CSV");
+        await page.waitFor(h1Is("Import CSV"), { label: "Import CSV" });
+        await shot("V2_import");
+      }
+    }
+
+    if (want("sizes")) {
+      theme = "light";
+      await setTheme(page, "light");
+      for (const [w, h] of [[1366, 768], [1024, 700]]) {
+        resize(w, h);
+        size = `${w}x${h}`;
+        await products(); await shot("01_catLight");
+        await fiche("MON"); await shot("25_detLight");
+        await stock(); await page.waitFor(hasText(sku("MON")), { label: "stock" }); await shot("43_stockLight");
+        await products(); await click(page, subNav("Fournisseurs"), "Fournisseurs"); await page.waitFor(hasText("Distributeur fictif Atlas"), { label: "fournisseurs" }); await shot("82_supList");
+        if (w === 1366) {
+          await products(); await click(page, buttonByText("Nouveau produit"), "Nouveau produit"); await page.waitFor(h1Is("Nouveau produit"), { label: "Nouveau produit" }); await shot("15_prodNew");
+          await openInventory(); await shot("73_invInProgress");
+          await products(); await click(page, subNav("Import CSV"), "Import CSV"); await shot("V2_import");
+          await products(); await click(page, subNav("Référentiel verres"), "Référentiel"); await shot("V2_lens");
+        }
+        const dark = await page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth || [...document.querySelectorAll('.shell__content')].some(e => e.scrollWidth > e.clientWidth + 1)");
+        check(!dark, `aucun défilement horizontal de page à ${w}×${h}`);
+      }
+      resize(1920, 1080);
+      size = "1920x1080";
+    }
+    if (want("zoom")) {
+      theme = "light";
+      await setTheme(page, "light");
+      await setZoom(page, 1.25);
+      zoom = "_z125";
+      await products(); await shot("01_catLight");
+      await products(); await click(page, buttonByText("Nouveau produit"), "Nouveau produit"); await page.waitFor(h1Is("Nouveau produit"), { label: "Nouveau produit" }); await shot("15_prodNew");
+      await fiche("MON"); await shot("25_detLight");
+      await stock(); await page.waitFor(hasText(sku("MON")), { label: "stock" }); await shot("43_stockLight");
+      await openInventory(); await shot("73_invInProgress");
+      await setZoom(page, 1);
+      zoom = "";
+    }
+    // États transverses et critiques (écritures RÉELLES sur les données fictives du banc) : seulement sur demande
+    // explicite `--only states`, jamais dans l'exécution par défaut.
+    if (only.includes("states")) {
+      theme = "light";
+      size = "1920x1080";
+      await setTheme(page, "light");
+      const stores = await apiGet(agent, "/api/stores");
+      const shop = stores.find((s) => s.id === c.stores.be).locations.find((l) => l.isDefault).id;
+      // Panne réseau simulée côté WebView2 (domaine CDP Fetch) : requêtes vers l'API retenues (chargement) ou refusées
+      // (erreur technique). L'API de banc n'est ni arrêtée ni modifiée.
+      let netMode = "pass";
+      const held = [];
+      page.on("Fetch.requestPaused", (p) => {
+        if (netMode === "hold") held.push(p.requestId);
+        else if (netMode === "fail") void page.send("Fetch.failRequest", { requestId: p.requestId, errorReason: "ConnectionRefused" }).catch(() => undefined);
+        else void page.send("Fetch.continueRequest", { requestId: p.requestId }).catch(() => undefined);
+      });
+      const network = async (mode) => {
+        netMode = mode;
+        if (mode === "pass") {
+          for (const requestId of held.splice(0)) await page.send("Fetch.continueRequest", { requestId }).catch(() => undefined);
+          await page.send("Fetch.disable");
+        } else {
+          await page.send("Fetch.enable", { patterns: [{ urlPattern: "*localhost:7367/api/*" }] });
+          if (mode === "fail") for (const requestId of held.splice(0)) await page.send("Fetch.failRequest", { requestId, errorReason: "ConnectionRefused" }).catch(() => undefined);
+        }
+      };
+
+      // 12 · 13 · 53 · 101 : chargement (latence) et erreur technique (réseau coupé côté WebView2).
+      await products();
+      await network("hold");
+      await page.evaluate(`(() => { const i = document.querySelector('input[aria-label="Rechercher"]'); i.focus(); i.select(); })()`);
+      await page.type("lenteur");
+      await page.press("Enter");
+      await page.waitFor("!!document.querySelector('.clients-loading__head')", { label: "squelette de chargement" });
+      await shot("12_catLoading");
+      await network("fail");
+      await page.evaluate(`(() => { const i = document.querySelector('input[aria-label="Rechercher"]'); i.focus(); i.select(); })()`);
+      await page.type("hors-ligne");
+      await page.press("Enter");
+      await page.waitFor(hasText("Impossible de charger le catalogue"), { label: "erreur technique catalogue", timeoutMs: 30000 });
+      await shot("13_catError");
+      await click(page, navButton("Stock & inventaires"), "menu Stock (hors ligne)");
+      await page.waitFor(hasText("Impossible de charger le stock"), { label: "erreur technique stock", timeoutMs: 30000 });
+      await shot("53_stockError");
+      await click(page, navButton("Produits"), "menu Produits (hors ligne)");
+      await page.waitFor(`!!${subNav("Fournisseurs")}`, { label: "sections Produits" });
+      await click(page, subNav("Fournisseurs"), "Fournisseurs (hors ligne)");
+      await page.waitFor(hasText("Impossible de charger les fournisseurs"), { label: "erreur technique fournisseurs", timeoutMs: 30000 });
+      await shot("101_supErrTech");
+      await network("pass");
+      await page.evaluate("document.querySelector('.clients-state button')?.click()");
+      await page.waitFor(hasText("Distributeur fictif Atlas"), { label: "fournisseurs rechargés" });
+      await click(page, navButton("Stock & inventaires"), "menu Stock");
+      await page.waitFor(`!!${subNav("Stock")}`, { label: "sections Stock" });
+      await click(page, subNav("Stock"), "Stock");
+      await page.evaluate("document.querySelector('.clients-state button')?.click()");
+      await page.waitFor(hasText(sku("MON")), { label: "stock rechargé (réseau rétabli)" });
+
+      // 48 : recherche dans le stock.
+      await page.evaluate(`(() => { const i = document.querySelector('input[aria-label="Rechercher dans le stock"]'); i.focus(); })()`);
+      await page.type("Monture");
+      await page.press("Enter");
+      await page.waitFor(`document.body.innerText.includes('Monture Horizon') && !document.body.innerText.includes('Cordon sport')`, { label: "recherche dans le stock" });
+      await shot("48_stockSearch");
+      await click(page, "document.querySelector('.clients-search__clear')", "effacer");
+
+      // 66 · 67 : quantité invalide puis mouvement réussi (écriture réelle : +1 monture).
+      await page.waitFor(hasText(sku("MON")), { label: "stock" });
+      await click(page, `(${rowWith(sku("MON"))}).querySelector('button[aria-label="Entrée"]')`, "Entrée");
+      await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "modale Entrée" });
+      await fillField(page, "Quantité à ajouter", "0");
+      await setSelect(page, "Motif", "Article retrouvé");
+      await click(page, inModal("Enregistrer le mouvement"), "Enregistrer (quantité 0)");
+      await page.waitFor(hasText("La quantité doit être un entier strictement positif."), { label: "quantité invalide" });
+      await shot("66_movQtyInvalid");
+      await fillField(page, "Quantité à ajouter", "1");
+      await click(page, inModal("Enregistrer le mouvement"), "Enregistrer (+1)");
+      await page.waitFor(hasText("Mouvement enregistré"), { label: "notification de succès" });
+      await shot("67_movSuccess");
+
+      // 70 : erreur technique sur une écriture (réseau refusé) : rien n'est écrit.
+      await click(page, `(${rowWith(sku("MON"))}).querySelector('button[aria-label="Entrée"]')`, "Entrée (hors ligne)");
+      await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "modale Entrée" });
+      await fillField(page, "Quantité à ajouter", "3");
+      await setSelect(page, "Motif", "Article retrouvé");
+      await network("fail");
+      await click(page, inModal("Enregistrer le mouvement"), "Enregistrer (réseau refusé)");
+      await page.waitFor(hasText("Erreur technique"), { label: "erreur technique d'écriture", timeoutMs: 30000 });
+      await shot("70_movErrTech");
+      await network("pass");
+      await closeModal();
+
+      // 114 : mouvement de stock réalisé SANS souris (Tab, flèches, Entrée), relu par l'API.
+      const beforeKeys = (await apiGet(agent, `/api/stock/balances?storeId=${c.stores.be}&pageSize=200`)).items.filter((r) => r.variantId === c.variants.optical_frames).reduce((s, r) => s + r.onHand, 0);
+      await page.evaluate(`(${rowWith(sku("MON"))}).querySelector('button[aria-label="Entrée"]').focus()`);
+      await page.press("Enter");
+      await page.waitFor("!!document.activeElement?.closest('[role=alertdialog]')", { label: "focus piégé dans la modale" });
+      for (let i = 0; i < 12 && (await page.evaluate("document.activeElement?.id")) !== "cat-quantity"; i++) await page.press("Tab");
+      check((await page.evaluate("document.activeElement?.id")) === "cat-quantity", "Tab → Quantité à ajouter");
+      await page.type("1");
+      await page.press("Tab");
+      await page.waitFor("document.activeElement?.tagName === 'SELECT'", { label: "Tab → Motif" });
+      await page.press("ArrowDown");
+      await page.waitFor("document.activeElement?.value === 'found'", { label: "motif choisi au clavier" });
+      for (let i = 0; i < 6 && !(await page.evaluate("document.activeElement?.textContent?.trim() === 'Enregistrer le mouvement'")); i++) await page.press("Tab");
+      check(await page.evaluate("document.activeElement?.textContent?.trim() === 'Enregistrer le mouvement'"), "Tab → Enregistrer le mouvement (focus visible)");
+      await shot("114_a11yNoMouse");
+      await page.press("Enter");
+      await page.waitFor(hasText("Mouvement enregistré"), { label: "mouvement au clavier enregistré" });
+      await until05(async () => (await apiGet(agent, `/api/stock/balances?storeId=${c.stores.be}&pageSize=200`)).items.filter((r) => r.variantId === c.variants.optical_frames).reduce((s, r) => s + r.onHand, 0) === beforeKeys + 1, "API : +1 enregistré au clavier seul");
+
+      // 50 · 68 : le stock change sur un « autre poste » pendant un ajustement → 409, rien n'est écrit.
+      await click(page, `(${rowWith(sku("MON"))}).querySelector('button[aria-label="Ajuster"]')`, "Ajuster");
+      await page.waitFor(hasText("Stock en main (dernier état chargé)"), { label: "modale Ajustement" });
+      await page.waitFor("!/Stock en main \\(dernier état chargé\\)\\s*—/.test(document.querySelector('[role=alertdialog]').innerText)", { label: "solde chargé" });
+      const other = await apiSend(agent, "POST", "/api/stock/movements", { requestId: crypto.randomUUID(), variantId: c.variants.optical_frames, locationId: shop, type: "manual_in", quantity: 1, reasonCode: "found" });
+      check(other.status === 200 || other.status === 201, "API : mouvement concurrent (autre poste) enregistré");
+      await fillField(page, "Nouvelle quantité constatée", "5");
+      await setSelect(page, "Motif", "Correction après comptage");
+      await click(page, inModal("Ajuster le stock"), "Ajuster");
+      await click(page, inModal("Confirmer l'ajustement"), "Confirmer l'ajustement");
+      await page.waitFor(hasText("Le stock a changé sur un autre poste"), { label: "409 stock modifié ailleurs" });
+      await page.waitFor("document.querySelector('[role=alertdialog]')?.innerText.includes('Le stock a changé sur un autre poste')", { label: "409 affiché dans la modale" });
+      await shot("68_movConflict");
+      await shot("50_stockConflict");
+      await closeModal();
+
+      // 80 · 78 · 81 : inventaire — ligne modifiée depuis son comptage, justification, validation, historique.
+      await openInventory();
+      for (const [code, qty] of [["SOL", "2"], ["X01", "14"], ["X02", "5"]]) {
+        const input = `input[aria-label="Quantité constatée ${sku(code)}"]`;
+        if (!(await page.evaluate(`!!document.querySelector(${J(input)})`))) continue;
+        await page.evaluate(`(() => { const i = document.querySelector(${J(input)}); i.focus(); i.select(); })()`);
+        await page.type(qty);
+        await click(page, `document.querySelector(${J(input)}).closest('form').querySelector('button[type=submit]')`, `compter ${code}`);
+        await page.waitFor(`!document.querySelector(${J(input)})`, { label: `${code} compté` });
+      }
+      const moved = await apiSend(agent, "POST", "/api/stock/movements", { requestId: crypto.randomUUID(), variantId: c.variants.sunglasses, locationId: shop, type: "manual_in", quantity: 1, reasonCode: "found" });
+      check(moved.status === 200 || moved.status === 201, "API : vente / mouvement concurrent sur une ligne déjà comptée");
+      await click(page, buttonByText("Actualiser"), "Actualiser l'inventaire (dernier état chargé)");
+      await page.waitFor(hasText("Stock modifié sur un autre poste pendant le comptage"), { label: "ligne modifiée depuis son comptage" });
+      await shot("80_invConflict");
+      await click(page, `[...document.querySelectorAll('[role=tab]')].find(t => t.textContent.startsWith('Écarts'))`, "Écarts");
+      for (const code of ["SOL", "X02"]) {
+        const select = `select[aria-label="Motif ${sku(code)}"]`;
+        await page.waitFor(`!!document.querySelector(${J(select)})`, { label: `écart ${code}` });
+        await page.evaluate(`(() => { const s = document.querySelector(${J(select)}); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(s, 'count_correction'); s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+        await page.waitFor(`document.querySelector(${J(select)})?.value === 'count_correction'`, { label: `motif ${code}` });
+      }
+      await click(page, buttonByText("Valider les ajustements"), "Valider");
+      await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation" });
+      await click(page, "[...document.querySelectorAll('[role=alertdialog] input[type=checkbox]')].pop()", "accepter les lignes modifiées");
+      await click(page, inModal("Appliquer les ajustements"), "Appliquer les ajustements");
+      await page.waitFor(hasText("Inventaire terminé"), { label: "inventaire validé" });
+      await shot("78_invDone");
+      await click(page, `[...document.querySelectorAll('[role=tab]')].find(t => t.textContent.startsWith('Comparaison'))`, "Comparaison (historique)");
+      await shot("81_invHistory");
+
+      // 31 : fiche en stock faible ; 37 · 41 : archivage refusé (stock en main) ; 33 · 39 · 40 : archivage puis réactivation.
+      await fiche("X02");
+      await shot("31_detLow");
+      await fiche("MON");
+      await openMenu(`document.querySelector('[aria-label="Autres actions"]')`, "Autres actions");
+      await click(page, `[...document.querySelectorAll('[role=menuitem]')].find(i => i.textContent.includes('Archiver le modèle'))`, "Archiver le modèle");
+      await click(page, `[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent.trim() === 'Archiver')`, "Archiver (stock en main)");
+      await page.waitFor(hasText("Archivage refusé"), { label: "archivage refusé par le serveur" });
+      await shot("37_delRefused");
+      await shot("41_delErrBiz");
+      await closeModal();
+      await fiche("SRV");
+      await openMenu(`document.querySelector('[aria-label="Autres actions"]')`, "Autres actions");
+      await click(page, `[...document.querySelectorAll('[role=menuitem]')].find(i => i.textContent.includes('Archiver le modèle'))`, "Archiver le modèle (prestation)");
+      await fillField(page, "Motif (facultatif)", "Prestation fictive retirée");
+      await shot("39_delDeactivateConfirm");
+      await click(page, `[...document.querySelectorAll('[role=alertdialog] button')].find(b => b.textContent.trim() === 'Archiver')`, "Archiver");
+      await page.waitFor(hasText("Produit archivé"), { label: "produit archivé" });
+      await shot("33_detDeactivated");
+      await openMenu(`document.querySelector('[aria-label="Autres actions"]')`, "Autres actions");
+      await shot("40_delReactivate");
+      await click(page, `[...document.querySelectorAll('[role=menuitem]')].find(i => i.textContent.includes('Réactiver le modèle'))`, "Réactiver le modèle");
+      await page.waitFor(`!document.body.innerText.includes('Produit archivé')`, { label: "produit réactivé" });
+
+      // 21 · 22 : création puis modification réussies (notifications).
+      await products();
+      await click(page, buttonByText("Nouveau produit"), "Nouveau produit");
+      await page.waitFor(h1Is("Nouveau produit"), { label: "Nouveau produit" });
+      await setSelect(page, "Famille", "Accessoires");
+      await fillField(page, "Nom du modèle", `Pochette fictive ${sfx}`);
+      await fillField(page, "Libellé de la variante", "Gris");
+      await click(page, buttonByText("Créer le produit"), "Créer le produit");
+      await page.waitFor(hasText("Produit créé"), { label: "création réussie" });
+      await shot("21_prodCreateOk");
+      await click(page, buttonByText("Modifier"), "Modifier");
+      await page.waitFor(h1Is("Modifier"), { label: "modification" });
+      await fillField(page, "Marque", "Marque fictive");
+      await shot("89_prodEdit-dirty");
+      await click(page, buttonByText("Enregistrer les modifications"), "Enregistrer les modifications");
+      await page.waitFor(hasText("Modifications enregistrées"), { label: "modification réussie" });
+      await shot("22_prodEditOk");
+
+      // 84 · 85 · 93 · 88 · 89 : fournisseurs — recherche, filtre, fiche sans produit, modification non enregistrée.
+      await click(page, subNav("Fournisseurs"), "Fournisseurs");
+      await page.waitFor(hasText("Distributeur fictif Atlas"), { label: "fournisseurs" });
+      await page.evaluate(`document.querySelector('input[aria-label="Rechercher un fournisseur"]').focus()`);
+      await page.type("Atlas");
+      await page.press("Enter");
+      await page.waitFor(`document.body.innerText.includes('Distributeur fictif Atlas') && !document.body.innerText.includes('Lunetier fictif Escaut')`, { label: "recherche fournisseur" });
+      await shot("84_supSearch");
+      await click(page, "document.querySelector('.clients-search__clear')", "effacer");
+      await openMenu(byLabel("Pays"), "Pays");
+      await click(page, `[...document.querySelectorAll('[role=menuitemradio]')].find(i => i.textContent.includes('Maroc'))`, "Pays = Maroc");
+      await page.waitFor(`!!${byLabel("Pays :")} && !document.body.innerText.includes('Lunetier fictif Escaut')`, { label: "filtre pays" });
+      await shot("85_supFilters");
+      await click(page, rowWith("Fournisseur fictif Maroc"), "fiche sans produit");
+      await page.waitFor(hasText("Aucun produit associé"), { label: "fournisseur sans produit" });
+      await shot("93_supNoProduct");
+      await click(page, buttonByText("Modifier"), "Modifier le fournisseur");
+      await page.waitFor(h1Is("Modifier"), { label: "modification fournisseur" });
+      await shot("88_supEdit");
+      await fillField(page, "Ville", "Ville-Démo Ouest");
+      await shot("89_supUnsaved");
+      await click(page, buttonByText("Annuler"), "Annuler");
+      await click(page, inModal("Fermer sans enregistrer"), "Fermer sans enregistrer");
+      await page.waitFor(hasText("Coordonnées"), { label: "retour à la fiche fournisseur" });
+      await click(page, subNav("Fournisseurs"), "Fournisseurs");
+      await page.evaluate("document.querySelector('.clients-search__clear')?.click()");
+      await page.evaluate(`document.querySelector('input[aria-label="Rechercher un fournisseur"]').focus()`);
+      await page.type("zzz-aucun");
+      await page.press("Enter");
+      await page.waitFor(hasText("Aucun résultat"), { label: "aucun fournisseur" });
+      await shot("98_supNoResult");
+      await click(page, buttonByText("Nouveau fournisseur"), "Nouveau fournisseur");
+      await page.waitFor(h1Is("Nouveau fournisseur"), { label: "formulaire fournisseur" });
+      await page.evaluate("document.getElementById('cat-name').focus()");
+      await page.press("Tab");
+      await page.press("Tab");
+      await shot("108_a11ySupKbd");
+      await fillField(page, "Nom", "Doublon fictif");
+      await fillField(page, "Code interne", `FBE${sfx}`);
+      await click(page, buttonByText("Créer le fournisseur"), "Créer (code déjà utilisé)");
+      await page.waitFor(hasText("Le formulaire contient des erreurs"), { label: "erreur métier : code en double" });
+      await shot("100_supErrBiz");
+      await click(page, buttonByText("Annuler"), "Annuler");
+      await click(page, inModal("Fermer sans enregistrer"), "Fermer sans enregistrer");
+      await products();
+      await click(page, buttonByText("Nouveau produit"), "Nouveau produit");
+      await page.waitFor(h1Is("Nouveau produit"), { label: "Nouveau produit" });
+      await page.evaluate("document.getElementById('cat-name').focus()");
+      await page.press("Tab");
+      await page.press("Tab");
+      await shot("107_a11yProdKbd");
+      await shot("110_a11yFocus");
+    }
+    if (want("vendeur")) {
+      theme = "light";
+      await setTheme(page, "light");
+      await signIn(page, seller);
+      await products();
+      await shot("01_catVendeur");
+      await click(page, rowWith(sku("MON")), "fiche (vendeur)");
+      await page.waitFor(hasText("Prix & disponibilité"), { label: "fiche vendeur" });
+      const body = await text(page);
+      check(!body.includes("Prix d'achat HT") && !body.includes("Coefficient effectif") && !body.includes("41,25"), "vendeur : aucun coût affiché");
+      await shot("34_detVendeur");
+    }
+  },
+
   async "catalogue-05"(page) {
     const c = credentials();
     const { agent, other: seller, suffix: sfx } = c;
     const shot = (name, size) => capture(`p05_${name}`, size);
     const sku = (code) => `N05-${sfx}-${code}`;
     const h1Is = (title) => `document.querySelector('h1')?.textContent.trim() === ${J(title)}`;
-    const variantRow = async (account, code, store = c.stores.be) =>
-      (await apiGet(account, `/api/catalog/variants?storeId=${store}&q=${encodeURIComponent(sku(code))}`)).items?.[0];
+    const variantBySku = async (account, value, store = c.stores.be) =>
+      (await apiGet(account, `/api/catalog/variants?storeId=${store}&q=${encodeURIComponent(value)}`)).items?.find((v) => v.sku === value);
+    const variantRow = (account, code, store) => variantBySku(account, sku(code), store);
     const price = async (variantId, store) => (await apiGet(agent, `/api/pricing/variants/${variantId}?storeId=${store}`)).price;
     const onHand = async (variantId) =>
       (await apiGet(agent, `/api/stock/balances?storeId=${c.stores.be}&pageSize=200`)).items.filter((r) => r.variantId === variantId).reduce((s, r) => s + r.onHand, 0);
     const subNav = (label) => `[...document.querySelectorAll('nav[aria-label="Sections"] a')].find(a => a.textContent.trim() === ${J(label)})`;
-    const rowButton = (rowText, label) =>
-      `(() => { const r = [...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(rowText)})); return r && [...r.querySelectorAll('button')].find(b => b.textContent.trim() === ${J(label)}); })()`;
+    // Actions de ligne du Lot 6 : boutons-icônes nommés (aria-label), première ligne portant le texte (SKU).
+    const rowAction = (rowText, label) =>
+      `(() => { const r = [...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(rowText)})); return r && r.querySelector(${J(`button[aria-label="${label}"]`)}); })()`;
+    const modal = "[role=alertdialog]";
+    const inModal = (label) => `[...document.querySelectorAll('${modal} button')].find(b => b.textContent.trim() === ${J(label)})`;
     const setActiveStore = async (name) => {
       const ok = await page.evaluate(`(() => { const s = document.querySelector('select[aria-label="Magasin actif"]'); if (!s) return false;
         const o = [...s.options].find(o => o.textContent.includes(${J(name)})); if (!o) return false;
@@ -1792,6 +2381,15 @@ const scenarios = {
     const uploadCsv = (name, content) => page.evaluate(`(() => { const input = document.querySelector('input[type=file]'); if (!input) return false;
       const dt = new DataTransfer(); dt.items.add(new File([${J(content)}], ${J(name)}, { type: 'text/csv' })); input.files = dt.files;
       input.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`).then((ok) => check(ok, `dépôt du fichier ${name} (sélecteur de fichier de l'interface)`));
+    const importKind = (label) => click(page, `[...document.querySelectorAll('label.cat-radio')].find(l => l.textContent.startsWith(${J(label)}))`, `type d'import : ${label}`);
+    const openPriceEditor = async () => {
+      if (!(await page.evaluate(hasText("Aperçu du prix de vente HT")))) await click(page, buttonByText("Modifier le prix"), "Modifier le prix");
+      await page.waitFor(hasText("Aperçu du prix de vente HT"), { label: "éditeur du bloc Prix" });
+    };
+    const products = async () => {
+      await click(page, `${navButton("Produits")}`, "menu Produits");
+      await page.waitFor(`!!${subNav("Catalogue")}`, { label: "sections Produits" });
+    };
 
     log("PARCOURS 05", `API ${API}, suffixe ${sfx}, magasins fictifs Bruxelles (EUR) et Casablanca (MAD)`);
     resize(1920, 1080);
@@ -1800,42 +2398,64 @@ const scenarios = {
     await setTheme(page, "light");
 
     // 1. Catalogue : six familles, magasin actif, prix du magasin.
-    await click(page, `${navButton("Produits")}`, "menu Produits");
-    await page.waitFor(h1Is("Catalogue"), { label: "écran Catalogue" });
+    await products();
+    await page.waitFor(h1Is("Produits"), { label: "écran Produits (catalogue)" });
     await page.waitFor(hasText(sku("MON")), { label: "variantes fictives listées" });
     for (const code of ["MON", "SOL", "VER", "LEN", "ACC", "SRV"]) check(await page.evaluate(hasText(sku(code))), `famille affichée : ${sku(code)}`);
     check(await page.evaluate(hasText("103,13")), "prix de vente BE (41,25 × 2,5 = 103,13 €) affiché");
     shot("01_catalogue_six-familles_light_1920x1080");
 
-    // 2. Création d'un produit par l'interface.
+    // 2. Création d'un produit par l'interface : SKU interne GÉNÉRÉ (aucune saisie), fournisseur principal facultatif.
     await click(page, buttonByText("Nouveau produit"), "Nouveau produit");
     await page.waitFor(h1Is("Nouveau produit"), { label: "formulaire Nouveau produit" });
     await setSelect(page, "Famille", "Accessoires");
     await fillField(page, "Marque", "Marque fictive");
     await fillField(page, "Nom du modèle", `Cordon interface ${sfx}`);
-    await fillField(page, "SKU interne", sku("UI1"));
     await fillField(page, "Libellé de la variante", "Cordon noir");
+    await setSelect(page, "Fournisseur principal", "Fournisseur fictif Belgique");
+    const generated = await page.evaluate(`document.getElementById([...document.querySelectorAll('label[for]')].find(l => l.textContent.trim() === 'SKU interne').htmlFor).value`);
+    check(/^ACC-[2-9A-HJKMNP-Z]{6}$/.test(generated), `SKU interne proposé automatiquement (${generated}), champ en lecture seule`);
+    check(await page.evaluate(`document.getElementById([...document.querySelectorAll('label[for]')].find(l => l.textContent.trim() === 'SKU interne').htmlFor).readOnly`), "SKU non saisi (lecture seule tant que « Personnaliser » n'est pas choisi)");
     shot("02_nouveau-produit_light_1920x1080");
-    await click(page, buttonByText("Enregistrer"), "Enregistrer le produit");
+    await click(page, buttonByText("Créer le produit"), "Créer le produit");
     await page.waitFor(`document.querySelector('h1')?.textContent.includes(${J(`Cordon interface ${sfx}`)})`, { label: "fiche du modèle créé" });
-    const created = await variantRow(agent, "UI1");
-    check(created?.familyCode === "accessories" && created?.stockPolicy === "stocked", "API : variante créée (accessoires, stockée)");
+    const created = await variantBySku(agent, generated);
+    check(created?.familyCode === "accessories" && created?.stockPolicy === "stocked", `API : variante créée (accessoires, stockée, SKU ${generated})`);
+    await until(async () => (await variantBySku(agent, generated))?.primarySupplier?.name === "Fournisseur fictif Belgique", "API : fournisseur principal rattaché à la variante");
 
-    // 3. Prix par coefficient (aperçu serveur, un seul arrondi), magasin Belgique — EUR.
-    await page.waitFor(hasText("Prix par coefficient"), { label: "onglet Prix" });
-    await fillField(page, "Prix d'achat HT (EUR)", "41,25");
+    // 2 bis. Conflit 409 : le modèle change sur un « autre poste » (API) pendant la modification ; rien n'est écrasé.
+    await click(page, buttonByText("Modifier"), "Modifier le modèle");
+    await page.waitFor(`document.querySelector('h1')?.textContent.startsWith('Modifier')`, { label: "formulaire de modification" });
+    await fillField(page, "Marque", "Marque modifiée ici");
+    const model = await apiGet(agent, `/api/catalog/models/${created.modelId}?storeId=${c.stores.be}`);
+    const other = await apiSend(agent, "PUT", `/api/catalog/models/${created.modelId}`, { requestId: crypto.randomUUID(), version: model.version, brand: "Marque fictive", name: model.name, description: "Modifié sur un autre poste", attributes: {} });
+    check(other.status === 200, "API : modification concurrente acceptée (autre poste)");
+    await click(page, buttonByText("Enregistrer les modifications"), "Enregistrer (version périmée)");
+    await page.waitFor(hasText("Ce produit a été modifié sur un autre poste"), { label: "409 affiché : modifié sur un autre poste" });
+    check((await apiGet(agent, `/api/catalog/models/${created.modelId}?storeId=${c.stores.be}`)).description === "Modifié sur un autre poste", "API : la modification concurrente n'est pas écrasée");
+    shot("02b_conflit-409_light_1920x1080");
+    await click(page, buttonByText("Annuler"), "Annuler");
+    await page.waitFor("!!document.querySelector('[role=alertdialog]')", { label: "confirmation de fermeture (saisie non enregistrée)" });
+    await click(page, inModal("Fermer sans enregistrer"), "Fermer sans enregistrer");
+    await page.waitFor(hasText("Prix & disponibilité"), { label: "retour à la fiche" });
+
+    // 3. Prix par coefficient dans le bloc Prix (aperçu serveur, un seul arrondi), magasin Belgique — EUR.
+    await openPriceEditor();
+    await fillField(page, "Prix d'achat HT", "41,25");
     await fillField(page, "Coefficient", "2,5");
     await click(page, buttonByText("Aperçu"), "Aperçu");
-    await page.waitFor(hasText("Prix calculé : 103,13"), { label: "aperçu 103,13 €" });
+    await page.waitFor(hasText("Prix calculé : 103,13"), { label: "aperçu serveur 103,13 €" });
     await click(page, buttonByText("Enregistrer ce prix"), "Enregistrer ce prix");
     await until(async () => (await price(created.variantId, c.stores.be))?.salePriceHt === "103.13", "API : prix BE 103.13 EUR (achat 41.2500, coefficient 2.5000)");
-    await page.waitFor("document.querySelector('.cat-price')?.textContent.includes('103,13')", { label: "prix enregistré affiché (103,13 €)" });
+    await page.waitFor("document.querySelector('[data-testid=sale-price]')?.textContent.includes('103,13')", { label: "prix validé affiché (103,13 €)" });
     shot("03_prix-coefficient-eur_light_1920x1080");
 
     // 4. Autre magasin, autre devise, aucune conversion.
     await setActiveStore("Casablanca");
-    await page.waitFor(hasText("Prix d'achat HT (MAD)"), { label: "tarif du magasin MAD" });
-    await fillField(page, "Prix d'achat HT (MAD)", "19,99");
+    await page.waitFor("document.querySelector('[data-testid=sale-price]') && [...document.querySelectorAll('.cat-badge')].some(b => b.textContent.trim() === 'MAD')", { label: "bloc Prix du magasin MAD" });
+    await openPriceEditor();
+    check(await page.evaluate("[...document.querySelectorAll('.cat-input-suffix')].some(e => e.textContent.trim() === 'MAD')"), "saisie en MAD (devise du magasin)");
+    await fillField(page, "Prix d'achat HT", "19,99");
     await fillField(page, "Coefficient", "2,2");
     await click(page, buttonByText("Aperçu"), "Aperçu MAD");
     await page.waitFor(hasText("Prix calculé : 43,98"), { label: "aperçu 43,98 MAD" });
@@ -1847,8 +2467,9 @@ const scenarios = {
 
     // 5. Prix manuel (droit pricing.manual) : coefficient conservé, mode manuel.
     await setActiveStore("Bruxelles");
-    await page.waitFor(hasText("Prix de vente HT (EUR)"), { label: "prix manuel (EUR)" });
-    await fillField(page, "Prix de vente HT (EUR)", "99,90");
+    await page.waitFor("[...document.querySelectorAll('.cat-badge')].some(b => b.textContent.trim() === 'EUR')", { label: "bloc Prix du magasin EUR" });
+    await openPriceEditor();
+    await fillField(page, "Prix de vente HT", "99,90");
     await fillField(page, "Motif (facultatif)", "Prix rond fictif");
     await click(page, buttonByText("Appliquer le prix manuel"), "Appliquer le prix manuel");
     await until(async () => (await price(created.variantId, c.stores.be))?.pricingMode === "manual", "API : mode manuel");
@@ -1857,27 +2478,30 @@ const scenarios = {
     await page.waitFor(hasText("Prix manuel"), { label: "mode « Prix manuel » affiché" });
     shot("05_prix-manuel_light_1920x1080");
 
-    // 6. Stock : entrée, puis sortie supérieure au stock refusée (rien écrit).
+    // 6. Stock : entrée motivée, puis sortie supérieure au stock refusée par le serveur (rien écrit).
     const monture = (await variantRow(agent, "MON")).variantId;
     const before = await onHand(monture);
     await click(page, `${navButton("Stock & inventaires")}`, "menu Stock & inventaires");
     await page.waitFor(h1Is("Stock"), { label: "écran Stock" });
     await page.waitFor(hasText(sku("MON")), { label: "solde de la monture" });
-    await click(page, rowButton(sku("MON"), "Entrée"), "Entrée (monture)");
-    await page.waitFor("!!document.querySelector('[role=dialog]')", { label: "dialogue Entrée" });
-    await fillField(page, "Quantité", "2");
-    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Confirmer')`, "Confirmer l'entrée");
+    await click(page, rowAction(sku("MON"), "Entrée"), "Entrée (monture)");
+    await page.waitFor(`!!document.querySelector('${modal}')`, { label: "modale Entrée" });
+    await fillField(page, "Quantité à ajouter", "2");
+    await setSelect(page, "Motif", "Article retrouvé");
+    await click(page, inModal("Enregistrer le mouvement"), "Enregistrer l'entrée");
     await until(async () => (await onHand(monture)) === before + 2, `API : en main ${before} → ${before + 2}`);
-    await page.waitFor("!document.querySelector('[role=dialog]')", { label: "dialogue fermé" });
-    await click(page, rowButton(sku("MON"), "Sortie"), "Sortie (monture)");
-    await page.waitFor("!!document.querySelector('[role=dialog]')", { label: "dialogue Sortie" });
-    await fillField(page, "Quantité", String(before + 50));
-    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Confirmer')`, "Confirmer la sortie excessive");
-    await page.waitFor("!!document.querySelector('[role=dialog] [role=alert]')", { label: "refus affiché dans le dialogue" });
+    await page.waitFor(`!document.querySelector('${modal}')`, { label: "modale fermée" });
+    await page.waitFor(hasText("Mouvement enregistré"), { label: "notification de succès" });
+    await click(page, rowAction(sku("MON"), "Sortie"), "Sortie (monture)");
+    await page.waitFor(`!!document.querySelector('${modal}')`, { label: "modale Sortie" });
+    await fillField(page, "Quantité à retirer", String(before + 50));
+    await setSelect(page, "Motif", "Casse");
+    await click(page, inModal("Enregistrer le mouvement"), "Enregistrer la sortie excessive");
+    await page.waitFor(`!!document.querySelector('${modal} [role=alert]')`, { label: "refus affiché dans la modale" });
     check((await onHand(monture)) === before + 2, "API : sortie refusée, stock inchangé, jamais négatif");
-    log("REFUS", await page.evaluate("document.querySelector('[role=dialog] [role=alert]').innerText.replace(/\\s+/g, ' ')"));
+    log("REFUS", await page.evaluate(`document.querySelector('${modal} [role=alert]').innerText.replace(/\\s+/g, ' ')`));
     shot("06_sortie-refusee-stock-negatif_light_1920x1080");
-    await click(page, `[...document.querySelectorAll('[role=dialog] button')].find(b => b.textContent.trim() === 'Annuler')`, "Annuler");
+    await click(page, inModal("Annuler"), "Annuler");
 
     // 7. Réceptions : réception partielle (10 annoncés, 6 reçus) et reliquat.
     await click(page, subNav("Réceptions"), "Réceptions");
@@ -1896,15 +2520,16 @@ const scenarios = {
     const sessions = await apiGet(agent, `/api/inventories?storeId=${c.stores.be}`);
     const sessionId = (sessions.items ?? sessions)[0].id;
     await until(async () => (await apiGet(agent, `/api/inventories/${sessionId}`)).lines.some((l) => l.sku === sku("SOL") && l.countedQuantity === 2), "API : ligne comptée 2 (écart −1 à justifier)");
+    await page.waitFor("/\\b1 \\/ \\d+ \\(\\d+ %\\)/.test(document.body.innerText)", { label: "barre de progression mise à jour (1 ligne comptée)" });
     shot("08_inventaire-comptage_light_1920x1080");
 
     // 9. Import CSV : aperçu, contrôle à blanc (rien écrit), application, réimport sans doublon, fichier rejeté.
     const csv = `code;nom;pays\nIMPN${sfx}A;Fournisseur importé A;BE\nIMPN${sfx}B;Fournisseur importé B;MA\n`;
     const imported = async () => (await apiGet(agent, `/api/suppliers?q=IMPN${sfx}&pageSize=50`)).items.filter((s) => s.code.startsWith(`IMPN${sfx}`)).length;
-    await click(page, `${navButton("Produits")}`, "menu Produits");
+    await products();
     await click(page, subNav("Import CSV"), "Import CSV");
     await page.waitFor(h1Is("Import CSV"), { label: "écran Import CSV" });
-    await setSelect(page, "Type", "Fournisseurs");
+    await importKind("Fournisseurs");
     await uploadCsv("fournisseurs.csv", csv);
     await page.waitFor(hasText("2. Aperçu et correspondance des colonnes"), { label: "aperçu et correspondance" });
     await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler (à blanc)");
@@ -1913,11 +2538,11 @@ const scenarios = {
     shot("09_import-controle-a-blanc_light_1920x1080");
     await click(page, buttonByText("Appliquer (tout ou rien)"), "Appliquer (tout ou rien)");
     await until(async () => (await imported()) === 2, "API : 2 fournisseurs importés");
-    await page.waitFor(hasText("Appliqué"), { label: "lot appliqué" });
+    await page.waitFor(hasText("Lot appliqué"), { label: "lot appliqué" });
     await click(page, subNav("Catalogue"), "Catalogue");
     await click(page, subNav("Import CSV"), "Import CSV (nouveau dépôt)");
     await page.waitFor(h1Is("Import CSV"), { label: "Import CSV (nouveau dépôt)" });
-    await setSelect(page, "Type", "Fournisseurs");
+    await importKind("Fournisseurs");
     await uploadCsv("fournisseurs.csv", csv);
     await page.waitFor(`!!${buttonByText("Contrôler (à blanc)")}`, { label: "lot réimporté" });
     await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler le réimport");
@@ -1928,7 +2553,7 @@ const scenarios = {
     await click(page, subNav("Catalogue"), "Catalogue");
     await click(page, subNav("Import CSV"), "Import CSV (nouveau dépôt)");
     await page.waitFor(h1Is("Import CSV"), { label: "Import CSV (nouveau dépôt)" });
-    await setSelect(page, "Type", "Catalogue (modèles et variantes)");
+    await importKind("Catalogue (modèles et variantes)");
     await uploadCsv("catalogue.csv", `famille;marque;modele;variante;sku;politique\naccessories;Marque;Import ${sfx};Rouge;IMPN-${sfx}-1;stocked\naccessories;Marque;Import ${sfx};=CMD();IMPN-${sfx}-2;stocked\n`);
     await page.waitFor(`!!${buttonByText("Contrôler (à blanc)")}`, { label: "lot catalogue déposé" });
     await click(page, buttonByText("Contrôler (à blanc)"), "Contrôler le catalogue");
@@ -1959,20 +2584,21 @@ const scenarios = {
     await setTheme(page, "light");
 
     await signIn(page, seller);
-    await click(page, `${navButton("Produits")}`, "menu Produits (vendeur)");
+    await products();
     await page.waitFor(hasText(sku("MON")), { label: "catalogue (vendeur)" });
     check(!(await page.evaluate(`!!${buttonByText("Nouveau produit")}`)), "vendeur : aucun « Nouveau produit » (catalog.write absent)");
     await click(page, `[...document.querySelectorAll('tbody tr')].find(r => r.textContent.includes(${J(sku("MON"))}))`, "fiche de la monture (vendeur)");
     await page.waitFor(hasText("Prix de vente HT"), { label: "fiche (vendeur)" });
     const body = await text(page);
     check(!body.includes("Prix d'achat HT") && !body.includes("Coefficient effectif") && !body.includes("Marge HT") && !body.includes("41,25"), "vendeur : aucun coût affiché (prix d'achat, coefficient, marge)");
-    check(body.includes("103,13"), "vendeur : prix de vente affiché");
+    check(body.includes("103,13") && body.includes("Lecture seule"), "vendeur : prix de vente affiché, fiche en lecture seule");
     const raw = J(await apiGet(seller, `/api/catalog/variants/${monture}?storeId=${c.stores.be}`));
     check(!raw.includes("purchasePriceHt") && !raw.includes("41.25"), "API (vendeur) : aucune clé de coût servie");
     shot("16_vendeur-sans-couts_light_1920x1080");
     await click(page, `${navButton("Stock & inventaires")}`, "menu Stock (vendeur)");
-    await page.waitFor(hasText(sku("MON")), { label: "stock (vendeur)" });
-    check(!(await page.evaluate(`!!${rowButton(sku("MON"), "Entrée")}`)), "vendeur : aucune action d'entrée/sortie (stock.movements.write absent)");
+    await page.waitFor(`${h1Is("Stock")} && ${hasText(sku("MON"))}`, { label: "stock (vendeur)" });
+    check(!(await page.evaluate(`!!${rowAction(sku("MON"), "Entrée")}`)), "vendeur : aucune action d'entrée/sortie (stock.movements.write absent)");
+    check(!(await page.evaluate(`!!${buttonByText("Nouveau mouvement")}`)), "vendeur : aucun « Nouveau mouvement »");
   },
 };
 

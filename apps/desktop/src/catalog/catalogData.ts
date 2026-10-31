@@ -1,6 +1,7 @@
-// Données serveur des écrans Catalogue & stock (TanStack Query) et magasin actif ; séparé des composants (Fast Refresh).
+// Données serveur des écrans Catalogue & stock (TanStack Query), magasin actif et notification ; séparé des composants
+// (Fast Refresh).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext } from "react";
+import { createContext, type KeyboardEvent, useContext } from "react";
 import { type Authorized, getCatalog, previewCatalog, type Store, writeCatalog } from "../api/catalog.ts";
 import type { ApiError } from "../api/client.ts";
 import { unwrap } from "../api/queryClient.ts";
@@ -51,7 +52,27 @@ export const StoreContext = createContext<StoreContextValue>({ stores: [], store
 
 export const useActiveStore = () => useContext(StoreContext);
 
+export interface ToastValue {
+  show: (title: string, text?: string, tone?: "ok" | "err") => void;
+}
+
+export const ToastContext = createContext<ToastValue>({ show: () => undefined });
+
+export const useToast = () => useContext(ToastContext);
+
 export function errorMessage(error: ApiError | undefined): string {
   if (!error) return "";
   return (error.code && ERROR_MESSAGES[error.code]) ?? error.message;
+}
+
+/** Ligne de table ouvrant une fiche (souris, Entrée) : focalisable au clavier, anneau de focus visible. */
+export function rowLink(href: string, open: (href: string) => void) {
+  return {
+    "data-href": href,
+    tabIndex: 0,
+    onClick: () => open(href),
+    onKeyDown: (event: KeyboardEvent) => {
+      if (event.key === "Enter") open(href);
+    },
+  };
 }

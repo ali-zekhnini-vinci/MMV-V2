@@ -153,3 +153,19 @@ Concurrence (plan Q-05-401 à 410) sur PostgreSQL réel :
 | Q-05-406, Q-05-407, Q-05-410 | NOT_TESTED |
 | Q-05-408 | PASS — version périmée `409` (prix, ligne d'inventaire comptée deux fois) |
 | Q-05-409 | PASS en séquence (`inventory_open` sur périmètre recouvrant) ; ouvertures strictement simultanées NOT_TESTED |
+
+## Contrôles G05-DESIGN (31/10/2026)
+
+Rapport : [`LIVRAISON_05_DESIGN.md`](LIVRAISON_05_DESIGN.md) § 4 ; matrice visuelle : [`G05_DESIGN_MATRIX.md`](G05_DESIGN_MATRIX.md).
+
+| ID | Contrôle | Statut |
+|---|---|---|
+| Q-05-D01 | `npm run check`, `eslint .` (0 erreur, 1 avertissement préexistant), `vite build` | PASS |
+| Q-05-D02 | Vitest complet 315 / 315 (dont SKU généré, états du Lot 6, jetons de `Catalog.css`) | PASS |
+| Q-05-D03 | Tauri natif `catalogue-05` sur l'interface refondue : 96 contrôles (SKU généré, 409, prix serveur EUR / MAD, prix manuel, refus de stock négatif, réception, inventaire, import tout ou rien, vendeur sans coûts) | PASS |
+| Q-05-D04 | Tauri natif `design-05` : 284 contrôles, 146 captures (clair / sombre 1920×1080, 1366×768, 1024×700, zoom 125 %, états critiques) | PASS |
+| Q-05-D05 | Aucun défilement horizontal de page à 1366×768 et 1024×700 | PASS |
+| Q-05-D06 | Mouvement de stock au clavier seul, relu par l'API | PASS |
+| Q-05-D07 | Comparaison cadre par cadre (107) avec les rendus du HTML original | 55 MATCH, 30 ADAPTED_APPROVED, 10 ADAPTED_PROPOSED, 3 DEFERRED_PROPOSED, 9 NOT_TESTED |
+| Q-05-D08 | Acceptation visuelle | **OWNER_DESIGN_FINAL_REVIEW_REQUIRED** |
+| Q-05-D09 | Tests backend (`MMV.Api.Tests`, `MMV.PostgreSql.Tests`) | NOT_RERUN (aucun fichier backend, SQL ou contrat modifié) |

@@ -39,7 +39,7 @@ export const AVAILABILITY_LABELS: Record<AvailabilityCode, string> = {
   archived: "Archivé",
   available: "Disponible",
   on_order: "Sur commande",
-  incomplete: "Fiche incomplète — fournisseur principal manquant",
+  incomplete: "Fiche incomplète",
   in_stock: "En stock",
   low_stock: "Stock faible",
   out_of_stock: "Rupture",
@@ -155,4 +155,42 @@ export function fieldError(errors: Record<string, string[]> | undefined, field: 
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "—";
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(value));
+}
+
+export function formatTime(value: string): string {
+  return new Intl.DateTimeFormat("fr-FR", { timeStyle: "short" }).format(new Date(value));
+}
+
+/** Libellés courts des six familles (pastille .cat du Lot 6) ; le libellé complet vient du serveur. */
+export const FAMILY_SHORT_LABELS: Record<string, string> = {
+  optical_frames: "Monture",
+  sunglasses: "Solaire",
+  ophthalmic_lenses: "Verre",
+  contact_lenses_solutions: "Lentille / produit",
+  accessories: "Accessoire",
+  services: "Prestation",
+};
+
+/** Préfixe du SKU interne proposé par famille. */
+const SKU_PREFIXES: Record<string, string> = {
+  optical_frames: "MON",
+  sunglasses: "SOL",
+  ophthalmic_lenses: "VER",
+  contact_lenses_solutions: "LEN",
+  accessories: "ACC",
+  services: "PRE",
+};
+
+/** Alphabet sans caractères ambigus (0/O, 1/I/L) : 31 symboles, 6 tirages ⇒ ~8,9 × 10⁸ combinaisons par famille. */
+const SKU_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+/**
+ * SKU interne généré automatiquement par MMV (correctif Q05 demandé par le propriétaire) : préfixe de famille + 6 symboles
+ * tirés par le générateur cryptographique du poste. Aucune saisie exigée ; l'unicité reste garantie par le SERVEUR
+ * (contrainte `ux_product_variants_sku`) — un doublon improbable est refusé et un nouveau SKU est proposé.
+ */
+export function proposeSku(familyCode: string, random: (length: number) => ArrayLike<number> = (length) => crypto.getRandomValues(new Uint8Array(length))): string {
+  const bytes = Array.from(random(6));
+  const body = bytes.map((byte) => SKU_ALPHABET[byte % SKU_ALPHABET.length]).join("");
+  return `${SKU_PREFIXES[familyCode] ?? "ART"}-${body}`;
 }

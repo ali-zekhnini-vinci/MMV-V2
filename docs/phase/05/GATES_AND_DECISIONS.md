@@ -137,3 +137,26 @@ Points ouverts — mise à jour :
 Réserves maintenues (R-F-01 à R-F-08, [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) § 7) ; backlog ajouté : BL-05-11 (contrainte emplacement ↔ magasin), BL-05-12 (conservation des contenus CSV) — [`docs/PERIMETRE_ET_SEQUENCE.md`](../../PERIMETRE_ET_SEQUENCE.md).
 
 - 30/10/2026 (intégration finale) : précontrôles conformes ; sauvegardes `mmv_v2_dev` / `mmv_v2_test` hors dépôt (lisibles, restauration non éprouvée) ; 0007 appliquée dev puis test ; inventaire et contraintes rejoués (O-05-13) ; suites PostgreSQL complètes sur `mmv_v2_test` via MMV.Api réel ; Tauri natif ; correctifs O-05-11 et O-05-14 ; données fictives purgées (résidu 0) ; processus du propriétaire (MMV.Api 7267) jamais touchés ; `.env.development` intact. **STOP — `PHASE05_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`.**
+
+## Mise à jour des gates — 31/10/2026 (G05-DESIGN : NO-GO puis refonte fidèle au Lot 6)
+
+Mandat : [`prompts/MMV_V2_PROMPT_CLAUDE_PHASE05_REDESIGN_LOT6.md`](../../../prompts/MMV_V2_PROMPT_CLAUDE_PHASE05_REDESIGN_LOT6.md) — le propriétaire **refuse** le design livré le 30/10 (audit `MMV_V2_PHASE05_AUDIT_FIDELITE_LOT6.md`, comparaisons visuelles). Rapport : [`LIVRAISON_05_DESIGN.md`](LIVRAISON_05_DESIGN.md) ; matrice : [`G05_DESIGN_MATRIX.md`](G05_DESIGN_MATRIX.md). Les tableaux précédents sont conservés (historique).
+
+| Gate | État au 31/10/2026 |
+|---|---|
+| G05-DESIGN | **`PHASE05_UX_LOT6_ALIGNED — OWNER_DESIGN_FINAL_REVIEW_REQUIRED`** — 107 cadres : 55 MATCH, 30 ADAPTED_APPROVED, 10 ADAPTED_PROPOSED, 3 DEFERRED_PROPOSED, 9 NOT_TESTED ; 146 captures natives appariées aux rendus du HTML original ; **acceptation visuelle du propriétaire requise** |
+| G05-SQL | inchangé (PASSED) — aucun SQL, aucune migration, aucune empreinte modifiés (manifeste 12 / 12 OK le 31/10) |
+| G05-A à 05-D | fonctionnel revérifié sous Tauri natif sur l'interface refondue (96 contrôles) ; tests backend NOT_RERUN (backend inchangé) |
+| G05-FISCAL, G05-LEGAL | **OPEN** (inchangés) |
+| G05-FINAL | en attente de l'acceptation G05-DESIGN puis de l'audit final ; aucun push / PR / merge |
+
+Points ouverts — mise à jour :
+
+| ID | Point | État / proposition | Décideur |
+|---|---|---|---|
+| O-05-17 | Logo du shell sur fond blanc en thème sombre | **OPEN** — actif approuvé du Shell-Handoff (Phase 02) ; le Lot 6 emploie `logo-dark.png` ; shell commun non modifié sans accord | propriétaire |
+| O-05-20 | SKU interne : le mandat G05-DESIGN exige un SKU **généré** (correctif Q05) ; QR-08 avait retenu « saisi » | **appliqué côté poste** : proposition automatique (préfixe de famille + 6 symboles aléatoires), personnalisation facultative ; unicité inchangée côté serveur ; API et schéma inchangés | propriétaire (confirmation) |
+| O-05-21 | Dix adaptations visuelles non prescrites (`ADAPTED_PROPOSED`) | à accepter ou à corriger ([`G05_DESIGN_MATRIX.md`](G05_DESIGN_MATRIX.md) § 6) | propriétaire |
+| O-05-22 | Export CSV des cadres 14, 54, 102 non implémenté (BL-05-09 non ratifié) | confirmer le report ou demander l'export | propriétaire |
+
+- 31/10/2026 (G05-DESIGN) : mandat, audit et ZIP de comparaison lus ; HTML Lot 6 original rendu (107 cadres) ; écrans Phase 05 recomposés (React / CSS seulement) ; banc natif (API copiée sur 7367, `mmv_v2_test`, données fictives, résidu 0) ; captures et planches ; suites frontend complètes PASS ; processus du propriétaire (MMV.Api 7267, `mmv-desktop`) jamais touchés ; `.env.development` intact. **STOP — `PHASE05_UX_LOT6_ALIGNED — OWNER_DESIGN_FINAL_REVIEW_REQUIRED`.**

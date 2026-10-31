@@ -2,6 +2,8 @@
 
 Source : `MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html` (DRAFT, empreinte `6ca2cec0…bc35e7`, 175 994 octets), catalogue `MMV_V2_Registre_134_Groupes.csv` (B-098 à B-134, **37 groupes**) et `MMV_V2_Registre_324_Etats.csv` (`MMV-L06-*`, **107 états** ; la maquette compte 108 `data-mount`, le 108ᵉ étant les notes de conception, hors inventaire).
 
+> **Mise à jour 31/10/2026.** La conformité **visuelle** cadre par cadre (107 cadres, captures natives appariées) est suivie dans [`G05_DESIGN_MATRIX.md`](G05_DESIGN_MATRIX.md) ; la présente matrice reste celle des fonctionnalités (historique).
+
 > **Mise à jour 30/10/2026.** D-05-01 est `APPROVED` : le Lot 6 est une référence visuelle et ergonomique seulement ; copie de travail et index dans `references/phase05/` (`INDEX_LOT6.md`, `SHA256SUMS.txt`). Les §§ 1 à 3 sont l'état du 29/10/2026, conservé ; les routes et permissions qu'ils citent sont remplacées par [`API_PROPOSED.md`](API_PROPOSED.md) révisé. Correspondance avec les futurs modules et dispositions révisées : **§ 4** ; nouveaux états sans planche : **§ 5**.
 
 Dispositions : **ADOPT** (repris tel quel côté interface) · **ADAPT** (repris avec une règle V2 différente) · **REPLACE** (la planche illustre une limite de l'ancien logiciel ; remplacée par un état V2) · **DEFER** (hors Phase 05). Routes : [`API_PROPOSED.md`](API_PROPOSED.md). Permissions : D-05-11. Toutes les dispositions sont `PROPOSED` (D-05-01).

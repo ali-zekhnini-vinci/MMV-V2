@@ -1,0 +1,29 @@
+﻿== npm run check ==
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+check exit 0
+
+== eslint . ==
+C:\Users\Ali Zekhnini\Documents\GitHub\MMV V2\apps\desktop\src\clients\ClientsTable.tsx:153:17
+  151 |   // Avertissement lint attendu (react-hooks/incompatible-library) : useReactTable renvoie des fonctions
+  152 |   // non mÃ©moÃ¯sables ; le React Compiler ignore alors ce composant, qui reste correct (rendu Ã  chaque Ã©tat).
+> 153 |   const table = useReactTable({
+      |                 ^^^^^^^^^^^^^ TanStack Table's `useReactTable()` API returns functions that cannot be memoized safely
+  154 |     data: rows,
+  155 |     columns,
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+âœ– 1 problem (0 errors, 1 warning)
+
+lint exit 0
+
+== vitest run ==
+ Test Files  28 passed (28)
+      Tests  315 passed (315)
+   Duration  60.89s (tests 75%, environment 10%, import 9%, transform 5%)
+vitest exit 0
+
+== vite build ==
+
+[32mâœ“ built in 954ms[39m
+build exit 0

@@ -67,3 +67,13 @@ Versionnés : `README.md`, `INDEX_LOT6.md`, `SHA256SUMS.txt`, `.gitignore`, `lot
 | `docs/phase/04/LIVRAISON_04C.md`, `evidence/P04C_harness_c04http.cs.txt`, `apps/desktop/e2e/run-native.mjs` | procédés de banc reconduits (API copiée hors dépôt, Tauri renommé, CDP) |
 
 Produits (nouveaux, versionnés) : [`LIVRAISON_05_FINAL.md`](LIVRAISON_05_FINAL.md) ; `sql/0007_CatalogStockModule.schema-inventory.applied.txt` (relu sur `mmv_v2_test` après application, SHA-256 `5bf96490ef341638ae2072e3a4ffaeff788b9b9970134f6ac4972dde153c3d63`, **hors manifeste 0007**, O-05-13) ; `evidence/P05F_*` (précontrôles, application, `verify.sql`, empreintes de contenu, PostgreSQL, .NET, frontend, natif, journal de l'API de banc, outil de banc, 16 captures).
+
+## Sources de la refonte G05-DESIGN (31/10/2026)
+
+| Source | Usage | SHA-256 |
+|---|---|---|
+| `prompts/MMV_V2_PROMPT_CLAUDE_PHASE05_REDESIGN_LOT6.md` | mandat (copie versionnée, identique à celle du ZIP de comparaison) | `c5b7cd6310a057d5b2550426bd292b60fd16d56d56bdffa7eab030f83c431360` |
+| `MMV_V2_LOT6_COMPARAISON_VISUELLE.zip` (racine, **non suivi**) | audit `MMV_V2_PHASE05_AUDIT_FIDELITE_LOT6.md` (`359e5219e84deed7a1dd5bedc2265b8e41e94483a45f29917e0ef0db5bbe1dfe`), rendus de référence et comparaisons du propriétaire | `5b36c347dd31922e9242396584778907eba91f13b8a2b0198546e5d872e852f8` |
+| `MMV initialisation projet V1 (7).zip` (racine, **non suivi**) | `MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html` (`6ca2cec033b8aa35b4ec4188c2bc95ab3cd5aaaa8c469e82a4a7e04b8bbc35e7`, **identique** au fichier déjà enregistré), `_ds/`, `support.js` | `d214daa703cd8f8c4f2cdf6c44750c5a746f93387da61a4f292e624a271b9c52` |
+
+Rendus des 107 cadres (Edge sans interface, [`evidence/design/G05D_render-lot6.mjs.txt`](evidence/design/G05D_render-lot6.mjs.txt)) et planches côte à côte : **non versionnés** (O-05-10 : identifiants de l'ancien logiciel et coordonnées de fournisseurs de la maquette) ; archive d'audit `MMV-V2-phase05-design-lot6.zip`. Versionnés : captures natives, journaux et correspondances dans [`evidence/design/`](evidence/design/).

@@ -9,6 +9,7 @@ const KEYS = {
   Enter: { key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" },
   Escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
   Space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
+  ArrowDown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
 };
 
 export async function connect(port, urlPrefix = "http://localhost:1420") {
@@ -24,8 +25,13 @@ export async function connect(port, urlPrefix = "http://localhost:1420") {
 
   let nextId = 0;
   const pending = new Map();
+  // G05-DESIGN : abonnements aux événements CDP (ex. Fetch.requestPaused pour simuler une panne réseau du poste).
+  const listeners = new Map();
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
+    if (message.method && listeners.has(message.method)) {
+      for (const handler of listeners.get(message.method)) handler(message.params);
+    }
     if (message.id !== undefined && pending.has(message.id)) {
       const { resolve, reject } = pending.get(message.id);
       pending.delete(message.id);
@@ -53,6 +59,7 @@ export async function connect(port, urlPrefix = "http://localhost:1420") {
     send,
     evaluate,
     sleep,
+    on: (method, handler) => listeners.set(method, [...(listeners.get(method) ?? []), handler]),
     async press(name, { shift = false } = {}) {
       const key = KEYS[name];
       const modifiers = shift ? 8 : 0;

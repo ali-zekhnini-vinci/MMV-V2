@@ -1,64 +1,103 @@
-// Fournisseurs (Lot 6 B-125 à B-130, adaptés : statut actif / archivé au lieu de la suppression, identifiants légaux
-// facultatifs selon le pays — contrôle de format seulement —, contact minimal).
-import { Archive, ArrowLeft, Plus, RotateCcw, Save } from "lucide-react";
-import { useState } from "react";
+// Fournisseurs — Lot 6 groupes 28–33 (liste clair/sombre, recherche, filtres, nouveau, erreurs, modification, non
+// enregistré, détail, produits associés, sans produit, suppression / refus / désactivation, états transverses) sur les
+// règles V2 : statut actif / ARCHIVÉ au lieu de la suppression physique (la maquette « supprimer » devient « archiver »),
+// plusieurs fournisseurs possibles par variante, fiche incomplète autorisée (code, nom, pays seuls exigés), identifiants
+// légaux facultatifs selon le pays (contrôle de format seulement), contact minimal.
+import { Archive, Box, Building2, Flag, Info, PackageOpen, Pencil, Plus, RotateCcw, Save, SearchX, Star, Truck, X } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { type Page, query, type SupplierDetail, type SupplierRow } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
+import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { useCatalogAccess } from "./catalogAccess.ts";
 import { POLICY_LABELS } from "./catalogFormat.ts";
 import {
-  Badge, Dialog, ErrorBanner, ErrorState, Field, Loading, PageHeader, Pager, Panel,
+  Badge, Banner, Card, EmptyState, ErrorBanner, ErrorState, Field, FilterChip, FormBar, FormSection, KeyValues, Loading, Modal, PageHeader, RowChevron, SearchBox,
+  TableFoot, TablePanel, Toolbar, ToolbarSpacer,
 } from "./CatalogUi.tsx";
-import { useCatalogQuery, useCatalogWrite } from "./catalogData.ts";
+import { errorMessage, rowLink, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
 
 const LEGAL_KEYS: Record<string, { key: string; label: string }[]> = {
   MA: [{ key: "ice", label: "ICE (15 chiffres)" }, { key: "if", label: "Identifiant fiscal" }, { key: "rc", label: "Registre de commerce" }],
   BE: [{ key: "enterpriseNumber", label: "Numéro d'entreprise (BCE)" }],
 };
 
+const COUNTRIES: Record<string, string> = { BE: "Belgique", MA: "Maroc" };
+
+// ---------- liste (supListLight … supCsv) ----------
+
 export function SuppliersListView() {
   const navigate = useNavigate();
   const access = useCatalogAccess();
   const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
   const [status, setStatus] = useState("active");
+  const [country, setCountry] = useState("");
   const [page, setPage] = useState(1);
-  const list = useCatalogQuery<Page<SupplierRow>>(`/api/suppliers${query({ q: search, status, page, pageSize: 50 })}`);
+  const list = useCatalogQuery<Page<SupplierRow>>(`/api/suppliers${query({ q, status, countryCode: country, page, pageSize: 50 })}`);
+  const filtered = q !== "" || status !== "active" || country !== "";
+  const create = access.suppliersWrite && <Button variant="primary" onClick={() => navigate("/produits/fournisseurs/nouveau")}><Plus size={18} aria-hidden="true" />Nouveau fournisseur</Button>;
   return (
-    <section>
-      <PageHeader title="Fournisseurs" actions={access.suppliersWrite && (
-        <Button variant="primary" onClick={() => navigate("/produits/fournisseurs/nouveau")}><Plus size={16} aria-hidden="true" />Nouveau fournisseur</Button>
-      )} />
-      <form className="cat-toolbar" role="search" onSubmit={(e) => { e.preventDefault(); setSearch(q.trim()); setPage(1); }}>
-        <input className="cat-input cat-toolbar__search" placeholder="Nom, code, ville…" aria-label="Rechercher un fournisseur" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select className="cat-input" aria-label="Statut" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-          <option value="active">Actifs</option><option value="archived">Archivés</option><option value="all">Tous</option>
-        </select>
-        <Button type="submit">Rechercher</Button>
-      </form>
-      {list.isPending ? <Loading label="Chargement des fournisseurs…" /> : list.isError ? <ErrorState error={list.error} onRetry={() => void list.refetch()} /> : list.data.items.length === 0 ? (
-        <p className="cat-muted">Aucun fournisseur pour ces critères.</p>
+    <section className="cat-screen" aria-labelledby="suppliers-title">
+      <PageHeader title="Fournisseurs" subtitle="Répertoire des fournisseurs — plusieurs fournisseurs possibles par variante, archivage sans suppression"
+        actions={<>
+          {access.catalogImport && <Button onClick={() => navigate("/produits/import")}><Box size={16} aria-hidden="true" />Importer un CSV</Button>}
+          {create}
+        </>} />
+      <Toolbar>
+        <SearchBox value={q} onSearch={(value) => { setQ(value); setPage(1); }} placeholder="Rechercher par nom, code ou ville…" label="Rechercher un fournisseur" />
+        <FilterChip icon={Flag} label="Pays" value={country} onChange={(value) => { setCountry(value); setPage(1); }}
+          options={[{ value: "", label: "Tous les pays" }, ...Object.entries(COUNTRIES).map(([value, label]) => ({ value, label }))]} />
+        <FilterChip icon={Archive} label="Statut" value={status} defaultValue="active" onChange={(value) => { setStatus(value); setPage(1); }}
+          options={[{ value: "active", label: "Actifs" }, { value: "archived", label: "Archivés" }, { value: "all", label: "Tous" }]} />
+        <ToolbarSpacer />
+      </Toolbar>
+      {list.isPending ? <Loading label="Chargement des fournisseurs…" /> : list.isError ? (
+        <ErrorState error={list.error} title="Impossible de charger les fournisseurs" onRetry={() => void list.refetch()} />
+      ) : list.data.items.length === 0 ? (
+        filtered ? (
+          <EmptyState tone="info" icon={SearchX} title="Aucun résultat"
+            action={<Button onClick={() => { setQ(""); setStatus("active"); setCountry(""); setPage(1); }}><RotateCcw size={16} aria-hidden="true" />Réinitialiser la recherche</Button>}>
+            {q ? `Aucun fournisseur ne correspond à « ${q} ». Vérifiez l'orthographe ou réinitialisez la recherche.` : "Aucun fournisseur pour ces filtres."}
+          </EmptyState>
+        ) : (
+          <EmptyState icon={Truck} title="Aucun fournisseur" action={create}>Ajoutez votre premier fournisseur pour pouvoir le rattacher aux variantes.</EmptyState>
+        )
       ) : (
-        <>
-          <div className="cat-table-wrap">
-            <table className="cat-table">
-              <thead><tr><th scope="col">Code</th><th scope="col">Nom</th><th scope="col">Pays</th><th scope="col">Ville</th><th scope="col">Contact</th><th scope="col" className="cat-num">Variantes</th><th scope="col" className="cat-num">Principal de</th><th scope="col">Statut</th></tr></thead>
-              <tbody>{list.data.items.map((s) => (
-                <tr key={s.id} className="cat-row" tabIndex={0} onClick={() => navigate(`/produits/fournisseurs/${s.id}`)} onKeyDown={(e) => e.key === "Enter" && navigate(`/produits/fournisseurs/${s.id}`)}>
-                  <td className="cat-mono">{s.code}</td><td className="cat-strong">{s.name}</td><td>{s.countryCode}</td><td>{s.city ?? "—"}</td><td>{s.contactName ?? "—"}</td>
-                  <td className="cat-num">{s.variantCount}</td><td className="cat-num">{s.primaryCount}</td>
-                  <td>{s.status === "active" ? <Badge tone="success">Actif</Badge> : <Badge tone="neutral">Archivé</Badge>}</td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-          <Pager page={list.data.page} pageSize={list.data.pageSize} total={list.data.totalCount} onPage={setPage} />
-        </>
+        <TablePanel fill foot={
+          <TableFoot icon={Truck} page={list.data.page} pageSize={list.data.pageSize} total={list.data.totalCount} onPage={setPage}>
+            {list.data.totalCount} fournisseur{list.data.totalCount > 1 ? "s" : ""}
+          </TableFoot>
+        }>
+          <table className="clients-table cat-table">
+            <thead><tr><th scope="col">Nom</th><th scope="col">Code</th><th scope="col" className="cat-hide-sm">Pays</th><th scope="col" className="cat-hide-md">Contact</th><th scope="col" className="cat-num">Variantes</th><th scope="col" className="cat-num cat-hide-sm">Principal de</th><th scope="col">Statut</th><th scope="col"><span className="sr-only">Ouvrir</span></th></tr></thead>
+            <tbody>{list.data.items.map((s) => (
+              <tr key={s.id} className={s.status === "archived" ? "cat-row is-archived" : "cat-row"} {...rowLink(`/produits/fournisseurs/${s.id}`, (href) => navigate(href))}>
+                <td>
+                  <div className="clients-cell">
+                    <span className="cat-thumb cat-thumb--round"><Building2 size={18} aria-hidden="true" /></span>
+                    <div>
+                      <div className="clients-cell__name">{s.name}</div>
+                      <div className="cat-sub">{[s.city, COUNTRIES[s.countryCode] ?? s.countryCode].filter(Boolean).join(" · ")}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span className="cat-ref">{s.code}</span></td>
+                <td className="cat-secondary cat-hide-sm">{s.countryCode}</td>
+                <td className="cat-secondary cat-hide-md">{s.contactName ?? "—"}</td>
+                <td className="cat-num">{s.variantCount > 0 ? <Badge tone="accent" icon={Box}>{s.variantCount}</Badge> : <span className="clients-muted">0</span>}</td>
+                <td className="cat-num tnum cat-hide-sm">{s.primaryCount}</td>
+                <td>{s.status === "active" ? <Badge tone="ok">Actif</Badge> : <Badge tone="arch" icon={Archive}>Archivé</Badge>}</td>
+                <td><RowChevron /></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </TablePanel>
       )}
     </section>
   );
 }
+
+// ---------- formulaire (supNew, supErrors, supEdit, supUnsaved) ----------
 
 interface SupplierDraft {
   code: string; name: string; countryCode: string; contactName: string; email: string; phone: string; addressLine: string; postalCode: string; city: string;
@@ -72,124 +111,209 @@ const draftOf = (s: SupplierDetail): SupplierDraft => ({
   postalCode: s.postalCode ?? "", city: s.city ?? "", legalIdentifiers: s.legalIdentifiers, notes: s.notes ?? "",
 });
 
-function SupplierForm({ draft, onChange, errors }: { draft: SupplierDraft; onChange: (d: SupplierDraft) => void; errors?: Record<string, string[]> }) {
-  const set = (patch: Partial<SupplierDraft>) => onChange({ ...draft, ...patch });
-  return (
-    <>
-      <div className="cat-grid">
-        <Field label="Code interne" name="code" value={draft.code} onChange={(code) => set({ code })} required errors={errors} />
-        <Field label="Nom" name="name" value={draft.name} onChange={(name) => set({ name })} required errors={errors} />
-        <Field label="Pays (ISO, ex. BE, MA)" name="countryCode" value={draft.countryCode} onChange={(c) => set({ countryCode: c.toUpperCase(), legalIdentifiers: {} })} required errors={errors} />
-        <Field label="Contact" name="contactName" value={draft.contactName} onChange={(contactName) => set({ contactName })} errors={errors} hint="Un seul contact, données minimales." />
-        <Field label="E-mail" name="email" value={draft.email} onChange={(email) => set({ email })} type="email" errors={errors} />
-        <Field label="Téléphone" name="phone" value={draft.phone} onChange={(phone) => set({ phone })} errors={errors} />
-        <Field label="Adresse" name="addressLine" value={draft.addressLine} onChange={(addressLine) => set({ addressLine })} errors={errors} />
-        <Field label="Code postal" name="postalCode" value={draft.postalCode} onChange={(postalCode) => set({ postalCode })} errors={errors} />
-        <Field label="Ville" name="city" value={draft.city} onChange={(city) => set({ city })} errors={errors} />
-        {(LEGAL_KEYS[draft.countryCode] ?? []).map((k) => (
-          <Field key={k.key} label={k.label} name={`legalIdentifiers.${k.key}`} value={draft.legalIdentifiers[k.key] ?? ""} errors={errors}
-            onChange={(v) => set({ legalIdentifiers: { ...draft.legalIdentifiers, [k.key]: v } })} hint="Contrôle de format seulement." />
-        ))}
-      </div>
-      <Field label="Notes (aucune donnée sensible)" name="notes" value={draft.notes} onChange={(notes) => set({ notes })} errors={errors} multiline />
-    </>
-  );
-}
-
 const body = (d: SupplierDraft) => ({
   ...d,
   ...Object.fromEntries(Object.entries(d).filter(([, v]) => typeof v === "string").map(([k, v]) => [k, (v as string).trim() === "" ? null : v])),
   legalIdentifiers: d.legalIdentifiers,
 });
 
-export function SupplierCreateView() {
-  const navigate = useNavigate();
-  const write = useCatalogWrite<{ id: string }>();
-  const [draft, setDraft] = useState<SupplierDraft>(EMPTY);
+function SupplierFormSections({ draft, onChange, errors }: { draft: SupplierDraft; onChange: (d: SupplierDraft) => void; errors?: Record<string, string[]> }) {
+  const set = (patch: Partial<SupplierDraft>) => onChange({ ...draft, ...patch });
+  const legal = LEGAL_KEYS[draft.countryCode] ?? [];
   return (
-    <section>
-      <PageHeader title="Nouveau fournisseur" actions={<Button variant="tertiary" onClick={() => navigate("/produits/fournisseurs")}><ArrowLeft size={16} aria-hidden="true" />Fournisseurs</Button>} />
-      <ErrorBanner error={write.error} />
-      <Panel><SupplierForm draft={draft} onChange={setDraft} errors={write.error?.error.fieldErrors} /></Panel>
-      <div className="cat-actions">
-        <Button variant="primary" disabled={write.isPending} onClick={() => write.mutate({ method: "POST", path: "/api/suppliers", body: body(draft) }, { onSuccess: (r) => navigate(`/produits/fournisseurs/${r.id}`) })}>
-          <Save size={16} aria-hidden="true" />Enregistrer
-        </Button>
+    <>
+      <FormSection title="Informations du fournisseur" icon={Truck}>
+        <Field label="Nom" name="name" value={draft.name} onChange={(name) => set({ name })} required errors={errors} span2 placeholder="Ex. Fournisseur fictif Belgique" />
+        <Field label="Code interne" name="code" value={draft.code} onChange={(code) => set({ code })} required errors={errors} placeholder="Ex. FRN-BE-01" hint="Unique ; utilisé par l'import CSV." />
+        <Field label="Pays (ISO)" name="countryCode" value={draft.countryCode} onChange={(c) => set({ countryCode: c.toUpperCase(), legalIdentifiers: {} })} required errors={errors} hint="BE ou MA pour les pilotes." />
+        <Field label="Contact" name="contactName" value={draft.contactName} onChange={(contactName) => set({ contactName })} errors={errors} hint="Un seul contact, données minimales." />
+        <Field label="Téléphone" name="phone" value={draft.phone} onChange={(phone) => set({ phone })} errors={errors} />
+        <Field label="E-mail de contact" name="email" value={draft.email} onChange={(email) => set({ email })} type="email" errors={errors} span2 />
+        <Field label="Adresse" name="addressLine" value={draft.addressLine} onChange={(addressLine) => set({ addressLine })} errors={errors} span2 placeholder="Adresse postale (facultative)" />
+        <Field label="Code postal" name="postalCode" value={draft.postalCode} onChange={(postalCode) => set({ postalCode })} errors={errors} />
+        <Field label="Ville" name="city" value={draft.city} onChange={(city) => set({ city })} errors={errors} />
+      </FormSection>
+      {legal.length > 0 && (
+        <FormSection title={`Identifiants légaux — ${COUNTRIES[draft.countryCode] ?? draft.countryCode}`} icon={Flag}>
+          {legal.map((k) => (
+            <Field key={k.key} label={k.label} name={`legalIdentifiers.${k.key}`} value={draft.legalIdentifiers[k.key] ?? ""} errors={errors}
+              onChange={(v) => set({ legalIdentifiers: { ...draft.legalIdentifiers, [k.key]: v } })} hint="Facultatif ; contrôle de format seulement." />
+          ))}
+        </FormSection>
+      )}
+      <FormSection title="Notes" icon={Info}>
+        <Field label="Notes internes (aucune donnée sensible)" name="notes" value={draft.notes} onChange={(notes) => set({ notes })} errors={errors} multiline span2 />
+      </FormSection>
+    </>
+  );
+}
+
+function SupplierFormScreen({ title, subtitle, initial, version, path, method, back, conflictReload }: {
+  title: string; subtitle: string; initial: SupplierDraft; version?: number; path: string; method: "POST" | "PUT"; back: string; conflictReload?: () => void;
+}) {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const write = useCatalogWrite<{ id: string }>();
+  const [draft, setDraft] = useState(initial);
+  const [leave, setLeave] = useState<(() => void) | null>(null);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) && !write.isSuccess;
+  const errors = write.error?.error.fieldErrors;
+  useLeaveGuard((proceed) => { if (!dirty) return false; setLeave(() => proceed); return true; });
+  const close = () => (dirty ? setLeave(() => () => navigate(back)) : navigate(back));
+  const save = () => write.mutate({ method, path, body: { ...(version !== undefined ? { version } : {}), ...body(draft) } },
+    { onSuccess: (r) => { toast.show(method === "POST" ? "Fournisseur créé" : "Modifications enregistrées", draft.name); navigate(method === "POST" ? `/produits/fournisseurs/${r.id}` : back); } });
+  return (
+    <section className="cat-screen cat-form" aria-labelledby="supplier-form">
+      <PageHeader title={title} subtitle={subtitle} actions={<Button variant="ghost" onClick={close}><X size={18} aria-hidden="true" />Fermer</Button>} />
+      <div className="cat-form__body cat-form__body--narrow">
+        {dirty && !write.error && (
+          <Banner tone="warn" icon={Info} title="Modifications non enregistrées">Enregistrez pour conserver vos changements avant de quitter la fiche.</Banner>
+        )}
+        {write.error && (write.error.error.code === "version_conflict" ? (
+          <Banner tone="warn" icon={Info} title="Fournisseur modifié sur un autre poste" role="alert"
+            action={conflictReload && <Button size="sm" className="cat-btn-warn" onClick={conflictReload}><RotateCcw size={16} aria-hidden="true" />Recharger</Button>}>
+            Rechargez pour repartir de la version enregistrée ; vos saisies restent dans le formulaire.
+          </Banner>
+        ) : (
+          <Banner tone="err" icon={Info} title="Le formulaire contient des erreurs" role="alert">
+            {errors ? "Corrigez les champs signalés ci-dessous. Seuls le nom, le code et le pays sont obligatoires." : errorMessage(write.error.error)}
+          </Banner>
+        ))}
+        <SupplierFormSections draft={draft} onChange={setDraft} errors={errors} />
       </div>
+      <FormBar dirty={dirty} hint="Les champs marqués * sont obligatoires · fiche incomplète autorisée" narrow>
+        <Button onClick={close}>Annuler</Button>
+        <Button variant="primary" disabled={write.isPending} onClick={save}>
+          <Save size={16} aria-hidden="true" />{method === "POST" ? "Créer le fournisseur" : "Enregistrer les modifications"}
+        </Button>
+      </FormBar>
+      <Modal open={leave !== null} onClose={() => setLeave(null)} tone="warn" icon={Info} title="Modifications non enregistrées"
+        description="Vous avez modifié ce fournisseur. Si vous fermez maintenant, vos changements seront perdus."
+        actions={<>
+          <Button variant="ghost" onClick={() => { const go = leave; setLeave(null); go?.(); }}>Fermer sans enregistrer</Button>
+          <Button onClick={() => setLeave(null)}>Continuer l&apos;édition</Button>
+          <Button variant="primary" onClick={() => { setLeave(null); save(); }}><Save size={16} aria-hidden="true" />Enregistrer</Button>
+        </>} />
     </section>
   );
 }
 
+export function SupplierCreateView() {
+  return <SupplierFormScreen title="Nouveau fournisseur" subtitle="Ajouter un fournisseur au répertoire" initial={EMPTY} path="/api/suppliers" method="POST" back="/produits/fournisseurs" />;
+}
+
+export function SupplierEditView() {
+  const { id = "" } = useParams();
+  const detail = useCatalogQuery<SupplierDetail>(`/api/suppliers/${id}`);
+  if (detail.isPending) return <Loading label="Chargement du fournisseur…" />;
+  if (detail.isError) return <ErrorState error={detail.error} title="Impossible de charger le fournisseur" onRetry={() => void detail.refetch()} />;
+  const s = detail.data;
+  return <SupplierFormScreen key={s.version} title={`Modifier — ${s.name}`} subtitle={s.code} initial={draftOf(s)} version={s.version} path={`/api/suppliers/${s.id}`} method="PUT"
+    back={`/produits/fournisseurs/${s.id}`} conflictReload={() => void detail.refetch()} />;
+}
+
+// ---------- détail (supDetailLight, supDetailDark, supProducts, supNoProduct, supDelete, supDeleteRefused, supNoDeactivate) ----------
+
 export function SupplierDetailView() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const access = useCatalogAccess();
   const detail = useCatalogQuery<SupplierDetail>(`/api/suppliers/${id}`);
   const write = useCatalogWrite();
-  const [editing, setEditing] = useState<SupplierDraft | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [accept, setAccept] = useState(false);
+  const [reason, setReason] = useState("");
   if (detail.isPending) return <Loading label="Chargement du fournisseur…" />;
-  if (detail.isError) return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
+  if (detail.isError) return <ErrorState error={detail.error} title="Impossible de charger le fournisseur" onRetry={() => void detail.refetch()} />;
   const s = detail.data;
   const pending = write.error?.error.code === "incomplete_variants_unconfirmed";
+  const archived = s.status === "archived";
+  const variants = s.variants ?? [];
   return (
-    <section>
-      <PageHeader title={s.name} subtitle={<>{s.code} · {s.countryCode} · {s.status === "active" ? <Badge tone="success">Actif</Badge> : <Badge tone="neutral">Archivé</Badge>}</>}
-        actions={<>
-          <Button variant="tertiary" onClick={() => navigate("/produits/fournisseurs")}><ArrowLeft size={16} aria-hidden="true" />Fournisseurs</Button>
-          {access.suppliersWrite && s.status === "active" && <Button onClick={() => setEditing(draftOf(s))}>Modifier</Button>}
-          {access.suppliersWrite && s.status === "active" && <Button variant="danger" onClick={() => { setAccept(false); setArchiving(true); }}><Archive size={16} aria-hidden="true" />Archiver</Button>}
-          {access.suppliersWrite && s.status === "archived" && (
-            <Button onClick={() => write.mutate({ method: "POST", path: `/api/suppliers/${s.id}/reactivate`, body: { version: s.version } })}><RotateCcw size={16} aria-hidden="true" />Réactiver</Button>
-          )}
-        </>} />
-      <ErrorBanner error={write.error} />
-      <Panel title="Fiche">
-        <dl className="cat-facts">
-          <div><dt>Contact</dt><dd>{s.contactName ?? "—"}</dd></div>
-          <div><dt>E-mail</dt><dd>{s.email ?? "—"}</dd></div>
-          <div><dt>Téléphone</dt><dd>{s.phone ?? "—"}</dd></div>
-          <div><dt>Adresse</dt><dd>{[s.addressLine, s.postalCode, s.city].filter(Boolean).join(", ") || "—"}</dd></div>
-          {Object.entries(s.legalIdentifiers).map(([k, v]) => <div key={k}><dt>{k.toUpperCase()}</dt><dd className="cat-mono">{v}</dd></div>)}
-          {s.notes && <div><dt>Notes</dt><dd>{s.notes}</dd></div>}
-          {s.archiveReason && <div><dt>Motif d&apos;archivage</dt><dd>{s.archiveReason}</dd></div>}
-        </dl>
-      </Panel>
-      {s.variants && (
-        <Panel title={`Produits associés (${s.variants.length})`}>
-          {s.variants.length === 0 ? <p className="cat-muted">Aucun produit rattaché.</p> : (
-            <table className="cat-table">
-              <thead><tr><th scope="col">SKU</th><th scope="col">Produit</th><th scope="col">Politique</th><th scope="col">Référence fournisseur</th><th scope="col">Rôle</th></tr></thead>
-              <tbody>{s.variants.map((v) => (
-                <tr key={v.variantId} className="cat-row" tabIndex={0} onClick={() => navigate(`/produits/modele/${v.modelId}?variante=${v.variantId}`)}>
-                  <td className="cat-mono">{v.sku}</td><td>{v.modelName} · {v.label}</td><td>{POLICY_LABELS[v.stockPolicy]}</td><td>{v.supplierReference ?? "—"}</td>
-                  <td>{v.isPrimary ? <Badge tone="info">Principal</Badge> : "Secondaire"}</td>
+    <section className="cat-screen" aria-labelledby="supplier-title">
+      <PageHeader
+        back={{ label: "Fournisseurs", onClick: () => navigate("/produits/fournisseurs") }}
+        title={s.name}
+        titleExtra={archived ? <Badge tone="arch" icon={Archive}>Archivé</Badge> : <Badge tone="ok">Actif</Badge>}
+        subtitle={`${s.code} · ${COUNTRIES[s.countryCode] ?? s.countryCode}`}
+        actions={access.suppliersWrite && (archived ? (
+          <Button disabled={write.isPending} onClick={() => write.mutate({ method: "POST", path: `/api/suppliers/${s.id}/reactivate`, body: { version: s.version } }, { onSuccess: () => toast.show("Fournisseur réactivé", s.name) })}>
+            <RotateCcw size={16} aria-hidden="true" />Réactiver
+          </Button>
+        ) : (
+          <>
+            <Button onClick={() => navigate(`/produits/fournisseurs/${s.id}/modifier`)}><Pencil size={16} aria-hidden="true" />Modifier</Button>
+            <Button variant="danger" onClick={() => { write.reset(); setAccept(false); setReason(""); setArchiving(true); }}><Archive size={16} aria-hidden="true" />Archiver</Button>
+          </>
+        ))}
+      />
+      {!archiving && <ErrorBanner error={write.error} onReload={() => void detail.refetch()} />}
+      {archived && (
+        <Banner tone="neutral" icon={Archive} title="Fournisseur archivé">
+          Il ne peut plus devenir principal ; sa fiche et ses rattachements restent consultables (aucune suppression).{s.archiveReason ? ` Motif : ${s.archiveReason}.` : ""}
+        </Banner>
+      )}
+      <div className="cat-detail cat-detail--side-left">
+        <Card title="Coordonnées" icon={Truck}>
+          <KeyValues rows={[
+            ["Code", <span key="c" className="cat-ref">{s.code}</span>],
+            ["Pays", COUNTRIES[s.countryCode] ?? s.countryCode],
+            ["Contact", s.contactName ?? "—"],
+            ["Téléphone", <span key="t" className="tnum">{s.phone ?? "—"}</span>],
+            ["E-mail", s.email ?? "—"],
+            ["Adresse", [s.addressLine, s.postalCode, s.city].filter(Boolean).join(", ") || "—"],
+            ...Object.entries(s.legalIdentifiers).map(([k, v]): [string, ReactNode] => [LEGAL_KEYS[s.countryCode]?.find((x) => x.key === k)?.label ?? k.toUpperCase(), <span key={k} className="cat-mono">{v}</span>]),
+            ["Notes", <span key="n" className="cat-secondary" style={{ fontWeight: 500 }}>{s.notes ?? "—"}</span>],
+          ]} />
+        </Card>
+        {variants.length > 0 ? (
+          <Card title={`Produits associés (${variants.length})`} icon={Box} flush
+            foot={<span className="clients-muted">Plusieurs fournisseurs possibles par variante ; « principal » = fournisseur de commande par défaut.</span>}>
+            <table className="clients-table cat-table cat-table--inner">
+              <thead><tr><th scope="col">Référence</th><th scope="col">Produit</th><th scope="col" className="cat-hide-sm">Politique</th><th scope="col">Réf. fournisseur</th><th scope="col">Rôle</th></tr></thead>
+              <tbody>{variants.map((v) => (
+                <tr key={v.variantId} className={v.status === "archived" ? "is-archived" : undefined} {...rowLink(`/produits/modele/${v.modelId}?variante=${v.variantId}`, (href) => navigate(href))}>
+                  <td><span className="cat-ref">{v.sku}</span></td>
+                  <td><div className="clients-cell__name" style={{ fontSize: 13.5 }}>{v.modelName}</div><div className="cat-sub">{v.label}</div></td>
+                  <td className="cat-secondary cat-hide-sm">{POLICY_LABELS[v.stockPolicy]}</td>
+                  <td className="cat-secondary">{v.supplierReference ?? "—"}</td>
+                  <td>{v.isPrimary ? <Badge tone="accent" icon={Star}>Principal</Badge> : <Badge tone="arch">Secondaire</Badge>}</td>
                 </tr>
               ))}</tbody>
             </table>
-          )}
-        </Panel>
-      )}
-      <Dialog title="Modifier le fournisseur" open={editing !== null} onClose={() => setEditing(null)}>
-        <ErrorBanner error={write.error} />
-        {editing && <SupplierForm draft={editing} onChange={setEditing} errors={write.error?.error.fieldErrors} />}
-        <div className="cat-actions">
-          <Button onClick={() => setEditing(null)}>Annuler</Button>
-          <Button variant="primary" onClick={() => editing && write.mutate({ method: "PUT", path: `/api/suppliers/${s.id}`, body: { version: s.version, ...body(editing) } }, { onSuccess: () => setEditing(null) })}>Enregistrer</Button>
-        </div>
-      </Dialog>
-      <Dialog title="Archiver le fournisseur" open={archiving} onClose={() => setArchiving(false)}>
-        <p>Aucune suppression : la fiche et ses rattachements restent consultables. Un fournisseur archivé ne peut plus devenir principal.</p>
-        {pending && (
-          <label className="cat-check"><input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
-            Je confirme : les variantes commandées à la demande dont il est le principal deviendront « fiche incomplète ».</label>
+          </Card>
+        ) : (
+          <Card title="Produits associés" icon={Box}>
+            <div className="cat-empty-mini">
+              <span className="cat-thumb"><PackageOpen size={28} aria-hidden="true" /></span>
+              <div className="cat-empty-mini__title">Aucun produit associé</div>
+              <p className="cat-empty-mini__text">Rattachez ce fournisseur depuis la fiche d&apos;une variante (bloc « Fournisseurs »). Il peut aussi être archivé sans rompre aucun historique.</p>
+            </div>
+          </Card>
         )}
-        <div className="cat-actions">
+      </div>
+      <Modal open={archiving} onClose={() => setArchiving(false)} tone={pending ? "warn" : "err"} icon={Archive} title={`Archiver « ${s.name} » ?`}
+        description="Aucune suppression physique : la fiche, ses rattachements et l'historique des réceptions restent consultables. Un fournisseur archivé ne peut plus devenir principal."
+        actions={<>
           <Button onClick={() => setArchiving(false)}>Annuler</Button>
-          <Button variant="danger" onClick={() => write.mutate({ method: "POST", path: `/api/suppliers/${s.id}/archive`, body: { version: s.version, acceptIncompleteVariants: accept } }, { onSuccess: () => setArchiving(false) })}>Archiver</Button>
-        </div>
-      </Dialog>
+          <Button className="cat-btn-danger-solid" disabled={write.isPending || (pending && !accept)}
+            onClick={() => write.mutate({ method: "POST", path: `/api/suppliers/${s.id}/archive`, body: { version: s.version, reason: reason.trim() || null, acceptIncompleteVariants: accept } },
+              { onSuccess: () => { setArchiving(false); toast.show("Fournisseur archivé", s.name); } })}>
+            <Archive size={16} aria-hidden="true" />Archiver
+          </Button>
+        </>}>
+        {pending ? (
+          <Banner tone="warn" icon={Info} title="Variantes concernées" role="alert" compact>
+            Ce fournisseur est le principal de variantes commandées à la demande : elles deviendront « fiche incomplète ».
+          </Banner>
+        ) : write.error && <Banner tone="err" icon={Info} title="Archivage refusé" role="alert" compact>{errorMessage(write.error.error)}</Banner>}
+        {pending && (
+          <label className="cat-check cat-check--plain"><input type="checkbox" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
+            Je confirme : les variantes dont il est le principal deviendront « fiche incomplète ».</label>
+        )}
+        <Field label="Motif (facultatif)" name="supplierArchiveReason" value={reason} onChange={setReason} multiline />
+      </Modal>
     </section>
   );
 }

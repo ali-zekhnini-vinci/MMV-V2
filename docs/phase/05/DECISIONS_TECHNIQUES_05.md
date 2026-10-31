@@ -49,3 +49,8 @@ Légende : **Q** = tranché par Q01–Q20 · **M** = règle du mandat du 30/10/2
 6. Pas d'interdiction « compteur ≠ validateur » au niveau personne.
 7. Formats d'identifiants légaux : Maroc ICE 15 chiffres, IF 7–10, RC 1–10 ; Belgique numéro d'entreprise `(BE)?[01]\d{9}` — contrôles de format seulement, aucune règle juridique.
 8. Plafonds : 200 variantes par modèle, 200 lignes par réception, 5 000 lignes par inventaire et par import, 2 Mo par fichier.
+
+## Mise à jour 31/10/2026 (G05-DESIGN)
+
+- **QR-08 SKU** : le mandat du propriétaire du 31/10/2026 demande un SKU interne **généré automatiquement**, jamais exigé pour une création normale (« correctif Q05 »). Appliqué dans l'interface : SKU proposé (préfixe de famille + 6 symboles aléatoires), lecture seule par défaut, « Personnaliser » facultatif. Le serveur reste juge de l'unicité (`ux_product_variants_sku`) ; API, schéma et migration inchangés. La ligne QR-08 ci-dessus (30/10) est conservée telle quelle (O-05-20).
+- Fournisseur principal choisi à la création : rattaché à chaque variante par la route existante `PUT /api/catalog/variants/{id}/suppliers/{supplierId}` après la création (échec signalé, fiche incomplète autorisée).

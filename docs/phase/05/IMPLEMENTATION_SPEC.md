@@ -94,3 +94,11 @@ Calcul unique dans le domaine (`Availability.From(policy, archived, incomplete, 
 ## 8. Outillage de preuve (reconduit de la Phase 04)
 
 Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; PostgreSQL 18 réel sur `mmv_v2_test` après chaque G05-SQL, **barrières déterministes** pour la concurrence ; HTTPS réel ; Tauri natif ; captures comparées aux planches Lot 6 (`references/phase05/lot6/`) en clair / sombre, 1920×1080 et 1024×700 ; résidu de données de test = 0.
+
+## 9. Interface — composition du Lot 6 (G05-DESIGN, 31/10/2026)
+
+- Écrans traduits du Lot 6 en réutilisant le vocabulaire V2 des Lots 2–3 (`Clients.css`) et les composants V2 ; `Catalog.css` n'ajoute que les compléments du Lot 6 (jetons MMV, clair / sombre). Kit : `CatalogUi.tsx` (en-tête, barre d'outils, puces, table en carte à hauteur d'écran, cartes, sections de formulaire, pied d'actions, modale Radix, bandeaux, KPI, fraîcheur, toast).
+- Magasin actif : sélecteur unique dans la barre de contexte du module ; shell commun inchangé.
+- SKU interne **généré** sur le poste (`proposeSku` : préfixe de famille + 6 symboles de `crypto.getRandomValues`), personnalisable ; unicité contrôlée par le serveur (inchangé).
+- Prix : édition dans le bloc « Prix & disponibilité » ; enregistrement seulement d'une valeur **aperçue par le serveur** ; aucun calcul ni arrondi monétaire sur le poste (les seules sommes du poste sont des quantités entières des KPI de stock).
+- Détail : [`LIVRAISON_05_DESIGN.md`](LIVRAISON_05_DESIGN.md) § 2.

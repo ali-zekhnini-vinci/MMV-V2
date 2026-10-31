@@ -1,0 +1,41 @@
+// Rendu des cadres du Lot 6 (MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html, fichier ORIGINAL du ZIP Claude Design)
+// dans Edge sans interface : une capture PNG 1:1 par cadre data-mount (1920×1080, ou largeur propre du cadre).
+// Usage : node render-lot6.mjs <port> <dossier de sortie>
+import { writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
+
+const [port, out] = [Number(process.argv[2]), process.argv[3]];
+mkdirSync(out, { recursive: true });
+const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
+const target = targets.find((t) => t.type === "page" && t.url.includes("Lot6"));
+if (!target) throw new Error("page Lot 6 introuvable");
+const socket = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((r) => socket.addEventListener("open", r, { once: true }));
+let id = 0;
+const pending = new Map();
+socket.addEventListener("message", (e) => { const m = JSON.parse(e.data); if (pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); } });
+const send = (method, params = {}) => new Promise((resolve, reject) => { const n = ++id; pending.set(n, (m) => (m.error ? reject(new Error(m.error.message)) : resolve(m.result))); socket.send(JSON.stringify({ id: n, method, params })); });
+const evaluate = async (expression) => (await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true })).result.value;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+await send("Emulation.setDeviceMetricsOverride", { width: 2200, height: 1300, deviceScaleFactor: 1, mobile: false });
+for (let i = 0; i < 120; i++) {
+  const ready = await evaluate("(() => { const f = [...document.querySelectorAll('[data-mount]')]; return f.length > 100 && f.every(e => e.children.length > 0); })()");
+  if (ready) break;
+  await sleep(500);
+}
+await sleep(3000);
+const frames = await evaluate(`[...document.querySelectorAll('[data-mount]')].map(e => { const r = e.getBoundingClientRect();
+  return { name: e.dataset.mount, x: r.left + scrollX, y: r.top + scrollY, w: r.width, h: r.height, icons: e.querySelectorAll('svg').length }; })`);
+const manifest = [];
+for (const f of frames) {
+  await evaluate(`document.querySelector('[data-mount="${f.name}"]').scrollIntoView({ block: 'start' })`);
+  await sleep(150);
+  const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: f.x, y: f.y, width: f.w, height: f.h, scale: 1 } });
+  const file = join(out, `LOT6_${f.name}.png`);
+  writeFileSync(file, Buffer.from(shot.data, "base64"));
+  manifest.push(`${f.name}\t${Math.round(f.w)}x${Math.round(f.h)}\tsvg=${f.icons}`);
+}
+writeFileSync(join(out, "frames.tsv"), manifest.join("\n") + "\n");
+console.log(`${frames.length} cadres rendus ; icônes SVG rendues dans ${frames.filter((f) => f.icons > 0).length} cadres`);
+process.exit(0);

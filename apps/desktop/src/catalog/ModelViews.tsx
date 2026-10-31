@@ -1,25 +1,38 @@
-// Modèles et variantes (Lot 6 B-102 à B-111, adaptés aux règles approuvées : modèle + variantes, SKU par variante,
-// politique par variante, archivage au lieu de suppression). Fiche variante : prix du magasin actif (aperçu SERVEUR,
-// recalcul jamais silencieux, prix manuel sous permission), fournisseurs (principal, prix fournisseur sous costs.*),
-// stock par emplacement, historique des prix.
-import { Archive, ArrowLeft, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
+// Produits — Lot 6 groupes 05–13 (nouveau produit, erreurs, modification, non enregistré, fermeture, succès, conflit,
+// désactivé, détail, blocs de la fiche, stock faible / rupture / lecture seule, menu d'actions, désactivation) traduits
+// sur les règles approuvées : MODÈLE + VARIANTES (SKU, politique, prix et stock par variante), SKU interne GÉNÉRÉ
+// automatiquement (correctif Q05), archivage au lieu de la suppression physique, plusieurs fournisseurs par variante.
+// Bloc « Prix & disponibilité » : prix d'achat HT, coefficient, aperçu SERVEUR du prix de vente HT, prix validé, mode
+// coefficient / manuel, journal — recalcul jamais silencieux, coûts et prix manuel sous permission, devise du magasin
+// actif, aucun TTC inventé.
+import {
+  Archive, Boxes, Building2, Calculator, Coins, EllipsisVertical, History, Info, Layers, Lock as LockIcon, PackageOpen, Pencil, Plus,
+  RotateCcw, Save, Sparkles, Star, Trash2, TrendingUp, Truck, X,
+} from "lucide-react";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { Family, LensReferences, ModelDetail, PriceHistoryEntry, SupplierRow, Page, VariantDetail } from "../api/catalog.ts";
-import { query } from "../api/catalog.ts";
+import type { Family, LensReferences, Movement, ModelDetail, Page, PriceHistoryEntry, SupplierRow, VariantDetail } from "../api/catalog.ts";
+import { getCatalog, query, writeCatalog } from "../api/catalog.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
 import { Button } from "../components/ui/button.tsx";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu.tsx";
+import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { useCatalogAccess } from "./catalogAccess.ts";
 import {
-  AVAILABILITY_LABELS, AVAILABILITY_TONES, decimalInput, formatDateTime, formatMoney, POLICY_LABELS, PRICE_STATUS_LABELS,
+  AVAILABILITY_LABELS, decimalInput, formatDateTime, formatDecimal, formatMoney, MOVEMENT_LABELS, POLICY_LABELS, PRICE_STATUS_LABELS, proposeSku,
+  reasonLabel,
 } from "./catalogFormat.ts";
+import { availabilityBadge, stockTone } from "./catalogStatus.ts";
 import {
-  Badge, Dialog, ErrorBanner, ErrorState, Field, Loading, PageHeader, Panel, SelectField, StoreSelect,
+  Badge, Banner, Card, Diff, ErrorBanner, ErrorState, FamilyTag, Field, FormBar, FormSection, KeyValues, Loading, Lock, Modal, PageHeader, RefreshBar,
+  SelectField, StockCell,
 } from "./CatalogUi.tsx";
-import { useActiveStore, useCatalogPreview, useCatalogQuery, useCatalogWrite } from "./catalogData.ts";
+import { errorMessage, KEY, useActiveStore, useAuthorized, useCatalogPreview, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
 
 interface VariantDraft {
   sku: string;
+  skuCustom: boolean;
   label: string;
   manufacturerReference: string;
   barcode: string;
@@ -29,15 +42,15 @@ interface VariantDraft {
   attributes: Record<string, string>;
 }
 
-const emptyVariant = (policy: string): VariantDraft => ({
-  sku: "", label: "", manufacturerReference: "", barcode: "", stockPolicy: policy, lensIndexId: "", treatmentIds: [], attributes: {},
+const emptyVariant = (familyCode: string, policy: string): VariantDraft => ({
+  sku: proposeSku(familyCode), skuCustom: false, label: "", manufacturerReference: "", barcode: "", stockPolicy: policy, lensIndexId: "", treatmentIds: [], attributes: {},
 });
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
 function variantBody(draft: VariantDraft, includePolicy: boolean) {
   return {
-    sku: draft.sku,
+    sku: draft.sku.trim(),
     label: draft.label,
     manufacturerReference: orNull(draft.manufacturerReference),
     barcode: orNull(draft.barcode),
@@ -53,10 +66,40 @@ function useFamilies() {
   return Array.isArray(families.data) ? families.data : [];
 }
 
-// ---------- création ----------
+/** Garde de sortie (menu du shell) + confirmation de fermeture du Lot 6 (prodClose). */
+function useUnsavedGuard(dirty: boolean) {
+  const [pending, setPending] = useState<(() => void) | null>(null);
+  useLeaveGuard((proceed) => {
+    if (!dirty) return false;
+    setPending(() => proceed);
+    return true;
+  });
+  return {
+    pending,
+    ask: (proceed: () => void) => (dirty ? setPending(() => proceed) : proceed()),
+    cancel: () => setPending(null),
+    confirm: () => { const go = pending; setPending(null); go?.(); },
+  };
+}
+
+function UnsavedModal({ open, onLeave, onStay, onSave, saving }: { open: boolean; onLeave: () => void; onStay: () => void; onSave: () => void; saving: boolean }) {
+  return (
+    <Modal open={open} onClose={onStay} tone="warn" icon={Info} title="Modifications non enregistrées"
+      description="Vous avez des modifications non enregistrées. Si vous fermez maintenant, elles seront perdues."
+      actions={<>
+        <Button variant="ghost" onClick={onLeave}>Fermer sans enregistrer</Button>
+        <Button onClick={onStay}>Continuer l&apos;édition</Button>
+        <Button variant="primary" disabled={saving} onClick={onSave}><Save size={16} aria-hidden="true" />Enregistrer</Button>
+      </>} />
+  );
+}
+
+// ---------- création (prodNew, prodErrors, prodUnsaved, prodClose, prodCreateOk) ----------
 
 export function ModelCreateView() {
   const navigate = useNavigate();
+  const toast = useToast();
+  const access = useCatalogAccess();
   const families = useFamilies();
   const lens = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
   const write = useCatalogWrite<{ id: string }>();
@@ -65,9 +108,25 @@ export function ModelCreateView() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [lensRangeId, setLensRangeId] = useState("");
-  const [variants, setVariants] = useState<VariantDraft[]>([emptyVariant("stocked")]);
+  const [modelAttributes, setModelAttributes] = useState<Record<string, string>>({});
+  const [variants, setVariants] = useState<VariantDraft[]>(() => [emptyVariant("optical_frames", "stocked")]);
+  const [regenerated, setRegenerated] = useState<number[]>([]);
+  const [supplierId, setSupplierId] = useState("");
+  const suppliers = useCatalogQuery<Page<SupplierRow>>(access.suppliersRead ? "/api/suppliers?status=active&pageSize=200" : null);
+  const authorized = useAuthorized();
+  const queryClient = useQueryClient();
+  const { store } = useActiveStore();
   const family = families.find((f) => f.code === familyCode);
   const errors = write.error?.error.fieldErrors;
+  const dirty = brand !== "" || name !== "" || description !== "" || variants.some((v) => v.label !== "" || v.barcode !== "" || v.manufacturerReference !== "");
+  const guard = useUnsavedGuard(dirty && !write.isSuccess);
+
+  const changeFamily = (code: string) => {
+    setFamilyCode(code);
+    setModelAttributes({});
+    const next = families.find((x) => x.code === code);
+    setVariants((current) => current.map((v) => ({ ...v, sku: v.skuCustom ? v.sku : proposeSku(code), stockPolicy: next?.allowedPolicies[0] ?? "stocked", attributes: {}, lensIndexId: "", treatmentIds: [] })));
+  };
 
   const submit = () =>
     write.mutate(
@@ -75,302 +134,683 @@ export function ModelCreateView() {
         method: "POST",
         path: "/api/catalog/models",
         body: {
-          familyCode, brand: orNull(brand), name, description: orNull(description), lensRangeId: orNull(lensRangeId), attributes: {},
+          familyCode, brand: orNull(brand), name, description: orNull(description), lensRangeId: orNull(lensRangeId), attributes: modelAttributes,
           variants: variants.map((v) => variantBody(v, true)),
         },
       },
-      { onSuccess: (result) => navigate(`/produits/modele/${result.id}`) },
+      {
+        onSuccess: async (result) => {
+          // Fournisseur principal du Lot 6 : rattachement V2 par variante (même API que la fiche), après la création.
+          let linked = true;
+          if (supplierId !== "" && store) {
+            const detail = await getCatalog<ModelDetail>(authorized, `/api/catalog/models/${result.id}${query({ storeId: store.id })}`);
+            const ids = detail.ok ? detail.data.variants.map((v) => v.row.variantId) : [];
+            const outcomes = await Promise.all(ids.map((variantId) =>
+              writeCatalog(authorized, "PUT", `/api/catalog/variants/${variantId}/suppliers/${supplierId}`, { supplierReference: null, isPrimary: true })));
+            linked = detail.ok && outcomes.every((o) => o.ok);
+            void queryClient.invalidateQueries({ queryKey: [...KEY] });
+          }
+          if (linked) {
+            toast.show("Produit créé", `${name} · ${variants.length} variante${variants.length > 1 ? "s" : ""} ajoutée${variants.length > 1 ? "s" : ""} au catalogue.`);
+          } else {
+            toast.show("Produit créé, fournisseur non rattaché", "Rattachez le fournisseur depuis la fiche (bloc « Fournisseurs »).", "err");
+          }
+          navigate(`/produits/modele/${result.id}`);
+        },
+        onError: (error) => {
+          // SKU proposé déjà pris (improbable) : nouveau SKU proposé pour les variantes non personnalisées.
+          const duplicates = variants.map((_, i) => i).filter((i) => error.error.fieldErrors?.[`variants[${i}].sku`]?.includes("duplicate") && !variants[i].skuCustom);
+          if (duplicates.length > 0) {
+            setVariants((current) => current.map((v, i) => (duplicates.includes(i) ? { ...v, sku: proposeSku(familyCode) } : v)));
+          }
+          setRegenerated(duplicates);
+        },
+      },
     );
 
+  const close = () => guard.ask(() => navigate("/produits"));
+
   return (
-    <section aria-labelledby="new-model">
-      <PageHeader
-        title="Nouveau produit"
-        subtitle="Un modèle (famille, marque, nom) et au moins une variante (SKU, libellé, politique de stock). Les prix se fixent ensuite par magasin."
-        actions={<Button variant="tertiary" onClick={() => navigate("/produits")}><ArrowLeft size={16} aria-hidden="true" />Catalogue</Button>}
-      />
-      <ErrorBanner error={write.error} />
-      <Panel title="Modèle">
-        <div className="cat-grid">
-          <SelectField label="Famille" name="familyCode" value={familyCode} required errors={errors}
-            onChange={(value) => { setFamilyCode(value); const f = families.find((x) => x.code === value); setVariants((current) => current.map((v) => ({ ...v, stockPolicy: f?.allowedPolicies[0] ?? "stocked", attributes: {} }))); }}
-            options={families.map((f) => ({ value: f.code, label: f.label }))} />
-          <Field label="Marque" name="brand" value={brand} onChange={setBrand} errors={errors} />
-          <Field label="Nom du modèle" name="name" value={name} onChange={setName} required errors={errors} />
+    <section className="cat-screen cat-form" aria-labelledby="new-model">
+      <PageHeader title="Nouveau produit" subtitle="Ajouter un modèle et ses variantes au catalogue"
+        actions={<Button variant="ghost" onClick={close}><X size={18} aria-hidden="true" />Fermer</Button>} />
+      <div className="cat-form__body">
+        {write.error && (
+          <Banner tone="err" icon={Info} title="Le formulaire contient des erreurs" role="alert">
+            {write.error.error.code === "validation_failed" || write.error.error.fieldErrors ? "Corrigez les champs signalés ci-dessous avant d'enregistrer." : errorMessage(write.error.error)}
+          </Banner>
+        )}
+        <FormSection title="Informations générales" icon={Info}>
+          <Field label="Nom du modèle" name="name" value={name} onChange={setName} required errors={errors} placeholder="Ex. Monture acétate Écaille" />
+          <Field label="Marque" name="brand" value={brand} onChange={setBrand} errors={errors} placeholder="Marque (facultative)" />
+          <SelectField label="Famille" name="familyCode" value={familyCode} required errors={errors} onChange={changeFamily}
+            options={families.map((f) => ({ value: f.code, label: f.label }))} hint="Six familles approuvées ; la famille fixe les politiques de stock admises." />
+          {access.suppliersRead ? (
+            <SelectField label="Fournisseur principal" name="primarySupplier" value={supplierId} onChange={setSupplierId}
+              options={[{ value: "", label: "Aucun pour l'instant (fiche incomplète autorisée)" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: s.name }))]}
+              hint="Facultatif ; rattaché à chaque variante après la création. D'autres fournisseurs s'ajoutent dans la fiche." />
+          ) : <span aria-hidden="true" />}
           {familyCode === "ophthalmic_lenses" && (
-            <SelectField label="Gamme de verres" name="lensRangeId" value={lensRangeId} required errors={errors} onChange={setLensRangeId}
-              options={[{ value: "", label: "— Choisir —" }, ...(lens.data?.ranges ?? []).filter((r) => r.status === "active").map((r) => ({
+            <SelectField label="Gamme de verres" name="lensRangeId" value={lensRangeId} required errors={errors} onChange={setLensRangeId} span2
+              options={[{ value: "", label: "— Choisir une gamme —" }, ...(lens.data?.ranges ?? []).filter((r) => r.status === "active").map((r) => ({
                 value: r.id, label: `${lens.data?.manufacturers.find((m) => m.id === r.manufacturerId)?.name ?? "?"} — ${r.name}`,
               }))]} />
           )}
-        </div>
-        <Field label="Description" name="description" value={description} onChange={setDescription} errors={errors} multiline />
-      </Panel>
-      {variants.map((variant, index) => (
-        <Panel key={index} title={`Variante ${index + 1}`} actions={variants.length > 1 && (
-          <Button size="sm" variant="danger" onClick={() => setVariants((current) => current.filter((_, i) => i !== index))}>
-            <Trash2 size={14} aria-hidden="true" />Retirer
-          </Button>
-        )}>
-          <VariantFields family={family} lens={lens.data} draft={variant} prefix={`variants[${index}].`} errors={errors} withPolicy
-            onChange={(next) => setVariants((current) => current.map((v, i) => (i === index ? next : v)))} />
-        </Panel>
-      ))}
-      <div className="cat-actions">
-        <Button onClick={() => setVariants((current) => [...current, emptyVariant(family?.allowedPolicies[0] ?? "stocked")])}>
-          <Plus size={16} aria-hidden="true" />Ajouter une variante
-        </Button>
-        <Button variant="primary" disabled={write.isPending} onClick={submit}>
-          <Save size={16} aria-hidden="true" />{write.isPending ? "Enregistrement…" : "Enregistrer"}
-        </Button>
+          <Field label="Description" name="description" value={description} onChange={setDescription} errors={errors} multiline span2 placeholder="Description commerciale (facultative)" />
+        </FormSection>
+
+        <FormSection title={`Variantes (${variants.length})`} icon={Layers} grid={false}
+          actions={<Button size="sm" onClick={() => setVariants((current) => [...current, emptyVariant(familyCode, family?.allowedPolicies[0] ?? "stocked")])}>
+            <Plus size={16} aria-hidden="true" />Ajouter une variante
+          </Button>}>
+          {variants.map((variant, index) => (
+            <div key={index} className="cat-variant">
+              <div className="cat-variant__head">
+                Variante {index + 1}
+                <span className="cat-formbar__spacer" />
+                {variants.length > 1 && (
+                  <Button size="sm" variant="danger" onClick={() => setVariants((current) => current.filter((_, i) => i !== index))}>
+                    <Trash2 size={14} aria-hidden="true" />Retirer
+                  </Button>
+                )}
+              </div>
+              <VariantFields family={family} familyCode={familyCode} lens={lens.data} draft={variant} prefix={`variants[${index}].`} errors={errors} withPolicy
+                skuError={regenerated.includes(index) ? "SKU déjà utilisé : un nouveau SKU a été proposé, enregistrez de nouveau." : undefined}
+                onChange={(next) => setVariants((current) => current.map((v, i) => (i === index ? next : v)))} />
+            </div>
+          ))}
+        </FormSection>
+
+        <FormSection title={`Prix (${access.costsRead ? "prix d'achat, coefficient et marge : droit coûts" : "prix de vente HT par magasin"})`} icon={Coins} grid={false}>
+          <Banner tone="info" icon={Calculator} title="Prix fixés par magasin, après la création" compact>
+            Dans la fiche produit, bloc « Prix &amp; disponibilité » : prix d&apos;achat HT × coefficient avec aperçu calculé par le serveur, ou prix manuel
+            (droit dédié). Devise du magasin (EUR ou MAD), aucune conversion, aucun TTC tant que la fiscalité du magasin n&apos;est pas validée.
+          </Banner>
+        </FormSection>
+
+        <FormSection title="Stock" icon={Boxes} grid={false}>
+          <Banner tone="neutral" icon={Boxes} title="Stock par emplacement, jamais saisi ici" compact>
+            Variantes stockées : le stock initial entre par une réception fournisseur ou une entrée motivée ; le seuil d&apos;alerte se règle par magasin.
+            Variantes commandées à la demande et prestations : aucun stock physique.
+          </Banner>
+        </FormSection>
+
+        {family && family.modelAttributes.length > 0 && (
+          <FormSection title={`Détails — ${family.label}`} icon={Sparkles}>
+            {family.modelAttributes.map((attribute) => (
+              <Field key={attribute.key} label={attribute.label} name={`attributes.${attribute.key}`} value={modelAttributes[attribute.key] ?? ""} errors={errors}
+                inputMode={attribute.kind === "text" ? "text" : "decimal"} onChange={(v) => setModelAttributes((current) => ({ ...current, [attribute.key]: v }))} />
+            ))}
+          </FormSection>
+        )}
       </div>
+      <FormBar dirty={dirty} hint="Les champs marqués * sont obligatoires · SKU interne généré par MMV">
+        <Button onClick={close}>Annuler</Button>
+        <Button variant="primary" disabled={write.isPending} onClick={submit}>
+          <Save size={16} aria-hidden="true" />{write.isPending ? "Création…" : "Créer le produit"}
+        </Button>
+      </FormBar>
+      <UnsavedModal open={guard.pending !== null} onLeave={guard.confirm} onStay={guard.cancel} onSave={() => { guard.cancel(); submit(); }} saving={write.isPending} />
     </section>
   );
 }
 
-function VariantFields({ family, lens, draft, onChange, errors, prefix = "", withPolicy }: {
+function VariantFields({ family, familyCode, lens, draft, onChange, errors, prefix = "", withPolicy, skuError }: {
   family: Family | undefined;
+  familyCode: string;
   lens: LensReferences | undefined;
   draft: VariantDraft;
   onChange: (draft: VariantDraft) => void;
   errors?: Record<string, string[]>;
   prefix?: string;
   withPolicy?: boolean;
+  skuError?: string;
 }) {
   const set = (patch: Partial<VariantDraft>) => onChange({ ...draft, ...patch });
   return (
-    <>
-      <div className="cat-grid">
-        <Field label="SKU interne" name={`${prefix}sku`} value={draft.sku} onChange={(sku) => set({ sku })} required errors={errors} hint="Unique dans toute l'installation." />
-        <Field label="Libellé de la variante" name={`${prefix}label`} value={draft.label} onChange={(label) => set({ label })} required errors={errors} hint="Ex. coloris, calibre." />
-        <Field label="Référence fabricant" name={`${prefix}manufacturerReference`} value={draft.manufacturerReference} onChange={(v) => set({ manufacturerReference: v })} errors={errors} />
-        <Field label="Code-barres (EAN / GTIN)" name={`${prefix}barcode`} value={draft.barcode} onChange={(v) => set({ barcode: v })} errors={errors} inputMode="numeric" hint="Facultatif ; clé de contrôle vérifiée." />
-        {withPolicy && family && (
-          <SelectField label="Politique de stock" name={`${prefix}stockPolicy`} value={draft.stockPolicy} onChange={(v) => set({ stockPolicy: v })} required errors={errors}
-            options={family.allowedPolicies.map((p) => ({ value: p, label: POLICY_LABELS[p] }))} />
-        )}
-        {family?.code === "ophthalmic_lenses" && (
-          <SelectField label="Indice" name={`${prefix}lensIndexId`} value={draft.lensIndexId} onChange={(v) => set({ lensIndexId: v })} required errors={errors}
-            options={[{ value: "", label: "— Choisir —" }, ...(lens?.indices ?? []).filter((i) => i.status === "active").map((i) => ({ value: i.id, label: i.name }))]} />
-        )}
-        {family?.variantAttributes.map((attribute) => (
-          <Field key={attribute.key} label={attribute.label} name={`${prefix}attributes.${attribute.key}`} value={draft.attributes[attribute.key] ?? ""}
-            inputMode={attribute.kind === "text" ? "text" : "decimal"} errors={errors}
-            onChange={(v) => set({ attributes: { ...draft.attributes, [attribute.key]: v } })} />
-        ))}
-      </div>
+    <div className="cat-grid">
+      <Field label="Libellé de la variante" name={`${prefix}label`} value={draft.label} onChange={(label) => set({ label })} required errors={errors} placeholder="Ex. coloris, calibre, conditionnement" />
+      <Field label="SKU interne" name={`${prefix}sku`} value={draft.sku} onChange={(sku) => set({ sku, skuCustom: true })} errors={errors} readOnly={!draft.skuCustom} error={skuError}
+        suffix={draft.skuCustom
+          ? <button type="button" className="cat-input-action" onClick={() => set({ sku: proposeSku(familyCode), skuCustom: false })}>Régénérer</button>
+          : <button type="button" className="cat-input-action" onClick={() => set({ skuCustom: true })}>Personnaliser</button>}
+        hint={draft.skuCustom ? "Personnalisé : unique dans toute l'installation (contrôlé par le serveur)." : "Généré automatiquement par MMV ; aucune saisie requise."} />
+      {withPolicy && family ? (
+        <SelectField label="Politique de stock" name={`${prefix}stockPolicy`} value={draft.stockPolicy} onChange={(v) => set({ stockPolicy: v })} required errors={errors}
+          options={family.allowedPolicies.map((p) => ({ value: p, label: POLICY_LABELS[p] }))} />
+      ) : null}
+      <Field label="Code-barres (EAN / GTIN)" name={`${prefix}barcode`} value={draft.barcode} onChange={(v) => set({ barcode: v })} errors={errors} inputMode="numeric" hint="Facultatif ; clé de contrôle vérifiée." />
+      <Field label="Référence fabricant" name={`${prefix}manufacturerReference`} value={draft.manufacturerReference} onChange={(v) => set({ manufacturerReference: v })} errors={errors} />
       {family?.code === "ophthalmic_lenses" && (
-        <fieldset className="cat-fieldset">
-          <legend className="cat-label">Traitements inclus</legend>
-          {(lens?.treatments ?? []).filter((t) => t.status === "active").map((t) => (
-            <label key={t.id} className="cat-check">
-              <input type="checkbox" checked={draft.treatmentIds.includes(t.id)}
-                onChange={(e) => set({ treatmentIds: e.target.checked ? [...draft.treatmentIds, t.id] : draft.treatmentIds.filter((id) => id !== t.id) })} />
-              {t.name}
-            </label>
-          ))}
+        <SelectField label="Indice" name={`${prefix}lensIndexId`} value={draft.lensIndexId} onChange={(v) => set({ lensIndexId: v })} required errors={errors}
+          options={[{ value: "", label: "— Choisir —" }, ...(lens?.indices ?? []).filter((i) => i.status === "active").map((i) => ({ value: i.id, label: i.name }))]} />
+      )}
+      {family?.variantAttributes.map((attribute) => (
+        <Field key={attribute.key} label={attribute.label} name={`${prefix}attributes.${attribute.key}`} value={draft.attributes[attribute.key] ?? ""}
+          inputMode={attribute.kind === "text" ? "text" : "decimal"} errors={errors}
+          onChange={(v) => set({ attributes: { ...draft.attributes, [attribute.key]: v } })} />
+      ))}
+      {family?.code === "ophthalmic_lenses" && (
+        <fieldset className="clients-field cat-span2" style={{ border: 0, margin: 0, padding: 0 }}>
+          <legend className="clients-field__label" style={{ marginBottom: 7 }}>Traitements inclus</legend>
+          <div className="cat-checks">
+            {(lens?.treatments ?? []).filter((t) => t.status === "active").map((t) => (
+              <label key={t.id} className="cat-check">
+                <input type="checkbox" checked={draft.treatmentIds.includes(t.id)}
+                  onChange={(e) => set({ treatmentIds: e.target.checked ? [...draft.treatmentIds, t.id] : draft.treatmentIds.filter((id) => id !== t.id) })} />
+                {t.name}
+              </label>
+            ))}
+            {(lens?.treatments ?? []).filter((t) => t.status === "active").length === 0 && <span className="clients-muted">Aucun traitement configuré dans le référentiel.</span>}
+          </div>
         </fieldset>
       )}
-    </>
+    </div>
   );
 }
 
-// ---------- fiche modèle ----------
+// ---------- modification du modèle (prodEdit, prodConflict, prodDeactivated, prodEditOk) ----------
+
+export function ModelEditView() {
+  const { id = "" } = useParams();
+  const { store } = useActiveStore();
+  const model = useCatalogQuery<ModelDetail>(store ? `/api/catalog/models/${id}${query({ storeId: store.id })}` : null);
+  if (model.isPending) return <Loading label="Chargement du produit…" />;
+  if (model.isError) return <ErrorState error={model.error} title="Impossible de charger le produit" onRetry={() => void model.refetch()} />;
+  return <ModelEditForm key={model.data.id} model={model.data} onReload={() => void model.refetch()} />;
+}
+
+function ModelEditForm({ model, onReload }: { model: ModelDetail; onReload: () => void }) {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const access = useCatalogAccess();
+  const families = useFamilies();
+  const lens = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
+  const write = useCatalogWrite();
+  const reactivate = useCatalogWrite();
+  const family = families.find((f) => f.code === model.familyCode);
+  const initial = { brand: model.brand ?? "", name: model.name, description: model.description ?? "", lensRangeId: model.lensRangeId ?? "", attributes: model.attributes };
+  const [draft, setDraft] = useState(initial);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const guard = useUnsavedGuard(dirty && !write.isSuccess);
+  const errors = write.error?.error.fieldErrors;
+  const conflict = write.error?.error.code === "version_conflict";
+  const archived = model.status === "archived";
+  const back = `/produits/modele/${model.id}`;
+
+  const save = () => write.mutate(
+    { method: "PUT", path: `/api/catalog/models/${model.id}`, body: {
+      version: model.version, brand: orNull(draft.brand), name: draft.name, description: orNull(draft.description), lensRangeId: orNull(draft.lensRangeId), attributes: draft.attributes,
+    } },
+    { onSuccess: () => { toast.show("Modifications enregistrées", `${draft.name} a été mis à jour.`); navigate(back); } },
+  );
+
+  return (
+    <section className="cat-screen cat-form" aria-labelledby="edit-model">
+      <PageHeader title={`Modifier — ${model.name}`} subtitle={`${family?.label ?? model.familyCode} · ${model.variants.length} variante${model.variants.length > 1 ? "s" : ""}`}
+        actions={<Button variant="ghost" onClick={() => guard.ask(() => navigate(back))}><X size={18} aria-hidden="true" />Fermer</Button>} />
+      <div className="cat-form__body">
+        {conflict && (
+          <Banner tone="warn" icon={Info} title="Ce produit a été modifié sur un autre poste" role="alert"
+            action={<Button size="sm" className="cat-btn-warn" onClick={onReload}><RotateCcw size={16} aria-hidden="true" />Recharger</Button>}>
+            Rechargez pour repartir de la version enregistrée sur le serveur ; vos saisies sont conservées dans le formulaire.
+          </Banner>
+        )}
+        {!conflict && write.error && <ErrorBanner error={write.error} />}
+        {archived && (
+          <Banner tone="neutral" icon={Archive} title="Produit archivé"
+            action={access.catalogArchive && (
+              <Button size="sm" disabled={reactivate.isPending} onClick={() => reactivate.mutate({ method: "POST", path: `/api/catalog/models/${model.id}/reactivate`, body: { version: model.version } },
+                { onSuccess: () => toast.show("Produit réactivé") })}>
+                <RotateCcw size={16} aria-hidden="true" />Réactiver
+              </Button>
+            )}>
+            Il n&apos;apparaît plus au catalogue de vente ; son historique est conservé. Aucune modification n&apos;est possible tant qu&apos;il est archivé.
+          </Banner>
+        )}
+        <FormSection title="Informations générales" icon={Info}>
+          <Field label="Famille" name="familyReadonly" value={family?.label ?? model.familyCode} onChange={() => undefined} readOnly hint="La famille d'un modèle ne change pas." />
+          <Field label="Nom du modèle" name="name" value={draft.name} onChange={(name) => setDraft({ ...draft, name })} required errors={errors} disabled={archived} />
+          <Field label="Marque" name="brand" value={draft.brand} onChange={(brand) => setDraft({ ...draft, brand })} errors={errors} disabled={archived} />
+          {model.familyCode === "ophthalmic_lenses" ? (
+            <SelectField label="Gamme de verres" name="lensRangeId" value={draft.lensRangeId} required errors={errors} disabled={archived} onChange={(lensRangeId) => setDraft({ ...draft, lensRangeId })}
+              options={[{ value: "", label: "— Choisir une gamme —" }, ...(lens.data?.ranges ?? []).map((r) => ({ value: r.id, label: `${lens.data?.manufacturers.find((m) => m.id === r.manufacturerId)?.name ?? "?"} — ${r.name}` }))]} />
+          ) : <span aria-hidden="true" />}
+          <Field label="Description" name="description" value={draft.description} onChange={(description) => setDraft({ ...draft, description })} errors={errors} multiline span2 disabled={archived} />
+        </FormSection>
+        {family && family.modelAttributes.length > 0 && (
+          <FormSection title={`Détails — ${family.label}`} icon={Sparkles}>
+            {family.modelAttributes.map((attribute) => (
+              <Field key={attribute.key} label={attribute.label} name={`attributes.${attribute.key}`} value={draft.attributes[attribute.key] ?? ""} errors={errors} disabled={archived}
+                onChange={(v) => setDraft({ ...draft, attributes: { ...draft.attributes, [attribute.key]: v } })} />
+            ))}
+          </FormSection>
+        )}
+        <Banner tone="info" icon={Layers} title="Variantes, prix et stock" compact>
+          SKU, libellés, politique de stock, prix par magasin et fournisseurs se modifient variante par variante dans la fiche produit.
+        </Banner>
+      </div>
+      <FormBar dirty={dirty} hint="Les champs marqués * sont obligatoires">
+        <Button onClick={() => guard.ask(() => navigate(back))}>Annuler</Button>
+        <Button variant="primary" disabled={archived || !dirty || write.isPending} onClick={save}>
+          <Save size={16} aria-hidden="true" />{write.isPending ? "Enregistrement…" : "Enregistrer les modifications"}
+        </Button>
+      </FormBar>
+      <UnsavedModal open={guard.pending !== null} onLeave={guard.confirm} onStay={guard.cancel} onSave={() => { guard.cancel(); save(); }} saving={write.isPending} />
+    </section>
+  );
+}
+
+// ---------- fiche produit (detLight, detGeneral, detHistory, detLow, detRupture, detDeactivated, detVendeur, delMenu) ----------
 
 export function ModelDetailView() {
   const { id = "" } = useParams();
   const [search, setSearch] = useSearchParams();
   const navigate = useNavigate();
+  const toast = useToast();
   const access = useCatalogAccess();
   const { store } = useActiveStore();
   const model = useCatalogQuery<ModelDetail>(store ? `/api/catalog/models/${id}${query({ storeId: store.id })}` : null);
   const families = useFamilies();
   const lens = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
   const write = useCatalogWrite();
-  const [adding, setAdding] = useState(false);
-  const [newVariant, setNewVariant] = useState<VariantDraft>(emptyVariant("stocked"));
+  const [adding, setAdding] = useState<VariantDraft | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [reason, setReason] = useState("");
 
   if (model.isPending) return <Loading label="Chargement du produit…" />;
-  if (model.isError) return <ErrorState error={model.error} onRetry={() => void model.refetch()} />;
+  if (model.isError) return <ErrorState error={model.error} title="Impossible de charger le produit" onRetry={() => void model.refetch()} />;
   const data = model.data;
   const family = families.find((f) => f.code === data.familyCode);
   const selected = search.get("variante") ?? data.variants[0]?.row.variantId ?? null;
+  const archived = data.status === "archived";
+  const currency = store?.currency ?? "";
 
   return (
-    <section aria-labelledby="model-title">
+    <section className="cat-screen" aria-labelledby="model-title">
       <PageHeader
-        title={`${data.brand ? `${data.brand} — ` : ""}${data.name}`}
-        subtitle={<>{family?.label ?? data.familyCode} · {data.status === "archived" ? <Badge tone="neutral">Archivé</Badge> : <Badge tone="success">Actif</Badge>}</>}
-        actions={
+        back={{ label: "Produits", onClick: () => navigate("/produits") }}
+        title={data.name}
+        titleExtra={<>
+          <FamilyTag code={data.familyCode} label={family?.label} />
+          {archived ? <Badge tone="arch" icon={Archive}>Archivé</Badge> : <Badge tone="ok">Actif</Badge>}
+        </>}
+        subtitle={[data.brand, `${data.variants.length} variante${data.variants.length > 1 ? "s" : ""}`, store ? `prix en ${currency}` : null].filter(Boolean).join(" · ")}
+        actions={access.catalogWrite || access.catalogArchive ? (
           <>
-            <StoreSelect />
-            <Button variant="tertiary" onClick={() => navigate("/produits")}><ArrowLeft size={16} aria-hidden="true" />Catalogue</Button>
-            {access.catalogArchive && data.status === "active" && (
-              <Button variant="danger" onClick={() => setArchiving(true)}><Archive size={16} aria-hidden="true" />Archiver le modèle</Button>
+            {access.catalogWrite && !archived && (
+              <Button onClick={() => navigate(`/produits/modele/${data.id}/modifier`)}><Pencil size={16} aria-hidden="true" />Modifier</Button>
             )}
-            {access.catalogArchive && data.status === "archived" && (
-              <Button onClick={() => write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/reactivate`, body: { version: data.version } })}>
-                <RotateCcw size={16} aria-hidden="true" />Réactiver
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="cat-ract cat-ract--boxed" aria-label="Autres actions"><EllipsisVertical size={18} aria-hidden="true" /></button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {access.catalogWrite && !archived && (
+                  <DropdownMenuItem onSelect={() => setAdding(emptyVariant(data.familyCode, family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Ajouter une variante</DropdownMenuItem>
+                )}
+                {access.stockRead && <DropdownMenuItem onSelect={() => navigate("/inventaire")}><Boxes size={16} aria-hidden="true" />Voir le stock</DropdownMenuItem>}
+                {access.catalogArchive && !archived && (
+                  <DropdownMenuItem variant="destructive" className="cat-menu-danger" onSelect={() => { setReason(""); write.reset(); setArchiving(true); }}><Archive size={16} aria-hidden="true" />Archiver le modèle</DropdownMenuItem>
+                )}
+                {access.catalogArchive && archived && (
+                  <DropdownMenuItem onSelect={() => write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/reactivate`, body: { version: data.version } }, { onSuccess: () => toast.show("Produit réactivé") })}>
+                    <RotateCcw size={16} aria-hidden="true" />Réactiver le modèle
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </>
-        }
+        ) : <Lock large>Lecture seule</Lock>}
       />
-      <ErrorBanner error={write.error} />
-      {data.description && <p className="cat-muted">{data.description}</p>}
-      <div className="cat-split">
-        <Panel title={`Variantes (${data.variants.length})`} actions={access.catalogWrite && data.status === "active" && (
-          <Button size="sm" onClick={() => { setNewVariant(emptyVariant(family?.allowedPolicies[0] ?? "stocked")); setAdding(true); }}>
-            <Plus size={14} aria-hidden="true" />Variante
-          </Button>
-        )}>
-          <ul className="cat-list">
-            {data.variants.map(({ row }) => (
-              <li key={row.variantId}>
-                <button type="button" className={`cat-list__item${row.variantId === selected ? " is-selected" : ""}`} onClick={() => setSearch({ variante: row.variantId })}>
-                  <span className="cat-mono">{row.sku}</span>
-                  <span>{row.label}</span>
-                  <span className="cat-num">{formatMoney(row.price.salePriceHt, row.price.currency)}</span>
-                  <Badge tone={AVAILABILITY_TONES[row.availability]}>{AVAILABILITY_LABELS[row.availability]}</Badge>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-        {selected && <VariantPanel key={`${selected}-${store?.id}`} variantId={selected} family={family} lens={lens.data} />}
+      {!archiving && <ErrorBanner error={write.error} onReload={() => void model.refetch()} />}
+      {archived && (
+        <Banner tone="neutral" icon={Archive} title="Produit archivé">
+          Il n&apos;apparaît plus au catalogue de vente (aucune suppression physique) ; ses variantes, prix et mouvements restent consultables.{data.archiveReason ? ` Motif : ${data.archiveReason}.` : ""}
+        </Banner>
+      )}
+      <RefreshBar asOf={new Date(model.dataUpdatedAt).toISOString()} onRefresh={() => void model.refetch()} refreshing={model.isFetching} />
+
+      <div className="cat-detail">
+        <div className="cat-stack">
+          <Card title={`Variantes (${data.variants.length})`} icon={Layers} flush
+            actions={access.catalogWrite && !archived && (
+              <Button size="sm" onClick={() => setAdding(emptyVariant(data.familyCode, family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Variante</Button>
+            )}>
+            <table className="clients-table cat-table cat-table--inner">
+              <thead>
+                <tr>
+                  <th scope="col">Référence</th>
+                  <th scope="col">Variante</th>
+                  <th scope="col" className="cat-hide-sm">Politique</th>
+                  <th scope="col" className="cat-num">Prix de vente HT</th>
+                  {access.stockRead && <th scope="col" className="cat-num">Stock</th>}
+                  <th scope="col">Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.variants.map(({ row }) => {
+                  const badge = availabilityBadge(row.availability);
+                  const isSelected = row.variantId === selected;
+                  return (
+                    <tr key={row.variantId} className={isSelected ? "is-selected" : row.status === "archived" ? "is-archived" : undefined} data-href="variante" tabIndex={0} aria-selected={isSelected}
+                      onClick={() => setSearch({ variante: row.variantId })} onKeyDown={(e) => e.key === "Enter" && setSearch({ variante: row.variantId })}>
+                      <td><span className="cat-ref">{row.sku}</span></td>
+                      <td className="cat-strong">{row.label}</td>
+                      <td className="cat-secondary cat-hide-sm">{POLICY_LABELS[row.stockPolicy]}</td>
+                      <td className="cat-num cat-strong">{formatMoney(row.price.salePriceHt, row.price.currency)}</td>
+                      {access.stockRead && <td className="cat-num">{row.stock ? <StockCell value={row.stock.available} tone={stockTone(row.availability)} /> : <span className="clients-muted">—</span>}</td>}
+                      <td><Badge tone={badge.tone} icon={badge.icon}>{AVAILABILITY_LABELS[row.availability]}</Badge></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Card>
+          {selected && <VariantMain key={`${selected}-${store?.id}`} variantId={selected} family={family} lens={lens.data} />}
+          <Card title={`Détails — ${family?.label ?? data.familyCode}`} icon={Sparkles}>
+            <KeyValues rows={[
+              ["Marque", data.brand ?? "—"],
+              ...(family?.modelAttributes ?? []).map((a): [string, string] => [a.label, data.attributes[a.key] ?? "—"]),
+              ...(data.familyCode === "ophthalmic_lenses" ? [["Gamme", lens.data?.ranges.find((r) => r.id === data.lensRangeId)?.name ?? "—"] as [string, string]] : []),
+              ["Description", <span key="d" className="cat-secondary" style={{ fontWeight: 500 }}>{data.description ?? "—"}</span>],
+            ]} />
+          </Card>
+        </div>
+        <div className="cat-stack">
+          {selected && <VariantSide key={`${selected}-${store?.id}-side`} variantId={selected} />}
+        </div>
       </div>
 
-      <Dialog title="Nouvelle variante" open={adding} onClose={() => setAdding(false)}>
+      <Modal open={adding !== null} onClose={() => setAdding(null)} tone="accent" icon={Plus} title="Nouvelle variante" size="wide"
+        description="SKU généré automatiquement ; prix et stock se règlent ensuite par magasin."
+        actions={<>
+          <Button onClick={() => setAdding(null)}>Annuler</Button>
+          <Button variant="primary" disabled={write.isPending || !adding}
+            onClick={() => adding && write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/variants`, body: variantBody(adding, true) },
+              { onSuccess: () => { toast.show("Variante ajoutée", adding.label); setAdding(null); } })}>
+            <Save size={16} aria-hidden="true" />Créer la variante
+          </Button>
+        </>}>
         <ErrorBanner error={write.error} />
-        <VariantFields family={family} lens={lens.data} draft={newVariant} onChange={setNewVariant} errors={write.error?.error.fieldErrors} withPolicy />
-        <div className="cat-actions">
-          <Button onClick={() => setAdding(false)}>Annuler</Button>
-          <Button variant="primary" disabled={write.isPending}
-            onClick={() => write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/variants`, body: variantBody(newVariant, true) }, { onSuccess: () => setAdding(false) })}>
-            Enregistrer
-          </Button>
-        </div>
-      </Dialog>
-      <Dialog title="Archiver le modèle et ses variantes" open={archiving} onClose={() => setArchiving(false)}>
-        <p>Aucune suppression : le modèle et ses variantes restent consultables dans l&apos;historique. Refusé si une variante a du stock, du réservé ou un inventaire ouvert.</p>
-        <Field label="Motif (facultatif)" name="archiveReason" value={reason} onChange={setReason} multiline />
-        <div className="cat-actions">
+        {adding && <VariantFields family={family} familyCode={data.familyCode} lens={lens.data} draft={adding} onChange={setAdding} errors={write.error?.error.fieldErrors} withPolicy />}
+      </Modal>
+      <Modal open={archiving} onClose={() => setArchiving(false)} tone="err" icon={Archive} title="Archiver le modèle et ses variantes ?"
+        description="Aucune suppression : le modèle, ses variantes, prix et mouvements restent consultables dans l'historique. Refusé si une variante a du stock, du réservé ou un inventaire ouvert."
+        actions={<>
           <Button onClick={() => setArchiving(false)}>Annuler</Button>
-          <Button variant="danger" disabled={write.isPending}
-            onClick={() => write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/archive`, body: { version: data.version, reason: orNull(reason) } }, { onSuccess: () => setArchiving(false) })}>
-            Archiver
+          <Button className="cat-btn-danger-solid" disabled={write.isPending}
+            onClick={() => write.mutate({ method: "POST", path: `/api/catalog/models/${data.id}/archive`, body: { version: data.version, reason: orNull(reason) } },
+              { onSuccess: () => { setArchiving(false); toast.show("Produit archivé", "Il n'apparaît plus au catalogue de vente."); } })}>
+            <Archive size={16} aria-hidden="true" />Archiver
           </Button>
-        </div>
-      </Dialog>
+        </>}>
+        {write.error && (
+          <Banner tone="err" icon={Info} title={write.error.error.code === "archive_refused" ? "Archivage refusé" : "Opération refusée"} role="alert" compact>
+            {errorMessage(write.error.error)}
+          </Banner>
+        )}
+        <Field label="Motif (facultatif)" name="archiveReason" value={reason} onChange={setReason} multiline />
+      </Modal>
     </section>
   );
 }
 
-// ---------- fiche variante ----------
+// ---------- colonne principale : informations de la variante, historiques ----------
 
-function VariantPanel({ variantId, family, lens }: { variantId: string; family: Family | undefined; lens: LensReferences | undefined }) {
-  const access = useCatalogAccess();
+function useVariant(variantId: string) {
   const { store } = useActiveStore();
-  const detail = useCatalogQuery<VariantDetail>(store ? `/api/catalog/variants/${variantId}${query({ storeId: store.id })}` : null);
+  return useCatalogQuery<VariantDetail>(store ? `/api/catalog/variants/${variantId}${query({ storeId: store.id })}` : null);
+}
+
+function VariantMain({ variantId, family, lens }: { variantId: string; family: Family | undefined; lens: LensReferences | undefined }) {
+  const access = useCatalogAccess();
+  const toast = useToast();
+  const detail = useVariant(variantId);
   const write = useCatalogWrite();
   const [editing, setEditing] = useState<VariantDraft | null>(null);
-  const [tab, setTab] = useState<"prix" | "fournisseurs" | "stock" | "historique">("prix");
+  const [archiving, setArchiving] = useState(false);
 
   if (detail.isPending) return <Loading label="Chargement de la variante…" />;
-  if (detail.isError) return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
+  if (detail.isError) return <ErrorState error={detail.error} title="Impossible de charger la variante" onRetry={() => void detail.refetch()} />;
   const { row } = detail.data;
   const archived = row.status === "archived";
+  const policies = family?.allowedPolicies ?? [];
 
   return (
-    <Panel title={`${row.sku} — ${row.label}`} className="cat-detail" actions={
-      <div className="cat-actions">
-        {access.catalogWrite && !archived && (
-          <Button size="sm" onClick={() => setEditing({
-            sku: row.sku, label: row.label, manufacturerReference: row.manufacturerReference ?? "", barcode: row.barcode ?? "", stockPolicy: row.stockPolicy,
-            lensIndexId: detail.data.lensIndexId ?? "", treatmentIds: detail.data.treatmentIds, attributes: detail.data.attributes,
-          })}>Modifier</Button>
+    <>
+      <Card title={<>Informations — <span className="cat-ref">{row.sku}</span></>} icon={Info}
+        actions={(access.catalogWrite || access.catalogArchive) && (
+          <div className="clients-actions">
+            {access.catalogWrite && !archived && (
+              <Button size="sm" onClick={() => setEditing({
+                sku: row.sku, skuCustom: true, label: row.label, manufacturerReference: row.manufacturerReference ?? "", barcode: row.barcode ?? "", stockPolicy: row.stockPolicy,
+                lensIndexId: detail.data.lensIndexId ?? "", treatmentIds: detail.data.treatmentIds, attributes: detail.data.attributes,
+              })}><Pencil size={14} aria-hidden="true" />Modifier la variante</Button>
+            )}
+            {access.catalogArchive && (archived ? (
+              <Button size="sm" disabled={write.isPending} onClick={() => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/reactivate`, body: { version: row.version } },
+                { onSuccess: () => toast.show("Variante réactivée", row.sku) })}>
+                <RotateCcw size={14} aria-hidden="true" />Réactiver
+              </Button>
+            ) : (
+              <Button size="sm" variant="danger" onClick={() => { write.reset(); setArchiving(true); }}><Archive size={14} aria-hidden="true" />Archiver</Button>
+            ))}
+          </div>
+        )}>
+        {!archiving && <ErrorBanner error={write.error} onReload={() => void detail.refetch()} />}
+        <KeyValues rows={[
+          ["Référence (SKU)", <span key="s" className="cat-ref">{row.sku}</span>],
+          ["Libellé", row.label],
+          ["Politique de stock", access.catalogWrite && !archived && policies.length > 1 ? (
+            <select key="p" className="cat-inline-select" aria-label="Changer la politique de stock" value={row.stockPolicy} disabled={write.isPending}
+              onChange={(e) => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/policy`, body: { version: row.version, stockPolicy: e.target.value } },
+                { onSuccess: () => toast.show("Politique de stock modifiée", POLICY_LABELS[e.target.value as keyof typeof POLICY_LABELS]) })}>
+              {policies.map((p) => <option key={p} value={p}>{POLICY_LABELS[p]}</option>)}
+            </select>
+          ) : POLICY_LABELS[row.stockPolicy]],
+          ["Code-barres", <span key="b" className="cat-mono">{row.barcode ?? "—"}</span>],
+          ["Référence fabricant", row.manufacturerReference ?? "—"],
+          ...Object.entries(detail.data.attributes).map(([key, value]): [string, string] => [family?.variantAttributes.find((a) => a.key === key)?.label ?? key, value]),
+          ...(family?.code === "ophthalmic_lenses" ? [
+            ["Indice", lens?.indices.find((i) => i.id === detail.data.lensIndexId)?.name ?? "—"] as [string, string],
+            ["Traitements", detail.data.treatmentIds.map((t) => lens?.treatments.find((x) => x.id === t)?.name ?? "?").join(", ") || "aucun"] as [string, string],
+          ] : []),
+          ["Statut", archived ? <Badge key="st" tone="arch" icon={Archive}>Archivée</Badge> : <Badge key="st" tone="ok">Active</Badge>],
+          ...(detail.data.archiveReason ? [["Motif d'archivage", detail.data.archiveReason] as [string, string]] : []),
+        ]} />
+        {access.catalogWrite && !archived && policies.length > 1 && (
+          <p className="clients-field__hint" style={{ marginTop: 12 }}>Changement de politique refusé tant que du stock, du réservé ou un inventaire ouvert existent.</p>
         )}
-        {access.catalogArchive && (
-          <Button size="sm" variant={archived ? "secondary" : "danger"} disabled={write.isPending}
-            onClick={() => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/${archived ? "reactivate" : "archive"}`, body: { version: row.version } })}>
-            {archived ? "Réactiver" : "Archiver"}
-          </Button>
-        )}
-      </div>
-    }>
-      <ErrorBanner error={write.error} />
-      <dl className="cat-facts">
-        <div><dt>Politique</dt><dd>{POLICY_LABELS[row.stockPolicy]}</dd></div>
-        <div><dt>Disponibilité</dt><dd><Badge tone={AVAILABILITY_TONES[row.availability]}>{AVAILABILITY_LABELS[row.availability]}</Badge></dd></div>
-        <div><dt>Code-barres</dt><dd className="cat-mono">{row.barcode ?? "—"}</dd></div>
-        <div><dt>Réf. fabricant</dt><dd>{row.manufacturerReference ?? "—"}</dd></div>
-        <div><dt>Fournisseur principal</dt><dd>{row.primarySupplier ? `${row.primarySupplier.name}${row.primarySupplier.leadTimeDays !== null ? ` (${row.primarySupplier.leadTimeDays} j)` : ""}` : "—"}</dd></div>
-        {Object.entries(detail.data.attributes).map(([key, value]) => (
-          <div key={key}><dt>{family?.variantAttributes.find((a) => a.key === key)?.label ?? key}</dt><dd>{value}</dd></div>
-        ))}
-        {family?.code === "ophthalmic_lenses" && (
-          <div><dt>Indice · traitements</dt><dd>{lens?.indices.find((i) => i.id === detail.data.lensIndexId)?.name ?? "—"} · {detail.data.treatmentIds.map((t) => lens?.treatments.find((x) => x.id === t)?.name ?? "?").join(", ") || "aucun"}</dd></div>
-        )}
-      </dl>
-      {access.catalogWrite && !archived && <PolicyChange variantId={variantId} family={family} current={row.stockPolicy} version={row.version} />}
+      </Card>
+      <PriceHistoryCard variantId={variantId} />
 
-      <div className="cat-tabs" role="tablist">
-        {(["prix", "fournisseurs", "stock", "historique"] as const).filter((t) => (t === "fournisseurs" ? access.suppliersRead : t === "stock" ? access.stockRead && row.stockPolicy === "stocked" : true)).map((t) => (
-          <button key={t} type="button" role="tab" aria-selected={tab === t} className={`cat-tab${tab === t ? " is-active" : ""}`} onClick={() => setTab(t)}>
-            {{ prix: "Prix", fournisseurs: "Fournisseurs", stock: "Stock", historique: "Historique des prix" }[t]}
-          </button>
-        ))}
-      </div>
-      {tab === "prix" && <PricingPanel detail={detail.data} />}
-      {tab === "fournisseurs" && <SupplierLinksPanel detail={detail.data} />}
-      {tab === "stock" && detail.data.balances && (
-        <table className="cat-table">
-          <thead><tr><th scope="col">Emplacement</th><th scope="col" className="cat-num">En main</th><th scope="col" className="cat-num">Réservé</th><th scope="col" className="cat-num">Disponible</th></tr></thead>
-          <tbody>{detail.data.balances.map((b) => (
-            <tr key={b.locationId}><td>{b.locationName}{b.isDefault ? " (défaut)" : ""}</td><td className="cat-num">{b.onHand}</td><td className="cat-num">{b.reserved}</td><td className="cat-num">{b.available}</td></tr>
+      <Modal open={editing !== null} onClose={() => setEditing(null)} tone="accent" icon={Pencil} title={`Modifier la variante ${row.sku}`} size="wide"
+        actions={<>
+          <Button onClick={() => setEditing(null)}>Annuler</Button>
+          <Button variant="primary" disabled={write.isPending || !editing}
+            onClick={() => editing && write.mutate({ method: "PUT", path: `/api/catalog/variants/${variantId}`, body: { version: row.version, ...variantBody(editing, false) } },
+              { onSuccess: () => { toast.show("Modifications enregistrées", row.sku); setEditing(null); } })}>
+            <Save size={16} aria-hidden="true" />Enregistrer les modifications
+          </Button>
+        </>}>
+        <ErrorBanner error={write.error} onReload={() => { void detail.refetch(); setEditing(null); }} />
+        {editing && <VariantFields family={family} familyCode={family?.code ?? ""} lens={lens} draft={editing} onChange={setEditing} errors={write.error?.error.fieldErrors} />}
+      </Modal>
+      <Modal open={archiving} onClose={() => setArchiving(false)} tone="warn" icon={Archive} title={`Archiver la variante ${row.sku} ?`}
+        description="Elle n'apparaîtra plus à la vente ; son historique (prix, mouvements) est conservé. Refusé tant qu'il reste du stock, du réservé ou un inventaire ouvert."
+        actions={<>
+          <Button onClick={() => setArchiving(false)}>Annuler</Button>
+          <Button className="cat-btn-danger-solid" disabled={write.isPending}
+            onClick={() => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/archive`, body: { version: row.version } },
+              { onSuccess: () => { setArchiving(false); toast.show("Variante archivée", row.sku); } })}>
+            <Archive size={16} aria-hidden="true" />Archiver la variante
+          </Button>
+        </>}>
+        {write.error && <Banner tone="err" icon={Info} title="Archivage refusé" role="alert" compact>{errorMessage(write.error.error)}</Banner>}
+      </Modal>
+    </>
+  );
+}
+
+const HISTORY_FIELDS: Record<string, string> = { purchase_price_ht: "Prix d'achat HT", coefficient: "Coefficient", pricing_mode: "Mode", sale_price_ht: "Prix de vente HT", supplier_price_ht: "Prix fournisseur HT" };
+const HISTORY_ORIGINS: Record<string, string> = { edit: "Saisie", recalculation: "Recalcul", manual_price: "Prix manuel", import: "Import", receipt: "Réception" };
+const MODE_LABELS: Record<string, string> = { coefficient: "Coefficient", manual: "Manuel" };
+
+function historyValue(entry: PriceHistoryEntry, value: string | null, mode: string | null) {
+  if (entry.field === "pricing_mode") return mode ? MODE_LABELS[mode] ?? mode : "—";
+  if (entry.field === "coefficient") return value ? `× ${formatDecimal(value)}` : "—";
+  return formatMoney(value, entry.currency);
+}
+
+function PriceHistoryCard({ variantId }: { variantId: string }) {
+  const { store } = useActiveStore();
+  const history = useCatalogQuery<PriceHistoryEntry[]>(store ? `/api/pricing/variants/${variantId}/history${query({ storeId: store.id })}` : null);
+  const rows = Array.isArray(history.data) ? history.data : [];
+  return (
+    <Card title="Historique des prix" icon={History} flush actions={store && <span className="clients-muted">{store.name} · {store.currency}</span>}>
+      {history.isPending ? <p className="cat-empty-mini clients-muted">Chargement…</p> : history.isError ? <p className="cat-empty-mini clients-muted">Historique indisponible.</p> : rows.length === 0 ? (
+        <p className="cat-empty-mini clients-muted">Aucune modification de prix pour ce magasin.</p>
+      ) : (
+        <table className="clients-table cat-table cat-table--inner cat-table--compact">
+          <thead><tr><th scope="col">Date</th><th scope="col">Champ</th><th scope="col" className="cat-num">Ancien</th><th scope="col" className="cat-num">Nouveau</th><th scope="col">Origine</th><th scope="col" className="cat-hide-sm">Auteur</th></tr></thead>
+          <tbody>{rows.slice(0, 12).map((h) => (
+            <tr key={h.id}>
+              <td className="clients-muted tnum" style={{ whiteSpace: "nowrap" }}>{formatDateTime(h.changedAtUtc)}</td>
+              <td>{HISTORY_FIELDS[h.field] ?? h.field}</td>
+              <td className="cat-num cat-secondary">{historyValue(h, h.oldValue, h.oldMode)}</td>
+              <td className="cat-num cat-strong">{historyValue(h, h.newValue, h.newMode)}</td>
+              <td><Badge tone={h.origin === "manual_price" ? "warn" : h.origin === "recalculation" ? "info" : "arch"}>{HISTORY_ORIGINS[h.origin] ?? h.origin}</Badge>{h.reason && <div className="cat-sub">{h.reason}</div>}</td>
+              <td className="cat-secondary cat-hide-sm">{h.changedBy.displayName}</td>
+            </tr>
           ))}</tbody>
         </table>
       )}
-      {tab === "historique" && <PriceHistory variantId={variantId} />}
-
-      <Dialog title="Modifier la variante" open={editing !== null} onClose={() => setEditing(null)}>
-        <ErrorBanner error={write.error} />
-        {editing && <VariantFields family={family} lens={lens} draft={editing} onChange={setEditing} errors={write.error?.error.fieldErrors} />}
-        <div className="cat-actions">
-          <Button onClick={() => setEditing(null)}>Annuler</Button>
-          <Button variant="primary" disabled={write.isPending}
-            onClick={() => editing && write.mutate({ method: "PUT", path: `/api/catalog/variants/${variantId}`, body: { version: row.version, ...variantBody(editing, false) } }, { onSuccess: () => setEditing(null) })}>
-            Enregistrer
-          </Button>
-        </div>
-      </Dialog>
-    </Panel>
+    </Card>
   );
 }
 
-function PolicyChange({ variantId, family, current, version }: { variantId: string; family: Family | undefined; current: string; version: number }) {
-  const write = useCatalogWrite();
-  const options = family?.allowedPolicies ?? [];
-  if (options.length < 2) return null;
+function StockHistoryCard({ variantId }: { variantId: string }) {
+  const navigate = useNavigate();
+  const { store } = useActiveStore();
+  const movements = useCatalogQuery<Page<Movement>>(store ? `/api/stock/movements${query({ storeId: store.id, variantId, pageSize: 8 })}` : null);
+  const rows = movements.data?.items ?? [];
   return (
-    <div className="cat-inline">
-      <ErrorBanner error={write.error} />
-      <label className="cat-label" htmlFor={`policy-${variantId}`}>Changer la politique</label>
-      <select id={`policy-${variantId}`} className="cat-input w-auto" value={current} disabled={write.isPending}
-        onChange={(e) => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/policy`, body: { version, stockPolicy: e.target.value } })}>
-        {options.map((p) => <option key={p} value={p}>{POLICY_LABELS[p]}</option>)}
-      </select>
-      <span className="cat-muted">Refusé tant que du stock, du réservé ou un inventaire ouvert existent.</span>
-    </div>
+    <Card title="Historique de stock" icon={History} flush foot={<button type="button" className="cat-card__link" onClick={() => navigate("/inventaire/mouvements")}>Tout voir</button>}>
+      {movements.isPending ? <p className="cat-empty-mini clients-muted">Chargement…</p> : rows.length === 0 ? (
+        <p className="cat-empty-mini clients-muted">Aucun mouvement enregistré pour cette variante dans ce magasin.</p>
+      ) : (
+        <table className="clients-table cat-table cat-table--inner cat-table--compact">
+          <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" className="cat-num">Qté</th><th scope="col">Motif</th></tr></thead>
+          <tbody>{rows.map((m) => (
+            <tr key={m.id}>
+              <td className="clients-muted tnum" style={{ fontSize: 12.5 }}>{formatDateTime(m.performedAtUtc)}</td>
+              <td><Badge tone={m.quantityDelta > 0 ? "ok" : m.quantityDelta < 0 ? "err" : "info"}>{MOVEMENT_LABELS[m.type] ?? m.type}</Badge></td>
+              <td className="cat-num"><Diff value={m.quantityDelta} /></td>
+              <td className="cat-secondary" style={{ fontSize: 12.5 }}>{reasonLabel(m.reasonCode)}<div className="cat-sub">{m.locationCode} · stock {m.quantityAfter}</div></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      )}
+    </Card>
   );
 }
 
-// ---------- tarif ----------
+// ---------- colonne latérale : prix & disponibilité, fournisseurs ----------
 
-function PricingPanel({ detail }: { detail: VariantDetail }) {
+function VariantSide({ variantId }: { variantId: string }) {
   const access = useCatalogAccess();
+  const detail = useVariant(variantId);
+  if (detail.isPending || detail.isError) return null;
+  return (
+    <>
+      <PriceCard detail={detail.data} />
+      {access.suppliersRead && <SuppliersCard detail={detail.data} />}
+      {access.stockRead && detail.data.row.stockPolicy === "stocked" && <StockHistoryCard variantId={variantId} />}
+    </>
+  );
+}
+
+function PriceCard({ detail }: { detail: VariantDetail }) {
+  const access = useCatalogAccess();
+  const { row } = detail;
+  const price = row.price;
+  const canEdit = row.status === "active" && ((access.pricingWrite && access.costsRead) || access.pricingManual || access.costsWrite);
+  const [editing, setEditing] = useState(false);
+  const badge = availabilityBadge(row.availability);
+  const balances = detail.balances ?? [];
+
+  return (
+    <Card title="Prix & disponibilité" icon={Coins}
+      actions={<Badge tone="arch">{price.currency}</Badge>}
+      foot={canEdit && (
+        <Button size="sm" variant={editing ? "secondary" : "primary"} onClick={() => setEditing((v) => !v)}>
+          {editing ? <><X size={14} aria-hidden="true" />Fermer l&apos;édition</> : <><Pencil size={14} aria-hidden="true" />Modifier le prix</>}
+        </Button>
+      )}>
+      <div className="cat-price">
+        <span className="cat-price__label">Prix de vente HT validé</span>
+        <span className="cat-price__value" data-testid="sale-price">{formatMoney(price.salePriceHt, price.currency)}</span>
+      </div>
+      <div className="cat-line">
+        <span>Mode</span>
+        {price.pricingMode === "manual" ? <Badge tone="warn" icon={Pencil}>Prix manuel</Badge> : <Badge tone="accent" icon={Calculator}>Coefficient</Badge>}
+      </div>
+      <div className="cat-line">
+        <span>État</span>
+        <Badge tone={price.priceStatus === "up_to_date" ? "ok" : "warn"}>{PRICE_STATUS_LABELS[price.priceStatus]}</Badge>
+      </div>
+      <div className="cat-line">
+        <span>Prix TTC</span>
+        <span className={price.salePriceTtc ? "cat-line__value" : "clients-muted"}>{price.salePriceTtc ? formatMoney(price.salePriceTtc, price.currency) : "indisponible — fiscalité du magasin non validée"}</span>
+      </div>
+      <div className="cat-sep" />
+      {price.costsVisible ? (
+        <>
+          <div className="cat-line"><span>Prix d&apos;achat HT</span><span className="cat-line__value">{formatMoney(price.purchasePriceHt ?? null, price.currency)}</span></div>
+          <div className="cat-line"><span>Coefficient</span><span className="cat-line__value">{price.coefficient ? `× ${formatDecimal(price.coefficient)}` : "—"}</span></div>
+          <div className="cat-line"><span>Coefficient effectif</span><span className="cat-line__value">{price.effectiveCoefficient ? `× ${formatDecimal(price.effectiveCoefficient)}` : "—"}</span></div>
+          <div className="cat-line"><span>Marge HT</span>{price.margin ? <span className="cat-marg"><TrendingUp size={14} aria-hidden="true" />{formatMoney(price.margin, price.currency)}</span> : <span className="clients-muted">—</span>}</div>
+          {price.priceStatus === "recalculation_pending" && price.computedSalePriceHt && (
+            <div className="cat-line"><span>Prix recalculé proposé</span><span className="cat-line__value">{formatMoney(price.computedSalePriceHt, price.currency)}</span></div>
+          )}
+        </>
+      ) : (
+        <Lock>Prix d&apos;achat, coefficient et marge non visibles pour votre profil</Lock>
+      )}
+      {editing && <PriceEditor detail={detail} onDone={() => setEditing(false)} />}
+      <div className="cat-sep" />
+      {row.stockPolicy === "stocked" && row.stock ? (
+        <>
+          <div className="cat-line">
+            <StockCell value={`${row.stock.available} disponible${row.stock.available > 1 ? "s" : ""}`} tone={stockTone(row.availability)} />
+            <Badge tone={badge.tone} icon={badge.icon}>{AVAILABILITY_LABELS[row.availability]}</Badge>
+          </div>
+          <div className="cat-line"><span>En main · réservé</span><span className="cat-line__value">{row.stock.onHand} · {row.stock.reserved}</span></div>
+          <div className="cat-line"><span>Seuil d&apos;alerte</span><span className="cat-line__value">{row.stock.lowStockThreshold ?? "non défini"}</span></div>
+          {balances.length > 0 && (
+            <table className="clients-table cat-table cat-table--inner cat-table--compact" style={{ marginTop: 12 }}>
+              <thead><tr><th scope="col">Emplacement</th><th scope="col" className="cat-num">En main</th><th scope="col" className="cat-num">Réservé</th><th scope="col" className="cat-num">Dispo.</th></tr></thead>
+              <tbody>{balances.map((b) => (
+                <tr key={b.locationId}><td>{b.locationName}{b.isDefault && <span className="cat-sub"> défaut</span>}</td><td className="cat-num">{b.onHand}</td><td className="cat-num">{b.reserved}</td><td className="cat-num cat-strong">{b.available}</td></tr>
+              ))}</tbody>
+            </table>
+          )}
+        </>
+      ) : (
+        <div className="cat-line">
+          <span>{POLICY_LABELS[row.stockPolicy]}</span>
+          <Badge tone={badge.tone} icon={badge.icon}>{AVAILABILITY_LABELS[row.availability]}</Badge>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Édition du prix dans le bloc Prix : aperçu SERVEUR obligatoire avant enregistrement, aucun calcul sur le poste. */
+function PriceEditor({ detail, onDone }: { detail: VariantDetail; onDone: () => void }) {
+  const access = useCatalogAccess();
+  const toast = useToast();
   const { store } = useActiveStore();
   const price = detail.row.price;
   const write = useCatalogWrite();
@@ -384,164 +824,177 @@ function PricingPanel({ detail }: { detail: VariantDetail }) {
   const [previewState, setPreviewState] = useState<{ key: string; value: string } | null>(null);
   const previewKey = `${purchase}|${coefficient}`;
   const previewed = previewState?.key === previewKey ? previewState.value : null;
-  const setPreviewed = (value: string) => setPreviewState({ key: previewKey, value });
   if (!store) return null;
   const variantPath = `/api/pricing/variants/${detail.row.variantId}`;
   const base = { storeId: store.id, version: price.version };
   const fieldErrors = write.error?.error.fieldErrors ?? preview.error?.error.fieldErrors;
+  const done = (title: string) => ({ onSuccess: () => { toast.show(title, `${detail.row.sku} · magasin ${store.name}`); onDone(); } });
 
   return (
-    <div className="cat-pricing">
-      <dl className="cat-facts">
-        <div><dt>Prix de vente HT</dt><dd className="cat-price">{formatMoney(price.salePriceHt, price.currency)}</dd></div>
-        <div><dt>Mode</dt><dd>{price.pricingMode === "manual" ? "Prix manuel" : "Coefficient"}</dd></div>
-        <div><dt>État</dt><dd><Badge tone={price.priceStatus === "up_to_date" ? "success" : "warning"}>{PRICE_STATUS_LABELS[price.priceStatus]}</Badge></dd></div>
-        <div><dt>TTC</dt><dd>{price.salePriceTtc ? formatMoney(price.salePriceTtc, price.currency) : "TTC indisponible — fiscalité du magasin non validée"}</dd></div>
-        {price.costsVisible && (
-          <>
-            <div><dt>Prix d&apos;achat HT</dt><dd>{formatMoney(price.purchasePriceHt ?? null, price.currency)}</dd></div>
-            <div><dt>Coefficient</dt><dd>{price.coefficient ?? "—"}</dd></div>
-            <div><dt>Coefficient effectif</dt><dd>{price.effectiveCoefficient ?? "—"}</dd></div>
-            <div><dt>Marge HT</dt><dd>{formatMoney(price.margin ?? null, price.currency)}</dd></div>
-            {price.priceStatus === "recalculation_pending" && <div><dt>Prix recalculé proposé</dt><dd>{formatMoney(price.computedSalePriceHt ?? null, price.currency)}</dd></div>}
-          </>
-        )}
-      </dl>
+    <div className="cat-editor">
       <ErrorBanner error={(write.error ?? preview.error) as ApiRequestError | null} />
-      {access.pricingWrite && access.costsRead && detail.row.status === "active" && (
-        <fieldset className="cat-fieldset">
-          <legend className="cat-label">Prix par coefficient (calcul serveur, un seul arrondi au centime)</legend>
+      {access.pricingWrite && access.costsRead && (
+        <>
+          <p className="cat-editor__title"><Calculator size={14} aria-hidden="true" />Prix par coefficient — calcul serveur, un seul arrondi au centime</p>
           <div className="cat-grid">
-            <Field label={`Prix d'achat HT (${price.currency})`} name="purchasePriceHt" value={purchase} onChange={setPurchase} inputMode="decimal" errors={fieldErrors}
-              disabled={!access.costsWrite} hint={access.costsWrite ? undefined : "Lecture seule : droit costs.write requis."} />
-            <Field label="Coefficient" name="coefficient" value={coefficient} onChange={setCoefficient} inputMode="decimal" errors={fieldErrors} />
+            <Field label="Prix d'achat HT" name="purchasePriceHt" value={purchase} onChange={setPurchase} inputMode="decimal" errors={fieldErrors} suffix={price.currency}
+              disabled={!access.costsWrite} hint={access.costsWrite ? undefined : "Lecture seule (costs.write)."} />
+            <Field label="Coefficient" name="coefficient" value={coefficient} onChange={setCoefficient} inputMode="decimal" errors={fieldErrors} suffix="×" />
           </div>
-          <div className="cat-actions">
-            <Button disabled={preview.isPending}
+          <div className="cat-preview" aria-live="polite">
+            <span>Aperçu du prix de vente HT</span>
+            <span className="cat-preview__value">{previewed ? formatMoney(previewed, price.currency) : "—"}</span>
+          </div>
+          {previewed && <span className="sr-only">Prix calculé : {formatMoney(previewed, price.currency)}</span>}
+          {previewed && preview.data?.belowCost && (
+            <label className="cat-check cat-check--plain"><input type="checkbox" checked={acceptBelowCost} onChange={(e) => setAcceptBelowCost(e.target.checked)} />Je confirme une vente sous le prix d&apos;achat</label>
+          )}
+          <div className="cat-editor__actions">
+            <Button size="sm" disabled={preview.isPending}
               onClick={() => preview.mutate({ path: "/api/pricing/preview", body: { storeId: store.id, purchasePriceHt: decimalInput(purchase), coefficient: decimalInput(coefficient) } },
-                { onSuccess: (r) => { setPreviewed(r.computedSalePriceHt); setAcceptBelowCost(false); } })}>
-              Aperçu
+                { onSuccess: (r) => { setPreviewState({ key: previewKey, value: r.computedSalePriceHt }); setAcceptBelowCost(false); } })}>
+              <Calculator size={14} aria-hidden="true" />Aperçu
             </Button>
-            {previewed && <span>Prix calculé : <strong>{formatMoney(previewed, price.currency)}</strong></span>}
-            {previewed && preview.data?.belowCost && (
-              <label className="cat-check"><input type="checkbox" checked={acceptBelowCost} onChange={(e) => setAcceptBelowCost(e.target.checked)} />Je confirme une vente sous le prix d&apos;achat</label>
-            )}
-            <Button variant="primary" disabled={!previewed || write.isPending}
+            <Button size="sm" variant="primary" disabled={!previewed || write.isPending}
               onClick={() => write.mutate({ method: "PUT", path: variantPath, body: {
                 ...base, purchasePriceHt: access.costsWrite ? decimalInput(purchase) : undefined, coefficient: decimalInput(coefficient), expectedSalePriceHt: previewed, acceptBelowCost,
-              } })}>
-              Enregistrer ce prix
+              } }, done("Prix enregistré"))}>
+              <Save size={14} aria-hidden="true" />Enregistrer ce prix
             </Button>
             {price.priceStatus === "recalculation_pending" && price.computedSalePriceHt && (
-              <Button onClick={() => write.mutate({ method: "POST", path: `${variantPath}/recalculate`, body: { ...base, expectedSalePriceHt: price.computedSalePriceHt } })}>
+              <Button size="sm" onClick={() => write.mutate({ method: "POST", path: `${variantPath}/recalculate`, body: { ...base, expectedSalePriceHt: price.computedSalePriceHt } }, done("Recalcul appliqué"))}>
                 Appliquer le recalcul ({formatMoney(price.computedSalePriceHt, price.currency)})
               </Button>
             )}
           </div>
-        </fieldset>
+        </>
       )}
-      {access.costsWrite && !access.pricingWrite && detail.row.status === "active" && (
-        <fieldset className="cat-fieldset">
-          <legend className="cat-label">Prix d&apos;achat HT seul (le prix de vente ne change pas)</legend>
-          <Field label={`Prix d'achat HT (${price.currency})`} name="purchaseOnly" value={purchase} onChange={setPurchase} inputMode="decimal" errors={fieldErrors} />
-          <Button onClick={() => write.mutate({ method: "PUT", path: `${variantPath}/purchase-price`, body: { ...base, purchasePriceHt: decimalInput(purchase) } })}>Enregistrer le prix d&apos;achat</Button>
-        </fieldset>
+      {access.costsWrite && !access.pricingWrite && (
+        <>
+          <p className="cat-editor__title"><Coins size={14} aria-hidden="true" />Prix d&apos;achat HT seul — le prix de vente ne change pas</p>
+          <Field label="Prix d'achat HT" name="purchaseOnly" value={purchase} onChange={setPurchase} inputMode="decimal" errors={fieldErrors} suffix={price.currency} />
+          <div className="cat-editor__actions">
+            <Button size="sm" variant="primary" onClick={() => write.mutate({ method: "PUT", path: `${variantPath}/purchase-price`, body: { ...base, purchasePriceHt: decimalInput(purchase) } }, done("Prix d'achat enregistré"))}>
+              <Save size={14} aria-hidden="true" />Enregistrer le prix d&apos;achat
+            </Button>
+          </div>
+        </>
       )}
-      {access.pricingManual && detail.row.status === "active" && (
-        <fieldset className="cat-fieldset">
-          <legend className="cat-label">Prix manuel (le coefficient enregistré est conservé, non appliqué)</legend>
+      {access.pricingManual && (
+        <>
+          <p className="cat-editor__title"><LockIcon size={14} aria-hidden="true" />Prix manuel — le coefficient enregistré est conservé, non appliqué</p>
           <div className="cat-grid">
-            <Field label={`Prix de vente HT (${price.currency})`} name="salePriceHt" value={manual} onChange={setManual} inputMode="decimal" errors={fieldErrors} />
+            <Field label="Prix de vente HT" name="salePriceHt" value={manual} onChange={setManual} inputMode="decimal" errors={fieldErrors} suffix={price.currency} />
             <Field label="Motif (facultatif)" name="reason" value={reason} onChange={setReason} />
           </div>
-          <Button onClick={() => write.mutate({ method: "PUT", path: `${variantPath}/manual-price`, body: { ...base, salePriceHt: decimalInput(manual), reason: orNull(reason) } })}>
-            Appliquer le prix manuel
-          </Button>
-        </fieldset>
+          <div className="cat-editor__actions">
+            <Button size="sm" onClick={() => write.mutate({ method: "PUT", path: `${variantPath}/manual-price`, body: { ...base, salePriceHt: decimalInput(manual), reason: orNull(reason) } }, done("Prix manuel appliqué"))}>
+              <Pencil size={14} aria-hidden="true" />Appliquer le prix manuel
+            </Button>
+          </div>
+        </>
       )}
     </div>
   );
 }
 
-function PriceHistory({ variantId }: { variantId: string }) {
-  const { store } = useActiveStore();
-  const history = useCatalogQuery<PriceHistoryEntry[]>(store ? `/api/pricing/variants/${variantId}/history${query({ storeId: store.id })}` : null);
-  if (history.isPending) return <Loading label="Chargement de l'historique…" />;
-  if (history.isError) return <ErrorState error={history.error} />;
-  const rows = Array.isArray(history.data) ? history.data : [];
-  if (rows.length === 0) return <p className="cat-muted">Aucune modification de prix.</p>;
-  const labels: Record<string, string> = { purchase_price_ht: "Prix d'achat HT", coefficient: "Coefficient", pricing_mode: "Mode", sale_price_ht: "Prix de vente HT", supplier_price_ht: "Prix fournisseur HT" };
-  const origins: Record<string, string> = { edit: "Saisie", recalculation: "Recalcul", manual_price: "Prix manuel", import: "Import", receipt: "Réception" };
+function SuppliersCard({ detail }: { detail: VariantDetail }) {
+  const access = useCatalogAccess();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const write = useCatalogWrite();
+  const [linking, setLinking] = useState(false);
+  const links = (detail.suppliers ?? []).filter((l) => !l.removed).sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+  const path = (id: string) => `/api/catalog/variants/${detail.row.variantId}/suppliers/${id}`;
+  const canWrite = access.catalogWrite && detail.row.status === "active";
+
   return (
-    <table className="cat-table">
-      <thead><tr><th scope="col">Date</th><th scope="col">Champ</th><th scope="col">Ancien</th><th scope="col">Nouveau</th><th scope="col">Origine</th><th scope="col">Auteur</th></tr></thead>
-      <tbody>{rows.map((h) => (
-        <tr key={h.id}>
-          <td>{formatDateTime(h.changedAtUtc)}</td>
-          <td>{labels[h.field] ?? h.field}</td>
-          <td>{h.field === "pricing_mode" ? h.oldMode ?? "—" : h.field === "coefficient" ? h.oldValue ?? "—" : formatMoney(h.oldValue, h.currency)}</td>
-          <td>{h.field === "pricing_mode" ? h.newMode ?? "—" : h.field === "coefficient" ? h.newValue ?? "—" : formatMoney(h.newValue, h.currency)}</td>
-          <td>{origins[h.origin] ?? h.origin}{h.reason ? ` — ${h.reason}` : ""}</td>
-          <td>{h.changedBy.displayName}</td>
-        </tr>
-      ))}</tbody>
-    </table>
+    <Card title="Fournisseurs" icon={Truck} flush
+      foot={canWrite && <Button size="sm" onClick={() => { write.reset(); setLinking(true); }}><Plus size={14} aria-hidden="true" />Rattacher un fournisseur</Button>}>
+      <div className="cat-card__body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {detail.row.isIncomplete && (
+          <Banner tone="warn" icon={Info} title="Fiche incomplète" compact>Aucun fournisseur principal actif : la commande fournisseur effective l&apos;exigera.</Banner>
+        )}
+        {!linking && <ErrorBanner error={write.error} />}
+        {links.length === 0 ? (
+          <div className="cat-empty-mini">
+            <span className="cat-thumb"><PackageOpen size={26} aria-hidden="true" /></span>
+            <div className="cat-empty-mini__title">Aucun fournisseur rattaché</div>
+            <p className="cat-empty-mini__text">Plusieurs fournisseurs sont possibles par variante, dont un principal.</p>
+          </div>
+        ) : links.map((l) => (
+          <div key={l.supplierId} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <span className="cat-thumb cat-thumb--round"><Building2 size={20} aria-hidden="true" /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                <button type="button" className="cat-card__link" style={{ color: "var(--text-primary)", fontWeight: 700, fontSize: 15 }} onClick={() => navigate(`/produits/fournisseurs/${l.supplierId}`)}>{l.name}</button>
+                {l.isPrimary && <Badge tone="accent" icon={Star}>Principal</Badge>}
+                {l.supplierStatus === "archived" && <Badge tone="arch">Archivé</Badge>}
+              </div>
+              <div className="cat-sub cat-mono">{l.code}</div>
+              <KeyValues compact rows={[
+                ["Réf. fournisseur", l.supplierReference ?? "—"],
+                ["Délai indicatif", l.leadTimeDays !== null ? `${l.leadTimeDays} j` : "—"],
+                ...(detail.costsVisible ? [["Prix fournisseur HT", l.supplierPriceHt && l.supplierCurrency ? formatMoney(l.supplierPriceHt, l.supplierCurrency) : "—"] as [string, string]] : []),
+              ]} />
+              {canWrite && (
+                <div className="clients-actions" style={{ marginTop: 8 }}>
+                  {!l.isPrimary && l.supplierStatus === "active" && (
+                    <Button size="sm" variant="tertiary" onClick={() => write.mutate({ method: "PUT", path: path(l.supplierId), body: { version: l.version, isPrimary: true, supplierReference: l.supplierReference, leadTimeDays: l.leadTimeDays } },
+                      { onSuccess: () => toast.show("Fournisseur principal modifié", l.name) })}>
+                      <Star size={14} aria-hidden="true" />Rendre principal
+                    </Button>
+                  )}
+                  <Button size="sm" variant="danger" onClick={() => write.mutate({ method: "POST", path: `${path(l.supplierId)}/remove`, body: { version: l.version } },
+                    { onSuccess: () => toast.show("Fournisseur retiré", l.name) })}>
+                    <X size={14} aria-hidden="true" />Retirer
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {linking && <LinkSupplierModal detail={detail} onClose={() => setLinking(false)} />}
+    </Card>
   );
 }
 
-// ---------- fournisseurs d'une variante ----------
-
-function SupplierLinksPanel({ detail }: { detail: VariantDetail }) {
+function LinkSupplierModal({ detail, onClose }: { detail: VariantDetail; onClose: () => void }) {
   const access = useCatalogAccess();
-  const suppliers = useCatalogQuery<Page<SupplierRow>>("/api/suppliers?pageSize=200");
+  const toast = useToast();
+  const suppliers = useCatalogQuery<Page<SupplierRow>>("/api/suppliers?status=active&pageSize=200");
   const write = useCatalogWrite();
   const [supplierId, setSupplierId] = useState("");
   const [reference, setReference] = useState("");
   const [primary, setPrimary] = useState(false);
   const [priceHt, setPriceHt] = useState("");
   const [currency, setCurrency] = useState(detail.row.price.currency);
-  const links = (detail.suppliers ?? []).filter((l) => !l.removed);
-  const path = (id: string) => `/api/catalog/variants/${detail.row.variantId}/suppliers/${id}`;
-
+  const errors = write.error?.error.fieldErrors;
   return (
-    <div>
-      {detail.row.isIncomplete && <p className="cat-alert" role="status">Fiche incomplète : aucun fournisseur principal actif. La commande fournisseur effective l&apos;exigera.</p>}
+    <Modal open onClose={onClose} tone="accent" icon={Truck} title="Rattacher un fournisseur" size="wide"
+      description={`Variante ${detail.row.sku}. Plusieurs fournisseurs possibles, au plus un principal ; le prix fournisseur ne modifie pas le prix d'achat de référence.`}
+      actions={<>
+        <Button onClick={onClose}>Annuler</Button>
+        <Button variant="primary" disabled={supplierId === "" || write.isPending}
+          onClick={() => write.mutate({ method: "PUT", path: `/api/catalog/variants/${detail.row.variantId}/suppliers/${supplierId}`, body: {
+            supplierReference: orNull(reference), isPrimary: primary,
+            ...(access.costsWrite && priceHt.trim() !== "" ? { supplierPriceHt: decimalInput(priceHt), supplierCurrency: currency.trim().toUpperCase() } : {}),
+          } }, { onSuccess: () => { toast.show("Fournisseur rattaché", detail.row.sku); onClose(); } })}>
+          <Plus size={16} aria-hidden="true" />Rattacher
+        </Button>
+      </>}>
       <ErrorBanner error={write.error} />
-      <table className="cat-table">
-        <thead><tr><th scope="col">Fournisseur</th><th scope="col">Référence</th><th scope="col">Délai</th>{detail.costsVisible && <th scope="col" className="cat-num">Prix fournisseur HT</th>}<th scope="col">Rôle</th><th scope="col" /></tr></thead>
-        <tbody>{links.length === 0 ? <tr><td colSpan={6} className="cat-muted">Aucun fournisseur rattaché.</td></tr> : links.map((l) => (
-          <tr key={l.supplierId}>
-            <td>{l.name} <span className="cat-muted">({l.code}){l.supplierStatus === "archived" ? " · archivé" : ""}</span></td>
-            <td>{l.supplierReference ?? "—"}</td>
-            <td>{l.leadTimeDays !== null ? `${l.leadTimeDays} j` : "—"}</td>
-            {detail.costsVisible && <td className="cat-num">{l.supplierPriceHt && l.supplierCurrency ? formatMoney(l.supplierPriceHt, l.supplierCurrency) : "—"}</td>}
-            <td>{l.isPrimary ? <Badge tone="info">Principal</Badge> : access.catalogWrite && l.supplierStatus === "active" ? (
-              <Button size="sm" variant="tertiary" onClick={() => write.mutate({ method: "PUT", path: path(l.supplierId), body: { version: l.version, isPrimary: true, supplierReference: l.supplierReference, leadTimeDays: l.leadTimeDays } })}>Rendre principal</Button>
-            ) : null}</td>
-            <td>{access.catalogWrite && <Button size="sm" variant="danger" onClick={() => write.mutate({ method: "POST", path: `${path(l.supplierId)}/remove`, body: { version: l.version } })}>Retirer</Button>}</td>
-          </tr>
-        ))}</tbody>
-      </table>
-      {access.catalogWrite && detail.row.status === "active" && (
-        <fieldset className="cat-fieldset">
-          <legend className="cat-label">Rattacher un fournisseur</legend>
-          <div className="cat-grid">
-            <SelectField label="Fournisseur" name="supplierId" value={supplierId} onChange={setSupplierId}
-              options={[{ value: "", label: "— Choisir —" }, ...(suppliers.data?.items ?? []).filter((s) => s.status === "active").map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))]} />
-            <Field label="Référence fournisseur" name="supplierReference" value={reference} onChange={setReference} errors={write.error?.error.fieldErrors} />
-            {access.costsWrite && <Field label="Prix fournisseur HT" name="supplierPriceHt" value={priceHt} onChange={setPriceHt} inputMode="decimal" errors={write.error?.error.fieldErrors} hint="Sans conversion ; ne modifie pas le prix d'achat de référence." />}
-            {access.costsWrite && <Field label="Devise du prix fournisseur" name="supplierCurrency" value={currency} onChange={setCurrency} errors={write.error?.error.fieldErrors} />}
-          </div>
+      <div className="cat-grid">
+        <SelectField label="Fournisseur" name="supplierId" value={supplierId} onChange={setSupplierId} required span2
+          options={[{ value: "", label: "— Choisir un fournisseur actif —" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))]} />
+        <Field label="Référence fournisseur" name="supplierReference" value={reference} onChange={setReference} errors={errors} />
+        <div className="clients-field" style={{ justifyContent: "flex-end" }}>
           <label className="cat-check"><input type="checkbox" checked={primary} onChange={(e) => setPrimary(e.target.checked)} />Fournisseur principal</label>
-          <Button disabled={supplierId === "" || write.isPending}
-            onClick={() => write.mutate({ method: "PUT", path: path(supplierId), body: {
-              supplierReference: orNull(reference), isPrimary: primary,
-              ...(access.costsWrite && priceHt.trim() !== "" ? { supplierPriceHt: decimalInput(priceHt), supplierCurrency: currency.trim().toUpperCase() } : {}),
-            } })}>
-            Rattacher
-          </Button>
-        </fieldset>
-      )}
-    </div>
+        </div>
+        {access.costsWrite && <Field label="Prix fournisseur HT" name="supplierPriceHt" value={priceHt} onChange={setPriceHt} inputMode="decimal" errors={errors} suffix={currency} hint="Facultatif ; sans conversion." />}
+        {access.costsWrite && <Field label="Devise du prix fournisseur" name="supplierCurrency" value={currency} onChange={setCurrency} errors={errors} />}
+      </div>
+    </Modal>
   );
 }
