@@ -427,6 +427,37 @@ internal sealed class ImportStore(MmvDbContext context) : IImportStore
     public async Task<IReadOnlyDictionary<string, Supplier>> SuppliersByCodeAsync(IReadOnlyCollection<string> codeKeys, CancellationToken cancellationToken) =>
         await context.Suppliers.AsNoTracking().Where(s => codeKeys.Contains(s.CodeKey)).ToDictionaryAsync(s => s.CodeKey, StringComparer.Ordinal, cancellationToken);
 
+    public async Task<IReadOnlyDictionary<string, ProductVariant>> VariantsBySupplierReferenceAsync(
+        Guid supplierId, IReadOnlyCollection<string> referenceKeys, CancellationToken cancellationToken)
+    {
+        if (referenceKeys.Count == 0)
+        {
+            return new Dictionary<string, ProductVariant>(StringComparer.Ordinal);
+        }
+
+        var links = await (from l in context.VariantSuppliers.AsNoTracking()
+                           join v in context.ProductVariants.AsNoTracking() on l.VariantId equals v.Id
+                           where l.SupplierId == supplierId && l.RemovedAtUtc == null && l.SupplierReference != null
+                           select new { l.SupplierReference, Variant = v }).ToListAsync(cancellationToken);
+        var result = new Dictionary<string, ProductVariant>(StringComparer.Ordinal);
+        foreach (var link in links)
+        {
+            var key = Domain.Catalog.CatalogKeys.Normalize(link.SupplierReference!);
+            if (referenceKeys.Contains(key))
+            {
+                result.TryAdd(key, link.Variant);
+            }
+        }
+
+        return result;
+    }
+
+    public async Task<IReadOnlyDictionary<string, ProductVariant>> VariantsByBarcodeAsync(IReadOnlyCollection<string> barcodes, CancellationToken cancellationToken) =>
+        barcodes.Count == 0
+            ? new Dictionary<string, ProductVariant>(StringComparer.Ordinal)
+            : await context.ProductVariants.AsNoTracking().Where(v => v.Barcode != null && barcodes.Contains(v.Barcode))
+                .ToDictionaryAsync(v => v.Barcode!, StringComparer.Ordinal, cancellationToken);
+
     public async Task<IReadOnlyDictionary<string, ProductModel>> ModelsByKeyAsync(IReadOnlyCollection<string> familyCodes, CancellationToken cancellationToken)
     {
         var models = await context.ProductModels.AsNoTracking().Where(m => familyCodes.Contains(m.FamilyCode) && m.ArchivedAtUtc == null).ToListAsync(cancellationToken);

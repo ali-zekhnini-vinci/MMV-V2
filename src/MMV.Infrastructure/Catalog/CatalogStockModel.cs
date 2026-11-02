@@ -61,6 +61,7 @@ internal static class CatalogStockModel
         ConfigureStock(modelBuilder);
         ConfigureInventory(modelBuilder);
         ConfigureImports(modelBuilder);
+        ConfigureCorrections(modelBuilder);
         ApplySnakeCase(modelBuilder);
     }
 
@@ -601,6 +602,8 @@ internal static class CatalogStockModel
             batch.Property(b => b.Status).HasMaxLength(16).IsRequired();
             batch.Property(b => b.Version).IsRowVersion();
             batch.HasOne<Store>().WithMany().HasForeignKey(b => b.StoreId).HasConstraintName("fk_batches_stores").OnDelete(DeleteBehavior.Restrict);
+            batch.HasOne<Supplier>().WithMany().HasForeignKey(b => b.SupplierId).HasConstraintName("fk_batches_suppliers").OnDelete(DeleteBehavior.Restrict);
+            batch.HasIndex(b => b.SupplierId).HasDatabaseName("ix_batches_supplier_id");
             batch.HasOne<UserAccount>().WithMany().HasForeignKey(b => b.UploadedByUserId).HasConstraintName("fk_batches_uploaded_by_users").OnDelete(DeleteBehavior.Restrict);
             batch.HasOne<UserAccount>().WithMany().HasForeignKey(b => b.CheckedByUserId).HasConstraintName("fk_batches_checked_by_users").OnDelete(DeleteBehavior.Restrict);
             batch.HasOne<UserAccount>().WithMany().HasForeignKey(b => b.AppliedByUserId).HasConstraintName("fk_batches_applied_by_users").OnDelete(DeleteBehavior.Restrict);
@@ -631,6 +634,106 @@ internal static class CatalogStockModel
             row.HasOne<ImportBatch>().WithMany().HasForeignKey(r => r.BatchId).HasConstraintName("fk_rows_batches").OnDelete(DeleteBehavior.Restrict);
         });
     }
+
+    // ---------- 0008 : modèles d'import fournisseur, offres de verres (COR-05-04, COR-05-05) ----------
+
+    private static void ConfigureCorrections(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SupplierImportProfile>(profile =>
+        {
+            profile.ToTable("supplier_profiles", ImportsSchema, t =>
+            {
+                t.HasCheckConstraint("ck_supplier_profiles_kind", "kind IN ('catalog', 'prices')");
+                t.HasCheckConstraint("ck_supplier_profiles_json", "jsonb_typeof(mapping) = 'object' AND jsonb_typeof(headers) = 'array'");
+            });
+            profile.HasKey(p => p.Id).HasName("pk_supplier_profiles");
+            profile.Property(p => p.Id).ValueGeneratedNever();
+            profile.Property(p => p.Kind).HasMaxLength(16).IsRequired();
+            profile.Property(p => p.MappingJson).HasColumnName("mapping").HasColumnType("jsonb").IsRequired();
+            profile.Property(p => p.HeadersJson).HasColumnName("headers").HasColumnType("jsonb").IsRequired();
+            profile.Property(p => p.Version).IsRowVersion();
+            profile.HasOne<Supplier>().WithMany().HasForeignKey(p => p.SupplierId).HasConstraintName("fk_supplier_profiles_suppliers").OnDelete(DeleteBehavior.Restrict);
+            profile.HasOne<UserAccount>().WithMany().HasForeignKey(p => p.CreatedByUserId).HasConstraintName("fk_supplier_profiles_created_by_users").OnDelete(DeleteBehavior.Restrict);
+            profile.HasOne<UserAccount>().WithMany().HasForeignKey(p => p.UpdatedByUserId).HasConstraintName("fk_supplier_profiles_updated_by_users").OnDelete(DeleteBehavior.Restrict);
+            profile.HasIndex(p => new { p.SupplierId, p.Kind }).IsUnique().HasDatabaseName("ux_supplier_profiles_supplier_kind");
+            profile.HasIndex(p => p.CreatedByUserId).HasDatabaseName("ix_supplier_profiles_created_by_user_id");
+            profile.HasIndex(p => p.UpdatedByUserId).HasDatabaseName("ix_supplier_profiles_updated_by_user_id");
+        });
+
+        modelBuilder.Entity<LensOffer>(offer =>
+        {
+            offer.ToTable("lens_offers", CatalogSchema, t =>
+            {
+                t.HasCheckConstraint("ck_lens_offers_type", "lens_type IN ('single_vision', 'progressive', 'degressive', 'bifocal', 'other')");
+                t.HasCheckConstraint("ck_lens_offers_production", "production IN ('stocked', 'on_order')");
+                t.HasCheckConstraint(
+                    "ck_lens_offers_ranges",
+                    "(sphere_min IS NULL) = (sphere_max IS NULL) AND (sphere_min IS NULL OR sphere_min <= sphere_max)"
+                    + " AND (cylinder_min IS NULL) = (cylinder_max IS NULL) AND (cylinder_min IS NULL OR cylinder_min <= cylinder_max)"
+                    + " AND (addition_min IS NULL) = (addition_max IS NULL) AND (addition_min IS NULL OR (addition_min >= 0 AND addition_min <= addition_max))");
+                t.HasCheckConstraint(
+                    "ck_lens_offers_price",
+                    "(price_ht IS NULL) = (price_currency IS NULL) AND (price_ht IS NULL OR price_ht >= 0) AND (price_currency IS NULL OR price_currency ~ '^[A-Z]{3}$')");
+                t.HasCheckConstraint("ck_lens_offers_json", "jsonb_typeof(diameters) = 'array' AND jsonb_typeof(rules) = 'array'");
+                t.HasCheckConstraint("ck_lens_offers_validity", "valid_from IS NULL OR valid_until IS NULL OR valid_from <= valid_until");
+                t.HasCheckConstraint("ck_lens_offers_lead_time", "lead_time_days IS NULL OR (lead_time_days >= 0 AND lead_time_days <= 365)");
+                t.HasCheckConstraint("ck_lens_offers_revision", "revision >= 1");
+            });
+            ConfigureArchivable(offer, "lens_offers");
+            offer.HasKey(o => o.Id).HasName("pk_lens_offers");
+            offer.Property(o => o.Id).ValueGeneratedNever();
+            offer.Property(o => o.LensTypeCode).HasColumnName("lens_type").HasMaxLength(16).IsRequired();
+            offer.Property(o => o.Material).HasMaxLength(LensOffer.MaterialMaxLength);
+            offer.Property(o => o.ProductionCode).HasColumnName("production").HasMaxLength(16).IsRequired();
+            offer.Property(o => o.PriceHt).HasColumnType("numeric(12,4)");
+            offer.Property(o => o.PriceCurrency).HasColumnType("character(3)");
+            offer.Property(o => o.DiametersJson).HasColumnName("diameters").HasColumnType("jsonb").IsRequired();
+            offer.Property(o => o.RulesJson).HasColumnName("rules").HasColumnType("jsonb").IsRequired();
+            offer.Property(o => o.SphereMin).HasColumnType("numeric(5,2)");
+            offer.Property(o => o.SphereMax).HasColumnType("numeric(5,2)");
+            offer.Property(o => o.CylinderMin).HasColumnType("numeric(5,2)");
+            offer.Property(o => o.CylinderMax).HasColumnType("numeric(5,2)");
+            offer.Property(o => o.AdditionMin).HasColumnType("numeric(4,2)");
+            offer.Property(o => o.AdditionMax).HasColumnType("numeric(4,2)");
+            offer.Property(o => o.SourceReference).HasMaxLength(LensOffer.SourceMaxLength);
+            offer.Property(o => o.Notes).HasMaxLength(LensOffer.NotesMaxLength);
+            offer.HasOne<LensReference>().WithMany().HasForeignKey(o => o.RangeId).HasConstraintName("fk_lens_offers_range").OnDelete(DeleteBehavior.Restrict);
+            offer.HasOne<LensReference>().WithMany().HasForeignKey(o => o.IndexId).HasConstraintName("fk_lens_offers_index").OnDelete(DeleteBehavior.Restrict);
+            offer.HasOne<Supplier>().WithMany().HasForeignKey(o => o.SupplierId).HasConstraintName("fk_lens_offers_suppliers").OnDelete(DeleteBehavior.Restrict);
+            offer.HasMany(o => o.Treatments).WithOne().HasForeignKey(t => t.OfferId).HasConstraintName("fk_lens_offer_treatments_offers").OnDelete(DeleteBehavior.Cascade);
+            offer.Navigation(o => o.Treatments).UsePropertyAccessMode(PropertyAccessMode.Field);
+            offer.HasIndex(o => o.CreationRequestId).IsUnique().HasDatabaseName("ux_lens_offers_creation_request_id");
+            offer.HasIndex(o => o.RangeId).HasDatabaseName("ix_lens_offers_range_id");
+            offer.HasIndex(o => o.SupplierId).HasDatabaseName("ix_lens_offers_supplier_id");
+            offer.HasIndex(o => o.IndexId).HasDatabaseName("ix_lens_offers_index_id");
+        });
+
+        modelBuilder.Entity<LensOfferTreatment>(treatment =>
+        {
+            treatment.ToTable("lens_offer_treatments", CatalogSchema);
+            treatment.HasKey(t => new { t.OfferId, t.TreatmentId }).HasName("pk_lens_offer_treatments");
+            treatment.HasOne<LensReference>().WithMany().HasForeignKey(t => t.TreatmentId).HasConstraintName("fk_lens_offer_treatments_treatment").OnDelete(DeleteBehavior.Restrict);
+            treatment.HasIndex(t => t.TreatmentId).HasDatabaseName("ix_lens_offer_treatments_treatment_id");
+        });
+
+        modelBuilder.Entity<LensOfferRevision>(revision =>
+        {
+            revision.ToTable("lens_offer_revisions", CatalogSchema, t =>
+            {
+                t.HasCheckConstraint("ck_lens_offer_revisions_revision", "revision >= 1");
+                t.HasCheckConstraint("ck_lens_offer_revisions_snapshot", "jsonb_typeof(snapshot) = 'object'");
+            });
+            revision.HasKey(r => r.Id).HasName("pk_lens_offer_revisions");
+            revision.Property(r => r.Id).ValueGeneratedNever();
+            revision.Property(r => r.Snapshot).HasColumnType("jsonb").IsRequired();
+            revision.Property(r => r.Reason).HasMaxLength(LensOfferRevision.ReasonMaxLength);
+            revision.HasOne<LensOffer>().WithMany().HasForeignKey(r => r.OfferId).HasConstraintName("fk_lens_offer_revisions_offers").OnDelete(DeleteBehavior.Restrict);
+            revision.HasOne<UserAccount>().WithMany().HasForeignKey(r => r.ChangedByUserId).HasConstraintName("fk_lens_offer_revisions_changed_by_users").OnDelete(DeleteBehavior.Restrict);
+            revision.HasIndex(r => new { r.OfferId, r.Revision }).IsUnique().HasDatabaseName("ux_lens_offer_revisions_offer_revision");
+            revision.HasIndex(r => r.ChangedByUserId).HasDatabaseName("ix_lens_offer_revisions_changed_by_user_id");
+        });
+    }
+
 
     // ---------- outils ----------
 

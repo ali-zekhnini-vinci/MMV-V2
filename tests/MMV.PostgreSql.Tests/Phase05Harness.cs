@@ -35,6 +35,26 @@ internal static class Phase05Target
 
     public static string? SkipReason => Resolved.Value.Skip;
 
+    private static readonly Lazy<bool> CorrectionsApplied = new(() =>
+    {
+        if (Resolved.Value.ConnectionString is not { } connectionString)
+        {
+            return false;
+        }
+
+        using var connection = new NpgsqlConnection(connectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand("SELECT to_regclass('catalog.lens_offers') IS NOT NULL", connection);
+        return (bool)command.ExecuteScalar()!;
+    });
+
+    /// <summary>Migration 0008 (corrections COR-05-04 / COR-05-05) présente sur la cible.</summary>
+    public static bool HasCorrections => CorrectionsApplied.Value;
+
+    /// <summary>Tests des fonctions de 0008 : NOT_TESTED tant que 0008 n'est pas appliquée à la cible (revue SQL du propriétaire).</summary>
+    public static string? CorrectionsSkipReason =>
+        SkipReason ?? (HasCorrections ? null : "NOT_TESTED : migration 0008_CatalogCorrections non appliquée à la cible (revue SQL du propriétaire requise).");
+
     private static (string?, string, string?) Resolve()
     {
         var scratch = Environment.GetEnvironmentVariable(ScratchVariable);
@@ -79,6 +99,11 @@ public sealed class Phase05FactAttribute : FactAttribute
 public sealed class Phase05TheoryAttribute : TheoryAttribute
 {
     public Phase05TheoryAttribute() => Skip = Phase05Target.SkipReason;
+}
+
+public sealed class Phase05CorrectionsFactAttribute : FactAttribute
+{
+    public Phase05CorrectionsFactAttribute() => Skip = Phase05Target.CorrectionsSkipReason;
 }
 
 /// <summary>Réponse HTTP lue : statut et corps JSON (ou null).</summary>
@@ -306,6 +331,8 @@ internal sealed class Phase05Bench : IAsyncDisposable
         Stores.AddRange([be.Id, ma.Id]);
     }
 
+    private static readonly string[] CorrectionTables = ["catalog.lens_offers", "catalog.lens_offer_revisions", "imports.supplier_profiles"];
+
     private static readonly string[] GuardedTables =
     [
         "audit.events", "imports.rows", "imports.batches", "stock.inventory_lines", "stock.inventory_sessions", "stock.receipt_lines", "stock.receipts",
@@ -330,9 +357,18 @@ internal sealed class Phase05Bench : IAsyncDisposable
             await command.ExecuteNonQueryAsync();
         }
 
-        foreach (var table in GuardedTables)
+        var tables = Phase05Target.HasCorrections ? [.. CorrectionTables, .. GuardedTables] : GuardedTables;
+        foreach (var table in tables)
         {
             await Run($"ALTER TABLE {table} DISABLE TRIGGER USER");
+        }
+
+        if (Phase05Target.HasCorrections)
+        {
+            await Run("DELETE FROM catalog.lens_offer_revisions WHERE changed_by_user_id = ANY(@u)");
+            await Run("DELETE FROM catalog.lens_offer_treatments WHERE offer_id IN (SELECT id FROM catalog.lens_offers WHERE created_by_user_id = ANY(@u))");
+            await Run("DELETE FROM catalog.lens_offers WHERE created_by_user_id = ANY(@u)");
+            await Run("DELETE FROM imports.supplier_profiles WHERE created_by_user_id = ANY(@u)");
         }
 
         await Run("DELETE FROM imports.rows WHERE batch_id IN (SELECT id FROM imports.batches WHERE uploaded_by_user_id = ANY(@u))");
@@ -358,7 +394,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
         await Run("DELETE FROM org.stores WHERE id = ANY(@s)");
         await Run("DELETE FROM audit.events WHERE actor_user_id = ANY(@u)");
         await Run("DELETE FROM auth.users WHERE id = ANY(@u)");
-        foreach (var table in GuardedTables)
+        foreach (var table in tables)
         {
             await Run($"ALTER TABLE {table} ENABLE TRIGGER USER");
         }

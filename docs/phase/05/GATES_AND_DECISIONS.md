@@ -7,6 +7,20 @@
 
 - **GO finalisation 05-00** (propriétaire, 30/10/2026) : réponses Q01–Q20, intégration des références Lot 6, création autorisée de `feat/phase-05-catalogue-stock`, commits documentaires locaux — [`prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md`](../../../prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md). Interdits respectés : aucun backend, aucune migration `0007` générée ni appliquée, aucune table, aucune écriture ni connexion à `mmv_v2_dev` / `mmv_v2_test`, aucun processus arrêté, `apps/desktop/.env.development` intact (SHA-256 `58d1eb06…c3481d` avant / après), aucun `reset --hard` / `clean` / `stash`, aucun push / PR / merge, ancien dépôt non consulté.
 
+## Mise à jour des gates — 02/11/2026 (corrections COR-05-01 à COR-05-08)
+
+- **GO corrections** (propriétaire, 02/11/2026) : huit corrections métier et ergonomiques validées, travail autonome — [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../../../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md).
+
+| Gate | État au 02/11/2026 |
+|---|---|
+| G05-CORR (corrections) | **`PHASE05_CORRECTIONS — OWNER_SQL_REVIEW_REQUIRED`** — registre [`CORRECTIONS_05.md`](CORRECTIONS_05.md) |
+| G05-SQL-0008 | **OPEN** — migration additive `0008_CatalogCorrections` préparée, éprouvée sur cluster jetable (verify 14 / 14, PostgreSQL 20 / 20), **non appliquée** : [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md) |
+| G05-DESIGN | **OPEN** — acceptation visuelle du propriétaire (Lot 6) toujours requise ; nouvelles surfaces des corrections à comparer |
+| G05-FISCAL / G05-LEGAL | **OPEN** — inchangés |
+| G05-FINAL | NOT_STARTED — après GO SQL 0008, application, suites complètes et revue finale |
+
+Les états ci-dessous sont conservés tels que publiés.
+
 ## Mise à jour des gates — 30/10/2026
 
 | Gate | État au 30/10/2026 |

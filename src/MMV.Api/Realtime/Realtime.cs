@@ -177,6 +177,12 @@ internal sealed partial class RealtimeSessionMonitor(
     private static partial void LogSweepFailed(ILogger logger, Exception exception);
 }
 
+/// <summary>Marque une route POST de LECTURE (aperçu, évaluation) : jamais de notification.</summary>
+public sealed class NoChangeNotification
+{
+    public static readonly NoChangeNotification Instance = new();
+}
+
 public static class RealtimeSetup
 {
     public const string HubPath = "/hubs/changes";
@@ -209,7 +215,8 @@ public static class RealtimeSetup
         {
             var result = await next(context);
             var http = context.HttpContext;
-            if (HttpMethods.IsGet(http.Request.Method) || result is not IStatusCodeHttpResult { StatusCode: >= 200 and < 300 })
+            if (HttpMethods.IsGet(http.Request.Method) || result is not IStatusCodeHttpResult { StatusCode: >= 200 and < 300 }
+                || http.GetEndpoint()?.Metadata.GetMetadata<NoChangeNotification>() is not null)
             {
                 return result;
             }

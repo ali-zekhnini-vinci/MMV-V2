@@ -67,6 +67,52 @@ internal sealed record ArchiveRequest(Guid? RequestId = null, uint? Version = nu
 
 internal sealed record VersionRequest(Guid? RequestId = null, uint? Version = null);
 
+/// <summary>Offre de verres d'un fournisseur (COR-05-05) : niveau simple + règles avancées structurées.</summary>
+internal sealed record LensRangeBody(string? Min = null, string? Max = null);
+
+internal sealed record LensConditionsBody(
+    List<Guid>? TreatmentIds = null, List<Guid>? IndexIds = null, string? Material = null, LensRangeBody? Sphere = null, LensRangeBody? Cylinder = null, LensRangeBody? Addition = null);
+
+internal sealed record LensRuleBody(
+    string? Kind = null, string? Effect = null, string? Manufacturing = null, LensConditionsBody? Conditions = null, LensRangeBody? Range = null, List<int>? Diameters = null,
+    string? MaxSphereCylinderSum = null, string? SurchargeHt = null, int? ExtraLeadDays = null, string? Note = null);
+
+internal sealed record LensOfferRequest(
+    Guid? RequestId = null, uint? Version = null, Guid? RangeId = null, Guid? SupplierId = null, string? LensType = null, string? Material = null, Guid? IndexId = null,
+    string? Production = null, int? LeadTimeDays = null, string? PriceHt = null, string? PriceCurrency = null, List<int>? Diameters = null,
+    string? SphereMin = null, string? SphereMax = null, string? CylinderMin = null, string? CylinderMax = null, string? AdditionMin = null, string? AdditionMax = null,
+    List<Guid>? TreatmentIds = null, List<LensRuleBody>? Rules = null, bool? RulesComplete = null, string? SourceReference = null, DateOnly? ValidFrom = null,
+    DateOnly? ValidUntil = null, string? Notes = null, string? Reason = null)
+{
+    private static LensRangeInput? Range(LensRangeBody? body) => body is null ? null : new(body.Min, body.Max);
+
+    public LensOfferInput ToInput() => new(
+        LensType, Material, IndexId, Production, LeadTimeDays, PriceHt, PriceCurrency, Diameters, SphereMin, SphereMax, CylinderMin, CylinderMax, AdditionMin, AdditionMax,
+        TreatmentIds,
+        [.. (Rules ?? []).Select(r => new LensRuleInput(
+            r.Kind, r.Effect, r.Manufacturing,
+            r.Conditions is { } c ? new LensConditionsInput(c.TreatmentIds, c.IndexIds, c.Material, Range(c.Sphere), Range(c.Cylinder), Range(c.Addition)) : null,
+            Range(r.Range), r.Diameters, r.MaxSphereCylinderSum, r.SurchargeHt, r.ExtraLeadDays, r.Note))],
+        RulesComplete ?? false, SourceReference, ValidFrom, ValidUntil, Notes, Reason);
+}
+
+internal sealed record LensCheckRequest(string? Sphere = null, string? Cylinder = null, string? Addition = null, int? Diameter = null, List<Guid>? TreatmentIds = null, Guid? IndexId = null);
+
+internal sealed record LensOfferResponse(
+    Guid Id, Guid RangeId, Guid SupplierId, string SupplierName, string LensType, string? Material, Guid? IndexId, string Production, int? LeadTimeDays,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? PriceHt,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? PriceCurrency,
+    IReadOnlyList<int> Diameters, string? SphereMin, string? SphereMax, string? CylinderMin, string? CylinderMax, string? AdditionMin, string? AdditionMax,
+    IReadOnlyList<Guid> TreatmentIds, IReadOnlyList<LensRule> Rules, bool RulesComplete, string? SourceReference, DateOnly? ValidFrom, DateOnly? ValidUntil, string? Notes,
+    int Revision, string Status, DateTimeOffset UpdatedAtUtc, uint Version, bool CostsVisible);
+
+internal sealed record LensRevisionResponse(int Revision, DateTimeOffset ChangedAtUtc, ActorResponse ChangedBy, string? Reason);
+
+internal sealed record LensOfferDetailResponse(LensOfferResponse Offer, IReadOnlyList<LensRevisionResponse> Revisions);
+
+internal sealed record LensCheckResponse(string Status, string Manufacturing, IReadOnlyList<LensCompatibilityReason> Reasons, int ExtraLeadDays, string Disclaimer,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? SurchargeHt);
+
 internal sealed record LensReferenceRequest(Guid? RequestId = null, uint? Version = null, string? Name = null, Guid? ManufacturerId = null, string? IndexValue = null);
 
 internal sealed record SupplierLinkRequest(
@@ -188,6 +234,16 @@ internal static class CatalogEndpoints
         catalog.MapPost("/lens-references/{kind}/{id:guid}/reactivate", (string kind, Guid id, HttpRequest request, ClaimsPrincipal principal, CatalogService service, CancellationToken ct) =>
             ArchiveLensReferenceAsync(id, archive: false, request, principal, service, ct)).RequireAuthorization(P(Permissions.CatalogConfigure));
 
+        // COR-05-05 : offres fournisseur du référentiel verres (capacités, restrictions, révisions, compatibilité).
+        catalog.MapGet("/lens-offers", ListLensOffersAsync).RequireAuthorization(P(Permissions.CatalogRead));
+        catalog.MapGet("/lens-offers/{id:guid}", GetLensOfferAsync).RequireAuthorization(P(Permissions.CatalogRead));
+        catalog.MapPost("/lens-offers", CreateLensOfferAsync).RequireAuthorization(P(Permissions.CatalogConfigure), P(Permissions.SuppliersRead));
+        catalog.MapPut("/lens-offers/{id:guid}", UpdateLensOfferAsync).RequireAuthorization(P(Permissions.CatalogConfigure));
+        catalog.MapPost("/lens-offers/{id:guid}/archive", (Guid id, HttpRequest r, ClaimsPrincipal p, LensOfferService s, CancellationToken ct) => ArchiveLensOfferAsync(id, true, r, p, s, ct))
+            .RequireAuthorization(P(Permissions.CatalogConfigure));
+        catalog.MapPost("/lens-offers/{id:guid}/reactivate", (Guid id, HttpRequest r, ClaimsPrincipal p, LensOfferService s, CancellationToken ct) => ArchiveLensOfferAsync(id, false, r, p, s, ct))
+            .RequireAuthorization(P(Permissions.CatalogConfigure));
+        catalog.MapPost("/lens-offers/{id:guid}/check", CheckLensOfferAsync).RequireAuthorization(P(Permissions.CatalogRead)).WithMetadata(NoChangeNotification.Instance);
         catalog.MapGet("/variants", ListVariantsAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapGet("/variants/{id:guid}", GetVariantAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapGet("/models/{id:guid}", GetModelAsync).RequireAuthorization(P(Permissions.CatalogRead));
@@ -212,7 +268,7 @@ internal static class CatalogEndpoints
         var pricing = api.MapGroup("/pricing").WithTags("Pricing").AddEndpointFilter(NoStore).RequireActiveStore().PublishesChanges(ChangeTopics.Pricing);
         pricing.MapGet("/variants/{id:guid}", GetPriceAsync).RequireAuthorization(P(Permissions.CatalogRead));
         pricing.MapGet("/variants/{id:guid}/history", PriceHistoryAsync).RequireAuthorization(P(Permissions.CatalogRead));
-        pricing.MapPost("/preview", PreviewAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
+        pricing.MapPost("/preview", PreviewAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead)).WithMetadata(NoChangeNotification.Instance);
         pricing.MapPut("/variants/{id:guid}", SetCoefficientPriceAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
         pricing.MapPut("/variants/{id:guid}/purchase-price", SetPurchasePriceAsync).RequireAuthorization(P(Permissions.CostsWrite));
         pricing.MapPost("/variants/{id:guid}/recalculate", RecalculateAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
@@ -311,6 +367,136 @@ internal static class CatalogEndpoints
 
         var outcome = await service.SetLensReferenceArchivedAsync(id, archive, body!.Version!.Value, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
+    }
+
+    // ---------- offres de verres (COR-05-05) ----------
+
+    private const string LensDisclaimer = "Évaluation selon les seules règles fournisseur enregistrées dans MMV : ni validation clinique, ni garantie du fabricant.";
+
+    private static string? Diopter(decimal? value) => MoneyText.Format(value, 2);
+
+    private static LensOfferResponse ToOffer(Domain.Catalog.LensOffer offer, string supplierName, bool costs)
+    {
+        var rules = LensRuleJson.Deserialize(offer.RulesJson);
+        return new LensOfferResponse(
+            offer.Id, offer.RangeId, offer.SupplierId, supplierName, offer.LensTypeCode, offer.Material, offer.IndexId, offer.ProductionCode, offer.LeadTimeDays,
+            costs ? Cost(offer.PriceHt) : null, costs ? offer.PriceCurrency : null, LensRuleJson.DeserializeDiameters(offer.DiametersJson),
+            Diopter(offer.SphereMin), Diopter(offer.SphereMax), Diopter(offer.CylinderMin), Diopter(offer.CylinderMax), Diopter(offer.AdditionMin), Diopter(offer.AdditionMax),
+            [.. offer.Treatments.Select(t => t.TreatmentId)],
+            costs ? rules : [.. rules.Select(r => r with { SurchargeHt = null })],
+            offer.RulesComplete, offer.SourceReference, offer.ValidFrom, offer.ValidUntil, offer.Notes, offer.Revision, offer.IsArchived ? "archived" : "active",
+            offer.UpdatedAtUtc, offer.Version, costs);
+    }
+
+    private static async Task<IResult> ListLensOffersAsync(HttpRequest request, ClaimsPrincipal principal, ILensOfferStore offers, ICatalogReadStore reads, CancellationToken cancellationToken)
+    {
+        var q = request.Query;
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "rangeId", "supplierId", "status" }))
+        {
+            return Results.BadRequest(InvalidQuery);
+        }
+
+        var range = q.ContainsKey("rangeId") ? ParseGuid(q["rangeId"]) : null;
+        var supplier = q.ContainsKey("supplierId") ? ParseGuid(q["supplierId"]) : null;
+        var status = Status(q["status"].FirstOrDefault());
+        if ((q.ContainsKey("rangeId") && range is null) || (q.ContainsKey("supplierId") && supplier is null) || status is null)
+        {
+            return Results.BadRequest(InvalidQuery);
+        }
+
+        var list = (await offers.ListAsync(range, supplier, status != StatusFilter.Active, cancellationToken))
+            .Where(o => status == StatusFilter.All || (status == StatusFilter.Archived) == o.IsArchived).ToList();
+        var names = await SupplierNamesAsync(reads, list.Select(o => o.SupplierId), cancellationToken);
+        var costs = Has(principal, Permissions.CostsRead);
+        return Results.Ok(list.Select(o => ToOffer(o, names.GetValueOrDefault(o.SupplierId, "?"), costs)));
+    }
+
+    private static async Task<Dictionary<Guid, string>> SupplierNamesAsync(ICatalogReadStore reads, IEnumerable<Guid> ids, CancellationToken cancellationToken)
+    {
+        var names = new Dictionary<Guid, string>();
+        foreach (var id in ids.Distinct())
+        {
+            if (await reads.GetSupplierAsync(id, cancellationToken) is { } supplier)
+            {
+                names[id] = supplier.Name;
+            }
+        }
+
+        return names;
+    }
+
+    private static async Task<IResult> GetLensOfferAsync(Guid id, ClaimsPrincipal principal, ILensOfferStore offers, ICatalogReadStore reads, CancellationToken cancellationToken)
+    {
+        var offer = await offers.FindAsync(id, cancellationToken);
+        if (offer is null)
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
+        var names = await SupplierNamesAsync(reads, [offer.SupplierId], cancellationToken);
+        var revisions = await offers.RevisionsAsync(id, cancellationToken);
+        var people = await reads.DisplayNamesAsync([.. revisions.Select(r => r.ChangedByUserId)], cancellationToken);
+        return Results.Ok(new LensOfferDetailResponse(
+            ToOffer(offer, names.GetValueOrDefault(offer.SupplierId, "?"), Has(principal, Permissions.CostsRead)),
+            [.. revisions.Select(r => new LensRevisionResponse(r.Revision, r.ChangedAtUtc, new ActorResponse(r.ChangedByUserId, people.GetValueOrDefault(r.ChangedByUserId, "Compte inconnu")), r.Reason))]));
+    }
+
+    private static async Task<IResult> CreateLensOfferAsync(HttpRequest request, ClaimsPrincipal principal, LensOfferService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<LensOfferRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
+        {
+            return invalid;
+        }
+
+        var outcome = await service.CreateAsync(body!.RangeId, body.SupplierId, body.ToInput(), body.RequestId!.Value, Actor(principal), cancellationToken);
+        return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)), $"/api/catalog/lens-offers/{outcome.Value}");
+    }
+
+    private static async Task<IResult> UpdateLensOfferAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, LensOfferService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<LensOfferRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
+        {
+            return invalid;
+        }
+
+        if (body!.RangeId is not null || body.SupplierId is not null)
+        {
+            // Gamme et fournisseur d'une offre immuables (une autre combinaison = une autre offre).
+            return Results.BadRequest(InvalidBody);
+        }
+
+        var outcome = await service.UpdateAsync(id, body.ToInput(), body.Version!.Value, body.RequestId!.Value, Actor(principal), cancellationToken);
+        return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
+    }
+
+    private static async Task<IResult> ArchiveLensOfferAsync(Guid id, bool archive, HttpRequest request, ClaimsPrincipal principal, LensOfferService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<ArchiveRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
+        {
+            return invalid;
+        }
+
+        var outcome = await service.SetArchivedAsync(id, archive, body!.Reason, body.Version!.Value, body.RequestId!.Value, UserId(principal), cancellationToken);
+        return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
+    }
+
+    /// <summary>Évaluation sans écriture (aucune notification temps réel : route POST non transactionnelle, réponse 200).</summary>
+    private static async Task<IResult> CheckLensOfferAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, LensOfferService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<LensCheckRequest>(request, cancellationToken);
+        if (body is null)
+        {
+            return Results.BadRequest(InvalidBody);
+        }
+
+        var outcome = await service.CheckAsync(id, new LensPrescriptionInput(body.Sphere, body.Cylinder, body.Addition, body.Diameter, body.TreatmentIds, body.IndexId), cancellationToken);
+        var costs = Has(principal, Permissions.CostsRead);
+        return await ToResultAsync(outcome, r => Task.FromResult<object?>(new LensCheckResponse(
+            r.Status switch { LensCompatibilityStatus.Compatible => "compatible", LensCompatibilityStatus.Incompatible => "incompatible", _ => "to_verify" },
+            r.Manufacturing, r.Reasons, r.ExtraLeadDays, LensDisclaimer, costs ? Cost(r.SurchargeHt) : null)));
     }
 
     // ---------- modèles et variantes ----------

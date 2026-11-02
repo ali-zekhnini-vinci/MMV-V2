@@ -38,7 +38,13 @@ internal sealed record JustifyRequest(Guid? RequestId = null, uint? Version = nu
 
 internal sealed record ValidateRequest(Guid? RequestId = null, uint? Version = null, string? Uncounted = null, bool? AcceptChangedLines = null);
 
-internal sealed record ImportUploadRequest(Guid? RequestId = null, string? Kind = null, Guid? StoreId = null, string? FileName = null, string? Content = null);
+internal sealed record ImportUploadRequest(
+    Guid? RequestId = null, string? Kind = null, Guid? StoreId = null, string? FileName = null, string? Content = null, Guid? SupplierId = null);
+
+/// <summary>Modèle d'import fournisseur (COR-05-04) : correspondance validée et en-têtes du fichier de référence.</summary>
+internal sealed record ImportProfileRequest(Guid? RequestId = null, Dictionary<string, string>? Mapping = null, List<string>? Headers = null);
+
+internal sealed record ImportProfileResponse(Guid Id, Guid SupplierId, string Kind, IReadOnlyDictionary<string, string> Mapping, IReadOnlyList<string> Headers, DateTimeOffset UpdatedAtUtc, uint Version);
 
 internal sealed record ImportCheckRequest(Guid? RequestId = null, uint? Version = null, Dictionary<string, string>? Mapping = null);
 
@@ -88,11 +94,15 @@ internal sealed record InventoryDetailResponse(InventorySummaryResponse Summary,
 
 internal sealed record ImportFieldResponse(string Key, bool Required);
 
-internal sealed record ImportPreviewResponse(Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount, IReadOnlyList<ImportFieldResponse> Fields, bool Replayed);
+internal sealed record ImportPreviewResponse(
+    Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount,
+    IReadOnlyList<ImportFieldResponse> Fields, bool Replayed, string Delimiter, IReadOnlyList<MappingSuggestion> Suggestions, string? DecimalSeparator, bool DecimalAmbiguous,
+    bool ProfileApplied, Guid? SupplierId);
 
 internal sealed record ImportBatchResponse(
     Guid Id, string Kind, Guid? StoreId, string FileName, string FileSha256, int RowCount, string Status, int? ErrorCount, bool ContainsCosts, bool ContainsManualPrices,
-    DateTimeOffset UploadedAtUtc, string UploadedBy, DateTimeOffset? CheckedAtUtc, DateTimeOffset? AppliedAtUtc, IReadOnlyDictionary<string, string> Mapping, uint Version);
+    DateTimeOffset UploadedAtUtc, string UploadedBy, DateTimeOffset? CheckedAtUtc, DateTimeOffset? AppliedAtUtc, IReadOnlyDictionary<string, string> Mapping, uint Version,
+    Guid? SupplierId);
 
 internal sealed record ImportRowResponse(int LineNo, string Outcome, IReadOnlyList<ImportError> Errors, IReadOnlyDictionary<string, string>? Values);
 
@@ -139,6 +149,8 @@ internal static class StockEndpoints
         imports.MapPost("/{id:guid}/check", CheckAsync);
         imports.MapPost("/{id:guid}/apply", ApplyAsync);
         imports.MapPost("/{id:guid}/cancel", CancelAsync);
+        imports.MapGet("/profiles/{supplierId:guid}/{kind}", GetProfileAsync).RequireAuthorization(P(Permissions.SuppliersRead));
+        imports.MapPut("/profiles/{supplierId:guid}/{kind}", SaveProfileAsync).RequireAuthorization(P(Permissions.SuppliersRead));
     }
 
     // ---------- soldes, alertes, seuils ----------
@@ -548,7 +560,7 @@ internal static class StockEndpoints
     private static ImportBatchResponse ToBatch(ImportBatch batch, string uploadedBy) => new(
         batch.Id, batch.Kind, batch.StoreId, batch.FileName, batch.FileSha256, batch.RowCount, batch.Status, batch.ErrorCount, batch.ContainsCosts, batch.ContainsManualPrices,
         batch.UploadedAtUtc, uploadedBy, batch.CheckedAtUtc, batch.AppliedAtUtc,
-        JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [], batch.Version);
+        JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [], batch.Version, batch.SupplierId);
 
     private static async Task<IResult> ListImportsAsync(HttpContext context, ICatalogReadStore reads, CancellationToken cancellationToken) =>
         Results.Ok((await reads.ListImportsAsync(50, cancellationToken)).Where(b => Visible(context, b.Batch)).Select(b => ToBatch(b.Batch, b.UploadedByName)));
@@ -568,10 +580,11 @@ internal static class StockEndpoints
 
         // Tarifs : magasin de l'installation par défaut ; autres types : aucun magasin (refus du service si fourni).
         var storeId = body.Kind == ImportKinds.Prices ? shop.Id : body.StoreId;
-        var outcome = await service.UploadAsync(body.Kind, storeId, body.FileName, body.Content, body.RequestId!.Value, UserId(principal), cancellationToken);
+        var outcome = await service.UploadAsync(body.Kind, storeId, body.FileName, body.Content, body.RequestId!.Value, UserId(principal), cancellationToken, body.SupplierId);
         return await ToResultAsync(outcome, p => Task.FromResult<object?>(new ImportPreviewResponse(
             p.BatchId, p.Headers, p.SampleRows, p.SuggestedMapping, p.RowCount,
-            [.. ImportService.Fields[body.Kind!].Select(f => new ImportFieldResponse(f.Key, f.Required))], outcome.Replayed)), $"/api/imports/{outcome.Value?.BatchId}");
+            [.. ImportService.Fields[body.Kind!].Select(f => new ImportFieldResponse(f.Key, f.Required))], outcome.Replayed,
+            p.Delimiter, p.Suggestions, p.DecimalSeparator, p.DecimalAmbiguous, p.ProfileApplied, p.SupplierId)), $"/api/imports/{outcome.Value?.BatchId}");
     }
 
     /// <summary>Rapport ; valeurs des lignes d'un lot contenant des coûts servies seulement avec <c>costs.read</c>.</summary>
@@ -644,6 +657,27 @@ internal static class StockEndpoints
 
         var outcome = await service.CancelAsync(id, body!.Version!.Value, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, s => Task.FromResult<object?>(s));
+    }
+
+    // ---------- modèles d'import fournisseur (COR-05-04) ----------
+
+    private static async Task<IResult> GetProfileAsync(Guid supplierId, string kind, ImportService service, CancellationToken cancellationToken) =>
+        await service.FindProfileAsync(supplierId, kind, cancellationToken) is { } profile
+            ? Results.Ok(new ImportProfileResponse(
+                profile.Id, profile.SupplierId, profile.Kind, JsonSerializer.Deserialize<Dictionary<string, string>>(profile.MappingJson, Json) ?? [],
+                JsonSerializer.Deserialize<List<string>>(profile.HeadersJson, Json) ?? [], profile.UpdatedAtUtc, profile.Version))
+            : Results.NotFound(new ErrorResponse("not_found"));
+
+    private static async Task<IResult> SaveProfileAsync(Guid supplierId, string kind, HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<ImportProfileRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
+        {
+            return invalid;
+        }
+
+        var outcome = await service.SaveProfileAsync(supplierId, kind, body!.Mapping, body.Headers, body.RequestId!.Value, UserId(principal), cancellationToken);
+        return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
     internal static string Format(decimal? value) => MoneyText.Format(value, MoneyText.SaleScale) ?? string.Empty;

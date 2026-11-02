@@ -2,12 +2,15 @@
 
 Mandat : [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../../../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md) (GO du propriétaire du 02/11/2026 sur les huit corrections). Branche `feat/phase-05-catalogue-stock`, commits locaux uniquement (aucun push, aucune PR, aucun merge, aucune Phase 06).
 
+**Statut : `PHASE05_CORRECTIONS — OWNER_SQL_REVIEW_REQUIRED`** — la migration additive `0008_CatalogCorrections` (COR-05-04, COR-05-05) est préparée et éprouvée sur cluster jetable, **non appliquée** : revue [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md).
+
 Statuts : `IMPLEMENTED` (code + tests automatisés au vert), `PENDING` (en cours), `NOT_TESTED` (preuve non encore produite). Les preuves natives (Tauri) et visuelles sont rapportées séparément ; un statut `IMPLEMENTED` ne vaut pas conformité visuelle.
 
 ## Journal
 
 | Date | Entrée |
 | --- | --- |
+| 2026-11-02 | Lot B (schéma 0008, cluster jetable seulement) : COR-05-04 et COR-05-05 implémentés. `MMV.Api.Tests` 527 / 527 (dont 28 règles pures des corrections), `MMV.Maintenance.Tests` 50 / 50, PostgreSQL Phase 05 **20 / 20** (+1 `NOT_TESTED`) sur cluster jetable 0001→0008, `verify.sql` 0008 14 / 14, Vitest 325 / 325, ESLint 0 erreur, `vite build` OK. 0008 **non appliquée** à `mmv_v2_dev` / `mmv_v2_test`. |
 | 2026-11-02 | Lot A (sans schéma) : COR-05-01, 02, 03, 06, 07, 08 implémentés côté serveur et poste. Tests : MMV.Api.Tests 499/499, MMV.Maintenance.Tests 50/50, PostgreSQL Phase 05 18/18 (+1 `NOT_TESTED` : processus HTTPS réel) sur cluster PostgreSQL 18 **jetable** (port 55433, base `mmv_v2_scratch`), Vitest 315/315, `npm run check` OK, ESLint 0 erreur (1 avertissement préexistant), `vite build` OK. Aucune écriture sur `mmv_v2_dev` / `mmv_v2_test`. |
 
 ## Registre
@@ -17,8 +20,8 @@ Statuts : `IMPLEMENTED` (code + tests automatisés au vert), `PENDING` (en cours
 | COR-05-01 | Un serveur local = un magasin | IMPLEMENTED | `tests/MMV.PostgreSql.Tests/Phase05StoreContextTests.cs` (2) |
 | COR-05-02 | Synchronisation temps réel SignalR | IMPLEMENTED (serveur + poste) ; natif deux postes `NOT_TESTED` | `Phase05RealtimeTests.cs` (vrais clients SignalR .NET, WebSocket et LongPolling) |
 | COR-05-03 | Débordement des tableaux de la fiche produit | IMPLEMENTED ; captures `NOT_TESTED` | revue CSS, Vitest |
-| COR-05-04 | Import CSV intelligent | PENDING | — |
-| COR-05-05 | Référentiel verres (simple + avancé) | PENDING | — |
+| COR-05-04 | Import CSV intelligent | IMPLEMENTED (code) ; PostgreSQL sur cluster jetable seulement ; bases du propriétaire `NOT_TESTED` (0008 non appliquée) | `Phase05CorrectionsSchemaTests.CsvImport_*`, `CorrectionsRulesTests` (nombres, synonymes, séparateur), `corrections.test.ts` (encodage, corrections) |
+| COR-05-05 | Référentiel verres (simple + avancé) | IMPLEMENTED (code) ; idem | `Phase05CorrectionsSchemaTests.LensOffers_*`, `CorrectionsRulesTests` (évaluateur, exemple −10 / +5) |
 | COR-05-06 | Assistant de création en cinq étapes | IMPLEMENTED ; natif `NOT_TESTED` | `Phase05ProductWizardTests.cs` |
 | COR-05-07 | Recherche harmonisée | IMPLEMENTED | `Phase05SearchTests.cs` |
 | COR-05-08 | Fournisseurs avec autocomplétion | IMPLEMENTED ; natif `NOT_TESTED` | `Phase05SearchTests.cs` (recherche fournisseur), doublon de nom refusé (service) |
@@ -65,7 +68,36 @@ Serveur (`src/MMV.Infrastructure/Catalog/CatalogSearch.cs`) : même principe que
 
 `src/catalog/SupplierCombobox.tsx` : combobox ARIA (saisie, suggestions serveur limitées à 8, flèches, Entrée, Échap, chargement, aucun résultat, surlignage), création rapide si `suppliers.write` (nom repris, code proposé, pays du magasin) puis sélection automatique. Réutilisé : assistant (étape 3), rattachement d'une variante, réceptions, filtre « Fournisseur » du catalogue. Doublons : le serveur refuse désormais un nom déjà porté par un fournisseur **actif** (casse, accents, espaces ignorés) sauf confirmation explicite `allowDuplicateName` (jamais envoyée par la création rapide).
 
+## COR-05-04 — Import CSV intelligent
+
+- **Détection** : encodage sur le poste (`csvFile.ts` : BOM UTF-8 / UTF-16, UTF-8 strict, sinon Windows-1252) ; séparateur par **cohérence** du nombre de colonnes sur 20 lignes (`;`, `,`, tabulation ; guillemets respectés), même règle serveur (`CsvTable.DetectDelimiter`) et poste ; intitulés normalisés (casse, accents, espaces, ponctuation) ; valeurs toujours en **chaînes** (« 000123 » reste « 000123 »).
+- **Correspondance** (`ImportMapper`) : dictionnaire de synonymes français / anglais (ex. `PA HT`, `Prix achat`, `Purchase Price` → prix d'achat HT ; `Couleur`, `Coloris`, `Color` → coloris), confiance affichée (**Modèle fournisseur**, **Reconnu**, **Probable — à vérifier**, **Ambigu — à confirmer**). Contexte : fichier d'un fournisseur désigné ⇒ `Ref` / `Référence` / `Product Code` proposés comme **référence fournisseur** (probable) ; sans fournisseur ⇒ ambigu (jamais appliqué sans choix). Une même colonne peut servir de libellé de variante et de coloris.
+- **Modèles fournisseur** (`imports.supplier_profiles`, 0008) : correspondance et options validées enregistrables au contrôle (« Enregistrer comme modèle ») ; reprises automatiquement au dépôt d'un nouveau fichier de ce fournisseur (colonnes encore présentes).
+- **Valeurs par défaut choisies** (jamais inventées) : famille et politique de stock pour tout le fichier quand la colonne manque (options `@familyCode`, `@stockPolicy`).
+- **Montants** (`NumberText`) : virgule ou point décimal, milliers (espace, insécable, point, virgule, apostrophe), symbole ou code de devise ; séparateur détecté par colonne ; valeur **ambiguë** (« 1,234 ») signalée `ambiguous_number` tant que le séparateur n'est pas confirmé (`@decimal`) ; devise différente du magasin refusée (aucune conversion).
+- **Rapprochement sans SKU** : référence fournisseur (fournisseur du fichier), puis code-barres ; sinon création avec **SKU généré par le serveur** à l'application. Réémission d'un fichier corrigé du même fournisseur : mises à jour, pas de doublon (testé). Rattachement inchangé = ligne « inchangée » ; fournisseur du fichier principal par défaut seulement si la variante n'en a aucun.
+- **Prix dans un fichier catalogue** : second lot « Prix du magasin » proposé après application (rapprochement par référence fournisseur) — décision qui évite d'élargir la contrainte `ck_batches_store` ; deux applications distinctes, chacune tout ou rien.
+- **Corrections avant import** : dans le rapport, chaque erreur de ligne offre une saisie ; « Recontrôler avec N correction(s) » abandonne le lot (tracé) et dépose la version corrigée comme **nouveau lot** (empreinte propre, l'original reste en historique).
+- **Compte rendu** : créations (dont SKU générés), modifications, inchangées, erreurs par ligne en français (champ métier + motif borné, jamais la valeur dans le message).
+- **IA** : aucune ; point d'extension documenté (assistant local futur soumis à la même confirmation), aucune dépendance.
+
+## COR-05-05 — Référentiel verres
+
+- Séparation : référentiel de base (fabricants, gammes, indices, traitements — inchangé) ; **offres fournisseur** (`catalog.lens_offers`, 0008) = capacités et restrictions d'UN fournisseur pour UNE gamme ; variantes commercialisables (catalogue, inchangé) ; politique de stock de l'offre ; correction du client (dossier optique, non modifié — contrat `LensPrescription` prêt pour la Phase 06).
+- Niveau 1 (écran « Gammes et offres fournisseur ») : par gamme, tableau des offres (fournisseur, type, indice / matériau, traitements, stocké / sur commande, SPH, CYL, ADD, diamètres, délai, prix connu si `costs.read`, fiche complète ou non) ; détail dépliable ; **testeur de correction**.
+- Niveau 2 (« Mode avancé ») : règles STRUCTURÉES — plages SPH / CYL / ADD multiples (autoriser / interdire), diamètres conditionnels, limite |SPH| + |CYL|, restriction explicite, conditions (traitements tous choisis, indices, matériau, plages de la correction), fabrication standard / spéciale, supplément HT (coût), délai supplémentaire, note ; validité et provenance de la fiche ; déclaration « fiche complète » ; motif de révision. Aucune expression libre : membre inconnu ⇒ `400`, type inconnu ⇒ `422` (testé).
+- Évaluation (`LensCompatibilityEvaluator`) : **compatible** seulement si toutes les dimensions sont couvertes ET la fiche déclarée complète et en cours de validité ; **incompatible** sur règle explicite (hors plage, combinaison, diamètre, traitement non proposé, restriction) ; **à vérifier** sinon (donnée manquante, fiche incomplète ou échue). Règle de spécificité : des règles « autoriser » à conditions qui s'appliquent remplacent la plage de base (ex. anti-lumière bleue : −10,00 à +5,00) ; « interdire » l'emporte toujours. Mention systématique : ni validation clinique ni garantie du fabricant. Exemple du mandat testé : −6,00 dans la plage (à vérifier tant que la fiche est incomplète), −11,00 et +6,00 hors plage.
+- Historique : révision incrémentée et instantané en **ajout seul** (`catalog.lens_offer_revisions`) à chaque modification ; audit `lens_offer.*`.
+- Assistant (COR-05-06) : pour un verre, la gamme est requise à l'étape 1, indice et traitements à l'étape 2, et l'étape 3 propose les fournisseurs ayant une offre pour cette gamme.
+
 ## Réserves et observations (lot A)
 
 - `npm audit` : 1 avis modéré préexistant (`fast-uri` via `ajv` via `@hookform/resolvers`), sans lien avec `@microsoft/signalr`.
 - `apps/desktop/.env.development` : modification du propriétaire (dernière écriture 01/11/2026 15:28, empreinte actuelle `a215e1f0…2e4e`), jamais modifiée par l'agent, jamais indexée.
+
+## Réserves et observations (lot B)
+
+- **0008 non appliquée** : le code des corrections suppose 0008 ; sur une base 0007 seule, `/api/imports` et `/api/catalog/lens-offers` échouent (colonne et tables absentes). Les tests 0008 sont ignorés (`NOT_TESTED`) sur une telle cible.
+- Offres de verres : un compte sans `costs.write` ne peut pas enregistrer une offre dont il modifierait (ou masquerait, faute de `costs.read`) le prix ou un supplément — refus `403 costs_forbidden`, jamais d'effacement silencieux ; à affiner si besoin (champ « inchangé » explicite).
+- Import : la colonne fournisseur d'un fichier catalogue est rapprochée par **code** fournisseur (pas par nom) ; un fichier fournisseur se rattache par le fournisseur désigné au dépôt.
+- Les offres de verres ne pilotent encore aucune vente ni commande (Phase 06 hors mandat) ; le contrat d'évaluation est prêt.

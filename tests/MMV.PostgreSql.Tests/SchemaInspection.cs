@@ -47,6 +47,9 @@ public sealed record SchemaState(
     public const string OpticalModuleMigrationId = "20261027134615_OpticalModule";
     public const string CatalogStockModuleMigrationId = "20261030005557_CatalogStockModule";
 
+    /// <summary>Corrections de la Phase 05 (COR-05-04 / COR-05-05) : objets dans les schémas de la Phase 05 uniquement.</summary>
+    public const string CatalogCorrectionsMigrationId = "20261102183203_CatalogCorrections";
+
     /// <summary>Schémas créés par 0007_CatalogStockModule (Phase 05) ; leur inventaire exact est contrôlé par <see cref="Phase05Schema"/>.</summary>
     public static readonly string[] Phase05Schemas = ["catalog", "imports", "org", "pricing", "stock"];
 
@@ -101,7 +104,8 @@ public sealed record SchemaState(
             Relations = [.. Relations.Where(r => !InPhase05(r))],
             Routines = [.. Routines.Where(r => !InPhase05(r))],
             Decorations = [.. Decorations.Where(d => !InPhase05(d))],
-            HistoryRows = [.. HistoryRows.Where(h => !h.StartsWith(CatalogStockModuleMigrationId, StringComparison.Ordinal))],
+            HistoryRows = [.. HistoryRows.Where(h => !h.StartsWith(CatalogStockModuleMigrationId, StringComparison.Ordinal)
+                && !h.StartsWith(CatalogCorrectionsMigrationId, StringComparison.Ordinal))],
         };
         differences.AddRange(previous.OpticalModuleDifferences(role));
         return differences;

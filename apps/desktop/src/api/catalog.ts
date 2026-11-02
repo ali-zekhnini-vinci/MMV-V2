@@ -379,6 +379,15 @@ export interface ImportBatch {
   uploadedBy: string;
   mapping: Record<string, string>;
   version: number;
+  supplierId: string | null;
+}
+
+/** Proposition de correspondance (COR-05-04) : `profile` (modèle fournisseur), `exact`, `probable`, `ambiguous`. */
+export interface MappingSuggestion {
+  field: string;
+  header: string;
+  confidence: "profile" | "exact" | "probable" | "ambiguous";
+  alternatives: string[];
 }
 
 export interface ImportPreview {
@@ -388,6 +397,12 @@ export interface ImportPreview {
   suggestedMapping: Record<string, string>;
   rowCount: number;
   fields: { key: string; required: boolean }[];
+  delimiter: string;
+  suggestions: MappingSuggestion[];
+  decimalSeparator: string | null;
+  decimalAmbiguous: boolean;
+  profileApplied: boolean;
+  supplierId: string | null;
 }
 
 export interface ImportSummary {

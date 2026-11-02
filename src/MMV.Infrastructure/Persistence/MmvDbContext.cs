@@ -83,6 +83,13 @@ public sealed class MmvDbContext(DbContextOptions<MmvDbContext> options) : DbCon
 
     public DbSet<ImportRow> ImportRows => Set<ImportRow>();
 
+    // Corrections Phase 05 (migration 0008, COR-05-04 / COR-05-05).
+    public DbSet<SupplierImportProfile> SupplierImportProfiles => Set<SupplierImportProfile>();
+
+    public DbSet<LensOffer> LensOffers => Set<LensOffer>();
+
+    public DbSet<LensOfferRevision> LensOfferRevisions => Set<LensOfferRevision>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         IdentityModel.Configure(modelBuilder);

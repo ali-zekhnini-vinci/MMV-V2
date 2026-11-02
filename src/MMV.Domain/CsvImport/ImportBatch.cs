@@ -60,6 +60,9 @@ public sealed class ImportBatch
 
     public Guid? StoreId { get; private set; }
 
+    /// <summary>Fournisseur du fichier (COR-05-04) : contexte de correspondance et profil d'import ; facultatif.</summary>
+    public Guid? SupplierId { get; private set; }
+
     public string FileName { get; private set; }
 
     public string FileSha256 { get; private set; }
@@ -100,12 +103,14 @@ public sealed class ImportBatch
     public uint Version { get; private set; }
 
     public static ImportBatch Upload(
-        Guid id, string kind, Guid? storeId, string fileName, string sha256, string content, int rowCount, string mappingJson, Guid userId, DateTimeOffset now, Guid requestId) =>
+        Guid id, string kind, Guid? storeId, string fileName, string sha256, string content, int rowCount, string mappingJson, Guid userId, DateTimeOffset now, Guid requestId,
+        Guid? supplierId = null) =>
         new()
         {
             Id = id,
             Kind = kind,
             StoreId = storeId,
+            SupplierId = supplierId,
             FileName = fileName,
             FileSha256 = sha256,
             Content = content,

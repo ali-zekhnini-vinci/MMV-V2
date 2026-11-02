@@ -168,6 +168,8 @@ public static class AuditActions
     public const string ReceiptEntity = "receipt";
     public const string InventoryEntity = "inventory";
     public const string ImportEntity = "import";
+    public const string LensOfferEntity = "lens_offer";
+    public const string ImportProfileEntity = "import_profile";
 
     public const string ModelCreated = "model.created";
     public const string ModelUpdated = "model.updated";
@@ -205,6 +207,13 @@ public static class AuditActions
     public const string ImportApplied = "import.applied";
     public const string ImportCancelled = "import.cancelled";
 
+    // Corrections Phase 05 (COR-05-04, COR-05-05).
+    public const string LensOfferCreated = "lens_offer.created";
+    public const string LensOfferUpdated = "lens_offer.updated";
+    public const string LensOfferArchived = "lens_offer.archived";
+    public const string LensOfferReactivated = "lens_offer.reactivated";
+    public const string ImportProfileSaved = "import_profile.saved";
+
     public static IReadOnlyList<string> Phase05 { get; } =
     [
         ModelCreated, ModelUpdated, ModelArchived, ModelReactivated,
@@ -216,6 +225,7 @@ public static class AuditActions
         StockMovementRecorded, StockAdjustmentRecorded, StockThresholdChanged, ReceiptRecorded,
         InventoryOpened, InventoryValidated, InventoryAbandoned,
         ImportUploaded, ImportChecked, ImportApplied, ImportCancelled,
+        LensOfferCreated, LensOfferUpdated, LensOfferArchived, LensOfferReactivated, ImportProfileSaved,
     ];
 
     public static IReadOnlyList<string> All { get; } =

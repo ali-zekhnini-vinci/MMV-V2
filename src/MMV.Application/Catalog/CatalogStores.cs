@@ -203,6 +203,15 @@ public interface IImportStore
 
     Task<IReadOnlyDictionary<string, Supplier>> SuppliersByCodeAsync(IReadOnlyCollection<string> codeKeys, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// COR-05-04 : variantes déjà rattachées au fournisseur par sa référence (clé normalisée) — un nouveau fichier du même
+    /// fournisseur sans SKU met à jour ces variantes au lieu d'en créer des doublons.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, ProductVariant>> VariantsBySupplierReferenceAsync(Guid supplierId, IReadOnlyCollection<string> referenceKeys, CancellationToken cancellationToken);
+
+    /// <summary>COR-05-04 : variantes par code-barres (correspondance d'une ligne sans SKU).</summary>
+    Task<IReadOnlyDictionary<string, ProductVariant>> VariantsByBarcodeAsync(IReadOnlyCollection<string> barcodes, CancellationToken cancellationToken);
+
     /// <summary>Modèles existants par (famille, marque, nom) normalisés.</summary>
     Task<IReadOnlyDictionary<string, ProductModel>> ModelsByKeyAsync(IReadOnlyCollection<string> familyCodes, CancellationToken cancellationToken);
 }

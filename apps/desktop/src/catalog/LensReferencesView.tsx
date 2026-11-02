@@ -1,9 +1,11 @@
-// Référentiel configurable des verres correcteurs (Q03, D-05-21) — écran V2 absent du Lot 6, dessiné avec ses
-// composants (cartes .card à en-tête, table.dt, badges, ligne d'ajout, états) : fabricants, gammes, indices,
-// traitements. Aucune valeur pré-remplie ; saisie par un compte détenant catalog.configure ; archivage, jamais de
-// suppression.
+// Référentiel des verres correcteurs (Q03, D-05-21, COR-05-05) — écran V2 absent du Lot 6, dessiné avec ses
+// composants (commande segmentée, cartes .card, table.dt, badges, états). Deux vues : « Gammes et offres fournisseur »
+// (au quotidien : ce que chaque fournisseur propose réellement, testeur de correction, mode avancé à la demande) et
+// « Référentiel de base » (fabricants, gammes, indices, traitements — inchangé). Aucune valeur pré-remplie ; saisie par
+// catalog.configure ; archivage, jamais de suppression.
 import { Archive, Factory, Gem, Layers, type LucideIcon, Plus, RotateCcw, Sigma, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { LensOffersView } from "./LensOffersView.tsx";
 import type { LensReference, LensReferences } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
 import { useCatalogAccess } from "./catalogAccess.ts";
@@ -20,13 +22,18 @@ const SECTIONS: { key: keyof LensReferences; segment: string; title: string; ico
 export function LensReferencesView() {
   const access = useCatalogAccess();
   const data = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
+  const [view, setView] = useState<"offers" | "basics">("offers");
   return (
     <section className="cat-screen" aria-labelledby="lens-title">
-      <PageHeader title="Référentiel des verres" subtitle="Configurable, aucune valeur pré-remplie — une variante de verre = gamme + indice + traitements"
+      <PageHeader title="Référentiel des verres" subtitle="Gammes, offres réelles des fournisseurs et restrictions de fabrication — une variante de verre = gamme + indice + traitements"
         titleExtra={!access.catalogConfigure && <Badge tone="arch">Lecture seule</Badge>} />
+      <div className="cat-seg" role="tablist" aria-label="Vue du référentiel">
+        <button type="button" role="tab" aria-selected={view === "offers"} className={view === "offers" ? "cat-seg__item is-active" : "cat-seg__item"} onClick={() => setView("offers")}>Gammes et offres fournisseur</button>
+        <button type="button" role="tab" aria-selected={view === "basics"} className={view === "basics" ? "cat-seg__item is-active" : "cat-seg__item"} onClick={() => setView("basics")}>Référentiel de base</button>
+      </div>
       {data.isPending ? <Loading label="Chargement du référentiel des verres…" /> : data.isError ? (
         <ErrorState error={data.error} title="Impossible de charger le référentiel" onRetry={() => void data.refetch()} />
-      ) : (
+      ) : view === "offers" ? <LensOffersView refs={data.data} /> : (
         <div className="cat-refgrid">
           {SECTIONS.map((section) => (
             <LensSection key={section.key} section={section} items={data.data[section.key]} manufacturers={data.data.manufacturers} canConfigure={access.catalogConfigure} />

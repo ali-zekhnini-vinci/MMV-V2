@@ -19,6 +19,7 @@ import { decimalInput, fieldError, formatMoney, POLICY_LABELS } from "./catalogF
 import { Badge, Banner, Card, Field, FormBar, KeyValues, Lock, PageHeader, SelectField, TableScroll } from "./CatalogUi.tsx";
 import { UnsavedModal, VariantFields } from "./ModelViews.tsx";
 import { emptyVariant, orNull, skuPrefix, stepOfField, useFamilies, useUnsavedGuard, type VariantDraft, variantBody, WIZARD_STEPS } from "./productForm.ts";
+import type { LensOffer } from "./lensOffers.ts";
 import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
 
 type PriceMode = "none" | "coefficient" | "manual";
@@ -85,6 +86,9 @@ export function ProductWizardView() {
   const [resumed] = useState(() => drafts.has(userId));
   const [draft, setDraft] = useState<WizardDraft>(() => drafts.get(userId) ?? freshDraft(defaultLocation));
   const [tried, setTried] = useState<number | null>(null);
+  // Verres : fournisseurs ayant déclaré une offre pour la gamme choisie (référentiel COR-05-05), proposés à l'étape 3.
+  const lensOffers = useCatalogQuery<LensOffer[]>(draft.familyCode === "ophthalmic_lenses" && draft.lensRangeId !== "" && access.suppliersRead
+    ? `/api/catalog/lens-offers?rangeId=${draft.lensRangeId}` : null);
   const family = families.find((f) => f.code === draft.familyCode);
   const errors = write.error?.error.fieldErrors;
   const dirty = draft.name !== "" || draft.brand !== "" || draft.variants.some((v) => v.label !== "") || draft.supplier !== null;
@@ -326,6 +330,14 @@ export function ProductWizardView() {
           <Card title="Fournisseurs" icon={Building2}>
             {access.suppliersRead ? (
               <div className="cat-stack">
+                {(lensOffers.data ?? []).length > 0 && !draft.supplier && (
+                  <div className="cat-checks">
+                    <span className="clients-field__hint">Fournisseurs proposant cette gamme :</span>
+                    {[...new Map((lensOffers.data ?? []).filter((o) => o.status === "active").map((o) => [o.supplierId, o.supplierName])).entries()].map(([id, supplierName]) => (
+                      <Button key={id} size="sm" onClick={() => patch({ supplier: { id, code: "", name: supplierName } })}>{supplierName}</Button>
+                    ))}
+                  </div>
+                )}
                 <div className="cat-grid">
                   <div className="cat-span2">
                     <SupplierCombobox label="Fournisseur principal" value={draft.supplier} onChange={(supplier) => patch({ supplier })}

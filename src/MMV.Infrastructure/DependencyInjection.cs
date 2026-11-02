@@ -89,6 +89,10 @@ public static class DependencyInjection
         services.TryAddScoped<SupplierService>();
         services.TryAddScoped<PricingService>();
         services.TryAddScoped<ProductCreationService>();
+        // Corrections Phase 05 (0008) : offres de verres, modèles d'import fournisseur.
+        services.TryAddScoped<ILensOfferStore, LensOfferStore>();
+        services.TryAddScoped<IImportProfileStore, ImportProfileStore>();
+        services.TryAddScoped<LensOfferService>();
         services.TryAddScoped<StockService>();
         services.TryAddScoped<InventoryService>();
         services.TryAddScoped<ImportService>();

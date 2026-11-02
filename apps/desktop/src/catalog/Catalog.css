@@ -2089,3 +2089,74 @@
     flex-basis: 140px;
   }
 }
+
+/* ---------- COR-05-04 : corrections dans le rapport d'import ---------- */
+.cat-fix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 2px 0;
+}
+
+.cat-fix__input {
+  height: 30px;
+  min-width: 140px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.cat-fix__input:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ---------- COR-05-05 : offres de verres (détail dépliable, testeur, mode avancé) ---------- */
+.cat-row-detail > td {
+  padding: 0 !important;
+  background: var(--surface-sunken);
+}
+
+.cat-lens-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4) 18px;
+}
+
+.cat-tester {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.cat-rule-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.cat-advanced {
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 1180px) {
+  .cat-lens-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

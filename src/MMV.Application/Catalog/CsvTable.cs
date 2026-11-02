@@ -35,8 +35,7 @@ public sealed class CsvTable
             return (null, "empty_file");
         }
 
-        var firstLine = text.Split('\n', 2)[0];
-        var delimiter = Delimiters.MaxBy(c => firstLine.Count(x => x == c));
+        var delimiter = DetectDelimiter(text);
         var records = new List<(int LineNo, List<string> Cells)>();
         var cells = new List<string>();
         var cell = new StringBuilder();
@@ -140,6 +139,53 @@ public sealed class CsvTable
         }
 
         return (new CsvTable(delimiter, headers, rows), null);
+    }
+
+    /// <summary>
+    /// Séparateur (COR-05-04) : parmi « ; », « , » et tabulation, celui qui découpe les 20 premières lignes en un nombre
+    /// de colonnes CONSTANT et le plus grand (guillemets respectés) ; à égalité, l'ordre de préférence. Un fichier d'une
+    /// seule colonne garde « ; ».
+    /// </summary>
+    public static char DetectDelimiter(string text)
+    {
+        var lines = text.Split('\n').Select(l => l.TrimEnd('\r')).Where(l => l.Trim().Length > 0).Take(20).ToList();
+        static int Count(string line, char delimiter)
+        {
+            var quoted = false;
+            var count = 0;
+            foreach (var c in line)
+            {
+                if (c == '"')
+                {
+                    quoted = !quoted;
+                }
+                else if (c == delimiter && !quoted)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        var best = Delimiters[0];
+        var bestScore = -1;
+        foreach (var delimiter in Delimiters)
+        {
+            var counts = lines.Select(l => Count(l, delimiter)).ToList();
+            if (counts.Count == 0 || counts[0] == 0)
+            {
+                continue;
+            }
+
+            var score = (counts.Count(c => c == counts[0]) * 1000) + counts[0];
+            if (score > bestScore)
+            {
+                (best, bestScore) = (delimiter, score);
+            }
+        }
+
+        return best;
     }
 
     /// <summary>Normalisation d'un nom de colonne pour la correspondance automatique (minuscules, sans accents ni séparateurs).</summary>

@@ -22,6 +22,9 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
 {
     public const string SnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.applied.txt";
 
+    /// <summary>Inventaire 0001–0008 relevé sur cluster jetable (revue SQL des corrections, COR-05-04 / COR-05-05).</summary>
+    public const string CorrectionsSnapshotRelativePath = "docs/phase/05/sql/0008_CatalogCorrections.schema-inventory.txt";
+
     public const string ReviewedSnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt";
 
     public const string ApprovedScriptRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql";
@@ -42,14 +45,16 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
         Assert.True(differences.Count == 0, "Différences 0001–0007 : " + string.Join(" ; ", differences));
 
         var actual = string.Join("\n", await InventoryAsync(connection)) + "\n";
-        var path = Path.Combine(FindRepositoryRoot(), SnapshotRelativePath);
+        // 0008 (corrections) appliquée à la cible : instantané 0001–0008 ; sinon instantané 0007 (inchangé).
+        var snapshot = Phase05Target.HasCorrections ? CorrectionsSnapshotRelativePath : SnapshotRelativePath;
+        var path = Path.Combine(FindRepositoryRoot(), snapshot);
         if (Environment.GetEnvironmentVariable("MMV_UPDATE_PHASE05_SCHEMA") == "1")
         {
             await File.WriteAllTextAsync(path, actual);
         }
 
         output.WriteLine($"{actual.Count(c => c == '\n')} ligne(s) d'inventaire sur {Phase05Target.Name}");
-        Assert.True(File.Exists(path), $"Instantané absent : {SnapshotRelativePath}");
+        Assert.True(File.Exists(path), $"Instantané absent : {snapshot}");
         Assert.Equal((await File.ReadAllTextAsync(path)).ReplaceLineEndings("\n"), actual);
     }
 

@@ -19,8 +19,14 @@ public sealed record ImportField(string Key, bool Required, params string[] Alia
 /// <summary>Erreur d'une ligne : champ (clé cible) et code borné ; jamais la valeur saisie.</summary>
 public sealed record ImportError(string Field, string Code);
 
-/// <summary>Aperçu après dépôt : en-têtes, premières lignes, correspondance proposée.</summary>
-public sealed record ImportPreview(Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount);
+/// <summary>
+/// Aperçu après dépôt : en-têtes, premières lignes, correspondance proposée (appliquée sauf colonnes ambiguës),
+/// propositions détaillées avec leur confiance, séparateur détecté, séparateur décimal détecté ou ambigu, modèle
+/// fournisseur repris (COR-05-04).
+/// </summary>
+public sealed record ImportPreview(
+    Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount,
+    string Delimiter, IReadOnlyList<MappingSuggestion> Suggestions, string? DecimalSeparator, bool DecimalAmbiguous, bool ProfileApplied, Guid? SupplierId);
 
 /// <summary>Synthèse d'un contrôle à blanc ou d'une application.</summary>
 public sealed record ImportSummary(Guid BatchId, string Status, int Total, int Create, int Update, int Unchanged, int Error);
@@ -34,8 +40,11 @@ public sealed record ImportSummary(Guid BatchId, string Status, int Total, int C
 /// lus en chaînes décimales ; cellules de type formule refusées.
 /// </summary>
 public sealed class ImportService(
-    ICatalogUnitOfWork unitOfWork, ICatalogStore store, IPricingStore pricing, IImportStore imports, TimeProvider clock, IAuditRecorder audit)
+    ICatalogUnitOfWork unitOfWork, ICatalogStore store, IPricingStore pricing, IImportStore imports, IImportProfileStore profiles, TimeProvider clock, IAuditRecorder audit)
 {
+    /// <summary>Champs monétaires dont le séparateur décimal est détecté ou confirmé (<see cref="ImportOptions.DecimalSeparator"/>).</summary>
+    public static readonly IReadOnlySet<string> MoneyFields = new HashSet<string>(StringComparer.Ordinal) { "purchasePriceHt", "coefficient", "salePriceHt" };
+
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     public static IReadOnlyDictionary<string, IReadOnlyList<ImportField>> Fields { get; } = new Dictionary<string, IReadOnlyList<ImportField>>(StringComparer.Ordinal)
@@ -47,7 +56,10 @@ public sealed class ImportService(
             new("modelName", true, "modele", "model", "modelname", "nommodele"),
             new("modelDescription", false, "description", "descriptionmodele"),
             new("variantLabel", true, "variante", "libelle", "libellevariante", "label", "variantlabel"),
-            new("sku", true, "sku", "referenceinterne", "refinterne"),
+            // SKU facultatif (COR-05-04) : absent, la ligne est rapprochée par référence fournisseur ou code-barres, sinon
+            // un SKU est généré par le serveur à l'application.
+            new("sku", false, "sku", "referenceinterne", "refinterne"),
+            new("color", false, "couleur", "coloris", "color"),
             new("manufacturerReference", false, "referencefabricant", "reffabricant", "manufacturerreference"),
             new("barcode", false, "codebarres", "ean", "gtin", "barcode"),
             new("stockPolicy", true, "politique", "politiquestock", "stockpolicy"),
@@ -74,7 +86,9 @@ public sealed class ImportService(
         ],
         [ImportKinds.Prices] =
         [
-            new("sku", true, "sku", "referenceinterne", "refinterne"),
+            // SKU ou référence fournisseur (fichier d'un fournisseur désigné) : l'un des deux est requis.
+            new("sku", false, "sku", "referenceinterne", "refinterne"),
+            new("supplierReference", false, "referencefournisseur", "reffournisseur", "supplierreference"),
             new("purchasePriceHt", false, "prixachatht", "prixachat", "purchasepriceht"),
             new("coefficient", false, "coefficient", "coef"),
             new("salePriceHt", false, "prixventeht", "prixvente", "salepriceht"),
@@ -85,13 +99,18 @@ public sealed class ImportService(
     // ---------- dépôt ----------
 
     public async Task<Outcome<ImportPreview>> UploadAsync(
-        string? kind, Guid? storeId, string? fileName, string? content, Guid requestId, Guid userId, CancellationToken cancellationToken)
+        string? kind, Guid? storeId, string? fileName, string? content, Guid requestId, Guid userId, CancellationToken cancellationToken, Guid? supplierId = null)
     {
         if (await imports.FindBatchByCreationRequestAsync(requestId, cancellationToken) is { } existing)
         {
             return existing.UploadedByUserId == userId
-                ? Outcome.Ok(Preview(existing, CsvTable.Parse(existing.Content, ImportBatch.MaxRows).Table!), replayed: true)
+                ? Outcome.Ok(await PreviewAsync(existing, CsvTable.Parse(existing.Content, ImportBatch.MaxRows).Table!, cancellationToken), replayed: true)
                 : Outcome.Conflict<ImportPreview>("request_id_reused");
+        }
+
+        if (supplierId is { } sid && (kind == ImportKinds.Suppliers || await store.FindSupplierAsync(sid, cancellationToken) is null or { IsArchived: true }))
+        {
+            return Outcome.Invalid<ImportPreview>("supplierId", kind == ImportKinds.Suppliers ? CatalogFieldErrors.NotAllowed : CatalogFieldErrors.Unknown);
         }
 
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
@@ -133,8 +152,10 @@ public sealed class ImportService(
 
         var sha = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content!)));
         var now = CatalogClock.Now(clock);
-        var mapping = Suggest(kind!, table.Headers);
-        var batch = ImportBatch.Upload(Guid.CreateVersion7(now), kind!, storeId, name!, sha, content!, table.Rows.Count, JsonSerializer.Serialize(mapping, Json), userId, now, requestId);
+        var profile = supplierId is { } owner ? await profiles.FindAsync(owner, kind!, cancellationToken) : null;
+        var (mapping, _) = Propose(kind!, table, supplierId is not null, profile);
+        var batch = ImportBatch.Upload(
+            Guid.CreateVersion7(now), kind!, storeId, name!, sha, content!, table.Rows.Count, JsonSerializer.Serialize(mapping, Json), userId, now, requestId, supplierId);
         imports.Add(batch);
         CatalogAudit.Record(audit, userId, now, AuditActions.ImportsModule, AuditActions.ImportUploaded, AuditActions.ImportEntity, batch.Id,
             [CatalogAudit.Field("kind", null, kind), CatalogAudit.Field("lineCount", null, table.Rows.Count.ToString(CultureInfo.InvariantCulture))]);
@@ -143,12 +164,92 @@ public sealed class ImportService(
         {
             return commit is { Status: CommitStatus.UniqueViolation, Constraint: "ux_batches_creation_request_id" }
                 && await imports.FindBatchByCreationRequestAsync(requestId, cancellationToken) is { } replay && replay.UploadedByUserId == userId
-                ? Outcome.Ok(Preview(replay, table), replayed: true)
+                ? Outcome.Ok(await PreviewAsync(replay, table, cancellationToken), replayed: true)
                 : Outcome.Conflict<ImportPreview>();
         }
 
-        return Outcome.Created(Preview(batch, table));
+        return Outcome.Created(await PreviewAsync(batch, table, cancellationToken));
     }
+
+    /// <summary>
+    /// Correspondance proposée (COR-05-04) : modèle du fournisseur, synonymes, contexte ; séparateur décimal détecté sur
+    /// les colonnes monétaires (option ajoutée seulement s'il est certain — sinon l'écran demande confirmation).
+    /// </summary>
+    private static (Dictionary<string, string> Mapping, IReadOnlyList<MappingSuggestion> Suggestions) Propose(
+        string kind, CsvTable table, bool supplierKnown, SupplierImportProfile? profile)
+    {
+        var saved = profile is null ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(profile.MappingJson, Json);
+        var suggestions = ImportMapper.Suggest(kind, table.Headers, supplierKnown, saved);
+        var mapping = ImportMapper.Applied(suggestions);
+        foreach (var (key, value) in saved ?? [])
+        {
+            if (ImportOptions.IsOption(key) && ImportOptions.All.Contains(key))
+            {
+                mapping[key] = value;
+            }
+        }
+
+        if (!mapping.ContainsKey(ImportOptions.DecimalSeparator) && DetectDecimal(table, mapping) is { Separator: { } separator })
+        {
+            mapping[ImportOptions.DecimalSeparator] = separator.ToString();
+        }
+
+        return (mapping, suggestions);
+    }
+
+    private static (char? Separator, bool Ambiguous) DetectDecimal(CsvTable table, IReadOnlyDictionary<string, string> mapping)
+    {
+        var columns = mapping.Where(m => MoneyFields.Contains(m.Key)).Select(m => table.Headers.ToList().IndexOf(m.Value)).Where(i => i >= 0).ToList();
+        return columns.Count == 0 ? (null, false) : NumberText.DetectColumn(table.Rows.SelectMany(r => columns.Where(c => c < r.Cells.Length).Select(c => r.Cells[c])));
+    }
+
+    /// <summary>Enregistre (ou remplace) le modèle d'import du fournisseur à partir d'une correspondance validée.</summary>
+    public async Task<Outcome<Guid>> SaveProfileAsync(Guid supplierId, string kind, IReadOnlyDictionary<string, string>? mapping, IReadOnlyList<string>? headers,
+        Guid requestId, Guid userId, CancellationToken cancellationToken)
+    {
+        if (kind is not (ImportKinds.Catalog or ImportKinds.Prices))
+        {
+            return Outcome.Missing<Guid>();
+        }
+
+        if (await store.FindSupplierAsync(supplierId, cancellationToken) is null or { IsArchived: true })
+        {
+            return Outcome.Invalid<Guid>("supplierId", CatalogFieldErrors.Unknown);
+        }
+
+        if (mapping is null || headers is null || headers.Count == 0 || headers.Count > 200 || mapping.Count > 60
+            || CheckMapping(kind, mapping, headers, requireFields: false) is { Count: > 0 })
+        {
+            return Outcome.Invalid<Guid>("mapping", CatalogFieldErrors.InvalidFormat);
+        }
+
+        var now = CatalogClock.Now(clock);
+        var mappingJson = JsonSerializer.Serialize(mapping, Json);
+        var headersJson = JsonSerializer.Serialize(headers, Json);
+        var profile = await profiles.FindAsync(supplierId, kind, cancellationToken);
+        if (profile?.LastRequestId == requestId)
+        {
+            return Outcome.Ok(profile.Id, replayed: true);
+        }
+
+        if (profile is null)
+        {
+            profile = SupplierImportProfile.Create(Guid.CreateVersion7(now), supplierId, kind, mappingJson, headersJson, userId, now, requestId);
+            profiles.Add(profile);
+        }
+        else
+        {
+            profile.Update(mappingJson, headersJson, userId, now, requestId);
+        }
+
+        CatalogAudit.Record(audit, userId, now, AuditActions.ImportsModule, AuditActions.ImportProfileSaved, AuditActions.ImportProfileEntity, profile.Id,
+            [CatalogAudit.Field("supplierId", null, supplierId.ToString()), CatalogAudit.Field("kind", null, kind)]);
+        var commit = await unitOfWork.SaveAsync(cancellationToken);
+        return commit.Saved ? Outcome.Ok(profile.Id) : Outcome.Conflict<Guid>();
+    }
+
+    public Task<SupplierImportProfile?> FindProfileAsync(Guid supplierId, string kind, CancellationToken cancellationToken) =>
+        profiles.FindAsync(supplierId, kind, cancellationToken);
 
     // ---------- contrôle à blanc ----------
 
@@ -327,11 +428,13 @@ public sealed class ImportService(
     private async Task<Plan> PlanAsync(ImportBatch batch, CsvTable table, IReadOnlyDictionary<string, string> mapping, CancellationToken cancellationToken)
     {
         var rows = table.Rows.Select(r => (r.LineNo, Values: Values(table, r.Cells, mapping))).ToList();
+        var supplier = batch.SupplierId is { } sid ? await store.FindSupplierAsync(sid, cancellationToken) : null;
+        var decimalSeparator = mapping.GetValueOrDefault(ImportOptions.DecimalSeparator) is { Length: 1 } d ? d[0] : (char?)null;
         return batch.Kind switch
         {
             ImportKinds.Suppliers => await PlanSuppliersAsync(rows, cancellationToken),
-            ImportKinds.Prices => await PlanPricesAsync(batch.StoreId!.Value, rows, cancellationToken),
-            _ => await PlanCatalogAsync(rows, cancellationToken),
+            ImportKinds.Prices => await PlanPricesAsync(batch.StoreId!.Value, supplier, decimalSeparator, rows, cancellationToken),
+            _ => await PlanCatalogAsync(supplier, rows, cancellationToken),
         };
     }
 
@@ -400,10 +503,16 @@ public sealed class ImportService(
         return new(plans, actions, false, false);
     }
 
-    private async Task<Plan> PlanPricesAsync(Guid storeId, List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken)
+    private async Task<Plan> PlanPricesAsync(
+        Guid storeId, Supplier? fileSupplier, char? decimalSeparator, List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken)
     {
         var shop = (await store.GetStoreAsync(storeId, cancellationToken))!;
-        var variants = await imports.VariantsBySkuAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("sku") ?? string.Empty))], cancellationToken);
+        var bySku = await imports.VariantsBySkuAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("sku") ?? string.Empty))], cancellationToken);
+        var byReference = fileSupplier is null
+            ? new Dictionary<string, ProductVariant>(StringComparer.Ordinal)
+            : await imports.VariantsBySupplierReferenceAsync(fileSupplier.Id, [.. rows.Select(r => r.Values.GetValueOrDefault("supplierReference")).OfType<string>().Select(CatalogKeys.Normalize)], cancellationToken);
+        var variants = bySku.Concat(byReference.Where(r => !bySku.ContainsKey("ref:" + r.Key)).Select(r => KeyValuePair.Create("ref:" + r.Key, r.Value)))
+            .ToDictionary(StringComparer.Ordinal);
         var prices = (await pricing.PricesAsync(storeId, [.. variants.Values.Select(v => v.Id)], cancellationToken)).ToDictionary(p => p.VariantId);
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var plans = new List<RowPlan>();
@@ -413,11 +522,12 @@ public sealed class ImportService(
         {
             var errors = FormulaErrors(values);
             var sku = values.GetValueOrDefault("sku");
-            var key = sku is null ? null : CatalogKeys.Normalize(sku);
+            var reference = values.GetValueOrDefault("supplierReference");
+            var key = sku is not null ? CatalogKeys.Normalize(sku) : reference is not null && fileSupplier is not null ? "ref:" + CatalogKeys.Normalize(reference) : null;
             ProductVariant? variant = null;
             if (key is null)
             {
-                errors.Add(new("sku", CatalogFieldErrors.Required));
+                errors.Add(new(reference is null ? "sku" : "supplierReference", reference is null ? CatalogFieldErrors.Required : "supplier_required"));
             }
             else if (!seen.Add(key))
             {
@@ -439,11 +549,31 @@ public sealed class ImportService(
             }
 
             var fieldErrors = new Dictionary<string, string[]>(StringComparer.Ordinal);
-            var purchase = values.TryGetValue("purchasePriceHt", out var purchaseText) ? PricingService.Purchase(purchaseText, fieldErrors, required: false) : null;
-            var coefficient = values.TryGetValue("coefficient", out var coefficientText) ? PricingService.Coefficient(coefficientText, fieldErrors) : null;
-            var sale = values.TryGetValue("salePriceHt", out var saleText) ? PricingService.Sale(saleText, "salePriceHt", fieldErrors) : null;
+            // Montants d'un fichier fournisseur : virgule ou point, milliers, symbole de devise (COR-05-04) ; ambigu ⇒ erreur.
+            string? Amount(string field, string? expectedCurrency)
+            {
+                if (!values.TryGetValue(field, out var raw))
+                {
+                    return null;
+                }
+
+                var (normalized, error) = NumberText.Normalize(raw, decimalSeparator, expectedCurrency);
+                if (error is not null)
+                {
+                    errors.Add(new(field, error));
+                }
+
+                return normalized;
+            }
+
+            var purchaseText = Amount("purchasePriceHt", shop.CurrencyCode);
+            var coefficientText = Amount("coefficient", null);
+            var saleText = Amount("salePriceHt", shop.CurrencyCode);
+            var purchase = purchaseText is not null ? PricingService.Purchase(purchaseText, fieldErrors, required: false) : null;
+            var coefficient = coefficientText is not null ? PricingService.Coefficient(coefficientText, fieldErrors) : null;
+            var sale = saleText is not null ? PricingService.Sale(saleText, "salePriceHt", fieldErrors) : null;
             errors.AddRange(fieldErrors.Select(e => new ImportError(e.Key, e.Value[0])));
-            if (purchase is null && coefficient is null && sale is null && fieldErrors.Count == 0)
+            if (purchase is null && coefficient is null && sale is null && fieldErrors.Count == 0 && !errors.Any(e => MoneyFields.Contains(e.Field)))
             {
                 errors.Add(new("salePriceHt", CatalogFieldErrors.Required));
             }
@@ -540,9 +670,30 @@ public sealed class ImportService(
         return new(plans, actions, costs, manual);
     }
 
-    private async Task<Plan> PlanCatalogAsync(List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken)
+    private async Task<Plan> PlanCatalogAsync(Supplier? fileSupplier, List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken)
     {
-        var variants = await imports.VariantsBySkuAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("sku") ?? string.Empty))], cancellationToken);
+        var variants = (await imports.VariantsBySkuAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("sku") ?? string.Empty))], cancellationToken))
+            .ToDictionary(StringComparer.Ordinal);
+        // Lignes sans SKU (COR-05-04) : rapprochement par référence fournisseur (fournisseur du fichier ou de la ligne), puis par
+        // code-barres ; sinon création avec un SKU généré par le serveur.
+        var unkeyed = rows.Where(r => r.Values.GetValueOrDefault("sku") is null).ToList();
+        var byReference = fileSupplier is null
+            ? new Dictionary<string, ProductVariant>(StringComparer.Ordinal)
+            : await imports.VariantsBySupplierReferenceAsync(fileSupplier.Id, [.. unkeyed.Select(r => r.Values.GetValueOrDefault("supplierReference")).OfType<string>().Select(CatalogKeys.Normalize)], cancellationToken);
+        var byBarcode = await imports.VariantsByBarcodeAsync([.. unkeyed.Select(r => r.Values.GetValueOrDefault("barcode")).OfType<string>().Distinct()], cancellationToken);
+        foreach (var (lineNo, values) in unkeyed)
+        {
+            var matched = values.GetValueOrDefault("supplierReference") is { } reference && values.GetValueOrDefault("supplierCode") is null
+                && byReference.TryGetValue(CatalogKeys.Normalize(reference), out var viaReference)
+                ? viaReference
+                : values.GetValueOrDefault("barcode") is { } code && byBarcode.TryGetValue(code, out var viaBarcode) ? viaBarcode : null;
+            if (matched is not null)
+            {
+                values["sku"] = matched.Sku;
+                variants.TryAdd(CatalogKeys.Normalize(matched.Sku), matched);
+            }
+        }
+
         var families = rows.Select(r => FamilyCode(r.Values.GetValueOrDefault("familyCode"))).OfType<string>().Distinct().ToList();
         var models = await imports.ModelsByKeyAsync(families, cancellationToken);
         var suppliers = await imports.SuppliersByCodeAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("supplierCode") ?? string.Empty))], cancellationToken);
@@ -603,6 +754,17 @@ public sealed class ImportService(
                 }
             }
 
+            // SKU toujours absent : nouvelle variante, SKU généré (provisoire au contrôle, définitif à l'application).
+            var generatedSku = values.GetValueOrDefault("sku") is null;
+            var skuInput = generatedSku ? SkuGenerator.Propose(familyCode) : values.GetValueOrDefault("sku");
+            var attributeInput = values.GetValueOrDefault("color") is { } color && family?.VariantAttributes.Any(a => a.Key == "color") == true
+                ? new Dictionary<string, string?>(StringComparer.Ordinal) { ["color"] = color }
+                : null;
+            if (values.ContainsKey("color") && attributeInput is null)
+            {
+                errors.Add(new("color", CatalogFieldErrors.NotAllowed));
+            }
+
             var modelDetails = CatalogInputValidator.Model(
                 new ModelInput(familyCode ?? values.GetValueOrDefault("familyCode"), values.GetValueOrDefault("brand"), values.GetValueOrDefault("modelName"),
                     values.GetValueOrDefault("modelDescription"), rangeId, null),
@@ -611,13 +773,13 @@ public sealed class ImportService(
             var (variantDetails, variantPolicy) = family is null
                 ? (null, null)
                 : CatalogInputValidator.Variant(
-                    new VariantInput(values.GetValueOrDefault("sku"), values.GetValueOrDefault("manufacturerReference"), values.GetValueOrDefault("barcode"),
-                        values.GetValueOrDefault("variantLabel"), null, indexId, treatmentIds, policy ?? values.GetValueOrDefault("stockPolicy")),
+                    new VariantInput(skuInput, values.GetValueOrDefault("manufacturerReference"), values.GetValueOrDefault("barcode"),
+                        values.GetValueOrDefault("variantLabel"), attributeInput, indexId, treatmentIds, policy ?? values.GetValueOrDefault("stockPolicy")),
                     family, requirePolicy: true, fieldErrors);
             errors.AddRange(fieldErrors.Where(e => !(family is { IsOphthalmicLens: true } && e.Key is "lensRangeId" or "lensIndexId"))
                 .Select(e => new ImportError(Rename(e.Key), e.Value[0])));
 
-            var skuKey = variantDetails is null ? null : CatalogKeys.Normalize(variantDetails.Sku);
+            var skuKey = variantDetails is null ? null : generatedSku ? $"new:{lineNo}" : CatalogKeys.Normalize(variantDetails.Sku);
             if (skuKey is not null && !seenSku.Add(skuKey))
             {
                 errors.Add(new("sku", CatalogFieldErrors.Duplicate));
@@ -647,9 +809,20 @@ public sealed class ImportService(
                     errors.Add(new("supplierCode", CatalogFieldErrors.Archived));
                 }
             }
+            else if (fileSupplier is not null)
+            {
+                // Fichier d'un fournisseur désigné au dépôt : chaque ligne lui est rattachée (référence de la ligne).
+                supplier = fileSupplier;
+            }
             else if (supplierReference is not null || primary == true)
             {
                 errors.Add(new("supplierCode", CatalogFieldErrors.Required));
+            }
+
+            if (supplierReference is not null && supplier is not null && !generatedSku && values.GetValueOrDefault("supplierCode") is null
+                && byReference.TryGetValue(CatalogKeys.Normalize(supplierReference), out var referenced) && !string.Equals(referenced.Sku, values["sku"], StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add(new("supplierReference", CatalogFieldErrors.Duplicate));
             }
 
             if (errors.Count > 0 || modelDetails is null || variantDetails is null)
@@ -659,7 +832,7 @@ public sealed class ImportService(
             }
 
             var modelKey = ModelKey(modelDetails);
-            if (variants.TryGetValue(skuKey!, out var existing))
+            if (!generatedSku && variants.TryGetValue(skuKey!, out var existing))
             {
                 var owner = modelById[existing.ModelId];
                 if (ModelKey(owner.Snapshot()) != modelKey)
@@ -686,10 +859,18 @@ public sealed class ImportService(
                     continue;
                 }
 
-                // Attributs non importés : ceux de la fiche sont conservés.
-                var merged = variantDetails with { Attributes = existing.Attributes };
+                // Attributs non importés : ceux de la fiche sont conservés (le coloris importé remplace le coloris).
+                var mergedAttributes = existing.Attributes.ToDictionary(StringComparer.Ordinal);
+                foreach (var (attribute, value) in variantDetails.Attributes)
+                {
+                    mergedAttributes[attribute] = value;
+                }
+
+                var merged = variantDetails with { Attributes = mergedAttributes };
                 var same = existing.Snapshot().SameAs(merged);
-                var linkChange = supplier is not null;
+                // Rattachement inchangé (même fournisseur, même référence, même rôle) : la ligne reste « inchangée ».
+                var linkChange = supplier is not null && !(await store.LinksForVariantAsync(existing.Id, cancellationToken)).Any(l =>
+                    l.SupplierId == supplier.Id && !l.IsRemoved && l.SupplierReference == (supplierReference ?? l.SupplierReference) && (primary is null || l.IsPrimary == primary));
                 plans.Add(new(lineNo, values, same && !linkChange ? ImportOutcomes.Unchanged : ImportOutcomes.Update, [], skuKey));
                 var existingId = existing.Id;
                 if (!same)
@@ -702,9 +883,9 @@ public sealed class ImportService(
                     });
                 }
 
-                if (supplier is not null)
+                if (linkChange)
                 {
-                    actions.Add(LinkAction(existingId, supplier.Id, supplierReference, primary ?? false));
+                    actions.Add(LinkAction(existingId, supplier!.Id, supplierReference, primary));
                 }
 
                 continue;
@@ -716,9 +897,11 @@ public sealed class ImportService(
                 continue;
             }
 
-            plans.Add(new(lineNo, values, ImportOutcomes.Create, [], skuKey));
+            plans.Add(new(lineNo, generatedSku ? new Dictionary<string, string>(values) { ["sku"] = "(généré à l'application)" } : values, ImportOutcomes.Create, [], skuKey));
             var supplierId = supplier?.Id;
             var details = variantDetails;
+            var generate = generatedSku;
+            var familyForSku = familyCode;
             var policyValue = variantPolicy!.Value;
             actions.Add(async (userId, now, requestId, ct) =>
             {
@@ -740,6 +923,18 @@ public sealed class ImportService(
                     CatalogAudit.Record(audit, userId, now, AuditActions.CatalogModule, AuditActions.ModelCreated, AuditActions.ModelEntity, newModel.Id, [CatalogAudit.Field("import")]);
                 }
 
+                if (generate)
+                {
+                    // SKU définitif généré par le serveur, distinct des SKU existants (contrainte d'unicité en dernier recours).
+                    var sku = SkuGenerator.Propose(familyForSku);
+                    for (var attempt = 0; attempt < 5 && (await store.TakenSkusAsync([CatalogKeys.Normalize(sku)], null, ct)).Count > 0; attempt++)
+                    {
+                        sku = SkuGenerator.Propose(familyForSku);
+                    }
+
+                    details = details with { Sku = sku };
+                }
+
                 var variant = ProductVariant.Create(Guid.CreateVersion7(now), modelId, details, policyValue, null, userId, now);
                 store.Add(variant);
                 CatalogAudit.Record(audit, userId, now, AuditActions.CatalogModule, AuditActions.VariantCreated, AuditActions.VariantEntity, variant.Id,
@@ -753,7 +948,7 @@ public sealed class ImportService(
                         throw new InvalidOperationException("Import : enregistrement intermédiaire refusé.");
                     }
 
-                    await LinkAction(variant.Id, sid, supplierReference, primary ?? false)(userId, now, requestId, ct);
+                    await LinkAction(variant.Id, sid, supplierReference, primary)(userId, now, requestId, ct);
                 }
             });
         }
@@ -761,11 +956,15 @@ public sealed class ImportService(
         return new(plans, actions, false, false);
     }
 
-    /// <summary>Rattachement importé : référence et rôle principal seulement (aucun prix fournisseur par import de catalogue).</summary>
-    private ImportAction LinkAction(Guid variantId, Guid supplierId, string? reference, bool primary) => async (userId, now, requestId, ct) =>
+    /// <summary>
+    /// Rattachement importé : référence et rôle principal seulement (aucun prix fournisseur par import de catalogue).
+    /// Rôle non précisé par le fichier : celui du lien existant, sinon principal si la variante n'en a aucun.
+    /// </summary>
+    private ImportAction LinkAction(Guid variantId, Guid supplierId, string? reference, bool? requestedPrimary) => async (userId, now, requestId, ct) =>
     {
         var links = await store.LinksForVariantAsync(variantId, ct);
         var link = links.FirstOrDefault(l => l.SupplierId == supplierId);
+        var primary = requestedPrimary ?? (link is { IsRemoved: false } ? link.IsPrimary : !links.Any(l => l.IsPrimary && !l.IsRemoved));
         var details = new VariantSupplierDetails(reference ?? link?.SupplierReference, link?.SupplierPriceHt, link?.SupplierCurrency, link?.LeadTimeDays, primary);
         if (link is { IsRemoved: false } && link.Snapshot() == details)
         {
@@ -801,9 +1000,18 @@ public sealed class ImportService(
 
     // ---------- outils ----------
 
-    private static ImportPreview Preview(ImportBatch batch, CsvTable table) =>
-        new(batch.Id, table.Headers, [.. table.Rows.Take(10).Select(r => (IReadOnlyList<string>)[.. r.Cells])],
-            JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [], batch.RowCount);
+    private async Task<ImportPreview> PreviewAsync(ImportBatch batch, CsvTable table, CancellationToken cancellationToken)
+    {
+        var profile = batch.SupplierId is { } supplierId ? await profiles.FindAsync(supplierId, batch.Kind, cancellationToken) : null;
+        var (_, suggestions) = Propose(batch.Kind, table, batch.SupplierId is not null, profile);
+        var mapping = JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [];
+        var (detected, ambiguous) = DetectDecimal(table, mapping);
+        return new ImportPreview(
+            batch.Id, table.Headers, [.. table.Rows.Take(10).Select(r => (IReadOnlyList<string>)[.. r.Cells])], mapping, batch.RowCount,
+            table.Delimiter == '\t' ? "tab" : table.Delimiter.ToString(), suggestions,
+            mapping.GetValueOrDefault(ImportOptions.DecimalSeparator) ?? detected?.ToString(), ambiguous && !mapping.ContainsKey(ImportOptions.DecimalSeparator),
+            suggestions.Any(s => s.Confidence == MatchConfidence.Profile), batch.SupplierId);
+    }
 
     private static ImportSummary Summary(ImportBatch batch, IReadOnlyList<RowPlan> rows) =>
         new(batch.Id, batch.Status, rows.Count,
@@ -827,10 +1035,27 @@ public sealed class ImportService(
     }
 
     /// <summary>Correspondance valide : champs connus, en-têtes existants, chacun au plus une fois, champs obligatoires présents.</summary>
-    public static Dictionary<string, string[]> CheckMapping(string kind, IReadOnlyDictionary<string, string> mapping, IReadOnlyList<string> headers)
+    public static Dictionary<string, string[]> CheckMapping(string kind, IReadOnlyDictionary<string, string> mapping, IReadOnlyList<string> headers, bool requireFields = true)
     {
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
         var fields = Fields[kind];
+        foreach (var (option, value) in mapping.Where(m => ImportOptions.IsOption(m.Key)))
+        {
+            var valid = option switch
+            {
+                ImportOptions.DecimalSeparator => value is "," or ".",
+                ImportOptions.FamilyCode => kind == ImportKinds.Catalog && Families.Find(value) is not null,
+                ImportOptions.StockPolicy => kind == ImportKinds.Catalog && StockPolicies.TryParse(value) is not null,
+                _ => false,
+            };
+            if (!valid)
+            {
+                errors[$"mapping.{option}"] = [CatalogFieldErrors.InvalidFormat];
+            }
+        }
+
+        var options = mapping.Where(m => ImportOptions.IsOption(m.Key)).ToDictionary(StringComparer.Ordinal);
+        mapping = mapping.Where(m => !ImportOptions.IsOption(m.Key)).ToDictionary(StringComparer.Ordinal);
         foreach (var (key, header) in mapping)
         {
             if (fields.All(f => f.Key != key))
@@ -843,14 +1068,29 @@ public sealed class ImportService(
             }
         }
 
-        if (mapping.Values.Distinct(StringComparer.Ordinal).Count() != mapping.Count)
+        // Chaque colonne au plus une fois, sauf libellé de variante ET coloris (même colonne admise).
+        var reused = mapping.Where(m => m.Key is not ("color" or "variantLabel")).Select(m => m.Value)
+            .Concat(mapping.Where(m => m.Key is "color" or "variantLabel").Select(m => m.Value).Distinct(StringComparer.Ordinal)).ToList();
+        if (reused.Distinct(StringComparer.Ordinal).Count() != reused.Count)
         {
             errors["mapping"] = [CatalogFieldErrors.Duplicate];
         }
 
-        foreach (var field in fields.Where(f => f.Required && !mapping.ContainsKey(f.Key)))
+        if (!requireFields)
+        {
+            return errors;
+        }
+
+        // Champ obligatoire absent du fichier mais valeur par défaut choisie pour tout le fichier : admis.
+        foreach (var field in fields.Where(f => f.Required && !mapping.ContainsKey(f.Key)
+            && !(f.Key == "familyCode" && options.ContainsKey(ImportOptions.FamilyCode)) && !(f.Key == "stockPolicy" && options.ContainsKey(ImportOptions.StockPolicy))))
         {
             errors[$"mapping.{field.Key}"] = [CatalogFieldErrors.Required];
+        }
+
+        if (kind == ImportKinds.Prices && !mapping.ContainsKey("sku") && !mapping.ContainsKey("supplierReference"))
+        {
+            errors["mapping.sku"] = [CatalogFieldErrors.Required];
         }
 
         return errors;
@@ -859,13 +1099,22 @@ public sealed class ImportService(
     private static Dictionary<string, string> Values(CsvTable table, string[] cells, IReadOnlyDictionary<string, string> mapping)
     {
         var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var (key, header) in mapping)
+        foreach (var (key, header) in mapping.Where(m => !ImportOptions.IsOption(m.Key)))
         {
             var index = table.Headers.ToList().IndexOf(header);
             var value = index >= 0 && index < cells.Length ? cells[index].Trim() : string.Empty;
             if (value.Length > 0)
             {
                 values[key] = value;
+            }
+        }
+
+        // Valeurs par défaut CHOISIES par l'utilisateur pour tout le fichier (cellule vide ou colonne absente).
+        foreach (var (option, field) in new[] { (ImportOptions.FamilyCode, "familyCode"), (ImportOptions.StockPolicy, "stockPolicy") })
+        {
+            if (!values.ContainsKey(field) && mapping.GetValueOrDefault(option) is { Length: > 0 } fallback)
+            {
+                values[field] = fallback;
             }
         }
 
