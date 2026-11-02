@@ -10,6 +10,9 @@ const KEYS = {
   Escape: { key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 },
   Space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
   ArrowDown: { key: "ArrowDown", code: "ArrowDown", windowsVirtualKeyCode: 40 },
+  // COR-05 (preuves natives des corrections) : effacement d'un champ et navigation de liste.
+  ArrowUp: { key: "ArrowUp", code: "ArrowUp", windowsVirtualKeyCode: 38 },
+  Backspace: { key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 },
 };
 
 export async function connect(port, urlPrefix = "http://localhost:1420") {

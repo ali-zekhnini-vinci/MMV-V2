@@ -50,7 +50,8 @@ export function SupplierCombobox({ label, value, onChange, required, error, hint
   const listId = `${id}-list`;
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(0);
+  // Aucune suggestion en surbrillance tant que l'utilisateur n'a pas pressé ↓ (motif combobox ARIA) ; Entrée prend la première.
+  const [active, setActive] = useState(-1);
   const [creating, setCreating] = useState<string | null>(null);
   const searched = useDebounced(text.trim().replace(/\s+/g, " "));
   const suggestions = useCatalogQuery<Page<SupplierRow>>(
@@ -84,14 +85,14 @@ export function SupplierCombobox({ label, value, onChange, required, error, hint
     if (event.key === "ArrowDown") {
       event.preventDefault();
       if (!open) setOpen(true);
-      else setActive((i) => (options === 0 ? 0 : (i + 1) % options));
+      setActive((i) => (options === 0 ? -1 : (i + 1) % options));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
-      setActive((i) => (options === 0 ? 0 : (i - 1 + options) % options));
+      setActive((i) => (options === 0 ? -1 : i <= 0 ? options - 1 : i - 1));
     } else if (event.key === "Enter") {
       if (open && options > 0) {
         event.preventDefault();
-        pick(Math.min(active, options - 1));
+        pick(active < 0 ? 0 : Math.min(active, options - 1));
       }
     } else if (event.key === "Escape" && open) {
       event.preventDefault();
@@ -125,14 +126,14 @@ export function SupplierCombobox({ label, value, onChange, required, error, hint
             aria-expanded={open}
             aria-controls={listId}
             aria-autocomplete="list"
-            aria-activedescendant={open && options > 0 ? `${listId}-${Math.min(active, options - 1)}` : undefined}
+            aria-activedescendant={open && active >= 0 && options > 0 ? `${listId}-${Math.min(active, options - 1)}` : undefined}
             aria-invalid={message !== null}
             aria-describedby={message ? `${id}-error` : hint ? `${id}-hint` : undefined}
             autoComplete="off"
             autoFocus={autoFocus}
             value={text}
             placeholder={placeholder ?? "Nom, code ou référence fournisseur…"}
-            onChange={(event) => { setText(event.target.value); setOpen(true); setActive(0); }}
+            onChange={(event) => { setText(event.target.value); setOpen(true); setActive(-1); }}
             onFocus={() => setOpen(true)}
             onBlur={() => window.setTimeout(() => setOpen(false), 150)}
             onKeyDown={onKey}
