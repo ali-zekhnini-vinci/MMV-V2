@@ -287,12 +287,17 @@ function InventoryLineRow({ sessionId, line, open, blind, mode }: { sessionId: s
   const write = useCatalogWrite();
   const [counted, setCounted] = useState(line.countedQuantity?.toString() ?? "");
   const [editing, setEditing] = useState(false);
+  // Version de la ligne figée dès la première saisie (COR-05-02) : un comptage fait sur un autre poste entre-temps
+  // est refusé par le serveur (409), jamais écrasé ; la saisie en cours n'est pas remplacée par l'actualisation.
+  const [typedVersion, setTypedVersion] = useState<number | null>(null);
+  const type = (value: string) => { if (typedVersion === null) setTypedVersion(line.version); setCounted(value); };
   const path = `/api/inventories/${sessionId}/lines/${line.variantId}/${line.locationId}`;
   const canCount = open && access.inventoryCount;
   const valid = /^\d+$/.test(counted.trim());
   const isCounted = line.countedQuantity !== null;
-  const step = (delta: number) => setCounted((c) => String(Math.max(0, (Number.parseInt(c, 10) || 0) + delta)));
-  const save = () => valid && write.mutate({ method: "PUT", path, body: { version: line.version, countedQuantity: Number(counted) } }, { onSuccess: () => setEditing(false) });
+  const step = (delta: number) => type(String(Math.max(0, (Number.parseInt(counted, 10) || 0) + delta)));
+  const save = () => valid && write.mutate({ method: "PUT", path, body: { version: typedVersion ?? line.version, countedQuantity: Number(counted) } },
+    { onSuccess: () => { setEditing(false); setTypedVersion(null); }, onError: () => setTypedVersion(null) });
   const showInput = canCount && mode === "count" && (!isCounted || editing);
   const theoretical = line.expectedAtCount ?? line.expectedAtOpen;
 
@@ -319,7 +324,7 @@ function InventoryLineRow({ sessionId, line, open, blind, mode }: { sessionId: s
           <form className="cat-count" onSubmit={(e) => { e.preventDefault(); save(); }}>
             <span className="cat-qty">
               <button type="button" className="cat-qty__btn" aria-label={`Retirer une unité ${line.sku}`} onClick={() => step(-1)} disabled={counted.trim() === "" || counted === "0"}>−</button>
-              <input inputMode="numeric" aria-label={`Quantité constatée ${line.sku}`} value={counted} onChange={(e) => setCounted(e.target.value)} />
+              <input inputMode="numeric" aria-label={`Quantité constatée ${line.sku}`} value={counted} onChange={(e) => type(e.target.value)} />
               <button type="button" className="cat-qty__btn" aria-label={`Ajouter une unité ${line.sku}`} onClick={() => step(1)}>+</button>
             </span>
             <Button size="sm" variant="primary" type="submit" disabled={write.isPending || !valid}>{isCounted ? "Recompter" : "Compter"}</Button>

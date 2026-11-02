@@ -2,6 +2,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MMV.Api.Clients;
+using MMV.Api.Installation;
+using MMV.Api.Realtime;
 using MMV.Application.Catalog;
 using MMV.Domain.CsvImport;
 using MMV.Domain.Identity;
@@ -106,7 +108,7 @@ internal static class StockEndpoints
 
     public static void MapStockEndpoints(this RouteGroupBuilder api)
     {
-        var stock = api.MapGroup("/stock").WithTags("Stock").AddEndpointFilter(NoStore);
+        var stock = api.MapGroup("/stock").WithTags("Stock").AddEndpointFilter(NoStore).RequireActiveStore().PublishesChanges(ChangeTopics.Stock, ChangeTopics.Catalog);
         stock.MapGet("/balances", ListBalancesAsync).RequireAuthorization(P(Permissions.StockRead));
         stock.MapGet("/alerts", AlertsAsync).RequireAuthorization(P(Permissions.StockRead));
         stock.MapPut("/thresholds/{variantId:guid}", SetThresholdAsync).RequireAuthorization(P(Permissions.StockAdjust));
@@ -118,7 +120,8 @@ internal static class StockEndpoints
         stock.MapGet("/receipts/{id:guid}", GetReceiptAsync).RequireAuthorization(P(Permissions.StockRead));
         stock.MapPost("/receipts", ReceiveAsync).RequireAuthorization(P(Permissions.StockMovementsWrite), P(Permissions.SuppliersRead));
 
-        var inventories = api.MapGroup("/inventories").WithTags("Inventories").AddEndpointFilter(NoStore);
+        var inventories = api.MapGroup("/inventories").WithTags("Inventories").AddEndpointFilter(NoStore).RequireActiveStore()
+            .PublishesChanges(ChangeTopics.Inventory, ChangeTopics.Stock, ChangeTopics.Catalog);
         inventories.MapGet("/", ListInventoriesAsync).RequireAuthorization(P(Permissions.StockRead));
         inventories.MapGet("/{id:guid}", GetInventoryAsync).RequireAuthorization(P(Permissions.StockRead));
         inventories.MapPost("/", OpenInventoryAsync).RequireAuthorization(P(Permissions.InventoryCount));
@@ -127,7 +130,8 @@ internal static class StockEndpoints
         inventories.MapPost("/{id:guid}/validate", ValidateAsync).RequireAuthorization(P(Permissions.InventoryValidate));
         inventories.MapPost("/{id:guid}/abandon", AbandonAsync).RequireAuthorization(P(Permissions.InventoryValidate));
 
-        var imports = api.MapGroup("/imports").WithTags("Imports").AddEndpointFilter(NoStore).RequireAuthorization(P(Permissions.CatalogImport));
+        var imports = api.MapGroup("/imports").WithTags("Imports").AddEndpointFilter(NoStore).RequireActiveStore().RequireAuthorization(P(Permissions.CatalogImport))
+            .PublishesChanges(ChangeTopics.Imports, ChangeTopics.Catalog, ChangeTopics.Pricing, ChangeTopics.Suppliers, ChangeTopics.Stock);
         imports.MapGet("/fields", () => Results.Ok(ImportService.Fields.ToDictionary(k => k.Key, k => k.Value.Select(f => new ImportFieldResponse(f.Key, f.Required)).ToList())));
         imports.MapGet("/", ListImportsAsync);
         imports.MapPost("/", UploadAsync);
@@ -142,11 +146,17 @@ internal static class StockEndpoints
     private static async Task<IResult> ListBalancesAsync(HttpRequest request, ICatalogReadStore reads, ICatalogStore store, TimeProvider clock, CancellationToken cancellationToken)
     {
         var q = request.Query;
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "locationId", "q", "familyCode", "availability", "sort", "dir", "page", "pageSize" })
-            || ParseGuid(q["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "locationId", "q", "familyCode", "availability", "sort", "dir", "page", "pageSize" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var location = q.ContainsKey("locationId") ? ParseGuid(q["locationId"]) : null;
         var availabilityText = q["availability"].ToString();
@@ -163,9 +173,9 @@ internal static class StockEndpoints
             return Results.BadRequest(InvalidQuery);
         }
 
-        if (await store.GetStoreAsync(storeId, cancellationToken) is null)
+        if (location is { } locationId && !await OwnsLocationAsync(request, store, locationId, cancellationToken))
         {
-            return Results.NotFound(new ErrorResponse("store_not_found"));
+            return Results.NotFound(new ErrorResponse("location_not_found"));
         }
 
         var asOf = clock.GetUtcNow();
@@ -178,17 +188,19 @@ internal static class StockEndpoints
             result.PageNumber, result.PageSize, result.TotalCount, asOf));
     }
 
-    private static async Task<IResult> AlertsAsync(HttpRequest request, ICatalogReadStore reads, ICatalogStore store, TimeProvider clock, CancellationToken cancellationToken)
+    private static async Task<IResult> AlertsAsync(HttpRequest request, ICatalogReadStore reads, TimeProvider clock, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
 
-        if (await store.GetStoreAsync(storeId, cancellationToken) is null)
+        if (QueryStore(request, out var shop) is { } refused)
         {
-            return Results.NotFound(new ErrorResponse("store_not_found"));
+            return refused;
         }
+
+        var storeId = shop.Id;
 
         var asOf = clock.GetUtcNow();
         var alerts = await reads.AlertsAsync(storeId, cancellationToken);
@@ -205,12 +217,12 @@ internal static class StockEndpoints
             return invalid;
         }
 
-        if (body!.StoreId is not { } storeId)
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
         {
-            return Results.BadRequest(new ErrorResponse("store_required"));
+            return refused;
         }
 
-        var outcome = await service.SetThresholdAsync(variantId, storeId, body.LowStockThreshold, body.Version, body.RequestId!.Value, UserId(principal), cancellationToken);
+        var outcome = await service.SetThresholdAsync(variantId, shop.Id, body.LowStockThreshold, body.Version, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
@@ -226,11 +238,17 @@ internal static class StockEndpoints
     private static async Task<IResult> ListMovementsAsync(HttpRequest request, ClaimsPrincipal principal, ICatalogReadStore reads, CancellationToken cancellationToken)
     {
         var q = request.Query;
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "locationId", "variantId", "type", "from", "to", "page", "pageSize" })
-            || ParseGuid(q["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "locationId", "variantId", "type", "from", "to", "page", "pageSize" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var location = q.ContainsKey("locationId") ? ParseGuid(q["locationId"]) : null;
         var variant = q.ContainsKey("variantId") ? ParseGuid(q["variantId"]) : null;
@@ -250,12 +268,12 @@ internal static class StockEndpoints
         return Results.Ok(new PageResponse<MovementResponse>([.. result.Items.Select(m => ToMovement(m, costs))], result.PageNumber, result.PageSize, result.TotalCount));
     }
 
-    private static async Task<IResult> GetMovementAsync(Guid id, ClaimsPrincipal principal, ICatalogReadStore reads, CancellationToken cancellationToken) =>
-        await reads.GetMovementAsync(id, cancellationToken) is { } view
+    private static async Task<IResult> GetMovementAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ICatalogReadStore reads, ICatalogStore store, CancellationToken cancellationToken) =>
+        await reads.GetMovementAsync(id, cancellationToken) is { } view && await OwnsLocationAsync(request, store, view.Movement.LocationId, cancellationToken)
             ? Results.Ok(ToMovement(view, Has(principal, Permissions.CostsRead)))
             : Results.NotFound(new ErrorResponse("not_found"));
 
-    private static async Task<IResult> RecordMovementAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, ICatalogReadStore reads, CancellationToken cancellationToken)
+    private static async Task<IResult> RecordMovementAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, ICatalogReadStore reads, ICatalogStore store, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<MovementRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
@@ -268,11 +286,16 @@ internal static class StockEndpoints
             return Results.BadRequest(InvalidBody);
         }
 
+        if (!await OwnsLocationAsync(request, store, locationId, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("location_not_found"));
+        }
+
         var outcome = await service.RecordMovementAsync(variantId, locationId, body.Type, body.Quantity, body.ReasonCode, body.Comment, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, async id => (object?)ToMovement((await reads.GetMovementAsync(id, cancellationToken))!, Has(principal, Permissions.CostsRead)), $"/api/stock/movements/{outcome.Value}");
     }
 
-    private static async Task<IResult> AdjustAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, CancellationToken cancellationToken)
+    private static async Task<IResult> AdjustAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, ICatalogStore store, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<AdjustmentRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
@@ -283,6 +306,11 @@ internal static class StockEndpoints
         if (body!.VariantId is not { } variantId || body.LocationId is not { } locationId)
         {
             return Results.BadRequest(InvalidBody);
+        }
+
+        if (!await OwnsLocationAsync(request, store, locationId, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("location_not_found"));
         }
 
         var outcome = await service.AdjustAsync(variantId, locationId, body.ExpectedOnHand, body.CountedQuantity, body.ReasonCode, body.Comment, body.RequestId!.Value, UserId(principal), cancellationToken);
@@ -299,10 +327,17 @@ internal static class StockEndpoints
     private static async Task<IResult> ListReceiptsAsync(HttpRequest request, ICatalogReadStore reads, CancellationToken cancellationToken)
     {
         var q = request.Query;
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "supplierId", "page", "pageSize" }) || ParseGuid(q["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId", "supplierId", "page", "pageSize" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var supplier = q.ContainsKey("supplierId") ? ParseGuid(q["supplierId"]) : null;
         var page = Bounded(q["page"].FirstOrDefault(), 1, 1, VariantListQuery.MaxPage);
@@ -316,10 +351,10 @@ internal static class StockEndpoints
         return Results.Ok(new PageResponse<ReceiptSummaryResponse>([.. result.Items.Select(ToReceipt)], result.PageNumber, result.PageSize, result.TotalCount));
     }
 
-    private static async Task<IResult> GetReceiptAsync(Guid id, ClaimsPrincipal principal, ICatalogReadStore reads, CancellationToken cancellationToken)
+    private static async Task<IResult> GetReceiptAsync(Guid id, HttpContext context, ClaimsPrincipal principal, ICatalogReadStore reads, CancellationToken cancellationToken)
     {
         var detail = await reads.GetReceiptAsync(id, cancellationToken);
-        if (detail is null)
+        if (detail is null || !ActiveStore.Owns(context, detail.Summary.Receipt.StoreId))
         {
             return Results.NotFound(new ErrorResponse("not_found"));
         }
@@ -332,12 +367,17 @@ internal static class StockEndpoints
             costs));
     }
 
-    private static async Task<IResult> ReceiveAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, ICatalogReadStore reads, CancellationToken cancellationToken)
+    private static async Task<IResult> ReceiveAsync(HttpRequest request, ClaimsPrincipal principal, StockService service, ICatalogReadStore reads, ICatalogStore store, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<ReceiptRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
         {
             return invalid;
+        }
+
+        if (body!.LocationId is { } locationId && !await OwnsLocationAsync(request, store, locationId, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("location_not_found"));
         }
 
         var outcome = await service.ReceiveAsync(
@@ -363,11 +403,16 @@ internal static class StockEndpoints
             return Results.BadRequest(InvalidQuery);
         }
 
-        var store = q.ContainsKey("storeId") ? ParseGuid(q["storeId"]) : null;
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        Guid? store = shop.Id;
         var status = q["status"].ToString() is { Length: > 0 } s ? s : null;
         var page = Bounded(q["page"].FirstOrDefault(), 1, 1, VariantListQuery.MaxPage);
         var size = Bounded(q["pageSize"].FirstOrDefault(), 50, 1, VariantListQuery.MaxPageSize);
-        if ((q.ContainsKey("storeId") && store is null) || status is not (null or InventoryStatuses.Open or InventoryStatuses.Validated or InventoryStatuses.Abandoned)
+        if (status is not (null or InventoryStatuses.Open or InventoryStatuses.Validated or InventoryStatuses.Abandoned)
             || page is null || size is null)
         {
             return Results.BadRequest(InvalidQuery);
@@ -386,7 +431,7 @@ internal static class StockEndpoints
         }
 
         var detail = await reads.GetInventoryAsync(id, cancellationToken);
-        if (detail is null)
+        if (detail is null || !ActiveStore.Owns(request.HttpContext, detail.Summary.Session.StoreId))
         {
             return Results.NotFound(new ErrorResponse("not_found"));
         }
@@ -412,14 +457,24 @@ internal static class StockEndpoints
             return invalid;
         }
 
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
         var outcome = await service.OpenAsync(
-            new InventoryOpenInput(body!.StoreId, body.LocationIds, body.ScopeType, body.ScopeFamilyCode, body.VariantIds, body.Blind ?? false),
+            new InventoryOpenInput(shop.Id, body.LocationIds, body.ScopeType, body.ScopeFamilyCode, body.VariantIds, body.Blind ?? false),
             body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, async id => (object?)ToInventory((await reads.GetInventoryAsync(id, cancellationToken))!.Summary), $"/api/inventories/{outcome.Value}");
     }
 
-    private static async Task<IResult> CountAsync(Guid id, Guid variantId, Guid locationId, HttpRequest request, ClaimsPrincipal principal, InventoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> CountAsync(Guid id, Guid variantId, Guid locationId, HttpRequest request, ClaimsPrincipal principal, InventoryService service, IInventoryStore sessions, CancellationToken cancellationToken)
     {
+        if (!await OwnsSessionAsync(request, sessions, id, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<CountRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -430,8 +485,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
-    private static async Task<IResult> JustifyAsync(Guid id, Guid variantId, Guid locationId, HttpRequest request, InventoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> JustifyAsync(Guid id, Guid variantId, Guid locationId, HttpRequest request, InventoryService service, IInventoryStore sessions, CancellationToken cancellationToken)
     {
+        if (!await OwnsSessionAsync(request, sessions, id, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<JustifyRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -442,8 +502,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
-    private static async Task<IResult> ValidateAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, InventoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> ValidateAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, InventoryService service, IInventoryStore sessions, CancellationToken cancellationToken)
     {
+        if (!await OwnsSessionAsync(request, sessions, id, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<ValidateRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -454,8 +519,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
-    private static async Task<IResult> AbandonAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, InventoryService service, CancellationToken cancellationToken)
+    private static async Task<IResult> AbandonAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, InventoryService service, IInventoryStore sessions, CancellationToken cancellationToken)
     {
+        if (!await OwnsSessionAsync(request, sessions, id, cancellationToken))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<ArchiveRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -466,6 +536,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)));
     }
 
+    /// <summary>Session d'inventaire du magasin de l'installation (lecture sans verrou ; le service reverrouille).</summary>
+    private static async Task<bool> OwnsSessionAsync(HttpRequest request, IInventoryStore sessions, Guid id, CancellationToken cancellationToken) =>
+        await sessions.FindSessionAsync(id, lockForUpdate: false, cancellationToken) is { } session && ActiveStore.Owns(request.HttpContext, session.StoreId);
+
+    /// <summary>Lot d'import sans magasin (catalogue, fournisseurs…) ou du magasin de l'installation.</summary>
+    private static bool Visible(HttpContext context, ImportBatch batch) => batch.StoreId is not { } storeId || ActiveStore.Owns(context, storeId);
+
     // ---------- import CSV ----------
 
     private static ImportBatchResponse ToBatch(ImportBatch batch, string uploadedBy) => new(
@@ -473,8 +550,8 @@ internal static class StockEndpoints
         batch.UploadedAtUtc, uploadedBy, batch.CheckedAtUtc, batch.AppliedAtUtc,
         JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [], batch.Version);
 
-    private static async Task<IResult> ListImportsAsync(ICatalogReadStore reads, CancellationToken cancellationToken) =>
-        Results.Ok((await reads.ListImportsAsync(50, cancellationToken)).Select(b => ToBatch(b.Batch, b.UploadedByName)));
+    private static async Task<IResult> ListImportsAsync(HttpContext context, ICatalogReadStore reads, CancellationToken cancellationToken) =>
+        Results.Ok((await reads.ListImportsAsync(50, cancellationToken)).Where(b => Visible(context, b.Batch)).Select(b => ToBatch(b.Batch, b.UploadedByName)));
 
     private static async Task<IResult> UploadAsync(HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
     {
@@ -484,17 +561,24 @@ internal static class StockEndpoints
             return invalid;
         }
 
-        var outcome = await service.UploadAsync(body!.Kind, body.StoreId, body.FileName, body.Content, body.RequestId!.Value, UserId(principal), cancellationToken);
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        // Tarifs : magasin de l'installation par défaut ; autres types : aucun magasin (refus du service si fourni).
+        var storeId = body.Kind == ImportKinds.Prices ? shop.Id : body.StoreId;
+        var outcome = await service.UploadAsync(body.Kind, storeId, body.FileName, body.Content, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, p => Task.FromResult<object?>(new ImportPreviewResponse(
             p.BatchId, p.Headers, p.SampleRows, p.SuggestedMapping, p.RowCount,
             [.. ImportService.Fields[body.Kind!].Select(f => new ImportFieldResponse(f.Key, f.Required))], outcome.Replayed)), $"/api/imports/{outcome.Value?.BatchId}");
     }
 
     /// <summary>Rapport ; valeurs des lignes d'un lot contenant des coûts servies seulement avec <c>costs.read</c>.</summary>
-    private static async Task<IResult> ReportAsync(Guid id, ClaimsPrincipal principal, IImportStore imports, ImportService service, ICatalogReadStore reads, CancellationToken cancellationToken)
+    private static async Task<IResult> ReportAsync(Guid id, HttpContext context, ClaimsPrincipal principal, IImportStore imports, ImportService service, ICatalogReadStore reads, CancellationToken cancellationToken)
     {
         var batch = await imports.FindBatchAsync(id, cancellationToken);
-        if (batch is null)
+        if (batch is null || !Visible(context, batch))
         {
             return Results.NotFound(new ErrorResponse("not_found"));
         }
@@ -511,8 +595,13 @@ internal static class StockEndpoints
             visible));
     }
 
-    private static async Task<IResult> CheckAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
+    private static async Task<IResult> CheckAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, IImportStore imports, CancellationToken cancellationToken)
     {
+        if (await imports.FindBatchAsync(id, cancellationToken) is { } owned && !Visible(request.HttpContext, owned))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<ImportCheckRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -523,8 +612,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, s => Task.FromResult<object?>(s));
     }
 
-    private static async Task<IResult> ApplyAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
+    private static async Task<IResult> ApplyAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, IImportStore imports, CancellationToken cancellationToken)
     {
+        if (await imports.FindBatchAsync(id, cancellationToken) is { } owned && !Visible(request.HttpContext, owned))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<VersionRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {
@@ -535,8 +629,13 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, s => Task.FromResult<object?>(s));
     }
 
-    private static async Task<IResult> CancelAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
+    private static async Task<IResult> CancelAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ImportService service, IImportStore imports, CancellationToken cancellationToken)
     {
+        if (await imports.FindBatchAsync(id, cancellationToken) is { } owned && !Visible(request.HttpContext, owned))
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
+        }
+
         var body = await ReadBodyAsync<VersionRequest>(request, cancellationToken);
         if (Envelope(body, body?.RequestId, body?.Version, requireVersion: true) is { } invalid)
         {

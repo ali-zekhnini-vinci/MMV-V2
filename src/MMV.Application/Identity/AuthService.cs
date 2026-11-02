@@ -68,6 +68,21 @@ public sealed class AuthService(IIdentityStore store, IPasswordHashing hashing, 
     }
 
     /// <summary>Session valide pour ce jeton, ou <c>null</c> (absente, révoquée, expirée, compte désactivé).</summary>
+    /// <summary>
+    /// Contrôle SANS glissement ni écriture (connexions temps réel de longue durée, COR-05-02) : session non révoquée,
+    /// non échue, non inactive, compte actif. Une connexion ouverte ne prolonge donc jamais une session.
+    /// </summary>
+    public async Task<bool> IsSessionValidAsync(Guid sessionId, CancellationToken cancellationToken)
+    {
+        var session = await store.FindSessionAsync(sessionId, cancellationToken);
+        if (session is null || !session.IsValidAt(clock.GetUtcNow(), options.IdleTimeout))
+        {
+            return false;
+        }
+
+        return (await store.ListUsersAsync(cancellationToken)).Any(u => u.Id == session.UserId && u.IsActive);
+    }
+
     public async Task<AuthenticatedSession?> AuthenticateAsync(string token, CancellationToken cancellationToken)
     {
         var hash = SessionTokens.TryHash(token);

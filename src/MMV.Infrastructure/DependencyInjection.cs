@@ -88,6 +88,7 @@ public static class DependencyInjection
         services.TryAddScoped<CatalogService>();
         services.TryAddScoped<SupplierService>();
         services.TryAddScoped<PricingService>();
+        services.TryAddScoped<ProductCreationService>();
         services.TryAddScoped<StockService>();
         services.TryAddScoped<InventoryService>();
         services.TryAddScoped<ImportService>();

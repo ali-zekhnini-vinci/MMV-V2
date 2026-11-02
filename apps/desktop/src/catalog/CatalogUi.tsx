@@ -8,12 +8,14 @@
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import {
   AlertTriangle, ArrowUpDown, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, History, type LucideIcon, RotateCw, Search, ShieldAlert,
-  Store as StoreIcon, TriangleAlert, X,
+  Store as StoreIcon, TriangleAlert, Wifi, WifiOff, X,
 } from "lucide-react";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import type { Store } from "../api/catalog.ts";
+import type { ActiveStore } from "../api/catalog.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
 import { LoadingBlock, StateBlock, type StateTone } from "../clients/ClientStates.tsx";
+import { SEARCH_DEBOUNCE_MS } from "../clients/clientsUi.ts";
+import { REALTIME_LABELS, useRealtime } from "../realtime/realtimeContext.ts";
 import { Button } from "../components/ui/button.tsx";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
@@ -22,47 +24,47 @@ import { cn } from "../lib/utils.ts";
 import { errorMessage, StoreContext, type StoreContextValue, ToastContext, type ToastValue, useActiveStore, useCatalogQuery } from "./catalogData.ts";
 import { FAMILY_SHORT_LABELS, fieldError, formatTime } from "./catalogFormat.ts";
 
-// ---------- magasin actif ----------
+// ---------- magasin de l'installation ----------
+
+/** Motifs bornés d'une installation sans magasin résolu (`503 store_not_configured`). */
+const STORE_PROBLEMS: Record<string, string> = {
+  ambiguous: "Plusieurs magasins existent dans la base et aucun n'est désigné pour ce serveur.",
+  no_store: "Aucun magasin n'existe encore dans la base de ce serveur.",
+  unknown_code: "Le code magasin configuré pour ce serveur n'existe pas.",
+  archived: "Le magasin configuré pour ce serveur est archivé.",
+};
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const query = useCatalogQuery<Store[]>("/api/stores");
-  const [storeId, setStoreId] = useState<string | null>(null);
-  const value = useMemo<StoreContextValue>(() => {
-    const stores = Array.isArray(query.data) ? query.data : [];
-    return { stores, store: stores.find((s) => s.id === storeId) ?? stores[0] ?? null, setStoreId };
-  }, [query.data, storeId]);
+  const query = useCatalogQuery<ActiveStore>("/api/store");
+  const value = useMemo<StoreContextValue>(() => ({ store: query.data?.store ?? null, source: query.data?.source ?? null }), [query.data]);
 
-  if (query.isPending) return <LoadingBlock label="Chargement des magasins…" />;
-  if (query.isError) return <ErrorState error={query.error} title="Impossible de charger les magasins" onRetry={() => void query.refetch()} />;
-  if (value.stores.length === 0) {
+  if (query.isPending) return <LoadingBlock label="Chargement du magasin…" />;
+  if (query.isError && query.error.error.code === "store_not_configured") {
     return (
-      <StateBlock tone="info" icon={StoreIcon} title="Aucun magasin configuré">
+      <StateBlock tone="info" icon={StoreIcon} title="Magasin du serveur non configuré">
         <p>
-          Les magasins sont créés par la commande de maintenance (<code>MMV.Maintenance stores create</code>), avec leur devise (EUR ou MAD).
-          Aucun magasin fictif n&apos;est créé automatiquement.
+          {STORE_PROBLEMS[query.error.error.reason ?? ""] ?? "Le serveur MMV n'a pas de magasin actif."} Chaque serveur MMV sert un seul magasin :
+          l&apos;administrateur renseigne <code>Installation:StoreCode</code> dans la configuration du serveur (magasins créés par{" "}
+          <code>MMV.Maintenance stores create</code>), puis redémarre l&apos;API. Aucun magasin n&apos;est choisi automatiquement en cas d&apos;ambiguïté.
         </p>
       </StateBlock>
     );
   }
+  if (query.isError) return <ErrorState error={query.error} title="Impossible de charger le magasin" onRetry={() => void query.refetch()} />;
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
-/** Sélecteur compact du magasin actif, une seule fois par module (barre de contexte) : la devise suit le magasin. */
-export function StoreSelect() {
-  const { stores, store, setStoreId } = useActiveStore();
+/** Magasin de l'installation (lecture seule, une fois par module) : nom et devise, jamais sélectionnable. */
+export function StoreBadge() {
+  const { store } = useActiveStore();
   if (!store) return null;
   return (
-    <label className="cat-store">
+    <span className="cat-store" title={`Magasin de ce serveur MMV : ${store.name} (${store.code}) · devise ${store.currency}`}>
       <StoreIcon size={16} aria-hidden="true" />
       <span className="cat-store__label">Magasin</span>
-      <select value={store.id} onChange={(event) => setStoreId(event.target.value)} aria-label="Magasin actif">
-        {stores.map((s) => (
-          <option key={s.id} value={s.id}>
-            {s.name} · {s.currency}
-          </option>
-        ))}
-      </select>
-    </label>
+      <span className="cat-store__name">{store.name}</span>
+      <span className="cat-store__currency">{store.currency}</span>
+    </span>
   );
 }
 
@@ -130,24 +132,43 @@ export function PageHeader({ title, subtitle, actions, titleExtra, back }: {
 
 // ---------- barre d'outils (.toolbar, .tb-search, .chipbtn) ----------
 
-/** Recherche du Lot 6 sans bouton « Rechercher » : application après une courte pause de frappe, ou Entrée. */
-export function SearchBox({ value, onSearch, placeholder, label }: { value: string; onSearch: (value: string) => void; placeholder: string; label: string }) {
+/**
+ * Recherche du Lot 6 sans bouton « Rechercher », MÊME COMPORTEMENT que la liste Clients (COR-05-07) : application
+ * pendant la frappe après {@link SEARCH_DEBOUNCE_MS} ms ou sur Entrée, Échap vide le champ, espaces superflus retirés ;
+ * la recherche est serveur (accents, casse, mots combinés) et l'écran revient à la page 1. `busy` : recherche en cours.
+ */
+export function SearchBox({ value, onSearch, placeholder, label, busy = false }: {
+  value: string;
+  onSearch: (value: string) => void;
+  placeholder: string;
+  label: string;
+  busy?: boolean;
+}) {
   const [text, setText] = useState(value);
   const latest = useRef(onSearch);
   useEffect(() => {
     latest.current = onSearch;
   });
+  // Valeur réinitialisée par l'écran (ex. « Réinitialiser les filtres ») : le champ suit.
+  const [shown, setShown] = useState(value);
+  if (shown !== value) {
+    setShown(value);
+    if (text.trim() !== value) setText(value);
+  }
   useEffect(() => {
-    if (text.trim() === value) return undefined;
-    const timer = window.setTimeout(() => latest.current(text.trim()), 350);
+    if (text.trim().replace(/\s+/g, " ") === value) return undefined;
+    const timer = window.setTimeout(() => latest.current(text.trim().replace(/\s+/g, " ")), SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [text, value]);
+  const clear = () => { setText(""); onSearch(""); };
   return (
-    <form className="clients-search" role="search" onSubmit={(event) => { event.preventDefault(); onSearch(text.trim()); }}>
+    <form className="clients-search" role="search" aria-busy={busy} onSubmit={(event) => { event.preventDefault(); onSearch(text.trim().replace(/\s+/g, " ")); }}>
       <Search size={18} aria-hidden="true" />
-      <input type="search" value={text} placeholder={placeholder} aria-label={label} onChange={(event) => setText(event.target.value)} />
+      <input type="search" value={text} placeholder={placeholder} aria-label={label} onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => { if (event.key === "Escape" && text !== "") { event.preventDefault(); clear(); } }} />
+      {busy && <span className="cat-search-busy" role="status" aria-label="Recherche en cours" />}
       {text !== "" && (
-        <button type="button" className="clients-search__clear" aria-label="Effacer la recherche" onClick={() => { setText(""); onSearch(""); }}>
+        <button type="button" className="clients-search__clear" aria-label="Effacer la recherche" onClick={clear}>
           <X size={16} aria-hidden="true" />
         </button>
       )}
@@ -349,6 +370,33 @@ export function Lock({ children, large }: { children: ReactNode; large?: boolean
 
 // ---------- cartes (.card) ----------
 
+/**
+ * Conteneur de tableau dans une carte (COR-05-03) : le tableau ne dépasse JAMAIS de sa carte ; s'il est plus large que
+ * l'espace disponible, il défile horizontalement DANS ce conteneur (une seule barre, horizontale), au clavier aussi
+ * (région focalisable). En-têtes et colonnes restent dans l'ordre ; rien n'est masqué en silence.
+ */
+export function TableScroll({ label, children, side = false }: { label: string; children: ReactNode; side?: boolean }) {
+  return (
+    <div className={cn("cat-tscroll", side && "cat-tscroll--side")} role="region" aria-label={label} tabIndex={0}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Texte long d'une cellule (motif, commentaire) : une ligne coupée « … », détail consultable au clic ou à Entrée
+ * (le texte complet se déplie dans la cellule), et au survol (info-bulle). Jamais de texte qui élargit le tableau.
+ */
+export function ClipText({ text, className }: { text: string; className?: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button type="button" className={cn("cat-clip", className)} aria-expanded={open} title={open ? undefined : text}
+      onClick={(event) => { event.stopPropagation(); setOpen((v) => !v); }}>
+      {text}
+    </button>
+  );
+}
+
 export function Card({ title, icon: Icon, actions, children, foot, flush, className, id }: {
   title?: ReactNode;
   icon?: LucideIcon;
@@ -501,12 +549,30 @@ export function Loading({ label }: { label: string }) {
 
 // ---------- bandeau d'actualisation (.refbar) et KPI (.statmini) ----------
 
+/**
+ * Indicateur discret du temps réel (COR-05-02) : connecté, reconnexion en cours, déconnecté — données potentiellement
+ * obsolètes. Remplace l'ancienne mention « pas de temps réel ». Annonce polie des changements d'état (lecteurs d'écran).
+ */
+export function RealtimeIndicator({ compact = false }: { compact?: boolean }) {
+  const { status } = useRealtime();
+  const tone = status === "connected" ? "ok" : status === "disconnected" || status === "off" ? "err" : "warn";
+  return (
+    <span className={cn("cat-live", `cat-live--${tone}`, compact && "cat-live--compact")} role="status" aria-live="polite" title={REALTIME_LABELS[status]}>
+      <span className="cat-live__dot" aria-hidden="true" />
+      {status === "connected" ? <Wifi size={14} aria-hidden="true" /> : <WifiOff size={14} aria-hidden="true" />}
+      <span className={compact ? "sr-only" : undefined}>{REALTIME_LABELS[status]}</span>
+    </span>
+  );
+}
+
 export function RefreshBar({ asOf, onRefresh, refreshing, warn, children }: { asOf: string | undefined; onRefresh: () => void; refreshing?: boolean; warn?: boolean; children?: ReactNode }) {
+  const { status } = useRealtime();
   return (
     <div className="cat-refbar">
-      <span className={cn("cat-refbar__dot", warn && "cat-refbar__dot--warn")} aria-hidden="true" />
+      <span className={cn("cat-refbar__dot", (warn || status !== "connected") && "cat-refbar__dot--warn")} aria-hidden="true" />
       <History size={16} aria-hidden="true" />
-      <span>{asOf ? `Dernier état chargé : aujourd'hui à ${formatTime(asOf)} — pas de temps réel, actualisez avant d'agir.` : "Chargement…"}</span>
+      <span>{asOf ? `Dernier état chargé : aujourd'hui à ${formatTime(asOf)}${status === "connected" ? "" : " — actualisez avant d'agir"}` : "Chargement…"}</span>
+      <RealtimeIndicator />
       {children}
       <span className="cat-refbar__spacer" />
       <Button size="sm" onClick={onRefresh} disabled={refreshing}>

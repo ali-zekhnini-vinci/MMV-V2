@@ -190,6 +190,14 @@ internal sealed class CatalogStore(MmvDbContext context) : ICatalogStore
     public Task<bool> SupplierCodeTakenAsync(string codeKey, Guid? excludeId, CancellationToken cancellationToken) =>
         context.Suppliers.AnyAsync(s => s.CodeKey == codeKey && s.Id != excludeId, cancellationToken);
 
+    public async Task<bool> SupplierNameTakenAsync(string name, Guid? excludeId, CancellationToken cancellationToken)
+    {
+        static string Key(string value) => string.Join(' ', CatalogSearch.Fold(value).Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        var wanted = Key(name);
+        var names = await context.Suppliers.AsNoTracking().Where(s => s.ArchivedAtUtc == null && s.Id != excludeId).Select(s => s.Name).ToListAsync(cancellationToken);
+        return names.Any(n => Key(n) == wanted);
+    }
+
     public void Add(Supplier supplier) => context.Suppliers.Add(supplier);
 
     public async Task<bool> LockSupplierAsync(Guid supplierId, RowLock strength, CancellationToken cancellationToken) =>

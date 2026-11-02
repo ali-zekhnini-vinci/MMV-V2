@@ -7,82 +7,30 @@
 // actif, aucun TTC inventé.
 import {
   Archive, Boxes, Building2, Calculator, Coins, EllipsisVertical, History, Info, Layers, Lock as LockIcon, PackageOpen, Pencil, Plus,
-  RotateCcw, Save, Sparkles, Star, Trash2, TrendingUp, Truck, X,
+  RotateCcw, Save, Sparkles, Star, TrendingUp, Truck, X,
 } from "lucide-react";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import type { Family, LensReferences, Movement, ModelDetail, Page, PriceHistoryEntry, SupplierRow, VariantDetail } from "../api/catalog.ts";
-import { getCatalog, query, writeCatalog } from "../api/catalog.ts";
+import type { Family, LensReferences, Movement, ModelDetail, Page, PriceHistoryEntry, VariantDetail } from "../api/catalog.ts";
+import { query } from "../api/catalog.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
 import { Button } from "../components/ui/button.tsx";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../components/ui/dropdown-menu.tsx";
-import { useLeaveGuard } from "../shell/navigationGuard.ts";
 import { useCatalogAccess } from "./catalogAccess.ts";
 import {
-  AVAILABILITY_LABELS, decimalInput, formatDateTime, formatDecimal, formatMoney, MOVEMENT_LABELS, POLICY_LABELS, PRICE_STATUS_LABELS, proposeSku,
+  AVAILABILITY_LABELS, decimalInput, fieldError, formatDateTime, formatDecimal, formatMoney, MOVEMENT_LABELS, POLICY_LABELS, PRICE_STATUS_LABELS,
   reasonLabel,
 } from "./catalogFormat.ts";
 import { availabilityBadge, stockTone } from "./catalogStatus.ts";
 import {
   Badge, Banner, Card, Diff, ErrorBanner, ErrorState, FamilyTag, Field, FormBar, FormSection, KeyValues, Loading, Lock, Modal, PageHeader, RefreshBar,
-  SelectField, StockCell,
+  ClipText, SelectField, StockCell, TableScroll,
 } from "./CatalogUi.tsx";
-import { errorMessage, KEY, useActiveStore, useAuthorized, useCatalogPreview, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
+import { errorMessage, useActiveStore, useCatalogPreview, useCatalogQuery, useCatalogWrite, useEditBase, useToast } from "./catalogData.ts";
+import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
+import { emptyVariant, orNull, skuPrefix, useFamilies, useUnsavedGuard, type VariantDraft, variantBody } from "./productForm.ts";
 
-interface VariantDraft {
-  sku: string;
-  skuCustom: boolean;
-  label: string;
-  manufacturerReference: string;
-  barcode: string;
-  stockPolicy: string;
-  lensIndexId: string;
-  treatmentIds: string[];
-  attributes: Record<string, string>;
-}
-
-const emptyVariant = (familyCode: string, policy: string): VariantDraft => ({
-  sku: proposeSku(familyCode), skuCustom: false, label: "", manufacturerReference: "", barcode: "", stockPolicy: policy, lensIndexId: "", treatmentIds: [], attributes: {},
-});
-
-const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
-
-function variantBody(draft: VariantDraft, includePolicy: boolean) {
-  return {
-    sku: draft.sku.trim(),
-    label: draft.label,
-    manufacturerReference: orNull(draft.manufacturerReference),
-    barcode: orNull(draft.barcode),
-    attributes: draft.attributes,
-    lensIndexId: orNull(draft.lensIndexId),
-    treatmentIds: draft.treatmentIds,
-    ...(includePolicy ? { stockPolicy: draft.stockPolicy } : {}),
-  };
-}
-
-function useFamilies() {
-  const families = useCatalogQuery<Family[]>("/api/catalog/families");
-  return Array.isArray(families.data) ? families.data : [];
-}
-
-/** Garde de sortie (menu du shell) + confirmation de fermeture du Lot 6 (prodClose). */
-function useUnsavedGuard(dirty: boolean) {
-  const [pending, setPending] = useState<(() => void) | null>(null);
-  useLeaveGuard((proceed) => {
-    if (!dirty) return false;
-    setPending(() => proceed);
-    return true;
-  });
-  return {
-    pending,
-    ask: (proceed: () => void) => (dirty ? setPending(() => proceed) : proceed()),
-    cancel: () => setPending(null),
-    confirm: () => { const go = pending; setPending(null); go?.(); },
-  };
-}
-
-function UnsavedModal({ open, onLeave, onStay, onSave, saving }: { open: boolean; onLeave: () => void; onStay: () => void; onSave: () => void; saving: boolean }) {
+export function UnsavedModal({ open, onLeave, onStay, onSave, saving }: { open: boolean; onLeave: () => void; onStay: () => void; onSave: () => void; saving: boolean }) {
   return (
     <Modal open={open} onClose={onStay} tone="warn" icon={Info} title="Modifications non enregistrées"
       description="Vous avez des modifications non enregistrées. Si vous fermez maintenant, elles seront perdues."
@@ -94,168 +42,9 @@ function UnsavedModal({ open, onLeave, onStay, onSave, saving }: { open: boolean
   );
 }
 
-// ---------- création (prodNew, prodErrors, prodUnsaved, prodClose, prodCreateOk) ----------
-
-export function ModelCreateView() {
-  const navigate = useNavigate();
-  const toast = useToast();
-  const access = useCatalogAccess();
-  const families = useFamilies();
-  const lens = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
-  const write = useCatalogWrite<{ id: string }>();
-  const [familyCode, setFamilyCode] = useState("optical_frames");
-  const [brand, setBrand] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [lensRangeId, setLensRangeId] = useState("");
-  const [modelAttributes, setModelAttributes] = useState<Record<string, string>>({});
-  const [variants, setVariants] = useState<VariantDraft[]>(() => [emptyVariant("optical_frames", "stocked")]);
-  const [regenerated, setRegenerated] = useState<number[]>([]);
-  const [supplierId, setSupplierId] = useState("");
-  const suppliers = useCatalogQuery<Page<SupplierRow>>(access.suppliersRead ? "/api/suppliers?status=active&pageSize=200" : null);
-  const authorized = useAuthorized();
-  const queryClient = useQueryClient();
-  const { store } = useActiveStore();
-  const family = families.find((f) => f.code === familyCode);
-  const errors = write.error?.error.fieldErrors;
-  const dirty = brand !== "" || name !== "" || description !== "" || variants.some((v) => v.label !== "" || v.barcode !== "" || v.manufacturerReference !== "");
-  const guard = useUnsavedGuard(dirty && !write.isSuccess);
-
-  const changeFamily = (code: string) => {
-    setFamilyCode(code);
-    setModelAttributes({});
-    const next = families.find((x) => x.code === code);
-    setVariants((current) => current.map((v) => ({ ...v, sku: v.skuCustom ? v.sku : proposeSku(code), stockPolicy: next?.allowedPolicies[0] ?? "stocked", attributes: {}, lensIndexId: "", treatmentIds: [] })));
-  };
-
-  const submit = () =>
-    write.mutate(
-      {
-        method: "POST",
-        path: "/api/catalog/models",
-        body: {
-          familyCode, brand: orNull(brand), name, description: orNull(description), lensRangeId: orNull(lensRangeId), attributes: modelAttributes,
-          variants: variants.map((v) => variantBody(v, true)),
-        },
-      },
-      {
-        onSuccess: async (result) => {
-          // Fournisseur principal du Lot 6 : rattachement V2 par variante (même API que la fiche), après la création.
-          let linked = true;
-          if (supplierId !== "" && store) {
-            const detail = await getCatalog<ModelDetail>(authorized, `/api/catalog/models/${result.id}${query({ storeId: store.id })}`);
-            const ids = detail.ok ? detail.data.variants.map((v) => v.row.variantId) : [];
-            const outcomes = await Promise.all(ids.map((variantId) =>
-              writeCatalog(authorized, "PUT", `/api/catalog/variants/${variantId}/suppliers/${supplierId}`, { supplierReference: null, isPrimary: true })));
-            linked = detail.ok && outcomes.every((o) => o.ok);
-            void queryClient.invalidateQueries({ queryKey: [...KEY] });
-          }
-          if (linked) {
-            toast.show("Produit créé", `${name} · ${variants.length} variante${variants.length > 1 ? "s" : ""} ajoutée${variants.length > 1 ? "s" : ""} au catalogue.`);
-          } else {
-            toast.show("Produit créé, fournisseur non rattaché", "Rattachez le fournisseur depuis la fiche (bloc « Fournisseurs »).", "err");
-          }
-          navigate(`/produits/modele/${result.id}`);
-        },
-        onError: (error) => {
-          // SKU proposé déjà pris (improbable) : nouveau SKU proposé pour les variantes non personnalisées.
-          const duplicates = variants.map((_, i) => i).filter((i) => error.error.fieldErrors?.[`variants[${i}].sku`]?.includes("duplicate") && !variants[i].skuCustom);
-          if (duplicates.length > 0) {
-            setVariants((current) => current.map((v, i) => (duplicates.includes(i) ? { ...v, sku: proposeSku(familyCode) } : v)));
-          }
-          setRegenerated(duplicates);
-        },
-      },
-    );
-
-  const close = () => guard.ask(() => navigate("/produits"));
-
-  return (
-    <section className="cat-screen cat-form" aria-labelledby="new-model">
-      <PageHeader title="Nouveau produit" subtitle="Ajouter un modèle et ses variantes au catalogue"
-        actions={<Button variant="ghost" onClick={close}><X size={18} aria-hidden="true" />Fermer</Button>} />
-      <div className="cat-form__body">
-        {write.error && (
-          <Banner tone="err" icon={Info} title="Le formulaire contient des erreurs" role="alert">
-            {write.error.error.code === "validation_failed" || write.error.error.fieldErrors ? "Corrigez les champs signalés ci-dessous avant d'enregistrer." : errorMessage(write.error.error)}
-          </Banner>
-        )}
-        <FormSection title="Informations générales" icon={Info}>
-          <Field label="Nom du modèle" name="name" value={name} onChange={setName} required errors={errors} placeholder="Ex. Monture acétate Écaille" />
-          <Field label="Marque" name="brand" value={brand} onChange={setBrand} errors={errors} placeholder="Marque (facultative)" />
-          <SelectField label="Famille" name="familyCode" value={familyCode} required errors={errors} onChange={changeFamily}
-            options={families.map((f) => ({ value: f.code, label: f.label }))} hint="Six familles approuvées ; la famille fixe les politiques de stock admises." />
-          {access.suppliersRead ? (
-            <SelectField label="Fournisseur principal" name="primarySupplier" value={supplierId} onChange={setSupplierId}
-              options={[{ value: "", label: "Aucun pour l'instant (fiche incomplète autorisée)" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: s.name }))]}
-              hint="Facultatif ; rattaché à chaque variante après la création. D'autres fournisseurs s'ajoutent dans la fiche." />
-          ) : <span aria-hidden="true" />}
-          {familyCode === "ophthalmic_lenses" && (
-            <SelectField label="Gamme de verres" name="lensRangeId" value={lensRangeId} required errors={errors} onChange={setLensRangeId} span2
-              options={[{ value: "", label: "— Choisir une gamme —" }, ...(lens.data?.ranges ?? []).filter((r) => r.status === "active").map((r) => ({
-                value: r.id, label: `${lens.data?.manufacturers.find((m) => m.id === r.manufacturerId)?.name ?? "?"} — ${r.name}`,
-              }))]} />
-          )}
-          <Field label="Description" name="description" value={description} onChange={setDescription} errors={errors} multiline span2 placeholder="Description commerciale (facultative)" />
-        </FormSection>
-
-        <FormSection title={`Variantes (${variants.length})`} icon={Layers} grid={false}
-          actions={<Button size="sm" onClick={() => setVariants((current) => [...current, emptyVariant(familyCode, family?.allowedPolicies[0] ?? "stocked")])}>
-            <Plus size={16} aria-hidden="true" />Ajouter une variante
-          </Button>}>
-          {variants.map((variant, index) => (
-            <div key={index} className="cat-variant">
-              <div className="cat-variant__head">
-                Variante {index + 1}
-                <span className="cat-formbar__spacer" />
-                {variants.length > 1 && (
-                  <Button size="sm" variant="danger" onClick={() => setVariants((current) => current.filter((_, i) => i !== index))}>
-                    <Trash2 size={14} aria-hidden="true" />Retirer
-                  </Button>
-                )}
-              </div>
-              <VariantFields family={family} familyCode={familyCode} lens={lens.data} draft={variant} prefix={`variants[${index}].`} errors={errors} withPolicy
-                skuError={regenerated.includes(index) ? "SKU déjà utilisé : un nouveau SKU a été proposé, enregistrez de nouveau." : undefined}
-                onChange={(next) => setVariants((current) => current.map((v, i) => (i === index ? next : v)))} />
-            </div>
-          ))}
-        </FormSection>
-
-        <FormSection title={`Prix (${access.costsRead ? "prix d'achat, coefficient et marge : droit coûts" : "prix de vente HT par magasin"})`} icon={Coins} grid={false}>
-          <Banner tone="info" icon={Calculator} title="Prix fixés par magasin, après la création" compact>
-            Dans la fiche produit, bloc « Prix &amp; disponibilité » : prix d&apos;achat HT × coefficient avec aperçu calculé par le serveur, ou prix manuel
-            (droit dédié). Devise du magasin (EUR ou MAD), aucune conversion, aucun TTC tant que la fiscalité du magasin n&apos;est pas validée.
-          </Banner>
-        </FormSection>
-
-        <FormSection title="Stock" icon={Boxes} grid={false}>
-          <Banner tone="neutral" icon={Boxes} title="Stock par emplacement, jamais saisi ici" compact>
-            Variantes stockées : le stock initial entre par une réception fournisseur ou une entrée motivée ; le seuil d&apos;alerte se règle par magasin.
-            Variantes commandées à la demande et prestations : aucun stock physique.
-          </Banner>
-        </FormSection>
-
-        {family && family.modelAttributes.length > 0 && (
-          <FormSection title={`Détails — ${family.label}`} icon={Sparkles}>
-            {family.modelAttributes.map((attribute) => (
-              <Field key={attribute.key} label={attribute.label} name={`attributes.${attribute.key}`} value={modelAttributes[attribute.key] ?? ""} errors={errors}
-                inputMode={attribute.kind === "text" ? "text" : "decimal"} onChange={(v) => setModelAttributes((current) => ({ ...current, [attribute.key]: v }))} />
-            ))}
-          </FormSection>
-        )}
-      </div>
-      <FormBar dirty={dirty} hint="Les champs marqués * sont obligatoires · SKU interne généré par MMV">
-        <Button onClick={close}>Annuler</Button>
-        <Button variant="primary" disabled={write.isPending} onClick={submit}>
-          <Save size={16} aria-hidden="true" />{write.isPending ? "Création…" : "Créer le produit"}
-        </Button>
-      </FormBar>
-      <UnsavedModal open={guard.pending !== null} onLeave={guard.confirm} onStay={guard.cancel} onSave={() => { guard.cancel(); submit(); }} saving={write.isPending} />
-    </section>
-  );
-}
-
-function VariantFields({ family, familyCode, lens, draft, onChange, errors, prefix = "", withPolicy, skuError }: {
+export function VariantFields({ family, familyCode, lens, draft, onChange, errors, prefix = "", withPolicy, skuError, canAutoSku = true }: {
+  /** Faux pour une variante existante : son SKU est déjà attribué (modifiable, jamais régénéré en silence). */
+  canAutoSku?: boolean;
   family: Family | undefined;
   familyCode: string;
   lens: LensReferences | undefined;
@@ -271,10 +60,11 @@ function VariantFields({ family, familyCode, lens, draft, onChange, errors, pref
     <div className="cat-grid">
       <Field label="Libellé de la variante" name={`${prefix}label`} value={draft.label} onChange={(label) => set({ label })} required errors={errors} placeholder="Ex. coloris, calibre, conditionnement" />
       <Field label="SKU interne" name={`${prefix}sku`} value={draft.sku} onChange={(sku) => set({ sku, skuCustom: true })} errors={errors} readOnly={!draft.skuCustom} error={skuError}
+        placeholder={draft.skuCustom ? undefined : `${skuPrefix(familyCode)}-······ (généré à l'enregistrement)`}
         suffix={draft.skuCustom
-          ? <button type="button" className="cat-input-action" onClick={() => set({ sku: proposeSku(familyCode), skuCustom: false })}>Régénérer</button>
+          ? (canAutoSku && <button type="button" className="cat-input-action" onClick={() => set({ sku: "", skuCustom: false })}>Génération auto</button>)
           : <button type="button" className="cat-input-action" onClick={() => set({ skuCustom: true })}>Personnaliser</button>}
-        hint={draft.skuCustom ? "Personnalisé : unique dans toute l'installation (contrôlé par le serveur)." : "Généré automatiquement par MMV ; aucune saisie requise."} />
+        hint={draft.skuCustom ? "Personnalisé : unique dans toute l'installation (contrôlé par le serveur)." : "Généré et garanti unique par le serveur MMV ; aucune saisie requise."} />
       {withPolicy && family ? (
         <SelectField label="Politique de stock" name={`${prefix}stockPolicy`} value={draft.stockPolicy} onChange={(v) => set({ stockPolicy: v })} required errors={errors}
           options={family.allowedPolicies.map((p) => ({ value: p, label: POLICY_LABELS[p] }))} />
@@ -317,6 +107,7 @@ export function ModelEditView() {
   const model = useCatalogQuery<ModelDetail>(store ? `/api/catalog/models/${id}${query({ storeId: store.id })}` : null);
   if (model.isPending) return <Loading label="Chargement du produit…" />;
   if (model.isError) return <ErrorState error={model.error} title="Impossible de charger le produit" onRetry={() => void model.refetch()} />;
+  // Clé = identifiant seul : une actualisation (temps réel) ne remonte jamais le formulaire en cours de saisie.
   return <ModelEditForm key={model.data.id} model={model.data} onReload={() => void model.refetch()} />;
 }
 
@@ -329,18 +120,29 @@ function ModelEditForm({ model, onReload }: { model: ModelDetail; onReload: () =
   const write = useCatalogWrite();
   const reactivate = useCatalogWrite();
   const family = families.find((f) => f.code === model.familyCode);
-  const initial = { brand: model.brand ?? "", name: model.name, description: model.description ?? "", lensRangeId: model.lensRangeId ?? "", attributes: model.attributes };
-  const [draft, setDraft] = useState(initial);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+  const current = { brand: model.brand ?? "", name: model.name, description: model.description ?? "", lensRangeId: model.lensRangeId ?? "", attributes: model.attributes };
+  const [draft, setDraft] = useState(current);
+  const base = useEditBase(model.version, current, setDraft);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(base.initial);
   const guard = useUnsavedGuard(dirty && !write.isSuccess);
   const errors = write.error?.error.fieldErrors;
-  const conflict = write.error?.error.code === "version_conflict";
+  const conflict = write.error?.error.code === "version_conflict" || base.remoteChanged;
+  // Fiche modifiée ailleurs alors que rien n'a été saisi ici : rien à préserver, la dernière version est reprise.
+  if (base.remoteChanged && !dirty) base.rebase();
+  const reload = () => {
+    if (base.remoteChanged) {
+      base.rebase();
+      write.reset();
+    } else {
+      onReload();
+    }
+  };
   const archived = model.status === "archived";
   const back = `/produits/modele/${model.id}`;
 
   const save = () => write.mutate(
     { method: "PUT", path: `/api/catalog/models/${model.id}`, body: {
-      version: model.version, brand: orNull(draft.brand), name: draft.name, description: orNull(draft.description), lensRangeId: orNull(draft.lensRangeId), attributes: draft.attributes,
+      version: base.version, brand: orNull(draft.brand), name: draft.name, description: orNull(draft.description), lensRangeId: orNull(draft.lensRangeId), attributes: draft.attributes,
     } },
     { onSuccess: () => { toast.show("Modifications enregistrées", `${draft.name} a été mis à jour.`); navigate(back); } },
   );
@@ -352,8 +154,10 @@ function ModelEditForm({ model, onReload }: { model: ModelDetail; onReload: () =
       <div className="cat-form__body">
         {conflict && (
           <Banner tone="warn" icon={Info} title="Ce produit a été modifié sur un autre poste" role="alert"
-            action={<Button size="sm" className="cat-btn-warn" onClick={onReload}><RotateCcw size={16} aria-hidden="true" />Recharger</Button>}>
-            Rechargez pour repartir de la version enregistrée sur le serveur ; vos saisies sont conservées dans le formulaire.
+            action={<Button size="sm" className="cat-btn-warn" onClick={reload}><RotateCcw size={16} aria-hidden="true" />{base.remoteChanged ? "Intégrer la dernière version" : "Recharger"}</Button>}>
+            {base.remoteChanged
+              ? "Une autre modification a été enregistrée pendant votre saisie. Intégrez-la : les champs que vous n'avez pas modifiés reprennent la valeur enregistrée, vos saisies sont conservées ; vérifiez puis enregistrez."
+              : "Rechargez pour repartir de la version enregistrée sur le serveur ; vos saisies sont conservées dans le formulaire."}
           </Banner>
         )}
         {!conflict && write.error && <ErrorBanner error={write.error} />}
@@ -447,7 +251,7 @@ export function ModelDetailView() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {access.catalogWrite && !archived && (
-                  <DropdownMenuItem onSelect={() => setAdding(emptyVariant(data.familyCode, family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Ajouter une variante</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setAdding(emptyVariant(family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Ajouter une variante</DropdownMenuItem>
                 )}
                 {access.stockRead && <DropdownMenuItem onSelect={() => navigate("/inventaire")}><Boxes size={16} aria-hidden="true" />Voir le stock</DropdownMenuItem>}
                 {access.catalogArchive && !archived && (
@@ -475,8 +279,9 @@ export function ModelDetailView() {
         <div className="cat-stack">
           <Card title={`Variantes (${data.variants.length})`} icon={Layers} flush
             actions={access.catalogWrite && !archived && (
-              <Button size="sm" onClick={() => setAdding(emptyVariant(data.familyCode, family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Variante</Button>
+              <Button size="sm" onClick={() => setAdding(emptyVariant(family?.allowedPolicies[0] ?? "stocked"))}><Plus size={16} aria-hidden="true" />Variante</Button>
             )}>
+            <TableScroll label="Variantes">
             <table className="clients-table cat-table cat-table--inner">
               <thead>
                 <tr>
@@ -506,6 +311,7 @@ export function ModelDetailView() {
                 })}
               </tbody>
             </table>
+            </TableScroll>
           </Card>
           {selected && <VariantMain key={`${selected}-${store?.id}`} variantId={selected} family={family} lens={lens.data} />}
           <Card title={`Détails — ${family?.label ?? data.familyCode}`} icon={Sparkles}>
@@ -569,6 +375,8 @@ function VariantMain({ variantId, family, lens }: { variantId: string; family: F
   const detail = useVariant(variantId);
   const write = useCatalogWrite();
   const [editing, setEditing] = useState<VariantDraft | null>(null);
+  // Version figée à l'ouverture de la modale : une actualisation venue d'un autre poste ne la remplace pas (COR-05-02).
+  const [editingVersion, setEditingVersion] = useState(0);
   const [archiving, setArchiving] = useState(false);
 
   if (detail.isPending) return <Loading label="Chargement de la variante…" />;
@@ -583,10 +391,10 @@ function VariantMain({ variantId, family, lens }: { variantId: string; family: F
         actions={(access.catalogWrite || access.catalogArchive) && (
           <div className="clients-actions">
             {access.catalogWrite && !archived && (
-              <Button size="sm" onClick={() => setEditing({
+              <Button size="sm" onClick={() => { setEditingVersion(row.version); setEditing({
                 sku: row.sku, skuCustom: true, label: row.label, manufacturerReference: row.manufacturerReference ?? "", barcode: row.barcode ?? "", stockPolicy: row.stockPolicy,
                 lensIndexId: detail.data.lensIndexId ?? "", treatmentIds: detail.data.treatmentIds, attributes: detail.data.attributes,
-              })}><Pencil size={14} aria-hidden="true" />Modifier la variante</Button>
+              }); }}><Pencil size={14} aria-hidden="true" />Modifier la variante</Button>
             )}
             {access.catalogArchive && (archived ? (
               <Button size="sm" disabled={write.isPending} onClick={() => write.mutate({ method: "POST", path: `/api/catalog/variants/${variantId}/reactivate`, body: { version: row.version } },
@@ -629,13 +437,18 @@ function VariantMain({ variantId, family, lens }: { variantId: string; family: F
         actions={<>
           <Button onClick={() => setEditing(null)}>Annuler</Button>
           <Button variant="primary" disabled={write.isPending || !editing}
-            onClick={() => editing && write.mutate({ method: "PUT", path: `/api/catalog/variants/${variantId}`, body: { version: row.version, ...variantBody(editing, false) } },
+            onClick={() => editing && write.mutate({ method: "PUT", path: `/api/catalog/variants/${variantId}`, body: { version: editingVersion, ...variantBody(editing, false) } },
               { onSuccess: () => { toast.show("Modifications enregistrées", row.sku); setEditing(null); } })}>
             <Save size={16} aria-hidden="true" />Enregistrer les modifications
           </Button>
         </>}>
         <ErrorBanner error={write.error} onReload={() => { void detail.refetch(); setEditing(null); }} />
-        {editing && <VariantFields family={family} familyCode={family?.code ?? ""} lens={lens} draft={editing} onChange={setEditing} errors={write.error?.error.fieldErrors} />}
+        {editing && row.version !== editingVersion && !write.error && (
+          <Banner tone="warn" icon={Info} title="Variante modifiée sur un autre poste">
+            Votre saisie est conservée. L&apos;enregistrement sera refusé tant que vous n&apos;aurez pas rouvert la variante sur sa dernière version.
+          </Banner>
+        )}
+        {editing && <VariantFields family={family} familyCode={family?.code ?? ""} lens={lens} draft={editing} onChange={setEditing} canAutoSku={false} errors={write.error?.error.fieldErrors} />}
       </Modal>
       <Modal open={archiving} onClose={() => setArchiving(false)} tone="warn" icon={Archive} title={`Archiver la variante ${row.sku} ?`}
         description="Elle n'apparaîtra plus à la vente ; son historique (prix, mouvements) est conservé. Refusé tant qu'il reste du stock, du réservé ou un inventaire ouvert."
@@ -672,6 +485,7 @@ function PriceHistoryCard({ variantId }: { variantId: string }) {
       {history.isPending ? <p className="cat-empty-mini clients-muted">Chargement…</p> : history.isError ? <p className="cat-empty-mini clients-muted">Historique indisponible.</p> : rows.length === 0 ? (
         <p className="cat-empty-mini clients-muted">Aucune modification de prix pour ce magasin.</p>
       ) : (
+        <TableScroll label="Historique des prix">
         <table className="clients-table cat-table cat-table--inner cat-table--compact">
           <thead><tr><th scope="col">Date</th><th scope="col">Champ</th><th scope="col" className="cat-num">Ancien</th><th scope="col" className="cat-num">Nouveau</th><th scope="col">Origine</th><th scope="col" className="cat-hide-sm">Auteur</th></tr></thead>
           <tbody>{rows.slice(0, 12).map((h) => (
@@ -680,11 +494,12 @@ function PriceHistoryCard({ variantId }: { variantId: string }) {
               <td>{HISTORY_FIELDS[h.field] ?? h.field}</td>
               <td className="cat-num cat-secondary">{historyValue(h, h.oldValue, h.oldMode)}</td>
               <td className="cat-num cat-strong">{historyValue(h, h.newValue, h.newMode)}</td>
-              <td><Badge tone={h.origin === "manual_price" ? "warn" : h.origin === "recalculation" ? "info" : "arch"}>{HISTORY_ORIGINS[h.origin] ?? h.origin}</Badge>{h.reason && <div className="cat-sub">{h.reason}</div>}</td>
+              <td className="cat-td-fill"><Badge tone={h.origin === "manual_price" ? "warn" : h.origin === "recalculation" ? "info" : "arch"}>{HISTORY_ORIGINS[h.origin] ?? h.origin}</Badge>{h.reason && <ClipText className="cat-sub" text={h.reason} />}</td>
               <td className="cat-secondary cat-hide-sm">{h.changedBy.displayName}</td>
             </tr>
           ))}</tbody>
         </table>
+        </TableScroll>
       )}
     </Card>
   );
@@ -700,17 +515,22 @@ function StockHistoryCard({ variantId }: { variantId: string }) {
       {movements.isPending ? <p className="cat-empty-mini clients-muted">Chargement…</p> : rows.length === 0 ? (
         <p className="cat-empty-mini clients-muted">Aucun mouvement enregistré pour cette variante dans ce magasin.</p>
       ) : (
-        <table className="clients-table cat-table cat-table--inner cat-table--compact">
+        <TableScroll label="Historique de stock" side>
+        <table className="clients-table cat-table cat-table--inner cat-table--compact cat-table--side">
           <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" className="cat-num">Qté</th><th scope="col">Motif</th></tr></thead>
           <tbody>{rows.map((m) => (
             <tr key={m.id}>
-              <td className="clients-muted tnum" style={{ fontSize: 12.5 }}>{formatDateTime(m.performedAtUtc)}</td>
+              <td className="clients-muted tnum cat-nowrap" style={{ fontSize: 12.5 }}>{formatDateTime(m.performedAtUtc)}</td>
               <td><Badge tone={m.quantityDelta > 0 ? "ok" : m.quantityDelta < 0 ? "err" : "info"}>{MOVEMENT_LABELS[m.type] ?? m.type}</Badge></td>
               <td className="cat-num"><Diff value={m.quantityDelta} /></td>
-              <td className="cat-secondary" style={{ fontSize: 12.5 }}>{reasonLabel(m.reasonCode)}<div className="cat-sub">{m.locationCode} · stock {m.quantityAfter}</div></td>
+              <td className="cat-secondary cat-td-fill" style={{ fontSize: 12.5 }}>
+                <ClipText text={m.comment ? `${reasonLabel(m.reasonCode)} — ${m.comment}` : reasonLabel(m.reasonCode)} />
+                <div className="cat-sub">{m.locationCode} · stock {m.quantityAfter}</div>
+              </td>
             </tr>
           ))}</tbody>
         </table>
+        </TableScroll>
       )}
     </Card>
   );
@@ -789,12 +609,14 @@ function PriceCard({ detail }: { detail: VariantDetail }) {
           <div className="cat-line"><span>En main · réservé</span><span className="cat-line__value">{row.stock.onHand} · {row.stock.reserved}</span></div>
           <div className="cat-line"><span>Seuil d&apos;alerte</span><span className="cat-line__value">{row.stock.lowStockThreshold ?? "non défini"}</span></div>
           {balances.length > 0 && (
-            <table className="clients-table cat-table cat-table--inner cat-table--compact" style={{ marginTop: 12 }}>
+            <TableScroll label="Stock par emplacement" side>
+            <table className="clients-table cat-table cat-table--inner cat-table--compact cat-table--side" style={{ marginTop: 12 }}>
               <thead><tr><th scope="col">Emplacement</th><th scope="col" className="cat-num">En main</th><th scope="col" className="cat-num">Réservé</th><th scope="col" className="cat-num">Dispo.</th></tr></thead>
               <tbody>{balances.map((b) => (
-                <tr key={b.locationId}><td>{b.locationName}{b.isDefault && <span className="cat-sub"> défaut</span>}</td><td className="cat-num">{b.onHand}</td><td className="cat-num">{b.reserved}</td><td className="cat-num cat-strong">{b.available}</td></tr>
+                <tr key={b.locationId}><td className="cat-td-fill"><ClipText text={b.locationName} />{b.isDefault && <span className="cat-sub">défaut</span>}</td><td className="cat-num">{b.onHand}</td><td className="cat-num">{b.reserved}</td><td className="cat-num cat-strong">{b.available}</td></tr>
               ))}</tbody>
             </table>
+            </TableScroll>
           )}
         </>
       ) : (
@@ -820,19 +642,26 @@ function PriceEditor({ detail, onDone }: { detail: VariantDetail; onDone: () => 
   const [manual, setManual] = useState("");
   const [reason, setReason] = useState("");
   const [acceptBelowCost, setAcceptBelowCost] = useState(false);
+  // Version du tarif figée à l'ouverture de l'éditeur (COR-05-02) : jamais d'écrasement d'un tarif changé ailleurs.
+  const [baseVersion] = useState(price.version);
   // Aperçu valable seulement pour les valeurs aperçues : toute modification de saisie l'invalide (jamais d'écriture silencieuse).
   const [previewState, setPreviewState] = useState<{ key: string; value: string } | null>(null);
   const previewKey = `${purchase}|${coefficient}`;
   const previewed = previewState?.key === previewKey ? previewState.value : null;
   if (!store) return null;
   const variantPath = `/api/pricing/variants/${detail.row.variantId}`;
-  const base = { storeId: store.id, version: price.version };
+  const base = { storeId: store.id, version: baseVersion };
   const fieldErrors = write.error?.error.fieldErrors ?? preview.error?.error.fieldErrors;
   const done = (title: string) => ({ onSuccess: () => { toast.show(title, `${detail.row.sku} · magasin ${store.name}`); onDone(); } });
 
   return (
     <div className="cat-editor">
       <ErrorBanner error={(write.error ?? preview.error) as ApiRequestError | null} />
+      {price.version !== baseVersion && !write.error && (
+        <Banner tone="warn" icon={Info} title="Tarif modifié sur un autre poste">
+          Vos saisies sont conservées mais l&apos;enregistrement sera refusé : fermez puis rouvrez l&apos;édition du tarif pour repartir du tarif enregistré.
+        </Banner>
+      )}
       {access.pricingWrite && access.costsRead && (
         <>
           <p className="cat-editor__title"><Calculator size={14} aria-hidden="true" />Prix par coefficient — calcul serveur, un seul arrondi au centime</p>
@@ -963,9 +792,10 @@ function SuppliersCard({ detail }: { detail: VariantDetail }) {
 function LinkSupplierModal({ detail, onClose }: { detail: VariantDetail; onClose: () => void }) {
   const access = useCatalogAccess();
   const toast = useToast();
-  const suppliers = useCatalogQuery<Page<SupplierRow>>("/api/suppliers?status=active&pageSize=200");
   const write = useCatalogWrite();
-  const [supplierId, setSupplierId] = useState("");
+  const [supplier, setSupplier] = useState<SupplierChoice | null>(null);
+  const supplierId = supplier?.id ?? "";
+  const linked = (detail.suppliers ?? []).filter((l) => !l.removed).map((l) => l.supplierId);
   const [reference, setReference] = useState("");
   const [primary, setPrimary] = useState(false);
   const [priceHt, setPriceHt] = useState("");
@@ -986,8 +816,10 @@ function LinkSupplierModal({ detail, onClose }: { detail: VariantDetail; onClose
       </>}>
       <ErrorBanner error={write.error} />
       <div className="cat-grid">
-        <SelectField label="Fournisseur" name="supplierId" value={supplierId} onChange={setSupplierId} required span2
-          options={[{ value: "", label: "— Choisir un fournisseur actif —" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: `${s.name} (${s.code})` }))]} />
+        <div className="cat-span2">
+          <SupplierCombobox label="Fournisseur" value={supplier} onChange={setSupplier} required exclude={linked} autoFocus
+            error={fieldError(errors, "supplierId")} hint="Recherche par nom, code ou référence ; création rapide si le fournisseur n'existe pas." />
+        </div>
         <Field label="Référence fournisseur" name="supplierReference" value={reference} onChange={setReference} errors={errors} />
         <div className="clients-field" style={{ justifyContent: "flex-end" }}>
           <label className="cat-check"><input type="checkbox" checked={primary} onChange={(e) => setPrimary(e.target.checked)} />Fournisseur principal</label>

@@ -99,7 +99,7 @@
   align-items: center;
   gap: var(--space-2);
   height: 40px;
-  padding: 0 6px 0 13px;
+  padding: 0 10px 0 13px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-card);
@@ -108,26 +108,22 @@
   color: var(--text-secondary);
 }
 
-.cat-store:focus-within {
-  border-color: var(--border-focus);
-  box-shadow: var(--shadow-focus);
-}
-
-.cat-store select {
-  height: 36px;
-  padding: 0 4px;
-  border: 0;
-  outline: none;
-  background: transparent;
-  font: inherit;
+.cat-store__name {
   font-weight: var(--weight-bold);
   color: var(--text-primary);
-  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
-.cat-store select option {
-  background: var(--surface-card);
-  color: var(--text-primary);
+.cat-store__currency {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
 }
 
 /* ---------- En-tête (.phead) : lien retour, extra du titre ---------- */
@@ -1821,5 +1817,275 @@
   .cat-switch__track,
   .cat-switch__track::after {
     transition: none;
+  }
+}
+
+/* ---------- COR-05-07 : recherche en cours (même champ que Clients) ---------- */
+.cat-search-busy {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent, var(--border-focus));
+  border-radius: 50%;
+  animation: clients-rotate 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-search-busy {
+    animation: none;
+  }
+}
+
+/* ---------- COR-05-02 : indicateur temps réel (discret, aligné sur .refbar) ---------- */
+.cat-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cat-live--compact {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.cat-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.cat-live--ok .cat-live__dot {
+  background: var(--success);
+}
+
+.cat-live--warn .cat-live__dot {
+  background: var(--warning);
+}
+
+.cat-live--warn {
+  color: var(--warning-text);
+}
+
+.cat-live--err .cat-live__dot {
+  background: var(--error);
+}
+
+.cat-live--err {
+  color: var(--error-text);
+}
+
+/* ---------- COR-05-08 : combobox fournisseur (champ .inp du Lot 6 + liste de suggestions) ---------- */
+.cat-combo {
+  position: relative;
+}
+
+.cat-combo__box input {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-combo__chosen {
+  gap: var(--space-2);
+}
+
+.cat-combo__name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-combo__chosen .cat-combo__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-combo__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% - 2px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-3);
+}
+
+.cat-combo--compact .cat-combo__list {
+  min-width: 320px;
+}
+
+.cat-combo__option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.cat-combo__option.is-active {
+  background: var(--surface-selected);
+}
+
+.cat-combo__create {
+  align-items: center;
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  border-radius: 0 0 6px 6px;
+}
+
+.cat-combo__state {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cat-combo--compact {
+  width: 230px;
+  flex: none;
+}
+
+.cat-combo--compact .clients-input {
+  height: 40px;
+}
+
+/* ---------- COR-05-03 : tableaux contenus dans leur carte ---------- */
+.cat-card,
+.cat-card__body {
+  min-width: 0;
+}
+
+.cat-tscroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.cat-tscroll:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.cat-tscroll > table {
+  min-width: 100%;
+}
+
+/* Colonne latérale (380 px) : cellules resserrées, en-têtes sans espacement de lettres superflu. */
+.cat-table--side thead th,
+.cat-table--side tbody td {
+  padding: 8px 10px;
+}
+
+.cat-table--side thead th {
+  letter-spacing: 0.02em;
+}
+
+.cat-nowrap {
+  white-space: nowrap;
+}
+
+/* Cellule « reste » : prend la largeur restante sans jamais élargir le tableau (texte coupé, détail au clic). */
+.cat-td-fill {
+  width: 100%;
+  max-width: 0;
+}
+
+.cat-clip {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cat-clip[aria-expanded="true"] {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cat-clip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+/* ---------- COR-05-06 : assistant de création produit (étapes .cat-steps du Lot 6, cliquables) ---------- */
+.cat-steps--wizard .cat-step {
+  padding: 0;
+}
+
+.cat-step__btn {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cat-step__btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.cat-step__btn:disabled {
+  cursor: default;
+}
+
+.cat-seg--sm .cat-seg__item {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+
+.cat-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 4px 0 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 1180px) {
+  .cat-steps--wizard .cat-step {
+    flex-basis: 140px;
   }
 }

@@ -11,21 +11,23 @@ import {
 } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { Highlight } from "../clients/highlight.tsx";
 import {
-  type BalanceRow, type Family, type Movement, type Page, query, type ReceiptSummary, type SupplierRow, type VariantRow,
+  type BalanceRow, type Family, type Movement, type Page, query, type ReceiptSummary, type VariantRow,
 } from "../api/catalog.ts";
 import type { ApiRequestError } from "../api/queryClient.ts";
 import { Button } from "../components/ui/button.tsx";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover.tsx";
 import { cn } from "../lib/utils.ts";
 import { useCatalogAccess } from "./catalogAccess.ts";
-import { AVAILABILITY_LABELS, formatDateTime, formatMoney, MOVEMENT_LABELS, REASONS, reasonLabel } from "./catalogFormat.ts";
+import { AVAILABILITY_LABELS, formatDateTime, formatMoney, MOVEMENT_LABELS, REASONS, reasonLabel, fieldError } from "./catalogFormat.ts";
 import { availabilityBadge, stockTone } from "./catalogStatus.ts";
 import {
   Badge, Banner, Diff, EmptyState, ErrorState, FamilyTag, Field, FilterChip, KeyValues, Kpi, Loading, Modal, PageHeader, RefreshBar, RowChevron, SearchBox,
-  SelectField, TableFoot, TablePanel, ToggleChip, Toolbar, ToolbarSpacer,
+  SelectField, TableFoot, TablePanel, ToggleChip, Toolbar, ToolbarSpacer, TableScroll,
 } from "./CatalogUi.tsx";
 import { errorMessage, useActiveStore, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
+import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
 
 type MovementKind = "manual_in" | "manual_out" | "adjustment";
 
@@ -52,7 +54,7 @@ export function BalancesView() {
   const [action, setAction] = useState<Action>(null);
   const families = useCatalogQuery<Family[]>("/api/catalog/families");
   const balances = useCatalogQuery<Page<BalanceRow> & { asOfUtc: string }>(store
-    ? `/api/stock/balances${query({ storeId: store.id, q, availability, familyCode, locationId, sort: byFamily ? "family" : "name", page, pageSize: 50 })}` : null);
+    ? `/api/stock/balances${query({ storeId: store.id, q, availability, familyCode, locationId, sort: byFamily ? "family" : "name", page, pageSize: 50 })}` : null, [], { keepPrevious: true });
   // KPI : toutes les lignes du magasin (quantités entières, aucun montant) + alertes calculées par le serveur.
   const all = useCatalogQuery<Page<BalanceRow>>(store ? `/api/stock/balances${query({ storeId: store.id, pageSize: 200 })}` : null);
   const alerts = useCatalogQuery<{ lowStockCount: number; outOfStockCount: number; asOfUtc: string }>(store ? `/api/stock/alerts${query({ storeId: store.id })}` : null);
@@ -92,7 +94,7 @@ export function BalancesView() {
           </div>
           <RefreshBar asOf={balances.data?.asOfUtc} onRefresh={refresh} refreshing={balances.isFetching} />
           <Toolbar>
-            <SearchBox value={q} onSearch={(value) => reset(() => setQ(value))} placeholder="Rechercher un produit dans le stock (SKU, nom, code-barres)…" label="Rechercher dans le stock" />
+            <SearchBox value={q} onSearch={(value) => reset(() => setQ(value))} busy={balances.isPlaceholderData} placeholder="Rechercher par nom, marque, modèle, coloris, SKU ou référence…" label="Rechercher dans le stock" />
             <ToggleChip icon={Layers} label="Par famille" on={byFamily} onToggle={() => reset(() => setByFamily(!byFamily))} />
             <ToggleChip icon={TriangleAlert} label="Stock faible" on={availability === "low_stock"} onToggle={() => reset(() => setAvailability(availability === "low_stock" ? "" : "low_stock"))} />
             <ToggleChip icon={CircleX} label="Rupture" on={availability === "out_of_stock"} onToggle={() => reset(() => setAvailability(availability === "out_of_stock" ? "" : "out_of_stock"))} />
@@ -147,7 +149,7 @@ export function BalancesView() {
                   </td>
                 </tr>
               ) : (
-                <BalanceLine key={`${item.row.variantId}-${item.row.locationId}`} row={item.row} onAction={(kind) => setAction({ kind, row: item.row })}
+                <BalanceLine key={`${item.row.variantId}-${item.row.locationId}`} row={item.row} search={q} onAction={(kind) => setAction({ kind, row: item.row })}
                   onOpen={() => navigate(`/produits/modele/${item.row.modelId}?variante=${item.row.variantId}`)} />
               ))}
             </tbody>
@@ -173,7 +175,7 @@ function groupRows(rows: BalanceRow[], byFamily: boolean): GroupItem[] {
   return out;
 }
 
-function BalanceLine({ row, onAction, onOpen }: { row: BalanceRow; onAction: (kind: MovementKind | "threshold") => void; onOpen: () => void }) {
+function BalanceLine({ row, onAction, onOpen, search = "" }: { row: BalanceRow; onAction: (kind: MovementKind | "threshold") => void; onOpen: () => void; search?: string }) {
   const access = useCatalogAccess();
   const badge = availabilityBadge(row.availability);
   const tone = stockTone(row.availability);
@@ -183,8 +185,8 @@ function BalanceLine({ row, onAction, onOpen }: { row: BalanceRow; onAction: (ki
         <div className="clients-cell">
           <span className="cat-thumb"><Box size={18} aria-hidden="true" /></span>
           <div>
-            <div className="clients-cell__name">{row.modelName} <span className="cat-secondary" style={{ fontWeight: 500 }}>· {row.label}</span></div>
-            <div className="clients-cell__ref">{row.sku}</div>
+            <div className="clients-cell__name"><Highlight text={row.modelName} query={search} /> <span className="cat-secondary" style={{ fontWeight: 500 }}>· <Highlight text={row.label} query={search} /></span></div>
+            <div className="clients-cell__ref"><Highlight text={row.sku} query={search} /></div>
           </div>
         </div>
       </td>
@@ -631,9 +633,9 @@ function ReceiptModal({ completes, onClose }: { completes: ReceiptSummary | null
   const access = useCatalogAccess();
   const toast = useToast();
   const { store } = useActiveStore();
-  const suppliers = useCatalogQuery<Page<SupplierRow>>("/api/suppliers?status=active&pageSize=200");
   const write = useCatalogWrite();
-  const [supplierId, setSupplierId] = useState("");
+  const [supplier, setSupplier] = useState<SupplierChoice | null>(completes ? { id: completes.supplierId, code: "", name: completes.supplierName } : null);
+  const supplierId = supplier?.id ?? "";
   const [locationId, setLocationId] = useState(store?.locations.find((l) => l.isDefault)?.id ?? "");
   const [document, setDocument] = useState("");
   const [lines, setLines] = useState<ReceiptLineDraft[]>([]);
@@ -661,8 +663,7 @@ function ReceiptModal({ completes, onClose }: { completes: ReceiptSummary | null
       </>}>
       <MovementError error={write.error} />
       <div className="cat-grid cat-grid--3">
-        <SelectField label="Fournisseur" name="supplierId" value={supplierId} onChange={setSupplierId} required errors={errors}
-          options={[{ value: "", label: "— Choisir —" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: s.name }))]} />
+        <SupplierCombobox label="Fournisseur" value={supplier} onChange={completes ? () => undefined : setSupplier} required error={fieldError(errors, "supplierId")} />
         <SelectField label="Emplacement" name="locationId" value={locationId} onChange={setLocationId} required errors={errors}
           options={store.locations.filter((l) => l.status === "active").map((l) => ({ value: l.id, label: l.name }))} />
         <Field label="N° de bon de livraison" name="supplierDocumentReference" value={document} onChange={setDocument} errors={errors} />
@@ -670,6 +671,7 @@ function ReceiptModal({ completes, onClose }: { completes: ReceiptSummary | null
       <VariantSearch picked={null} onPick={addLine} />
       {lines.length > 0 && (
         <div className="clients-panel">
+          <TableScroll label="Lignes de réception">
           <table className="clients-table cat-table cat-table--inner cat-table--compact">
             <thead><tr><th scope="col">Produit</th><th scope="col">Annoncé (BL)</th><th scope="col">Reçu</th>{access.costsWrite && <th scope="col">Coût unitaire HT ({store.currency})</th>}<th scope="col"><span className="sr-only">Retirer</span></th></tr></thead>
             <tbody>{lines.map((line, i) => {
@@ -685,6 +687,7 @@ function ReceiptModal({ completes, onClose }: { completes: ReceiptSummary | null
               );
             })}</tbody>
           </table>
+          </TableScroll>
         </div>
       )}
     </Modal>

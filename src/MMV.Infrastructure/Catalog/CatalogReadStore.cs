@@ -57,12 +57,10 @@ internal sealed class CatalogReadStore(MmvDbContext context) : ICatalogReadStore
             variants = variants.Where(x => context.VariantSuppliers.Any(l => l.VariantId == x.v.Id && l.SupplierId == supplierId && l.RemovedAtUtc == null));
         }
 
-        foreach (var word in (query.Search ?? string.Empty).ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).Take(5))
+        if (CatalogSearch.Words(query.Search) is { Count: > 0 } words)
         {
-            var pattern = Like(word);
-            variants = variants.Where(x => x.v.SkuKey.Contains(word) || EF.Functions.ILike(x.v.Label, pattern) || EF.Functions.ILike(x.m.Name, pattern)
-                || (x.m.Brand != null && EF.Functions.ILike(x.m.Brand, pattern)) || (x.v.Barcode != null && x.v.Barcode.Contains(word))
-                || (x.v.ManufacturerReference != null && EF.Functions.ILike(x.v.ManufacturerReference, pattern)));
+            var matching = CatalogSearch.VariantIds(context, words);
+            variants = variants.Where(x => matching.Contains(x.v.Id));
         }
 
         var rows = await variants.Select(x => new VariantBase(
@@ -133,10 +131,10 @@ internal sealed class CatalogReadStore(MmvDbContext context) : ICatalogReadStore
             suppliers = suppliers.Where(s => s.CountryCode == country);
         }
 
-        foreach (var word in (query.Search ?? string.Empty).ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).Take(5))
+        if (CatalogSearch.Words(query.Search) is { Count: > 0 } words)
         {
-            var pattern = Like(word);
-            suppliers = suppliers.Where(s => s.CodeKey.Contains(word) || EF.Functions.ILike(s.Name, pattern) || (s.City != null && EF.Functions.ILike(s.City, pattern)));
+            var matching = CatalogSearch.SupplierIds(context, words);
+            suppliers = suppliers.Where(s => matching.Contains(s.Id));
         }
 
         var total = await suppliers.CountAsync(cancellationToken);
@@ -178,11 +176,10 @@ internal sealed class CatalogReadStore(MmvDbContext context) : ICatalogReadStore
             variants = variants.Where(x => x.m.FamilyCode == family);
         }
 
-        foreach (var word in (query.Search ?? string.Empty).ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).Take(5))
+        if (CatalogSearch.Words(query.Search) is { Count: > 0 } words)
         {
-            var pattern = Like(word);
-            variants = variants.Where(x => x.v.SkuKey.Contains(word) || EF.Functions.ILike(x.v.Label, pattern) || EF.Functions.ILike(x.m.Name, pattern)
-                || (x.m.Brand != null && EF.Functions.ILike(x.m.Brand, pattern)) || (x.v.Barcode != null && x.v.Barcode.Contains(word)));
+            var matching = CatalogSearch.VariantIds(context, words);
+            variants = variants.Where(x => matching.Contains(x.v.Id));
         }
 
         var list = await variants.Select(x => new { x.v.Id, ModelId = x.m.Id, x.v.Sku, x.v.Label, x.m.Name, x.m.Brand, x.m.FamilyCode }).ToListAsync(cancellationToken);
@@ -372,9 +369,6 @@ internal sealed class CatalogReadStore(MmvDbContext context) : ICatalogReadStore
     }
 
     // ---------- outils ----------
-
-    /// <summary>Motif ILIKE « contient » (caractères spéciaux échappés).</summary>
-    private static string Like(string word) => "%" + word.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("%", "\\%", StringComparison.Ordinal).Replace("_", "\\_", StringComparison.Ordinal) + "%";
 
     /// <summary>Prix, stock agrégé sur les emplacements ACTIFS du magasin, seuil, fournisseur principal ACTIF, disponibilité.</summary>
     private async Task<List<VariantRowView>> EnrichAsync(List<VariantBase> rows, Store shop, CancellationToken cancellationToken)

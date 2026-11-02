@@ -111,14 +111,17 @@ internal sealed class Phase05Bench : IAsyncDisposable
     /// </summary>
     public const string ApiBaseVariable = "MMV_PG05_API_BASE";
 
-    private Phase05Bench(WebApplicationFactory<Program> factory, ITestOutputHelper output)
+    private Phase05Bench(WebApplicationFactory<Program> factory, WebApplicationFactory<Program> factoryMa, string suffix, ITestOutputHelper output)
     {
         Factory = factory;
+        FactoryMa = factoryMa;
+        Suffix = suffix;
         _output = output;
         RealApi = RealApiBase();
         Client = RealApi is null
             ? factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") })
             : new HttpClient { BaseAddress = RealApi };
+        ClientMa = factoryMa.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
     }
 
     /// <summary>Base du processus réel, ou null (serveur en mémoire).</summary>
@@ -143,9 +146,22 @@ internal sealed class Phase05Bench : IAsyncDisposable
 
     public WebApplicationFactory<Program> Factory { get; }
 
+    /// <summary>
+    /// COR-05-01 : un serveur = un magasin. Le banc fait tourner DEUX serveurs isolés par leur configuration
+    /// (<c>Installation:StoreCode</c>) sur la même base : <see cref="Client"/> = magasin fictif Belgique (EUR),
+    /// <see cref="ClientMa"/> = magasin fictif Maroc (MAD). Les sessions (jetons) valent pour les deux.
+    /// </summary>
+    public WebApplicationFactory<Program> FactoryMa { get; }
+
     public HttpClient Client { get; }
 
-    public string Suffix { get; } = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+    public HttpClient ClientMa { get; }
+
+    public string Suffix { get; }
+
+    public string StoreBeCode => $"T05BE{Suffix}";
+
+    public string StoreMaCode => $"T05MA{Suffix}";
 
     public List<Guid> Users { get; } = [];
 
@@ -165,16 +181,28 @@ internal sealed class Phase05Bench : IAsyncDisposable
 
     public int Residue { get; private set; } = -1;
 
-    public static async Task<Phase05Bench> CreateAsync(ITestOutputHelper output)
+    public static async Task<Phase05Bench> CreateAsync(ITestOutputHelper output, IReadOnlyDictionary<string, string?>? settings = null)
     {
         var connection = Phase05Target.ConnectionString!;
-        var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        var suffix = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        WebApplicationFactory<Program> Server(string storeCode) => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
             builder.UseSetting("Auth:LoginAttemptsPerMinute", "10000");
-            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = connection }));
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:Mmv"] = connection,
+                    ["Installation:StoreCode"] = storeCode,
+                });
+                if (settings is not null)
+                {
+                    config.AddInMemoryCollection(settings);
+                }
+            });
         });
-        var bench = new Phase05Bench(factory, output);
+        var bench = new Phase05Bench(Server($"T05BE{suffix}"), Server($"T05MA{suffix}"), suffix, output);
         await bench.SeedStoresAsync();
         output.WriteLine($"banc Phase 05 sur {Phase05Target.Name}, suffixe {bench.Suffix}, HTTP : {bench.RealApi?.ToString() ?? "serveur en mémoire"}");
         return bench;
@@ -213,7 +241,14 @@ internal sealed class Phase05Bench : IAsyncDisposable
 
     public Task<ApiResult> PutAsync(string user, string path, object body) => SendAsync(user, HttpMethod.Put, path, body);
 
-    public async Task<ApiResult> SendAsync(string user, HttpMethod method, string path, object? body)
+    /// <summary>Requête adressée au serveur du magasin fictif Maroc (MAD).</summary>
+    public Task<ApiResult> GetMaAsync(string user, string path) => SendAsync(user, HttpMethod.Get, path, null, ClientMa);
+
+    public Task<ApiResult> PostMaAsync(string user, string path, object body) => SendAsync(user, HttpMethod.Post, path, body, ClientMa);
+
+    public Task<ApiResult> PutMaAsync(string user, string path, object body) => SendAsync(user, HttpMethod.Put, path, body, ClientMa);
+
+    public async Task<ApiResult> SendAsync(string user, HttpMethod method, string path, object? body, HttpClient? client = null)
     {
         using var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _tokens[user]);
@@ -222,7 +257,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
             request.Content = JsonContent.Create(body);
         }
 
-        using var response = await Client.SendAsync(request);
+        using var response = await (client ?? Client).SendAsync(request);
         var text = await response.Content.ReadAsStringAsync();
         var json = text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
         return new ApiResult(response.StatusCode, json);
@@ -341,7 +376,9 @@ internal sealed class Phase05Bench : IAsyncDisposable
         Residue = (int)(long)(await residue.ExecuteScalarAsync())!;
         _output.WriteLine($"purge du banc {Suffix} : résidu = {Residue}");
         Client.Dispose();
+        ClientMa.Dispose();
         await Factory.DisposeAsync();
+        await FactoryMa.DisposeAsync();
         Assert.Equal(0, Residue);
     }
 }

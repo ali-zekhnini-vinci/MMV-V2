@@ -194,3 +194,11 @@ export function proposeSku(familyCode: string, random: (length: number) => Array
   const body = bytes.map((byte) => SKU_ALPHABET[byte % SKU_ALPHABET.length]).join("");
   return `${SKU_PREFIXES[familyCode] ?? "ART"}-${body}`;
 }
+
+/** Suggestions affichées par la combobox fournisseur (COR-05-08). */
+export const SUPPLIER_SUGGESTIONS = 8;
+
+/** Code proposé à la création rapide d'un fournisseur : lettres et chiffres du nom, en majuscules, 12 au plus. */
+export function suggestSupplierCode(name: string): string {
+  return name.normalize("NFD").replace(/\p{M}/gu, "").toUpperCase().replace(/[^A-Z0-9]+/g, "").slice(0, 12);
+}

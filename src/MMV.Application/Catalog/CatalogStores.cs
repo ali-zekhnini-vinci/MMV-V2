@@ -85,6 +85,9 @@ public interface ICatalogStore
 
     Task<bool> SupplierCodeTakenAsync(string codeKey, Guid? excludeId, CancellationToken cancellationToken);
 
+    /// <summary>Fournisseur NON archivé de même nom (casse, accents et espaces ignorés) — COR-05-08, aucun doublon.</summary>
+    Task<bool> SupplierNameTakenAsync(string name, Guid? excludeId, CancellationToken cancellationToken);
+
     void Add(Supplier supplier);
 
     Task<bool> LockSupplierAsync(Guid supplierId, RowLock strength, CancellationToken cancellationToken);

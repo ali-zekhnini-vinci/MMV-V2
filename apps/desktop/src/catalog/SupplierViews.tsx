@@ -6,6 +6,7 @@
 import { Archive, Box, Building2, Flag, Info, PackageOpen, Pencil, Plus, RotateCcw, Save, SearchX, Star, Truck, X } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { Highlight } from "../clients/highlight.tsx";
 import { type Page, query, type SupplierDetail, type SupplierRow } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
 import { useLeaveGuard } from "../shell/navigationGuard.ts";
@@ -13,9 +14,9 @@ import { useCatalogAccess } from "./catalogAccess.ts";
 import { POLICY_LABELS } from "./catalogFormat.ts";
 import {
   Badge, Banner, Card, EmptyState, ErrorBanner, ErrorState, Field, FilterChip, FormBar, FormSection, KeyValues, Loading, Modal, PageHeader, RowChevron, SearchBox,
-  TableFoot, TablePanel, Toolbar, ToolbarSpacer,
+  TableFoot, TablePanel, Toolbar, ToolbarSpacer, TableScroll,
 } from "./CatalogUi.tsx";
-import { errorMessage, rowLink, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
+import { errorMessage, rowLink, useCatalogQuery, useCatalogWrite, useEditBase, useToast } from "./catalogData.ts";
 
 const LEGAL_KEYS: Record<string, { key: string; label: string }[]> = {
   MA: [{ key: "ice", label: "ICE (15 chiffres)" }, { key: "if", label: "Identifiant fiscal" }, { key: "rc", label: "Registre de commerce" }],
@@ -33,7 +34,7 @@ export function SuppliersListView() {
   const [status, setStatus] = useState("active");
   const [country, setCountry] = useState("");
   const [page, setPage] = useState(1);
-  const list = useCatalogQuery<Page<SupplierRow>>(`/api/suppliers${query({ q, status, countryCode: country, page, pageSize: 50 })}`);
+  const list = useCatalogQuery<Page<SupplierRow>>(`/api/suppliers${query({ q, status, countryCode: country, page, pageSize: 50 })}`, [], { keepPrevious: true });
   const filtered = q !== "" || status !== "active" || country !== "";
   const create = access.suppliersWrite && <Button variant="primary" onClick={() => navigate("/produits/fournisseurs/nouveau")}><Plus size={18} aria-hidden="true" />Nouveau fournisseur</Button>;
   return (
@@ -44,7 +45,7 @@ export function SuppliersListView() {
           {create}
         </>} />
       <Toolbar>
-        <SearchBox value={q} onSearch={(value) => { setQ(value); setPage(1); }} placeholder="Rechercher par nom, code ou ville…" label="Rechercher un fournisseur" />
+        <SearchBox value={q} onSearch={(value) => { setQ(value); setPage(1); }} busy={list.isPlaceholderData} placeholder="Rechercher par nom, code, ville ou référence fournisseur…" label="Rechercher un fournisseur" />
         <FilterChip icon={Flag} label="Pays" value={country} onChange={(value) => { setCountry(value); setPage(1); }}
           options={[{ value: "", label: "Tous les pays" }, ...Object.entries(COUNTRIES).map(([value, label]) => ({ value, label }))]} />
         <FilterChip icon={Archive} label="Statut" value={status} defaultValue="active" onChange={(value) => { setStatus(value); setPage(1); }}
@@ -76,12 +77,12 @@ export function SuppliersListView() {
                   <div className="clients-cell">
                     <span className="cat-thumb cat-thumb--round"><Building2 size={18} aria-hidden="true" /></span>
                     <div>
-                      <div className="clients-cell__name">{s.name}</div>
+                      <div className="clients-cell__name"><Highlight text={s.name} query={q} /></div>
                       <div className="cat-sub">{[s.city, COUNTRIES[s.countryCode] ?? s.countryCode].filter(Boolean).join(" · ")}</div>
                     </div>
                   </div>
                 </td>
-                <td><span className="cat-ref">{s.code}</span></td>
+                <td><span className="cat-ref"><Highlight text={s.code} query={q} /></span></td>
                 <td className="cat-secondary cat-hide-sm">{s.countryCode}</td>
                 <td className="cat-secondary cat-hide-md">{s.contactName ?? "—"}</td>
                 <td className="cat-num">{s.variantCount > 0 ? <Badge tone="accent" icon={Box}>{s.variantCount}</Badge> : <span className="clients-muted">0</span>}</td>
@@ -155,12 +156,15 @@ function SupplierFormScreen({ title, subtitle, initial, version, path, method, b
   const toast = useToast();
   const write = useCatalogWrite<{ id: string }>();
   const [draft, setDraft] = useState(initial);
+  const base = useEditBase(version ?? 0, initial, setDraft);
   const [leave, setLeave] = useState<(() => void) | null>(null);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(initial) && !write.isSuccess;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(base.initial) && !write.isSuccess;
+  if (base.remoteChanged && !dirty) base.rebase();
+  const conflict = write.error?.error.code === "version_conflict" || base.remoteChanged;
   const errors = write.error?.error.fieldErrors;
   useLeaveGuard((proceed) => { if (!dirty) return false; setLeave(() => proceed); return true; });
   const close = () => (dirty ? setLeave(() => () => navigate(back)) : navigate(back));
-  const save = () => write.mutate({ method, path, body: { ...(version !== undefined ? { version } : {}), ...body(draft) } },
+  const save = () => write.mutate({ method, path, body: { ...(version !== undefined ? { version: base.version } : {}), ...body(draft) } },
     { onSuccess: (r) => { toast.show(method === "POST" ? "Fournisseur créé" : "Modifications enregistrées", draft.name); navigate(method === "POST" ? `/produits/fournisseurs/${r.id}` : back); } });
   return (
     <section className="cat-screen cat-form" aria-labelledby="supplier-form">
@@ -169,16 +173,22 @@ function SupplierFormScreen({ title, subtitle, initial, version, path, method, b
         {dirty && !write.error && (
           <Banner tone="warn" icon={Info} title="Modifications non enregistrées">Enregistrez pour conserver vos changements avant de quitter la fiche.</Banner>
         )}
-        {write.error && (write.error.error.code === "version_conflict" ? (
+        {conflict ? (
           <Banner tone="warn" icon={Info} title="Fournisseur modifié sur un autre poste" role="alert"
-            action={conflictReload && <Button size="sm" className="cat-btn-warn" onClick={conflictReload}><RotateCcw size={16} aria-hidden="true" />Recharger</Button>}>
-            Rechargez pour repartir de la version enregistrée ; vos saisies restent dans le formulaire.
+            action={(base.remoteChanged || conflictReload) && (
+              <Button size="sm" className="cat-btn-warn" onClick={() => { if (base.remoteChanged) { base.rebase(); write.reset(); } else conflictReload?.(); }}>
+                <RotateCcw size={16} aria-hidden="true" />{base.remoteChanged ? "Intégrer la dernière version" : "Recharger"}
+              </Button>
+            )}>
+            {base.remoteChanged
+              ? "Une autre modification a été enregistrée pendant votre saisie : les champs que vous n'avez pas modifiés reprennent la valeur enregistrée, vos saisies sont conservées."
+              : "Rechargez pour repartir de la version enregistrée ; vos saisies restent dans le formulaire."}
           </Banner>
-        ) : (
+        ) : write.error && (
           <Banner tone="err" icon={Info} title="Le formulaire contient des erreurs" role="alert">
             {errors ? "Corrigez les champs signalés ci-dessous. Seuls le nom, le code et le pays sont obligatoires." : errorMessage(write.error.error)}
           </Banner>
-        ))}
+        )}
         <SupplierFormSections draft={draft} onChange={setDraft} errors={errors} />
       </div>
       <FormBar dirty={dirty} hint="Les champs marqués * sont obligatoires · fiche incomplète autorisée" narrow>
@@ -208,7 +218,8 @@ export function SupplierEditView() {
   if (detail.isPending) return <Loading label="Chargement du fournisseur…" />;
   if (detail.isError) return <ErrorState error={detail.error} title="Impossible de charger le fournisseur" onRetry={() => void detail.refetch()} />;
   const s = detail.data;
-  return <SupplierFormScreen key={s.version} title={`Modifier — ${s.name}`} subtitle={s.code} initial={draftOf(s)} version={s.version} path={`/api/suppliers/${s.id}`} method="PUT"
+  // Clé = identifiant : une actualisation venue d'un autre poste ne remonte pas le formulaire (saisie préservée, COR-05-02).
+  return <SupplierFormScreen key={s.id} title={`Modifier — ${s.name}`} subtitle={s.code} initial={draftOf(s)} version={s.version} path={`/api/suppliers/${s.id}`} method="PUT"
     back={`/produits/fournisseurs/${s.id}`} conflictReload={() => void detail.refetch()} />;
 }
 
@@ -270,6 +281,7 @@ export function SupplierDetailView() {
         {variants.length > 0 ? (
           <Card title={`Produits associés (${variants.length})`} icon={Box} flush
             foot={<span className="clients-muted">Plusieurs fournisseurs possibles par variante ; « principal » = fournisseur de commande par défaut.</span>}>
+            <TableScroll label="Produits du fournisseur">
             <table className="clients-table cat-table cat-table--inner">
               <thead><tr><th scope="col">Référence</th><th scope="col">Produit</th><th scope="col" className="cat-hide-sm">Politique</th><th scope="col">Réf. fournisseur</th><th scope="col">Rôle</th></tr></thead>
               <tbody>{variants.map((v) => (
@@ -282,6 +294,7 @@ export function SupplierDetailView() {
                 </tr>
               ))}</tbody>
             </table>
+            </TableScroll>
           </Card>
         ) : (
           <Card title="Produits associés" icon={Box}>

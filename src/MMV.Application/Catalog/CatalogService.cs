@@ -34,6 +34,9 @@ public sealed class CatalogService(
             return existing.CreatedByUserId == userId ? Outcome.Ok<Guid>(existing.Id, replayed: true) : Outcome.Conflict<Guid>("request_id_reused");
         }
 
+        // SKU absent : généré par le serveur (COR-05-06) ; une saisie explicite reste possible et contrôlée.
+        variants = await WithGeneratedSkusAsync(input.FamilyCode, variants, cancellationToken);
+
         var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
         var details = CatalogInputValidator.Model(input, errors);
         if (variants.Count == 0)
@@ -92,6 +95,38 @@ public sealed class CatalogService(
                     : Outcome.Conflict<Guid>("request_id_reused"),
             _ => UniqueRefusal<Guid>(commit),
         };
+    }
+
+    /// <summary>Complète les SKU vides par des SKU générés, distincts entre eux et non déjà pris (5 essais par variante).</summary>
+    internal async Task<IReadOnlyList<VariantInput>> WithGeneratedSkusAsync(string? familyCode, IReadOnlyList<VariantInput> variants, CancellationToken cancellationToken)
+    {
+        if (variants.All(v => !string.IsNullOrWhiteSpace(v.Sku)))
+        {
+            return variants;
+        }
+
+        var used = new HashSet<string>(variants.Where(v => !string.IsNullOrWhiteSpace(v.Sku)).Select(v => CatalogKeys.Normalize(v.Sku!)), StringComparer.Ordinal);
+        var result = new List<VariantInput>(variants.Count);
+        foreach (var variant in variants)
+        {
+            if (!string.IsNullOrWhiteSpace(variant.Sku))
+            {
+                result.Add(variant);
+                continue;
+            }
+
+            var sku = SkuGenerator.Propose(familyCode);
+            for (var attempt = 0; attempt < 5 && (used.Contains(CatalogKeys.Normalize(sku))
+                || (await store.TakenSkusAsync([CatalogKeys.Normalize(sku)], null, cancellationToken)).Count > 0); attempt++)
+            {
+                sku = SkuGenerator.Propose(familyCode);
+            }
+
+            used.Add(CatalogKeys.Normalize(sku));
+            result.Add(variant with { Sku = sku });
+        }
+
+        return result;
     }
 
     public async Task<Outcome<Guid>> UpdateModelAsync(Guid id, ModelInput input, uint version, Guid requestId, Guid userId, CancellationToken cancellationToken)
@@ -167,6 +202,8 @@ public sealed class CatalogService(
         {
             return Outcome.Conflict<Guid>("archived");
         }
+
+        input = (await WithGeneratedSkusAsync(model.FamilyCode, [input], cancellationToken))[0];
 
         if (model.Variants.Count >= CatalogLimits.MaxVariantsPerModel)
         {

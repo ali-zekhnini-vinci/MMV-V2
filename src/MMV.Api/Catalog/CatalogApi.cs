@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MMV.Api.Auth;
 using MMV.Api.Clients;
+using MMV.Api.Installation;
 using MMV.Application.Catalog;
 using MMV.Domain.Catalog;
 using MMV.Domain.Identity;
@@ -98,6 +99,36 @@ internal static partial class CatalogApi
         request.Query.All(p => allowed.Contains(p.Key) && p.Value.Count == 1);
 
     public static Guid? ParseGuid(string? value) => Guid.TryParse(value, out var id) && id != Guid.Empty ? id : null;
+
+    // ---------- magasin de l'installation (COR-05-01) ----------
+
+    /// <summary>
+    /// Paramètre <c>storeId</c> FACULTATIF : absent, le magasin de l'installation ; présent, il doit le désigner
+    /// (sinon <c>404 store_not_found</c>, comme un magasin inexistant). Retourne la réponse de refus ou null.
+    /// </summary>
+    public static IResult? QueryStore(HttpRequest request, out Store store)
+    {
+        store = ActiveStore.Of(request.HttpContext);
+        if (!request.Query.ContainsKey("storeId"))
+        {
+            return null;
+        }
+
+        return ParseGuid(request.Query["storeId"]) is not { } requested ? Results.BadRequest(InvalidQuery)
+            : requested == store.Id ? null
+            : Results.NotFound(ActiveStore.StoreNotFound);
+    }
+
+    /// <summary>Même règle pour un <c>storeId</c> de corps : absent ⇒ magasin de l'installation.</summary>
+    public static IResult? BodyStore(HttpRequest request, Guid? requested, out Store store)
+    {
+        store = ActiveStore.Of(request.HttpContext);
+        return requested is null || requested == store.Id ? null : Results.NotFound(ActiveStore.StoreNotFound);
+    }
+
+    /// <summary>Emplacement du magasin de l'installation (sinon refus 404 identique à un emplacement inconnu).</summary>
+    public static async Task<bool> OwnsLocationAsync(HttpRequest request, ICatalogStore store, Guid locationId, CancellationToken cancellationToken) =>
+        await store.GetLocationAsync(locationId, cancellationToken) is { } location && ActiveStore.Owns(request.HttpContext, location.StoreId);
 
     public static bool? ParseBoolean(string? value) => value switch
     {

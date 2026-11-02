@@ -74,6 +74,12 @@ export interface Store {
   locations: StoreLocation[];
 }
 
+/** `GET /api/store` : magasin de l'installation et origine de sa résolution (COR-05-01). */
+export interface ActiveStore {
+  store: Store;
+  source: "configuration" | "single_store";
+}
+
 export interface FamilyAttribute {
   key: string;
   label: string;
@@ -305,6 +311,7 @@ export interface ReceiptSummary {
   id: string;
   number: string;
   locationCode: string;
+  supplierId: string;
   supplierName: string;
   supplierDocumentReference: string | null;
   completesReceiptId: string | null;

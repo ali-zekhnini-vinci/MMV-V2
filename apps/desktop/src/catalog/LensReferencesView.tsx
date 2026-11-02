@@ -7,7 +7,7 @@ import { useState } from "react";
 import type { LensReference, LensReferences } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
 import { useCatalogAccess } from "./catalogAccess.ts";
-import { Badge, Card, ErrorBanner, ErrorState, Field, Loading, PageHeader, SelectField } from "./CatalogUi.tsx";
+import { Badge, Card, ErrorBanner, ErrorState, Field, Loading, PageHeader, SelectField, TableScroll } from "./CatalogUi.tsx";
 import { useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
 
 const SECTIONS: { key: keyof LensReferences; segment: string; title: string; icon: LucideIcon; empty: string }[] = [
@@ -68,6 +68,7 @@ function LensSection({ section, items, manufacturers, canConfigure }: { section:
       {items.length === 0 ? (
         <p className="cat-empty-mini clients-muted">{section.empty}</p>
       ) : (
+        <TableScroll label="Référentiel">
         <table className="clients-table cat-table cat-table--inner cat-table--compact">
           <thead><tr><th scope="col">Nom</th>{needsParent && <th scope="col">Fabricant</th>}<th scope="col">Statut</th>{canConfigure && <th scope="col"><span className="sr-only">Actions</span></th>}</tr></thead>
           <tbody>{items.map((item) => (
@@ -88,6 +89,7 @@ function LensSection({ section, items, manufacturers, canConfigure }: { section:
             </tr>
           ))}</tbody>
         </table>
+        </TableScroll>
       )}
     </Card>
   );

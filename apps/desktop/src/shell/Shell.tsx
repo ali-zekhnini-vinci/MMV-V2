@@ -20,6 +20,8 @@ import { type LeaveGuard, NavigationGuardContext, type NavigationGuardRegistry }
 import { isOpticalModuleActive, OpticalActivationContext } from "../optical/opticalActivation.ts";
 import { OpticalHost } from "../optical/OpticalHost.tsx";
 import { isCatalogModuleActive } from "../catalog/catalogAccess.ts";
+import { CATALOG_REALTIME } from "../catalog/catalogRealtime.ts";
+import { RealtimeProvider } from "../realtime/RealtimeProvider.tsx";
 import { findNavItem, findNavItemByPath, type NavItem, navItems, routePattern, type ViewId, viewAccess, visibleSections } from "./navigation.ts";
 import { Sidebar } from "./Sidebar.tsx";
 import { StatusBar } from "./StatusBar.tsx";
@@ -195,9 +197,12 @@ function ShellLayout({ session }: { session: SessionInfo }) {
           </div>
         )}
         <NavigationGuardContext.Provider value={guardRegistry}>
-          <OpticalActivationContext.Provider value={opticalOn}>
-            {opticalOn ? <OpticalHost permissions={user.permissions}>{routes}</OpticalHost> : routes}
-          </OpticalActivationContext.Provider>
+          {/* Temps réel (COR-05-02) : une connexion par session, seulement si le module Catalogue & stock est actif. */}
+          <RealtimeProvider enabled={catalogOn} routing={CATALOG_REALTIME}>
+            <OpticalActivationContext.Provider value={opticalOn}>
+              {opticalOn ? <OpticalHost permissions={user.permissions}>{routes}</OpticalHost> : routes}
+            </OpticalActivationContext.Provider>
+          </RealtimeProvider>
         </NavigationGuardContext.Provider>
       </main>
       <StatusBar expiresAtUtc={session.expiresAtUtc} health={health.status} checking={health.checking} />

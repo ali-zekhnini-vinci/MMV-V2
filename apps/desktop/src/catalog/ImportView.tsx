@@ -10,7 +10,7 @@ import { Button } from "../components/ui/button.tsx";
 import { cn } from "../lib/utils.ts";
 import { formatDateTime } from "./catalogFormat.ts";
 import {
-  Badge, type BadgeTone, Banner, Card, ErrorBanner, ErrorState, Loading, PageHeader, RadioCard, SelectField, TableFoot, TablePanel,
+  Badge, type BadgeTone, Banner, Card, ErrorBanner, ErrorState, Loading, PageHeader, RadioCard, SelectField, TableFoot, TablePanel, TableScroll,
 } from "./CatalogUi.tsx";
 import { useActiveStore, useCatalogQuery, useCatalogWrite, useToast } from "./catalogData.ts";
 
@@ -37,11 +37,10 @@ const STATUS: Record<ImportBatch["status"], { label: string; tone: BadgeTone }> 
 const STEPS = ["Dépôt du fichier", "Correspondance des colonnes", "Contrôle à blanc", "Application tout ou rien"];
 
 export function ImportView() {
-  const { stores, store } = useActiveStore();
+  const { store } = useActiveStore();
   const history = useCatalogQuery<ImportBatch[]>("/api/imports");
   const upload = useCatalogWrite<ImportPreview>();
   const [kind, setKind] = useState("catalog");
-  const [storeId, setStoreId] = useState(store?.id ?? "");
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
   const report = useCatalogQuery<ImportReport>(batchId ? `/api/imports/${batchId}` : null);
@@ -52,7 +51,7 @@ export function ImportView() {
     if (!file) return;
     const content = await file.text();
     upload.mutate(
-      { method: "POST", path: "/api/imports", body: { kind, storeId: kind === "prices" ? storeId || store?.id : null, fileName: file.name, content } },
+      { method: "POST", path: "/api/imports", body: { kind, storeId: kind === "prices" ? store?.id : null, fileName: file.name, content } },
       { onSuccess: (result) => { setPreview(result); setBatchId(result.batchId); } },
     );
   };
@@ -75,8 +74,9 @@ export function ImportView() {
           </div>
           {kind === "prices" && (
             <div className="cat-grid">
-              <SelectField label="Magasin cible" name="importStore" value={storeId || store?.id || ""} onChange={setStoreId} options={stores.map((s) => ({ value: s.id, label: `${s.name} — ${s.currency}` }))}
-                hint="Les prix sont importés dans la devise de ce magasin, sans conversion." />
+              <p className="clients-field__hint">
+                Magasin cible : <strong>{store?.name}</strong> — {store?.currency}. Les prix sont importés dans la devise de ce magasin, sans conversion.
+              </p>
             </div>
           )}
           <label className="cat-drop">
@@ -91,6 +91,7 @@ export function ImportView() {
       <Card title="Imports récents" icon={History} flush>
         {history.isPending ? <p className="cat-empty-mini clients-muted">Chargement…</p> : history.isError ? <div className="cat-card__body"><ErrorState error={history.error} /></div> : (
           (Array.isArray(history.data) ? history.data : []).length === 0 ? <p className="cat-empty-mini clients-muted">Aucun import.</p> : (
+            <TableScroll label="Aperçu du fichier">
             <table className="clients-table cat-table cat-table--inner">
               <thead><tr><th scope="col">Date</th><th scope="col">Fichier</th><th scope="col">Type</th><th scope="col" className="cat-num">Lignes</th><th scope="col">Statut</th><th scope="col" className="cat-hide-sm">Auteur</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
               <tbody>{(Array.isArray(history.data) ? history.data : []).map((b) => (
@@ -105,6 +106,7 @@ export function ImportView() {
                 </tr>
               ))}</tbody>
             </table>
+            </TableScroll>
           )
         )}
       </Card>
@@ -133,10 +135,12 @@ function BatchSteps({ batchId, preview, report }: { batchId: string; preview: Im
           <div className="cat-stack">
             <div className="clients-panel">
               <div className="clients-panel__scroll">
+                <TableScroll label="Rapport ligne par ligne">
                 <table className="clients-table cat-table cat-table--inner cat-table--compact">
                   <thead><tr>{preview.headers.map((h) => <th key={h} scope="col">{h}</th>)}</tr></thead>
                   <tbody>{preview.sampleRows.map((row, i) => <tr key={i}>{row.map((cell, j) => <td key={j} className="cat-secondary">{cell}</td>)}</tr>)}</tbody>
                 </table>
+                </TableScroll>
               </div>
             </div>
             <div className="cat-grid cat-grid--3">

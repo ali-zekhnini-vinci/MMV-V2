@@ -10,7 +10,11 @@ namespace MMV.Application.Catalog;
 /// </summary>
 public sealed class SupplierService(ICatalogUnitOfWork unitOfWork, ICatalogStore store, TimeProvider clock, IAuditRecorder audit)
 {
-    public async Task<Outcome<Guid>> CreateAsync(SupplierInput input, Guid requestId, Guid userId, CancellationToken cancellationToken)
+    /// <param name="allowDuplicateName">
+    /// Confirmation explicite qu'un fournisseur ACTIF de même nom est bien distinct (sinon refus <c>name: duplicate</c>,
+    /// COR-05-08 : la création rapide ne l'envoie jamais, aucun doublon involontaire).
+    /// </param>
+    public async Task<Outcome<Guid>> CreateAsync(SupplierInput input, Guid requestId, Guid userId, CancellationToken cancellationToken, bool allowDuplicateName = false)
     {
         if (await store.FindSupplierByCreationRequestAsync(requestId, cancellationToken) is { } existing)
         {
@@ -27,6 +31,11 @@ public sealed class SupplierService(ICatalogUnitOfWork unitOfWork, ICatalogStore
         if (await store.SupplierCodeTakenAsync(Domain.Catalog.CatalogKeys.Normalize(details.Code), null, cancellationToken))
         {
             return Outcome.Invalid<Guid>("code", CatalogFieldErrors.Duplicate);
+        }
+
+        if (!allowDuplicateName && await store.SupplierNameTakenAsync(details.Name, null, cancellationToken))
+        {
+            return Outcome.Invalid<Guid>("name", CatalogFieldErrors.Duplicate);
         }
 
         var now = CatalogClock.Now(clock);

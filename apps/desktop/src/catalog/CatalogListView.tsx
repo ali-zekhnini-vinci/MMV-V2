@@ -4,10 +4,11 @@
 // Adaptations V2 : six familles (au lieu des catégories figées), politique de stock par variante, fournisseur principal
 // (plusieurs fournisseurs possibles), coefficient, statut archivé (pas de suppression). Export CSV du Lot 6 = cible non
 // livrée : à sa place, l'import CSV contrôlé (05-D) pour les comptes autorisés.
-import { Box, CircleCheck, FileUp, Layers, Plus, RotateCcw, Rows3, SearchX, Tag, Truck } from "lucide-react";
+import { Box, CircleCheck, FileUp, Layers, Plus, RotateCcw, Rows3, SearchX, Tag } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { type Family, type Page, query, type SupplierRow, type VariantRow } from "../api/catalog.ts";
+import { type Family, type Page, query, type VariantRow } from "../api/catalog.ts";
+import { Highlight } from "../clients/highlight.tsx";
 import { Button } from "../components/ui/button.tsx";
 import { useCatalogAccess } from "./catalogAccess.ts";
 import { AVAILABILITY_LABELS, formatMoney, POLICY_LABELS, PRICE_STATUS_LABELS } from "./catalogFormat.ts";
@@ -17,6 +18,7 @@ import {
   ToggleChip, Toolbar, ToolbarSpacer,
 } from "./CatalogUi.tsx";
 import { rowLink, useActiveStore, useCatalogQuery } from "./catalogData.ts";
+import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
 
 interface Filters {
   q: string;
@@ -49,9 +51,10 @@ export function CatalogListView() {
   const [filters, setFilters] = useState<Filters>(INITIAL);
   const [compact, setCompact] = useState(false);
   const families = useCatalogQuery<Family[]>("/api/catalog/families");
-  const suppliers = useCatalogQuery<Page<SupplierRow>>(access.suppliersRead ? "/api/suppliers?status=active&pageSize=200" : null);
+  // Fournisseur filtré : combobox serveur (COR-05-08) au lieu d'un menu de 200 noms ; seul l'identifiant part en filtre.
+  const [supplier, setSupplier] = useState<SupplierChoice | null>(null);
   const list = useCatalogQuery<Page<VariantRow>>(
-    store ? `/api/catalog/variants${query({ storeId: store.id, ...filters, pageSize: 50 })}` : null,
+    store ? `/api/catalog/variants${query({ storeId: store.id, ...filters, pageSize: 50 })}` : null, [], { keepPrevious: true },
   );
   const set = (patch: Partial<Filters>) => setFilters((current) => ({ ...current, page: 1, ...patch }));
   const sortBy = (sort: string) => set({ sort, dir: filters.sort === sort && filters.dir === "asc" ? "desc" : "asc" });
@@ -83,12 +86,12 @@ export function CatalogListView() {
         }
       />
       <Toolbar>
-        <SearchBox value={filters.q} onSearch={(q) => set({ q })} placeholder="Rechercher par référence, nom, marque ou code-barres…" label="Rechercher" />
+        <SearchBox value={filters.q} onSearch={(q) => set({ q })} busy={list.isPlaceholderData} placeholder="Rechercher par nom, marque, modèle, coloris, SKU, référence ou code-barres…" label="Rechercher dans le catalogue" />
         <FilterChip icon={Tag} label="Famille" value={filters.familyCode} onChange={(familyCode) => set({ familyCode })}
           options={[{ value: "", label: "Toutes les familles" }, ...familyList.map((f) => ({ value: f.code, label: f.label }))]} />
         {access.suppliersRead && (
-          <FilterChip icon={Truck} label="Fournisseur" value={filters.supplierId} onChange={(supplierId) => set({ supplierId })}
-            options={[{ value: "", label: "Tous les fournisseurs" }, ...(suppliers.data?.items ?? []).map((s) => ({ value: s.id, label: s.name }))]} />
+          <SupplierCombobox compact label="Filtrer par fournisseur" placeholder="Fournisseur…" allowCreate={false} value={supplier}
+            onChange={(choice) => { setSupplier(choice); set({ supplierId: choice?.id ?? "" }); }} />
         )}
         <FilterChip icon={CircleCheck} label="Disponibilité" value={filters.availability} onChange={(availability) => set({ availability })}
           options={[{ value: "", label: "Toutes" }, ...Object.entries(AVAILABILITY_LABELS).filter(([code]) => code !== "archived").map(([value, label]) => ({ value, label }))]} />
@@ -108,7 +111,7 @@ export function CatalogListView() {
       ) : list.data.totalCount === 0 ? (
         filtered ? (
           <EmptyState tone="info" icon={SearchX} title="Aucun résultat"
-            action={<Button onClick={() => setFilters(INITIAL)}><RotateCcw size={16} aria-hidden="true" />Réinitialiser les filtres</Button>}>
+            action={<Button onClick={() => { setFilters(INITIAL); setSupplier(null); }}><RotateCcw size={16} aria-hidden="true" />Réinitialiser les filtres</Button>}>
             {filters.q ? `Aucun produit ne correspond à « ${filters.q} ». Vérifiez l'orthographe ou réinitialisez les filtres.` : "Aucun produit ne correspond à ces filtres."}
           </EmptyState>
         ) : (
@@ -126,7 +129,7 @@ export function CatalogListView() {
             </TableFoot>
           }
         >
-          <table className={compact ? "clients-table cat-table cat-table--compact" : "clients-table cat-table"}>
+          <table className={compact ? "clients-table cat-table cat-table--compact" : "clients-table cat-table"} aria-busy={list.isPlaceholderData}>
             <thead>
               <tr>
                 <SortHeader label="Référence" sort="sku" current={filters.sort} dir={filters.dir} onSort={sortBy} />
@@ -146,10 +149,10 @@ export function CatalogListView() {
                 const badge = availabilityBadge(row.availability);
                 return (
                   <tr key={row.variantId} className={row.status === "archived" ? "is-archived" : undefined} {...rowLink(`/produits/modele/${row.modelId}?variante=${row.variantId}`, open)}>
-                    <td><span className="cat-ref">{row.sku}</span></td>
+                    <td><span className="cat-ref"><Highlight text={row.sku} query={filters.q} /></span></td>
                     <td>
-                      <div className="clients-cell__name">{row.modelName}</div>
-                      {!compact && <div className="cat-sub">{[row.label, row.brand].filter(Boolean).join(" · ")}</div>}
+                      <div className="clients-cell__name"><Highlight text={row.modelName} query={filters.q} /></div>
+                      {!compact && <div className="cat-sub"><Highlight text={[row.label, row.brand].filter(Boolean).join(" · ")} query={filters.q} /></div>}
                     </td>
                     {!compact && <td className="cat-hide-sm"><FamilyTag code={row.familyCode} /></td>}
                     {showSupplier && (

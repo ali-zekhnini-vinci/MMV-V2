@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
 using MMV.Api.Clients;
+using MMV.Api.Installation;
+using MMV.Api.Realtime;
 using MMV.Application.Audit;
 using MMV.Application.Catalog;
 using MMV.Domain.Audit;
@@ -25,6 +27,27 @@ internal sealed record VariantRequest(
 internal sealed record ModelCreateRequest(
     Guid? RequestId = null, string? FamilyCode = null, string? Brand = null, string? Name = null, string? Description = null, Guid? LensRangeId = null,
     Dictionary<string, string?>? Attributes = null, List<VariantRequest>? Variants = null);
+
+/// <summary>Assistant de création produit (COR-05-06) : tout en une transaction, voir <see cref="ProductCreationService"/>.</summary>
+internal sealed record ProductSupplierRequest(
+    Guid? SupplierId = null, string? SupplierReference = null, bool? IsPrimary = null, string? SupplierPriceHt = null, string? SupplierCurrency = null, int? LeadTimeDays = null);
+
+internal sealed record ProductPriceRequest(
+    string? Mode = null, string? PurchasePriceHt = null, string? Coefficient = null, string? ExpectedSalePriceHt = null, bool? AcceptBelowCost = null,
+    string? SalePriceHt = null, string? Reason = null);
+
+internal sealed record ProductStockRequest(Guid? LocationId = null, int? Quantity = null);
+
+internal sealed record ProductVariantRequest(
+    VariantRequest? Variant = null, List<ProductSupplierRequest>? Suppliers = null, ProductPriceRequest? Price = null, ProductStockRequest? Stock = null);
+
+internal sealed record ProductCreateRequest(
+    Guid? RequestId = null, Guid? StoreId = null, string? FamilyCode = null, string? Brand = null, string? Name = null, string? Description = null, Guid? LensRangeId = null,
+    Dictionary<string, string?>? Attributes = null, List<ProductVariantRequest>? Variants = null);
+
+internal sealed record ProductCreatedResponse(Guid ModelId, IReadOnlyList<ProductCreatedVariantResponse> Variants, bool Replayed);
+
+internal sealed record ProductCreatedVariantResponse(Guid VariantId, string Sku);
 
 internal sealed record ModelUpdateRequest(
     Guid? RequestId = null, uint? Version = null, string? Brand = null, string? Name = null, string? Description = null, Guid? LensRangeId = null,
@@ -52,7 +75,8 @@ internal sealed record SupplierLinkRequest(
 
 internal sealed record SupplierRequest(
     Guid? RequestId = null, uint? Version = null, string? Code = null, string? Name = null, string? CountryCode = null, string? ContactName = null, string? Email = null,
-    string? Phone = null, string? AddressLine = null, string? PostalCode = null, string? City = null, Dictionary<string, string?>? LegalIdentifiers = null, string? Notes = null)
+    string? Phone = null, string? AddressLine = null, string? PostalCode = null, string? City = null, Dictionary<string, string?>? LegalIdentifiers = null, string? Notes = null,
+    bool? AllowDuplicateName = null)
 {
     public SupplierInput ToInput() => new(Code, Name, CountryCode, ContactName, Email, Phone, AddressLine, PostalCode, City, LegalIdentifiers, Notes);
 }
@@ -83,6 +107,9 @@ internal sealed record MutationResponse(Guid Id, bool Replayed);
 internal sealed record LocationResponse(Guid Id, string Code, string Name, bool IsDefault, string Status);
 
 internal sealed record StoreResponse(Guid Id, string Code, string Name, string CountryCode, string Currency, string FiscalProfileStatus, IReadOnlyList<LocationResponse> Locations);
+
+/// <summary>Magasin de l'installation ; <c>source</c> : <c>configuration</c> (Installation:StoreCode) ou <c>single_store</c>.</summary>
+internal sealed record ActiveStoreResponse(StoreResponse Store, string Source);
 
 internal sealed record AttributeResponse(string Key, string Label, string Kind, int MaxLength, int? Min, int? Max);
 
@@ -144,9 +171,14 @@ internal static class CatalogEndpoints
 
     public static void MapCatalogEndpoints(this RouteGroupBuilder api)
     {
-        api.MapGet("/stores", ListStoresAsync).RequireAuthorization(Auth.AuthSetup.StoresReadPolicy).AddEndpointFilter(NoStore).WithTags("Catalog");
+        // COR-05-01 : un serveur = un magasin. « /stores » ne sert plus que le magasin de l'installation (compatibilité) ;
+        // « /store » le décrit avec l'origine de sa résolution. Aucun sélecteur côté poste.
+        api.MapGet("/stores", ListStoresAsync).RequireAuthorization(Auth.AuthSetup.StoresReadPolicy).AddEndpointFilter(NoStore).RequireActiveStore().WithTags("Catalog");
+        api.MapGet("/store", CurrentStoreAsync).RequireAuthorization(Auth.AuthSetup.StoresReadPolicy).AddEndpointFilter(NoStore).RequireActiveStore().WithTags("Catalog");
 
-        var catalog = api.MapGroup("/catalog").WithTags("Catalog").AddEndpointFilter(NoStore);
+        // COR-05-02 : toute écriture réussie notifie les postes du magasin (sujets ci-dessous), jamais un refus ni une annulation.
+        var catalog = api.MapGroup("/catalog").WithTags("Catalog").AddEndpointFilter(NoStore).RequireActiveStore()
+            .PublishesChanges(ChangeTopics.Catalog, ChangeTopics.Stock, ChangeTopics.Suppliers);
         catalog.MapGet("/families", () => Results.Ok(Families.All.Select(ToFamily))).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapGet("/lens-references", ListLensReferencesAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapPost("/lens-references/{kind}", CreateLensReferenceAsync).RequireAuthorization(P(Permissions.CatalogConfigure));
@@ -160,6 +192,7 @@ internal static class CatalogEndpoints
         catalog.MapGet("/variants/{id:guid}", GetVariantAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapGet("/models/{id:guid}", GetModelAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapPost("/models", CreateModelAsync).RequireAuthorization(P(Permissions.CatalogWrite));
+        catalog.MapPost("/products", CreateProductAsync).RequireAuthorization(P(Permissions.CatalogWrite));
         catalog.MapPut("/models/{id:guid}", UpdateModelAsync).RequireAuthorization(P(Permissions.CatalogWrite));
         catalog.MapPost("/models/{id:guid}/variants", AddVariantAsync).RequireAuthorization(P(Permissions.CatalogWrite));
         catalog.MapPut("/variants/{id:guid}", UpdateVariantAsync).RequireAuthorization(P(Permissions.CatalogWrite));
@@ -176,7 +209,7 @@ internal static class CatalogEndpoints
         catalog.MapPost("/variants/{id:guid}/suppliers/{supplierId:guid}/remove", RemoveSupplierLinkAsync).RequireAuthorization(P(Permissions.CatalogWrite), P(Permissions.SuppliersRead));
         catalog.MapGet("/history/{entityType}/{id:guid}", HistoryAsync).RequireAuthorization(P(Permissions.CatalogRead), P(Permissions.AuditRead));
 
-        var pricing = api.MapGroup("/pricing").WithTags("Pricing").AddEndpointFilter(NoStore);
+        var pricing = api.MapGroup("/pricing").WithTags("Pricing").AddEndpointFilter(NoStore).RequireActiveStore().PublishesChanges(ChangeTopics.Pricing);
         pricing.MapGet("/variants/{id:guid}", GetPriceAsync).RequireAuthorization(P(Permissions.CatalogRead));
         pricing.MapGet("/variants/{id:guid}/history", PriceHistoryAsync).RequireAuthorization(P(Permissions.CatalogRead));
         pricing.MapPost("/preview", PreviewAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
@@ -187,7 +220,8 @@ internal static class CatalogEndpoints
         pricing.MapGet("/recalculations", PendingRecalculationsAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
         pricing.MapPost("/recalculations/apply", ApplyRecalculationsAsync).RequireAuthorization(P(Permissions.PricingWrite), P(Permissions.CostsRead));
 
-        var suppliers = api.MapGroup("/suppliers").WithTags("Suppliers").AddEndpointFilter(NoStore);
+        var suppliers = api.MapGroup("/suppliers").WithTags("Suppliers").AddEndpointFilter(NoStore).RequireActiveStore()
+            .PublishesChanges(ChangeTopics.Suppliers, ChangeTopics.Catalog);
         suppliers.MapGet("/", ListSuppliersAsync).RequireAuthorization(P(Permissions.SuppliersRead));
         suppliers.MapGet("/{id:guid}", GetSupplierAsync).RequireAuthorization(P(Permissions.SuppliersRead));
         suppliers.MapPost("/", CreateSupplierAsync).RequireAuthorization(P(Permissions.SuppliersWrite));
@@ -198,18 +232,22 @@ internal static class CatalogEndpoints
 
     // ---------- magasins, familles, référentiel verres ----------
 
-    private static async Task<IResult> ListStoresAsync(ICatalogStore store, CancellationToken cancellationToken)
+    private static async Task<StoreResponse> ToStoreAsync(Domain.Stores.Store shop, ICatalogStore store, CancellationToken cancellationToken)
     {
-        var result = new List<StoreResponse>();
-        foreach (var shop in await store.ListStoresAsync(includeArchived: false, cancellationToken))
-        {
-            var locations = await store.ListLocationsAsync(shop.Id, cancellationToken);
-            result.Add(new StoreResponse(
-                shop.Id, shop.Code, shop.Name, shop.CountryCode, shop.CurrencyCode, shop.FiscalProfileStatus,
-                [.. locations.Select(l => new LocationResponse(l.Id, l.Code, l.Name, l.IsDefault, l.IsArchived ? "archived" : "active"))]));
-        }
+        var locations = await store.ListLocationsAsync(shop.Id, cancellationToken);
+        return new StoreResponse(
+            shop.Id, shop.Code, shop.Name, shop.CountryCode, shop.CurrencyCode, shop.FiscalProfileStatus,
+            [.. locations.Select(l => new LocationResponse(l.Id, l.Code, l.Name, l.IsDefault, l.IsArchived ? "archived" : "active"))]);
+    }
 
-        return Results.Ok(result);
+    /// <summary>Liste réduite au SEUL magasin de l'installation (les autres magasins de la base ne sont jamais servis).</summary>
+    private static async Task<IResult> ListStoresAsync(HttpContext context, ICatalogStore store, CancellationToken cancellationToken) =>
+        Results.Ok(new[] { await ToStoreAsync(ActiveStore.Of(context), store, cancellationToken) });
+
+    private static async Task<IResult> CurrentStoreAsync(HttpContext context, ICatalogStore store, InstallationStoreResolver resolver, CancellationToken cancellationToken)
+    {
+        var resolution = await resolver.ResolveAsync(store, cancellationToken);
+        return Results.Ok(new ActiveStoreResponse(await ToStoreAsync(ActiveStore.Of(context), store, cancellationToken), resolution.Source ?? "configuration"));
     }
 
     private static FamilyResponse ToFamily(FamilyDefinition family)
@@ -280,10 +318,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> ListVariantsAsync(HttpRequest request, ClaimsPrincipal principal, ICatalogReadStore reads, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
         var q = request.Query;
-        if (!OnlyAllowed(request, VariantListParameters) || ParseGuid(q["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, VariantListParameters))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var search = q["q"].ToString().Trim();
         var family = q["familyCode"].ToString() is { Length: > 0 } f ? f : null;
@@ -308,12 +353,6 @@ internal static class CatalogEndpoints
             return Results.BadRequest(InvalidQuery);
         }
 
-        var shop = await store.GetStoreAsync(storeId, cancellationToken);
-        if (shop is null)
-        {
-            return Results.NotFound(new ErrorResponse("store_not_found"));
-        }
-
         var result = await reads.ListVariantsAsync(
             new VariantListQuery(storeId, search.Length == 0 ? null : search, family, policy, status.Value, availability, incomplete, supplier, model, sort.Value, descending.Value, page.Value, size.Value),
             cancellationToken);
@@ -333,16 +372,22 @@ internal static class CatalogEndpoints
 
     private static async Task<IResult> GetModelAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ICatalogReadStore reads, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
 
-        var shop = await store.GetStoreAsync(storeId, cancellationToken);
-        var model = await reads.GetModelAsync(id, cancellationToken);
-        if (shop is null || model is null)
+        if (QueryStore(request, out var shop) is { } refused)
         {
-            return Results.NotFound(new ErrorResponse(shop is null ? "store_not_found" : "not_found"));
+            return refused;
+        }
+
+        var storeId = shop.Id;
+
+        var model = await reads.GetModelAsync(id, cancellationToken);
+        if (model is null)
+        {
+            return Results.NotFound(new ErrorResponse("not_found"));
         }
 
         var rows = await reads.ListVariantsAsync(new VariantListQuery(storeId, Status: StatusFilter.All, ModelId: id, PageSize: VariantListQuery.MaxPageSize), cancellationToken);
@@ -364,16 +409,22 @@ internal static class CatalogEndpoints
 
     private static async Task<IResult> GetVariantAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ICatalogReadStore reads, IPricingStore pricing, ICatalogStore store, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
 
-        var shop = await store.GetStoreAsync(storeId, cancellationToken);
-        var detail = shop is null ? null : await reads.GetVariantAsync(id, storeId, cancellationToken);
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
+
+        var detail = await reads.GetVariantAsync(id, storeId, cancellationToken);
         if (detail is null)
         {
-            return Results.NotFound(new ErrorResponse(shop is null ? "store_not_found" : "not_found"));
+            return Results.NotFound(new ErrorResponse("not_found"));
         }
 
         var costs = Has(principal, Permissions.CostsRead);
@@ -387,7 +438,7 @@ internal static class CatalogEndpoints
             ? detail.Balances.Select(b => new BalanceResponse(b.LocationId, b.LocationCode, b.LocationName, b.IsDefault, b.OnHand, b.Reserved, b.OnHand - b.Reserved, b.Version)).ToList()
             : null;
         return Results.Ok(new VariantDetailResponse(
-            Row(detail.Row, shop!, await TaxAsync(pricing, shop!, detail.Variant.TaxCategoryCode, cancellationToken), costs, stock),
+            Row(detail.Row, shop, await TaxAsync(pricing, shop, detail.Variant.TaxCategoryCode, cancellationToken), costs, stock),
             new ModelSummaryResponse(detail.Model.Id, detail.Model.FamilyCode, detail.Model.Brand, detail.Model.Name, detail.Model.IsArchived ? "archived" : "active", detail.Model.Version),
             detail.Variant.Attributes, detail.Variant.LensIndexId, [.. detail.Variant.Treatments.Select(t => t.TreatmentId)], detail.Variant.ArchiveReason,
             detail.Variant.TaxCategoryCode, suppliers, balances, costs));
@@ -405,6 +456,41 @@ internal static class CatalogEndpoints
             new ModelInput(body!.FamilyCode, body.Brand, body.Name, body.Description, body.LensRangeId, body.Attributes),
             [.. (body.Variants ?? []).Select(v => v.ToInput())], body.RequestId!.Value, UserId(principal), cancellationToken);
         return await ToResultAsync(outcome, id => Task.FromResult<object?>(new MutationResponse(id, outcome.Replayed)), $"/api/catalog/models/{outcome.Value}");
+    }
+
+    /// <summary>
+    /// Enregistrement final de l'assistant : modèle + variantes + fournisseurs + tarifs + stock initial, tout ou rien.
+    /// Magasin = celui de l'installation ; les droits de chaque section sont contrôlés avant toute écriture.
+    /// </summary>
+    private static async Task<IResult> CreateProductAsync(HttpRequest request, ClaimsPrincipal principal, ProductCreationService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<ProductCreateRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
+        {
+            return invalid;
+        }
+
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var variants = body.Variants ?? [];
+        if (variants.Any(v => v.Variant is null || (v.Suppliers ?? []).Any(s => s.SupplierId is null) || v.Stock is { LocationId: null } or { Quantity: null }))
+        {
+            return Results.BadRequest(InvalidBody);
+        }
+
+        var outcome = await service.CreateAsync(
+            new ModelInput(body.FamilyCode, body.Brand, body.Name, body.Description, body.LensRangeId, body.Attributes),
+            [.. variants.Select(v => new PlannedVariant(
+                v.Variant!.ToInput(),
+                [.. (v.Suppliers ?? []).Select(s => new PlannedSupplierLink(s.SupplierId!.Value, s.SupplierReference, s.IsPrimary ?? false, s.SupplierPriceHt, s.SupplierCurrency, s.LeadTimeDays))],
+                v.Price is { } p ? new PlannedPrice(p.Mode ?? ProductCreationService.CoefficientMode, p.PurchasePriceHt, p.Coefficient, p.ExpectedSalePriceHt, p.AcceptBelowCost ?? false, p.SalePriceHt, p.Reason) : null,
+                v.Stock is { } st ? new PlannedStock(st.LocationId!.Value, st.Quantity!.Value) : null))],
+            shop.Id, body.RequestId!.Value, Actor(principal), cancellationToken);
+        return await ToResultAsync(outcome, created => Task.FromResult<object?>(new ProductCreatedResponse(
+            created.ModelId, [.. created.Variants.Select(v => new ProductCreatedVariantResponse(v.VariantId, v.Sku))], outcome.Replayed)), $"/api/catalog/models/{outcome.Value?.ModelId}");
     }
 
     private static async Task<IResult> UpdateModelAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, CatalogService service, CancellationToken cancellationToken)
@@ -570,12 +656,19 @@ internal static class CatalogEndpoints
 
     private static async Task<IResult> GetPriceAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
 
-        if (await store.GetStoreAsync(storeId, cancellationToken) is null || await store.FindVariantAsync(id, cancellationToken) is null)
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
+
+        if (await store.FindVariantAsync(id, cancellationToken) is null)
         {
             return Results.NotFound(new ErrorResponse("not_found"));
         }
@@ -586,10 +679,17 @@ internal static class CatalogEndpoints
     /// <summary>Historique des prix : lignes de coût (prix d'achat, coefficient, prix fournisseur) seulement avec <c>costs.read</c>.</summary>
     private static async Task<IResult> PriceHistoryAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, IPricingStore pricing, ICatalogReadStore reads, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var costs = Has(principal, Permissions.CostsRead);
         var entries = (await pricing.HistoryAsync(id, storeId, cancellationToken)).Where(e => costs || !PriceFields.IsCost(e.Field)).ToList();
@@ -604,12 +704,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> PreviewAsync(HttpRequest request, PricingService service, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<PreviewRequest>(request, cancellationToken);
-        if (body?.StoreId is not { } storeId)
+        if (body is null)
         {
             return Results.BadRequest(InvalidBody);
         }
 
-        var outcome = await service.PreviewAsync(storeId, body.PurchasePriceHt, body.Coefficient, cancellationToken);
+        if (BodyStore(request, body.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var outcome = await service.PreviewAsync(shop.Id, body.PurchasePriceHt, body.Coefficient, cancellationToken);
         return await ToResultAsync(outcome, p => Task.FromResult<object?>(new PreviewResponse(
             Cost(p.PurchasePriceHt)!, MoneyText.Format(p.Coefficient, MoneyText.CoefficientScale), Money(p.ComputedSalePriceHt), p.Currency, SalePriceCalculator.RoundingRule, p.BelowCost)));
     }
@@ -617,10 +722,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> SetCoefficientPriceAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, PricingService service, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<CoefficientPriceRequest>(request, cancellationToken);
-        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid || body!.StoreId is not { } storeId)
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
         {
-            return Envelope(body, body?.RequestId, null, false) ?? Results.BadRequest(new ErrorResponse("store_required"));
+            return invalid;
         }
+
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var outcome = await service.SetCoefficientPriceAsync(
             id, storeId, body.Currency, body.PurchasePriceHt, body.Coefficient, body.ExpectedSalePriceHt, body.AcceptBelowCost ?? false, body.Version, body.RequestId!.Value, Actor(principal), cancellationToken);
@@ -630,10 +742,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> SetPurchasePriceAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, PricingService service, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<PurchasePriceRequest>(request, cancellationToken);
-        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid || body!.StoreId is not { } storeId)
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
         {
-            return Envelope(body, body?.RequestId, null, false) ?? Results.BadRequest(new ErrorResponse("store_required"));
+            return invalid;
         }
+
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var outcome = await service.SetPurchasePriceAsync(id, storeId, body.Currency, body.PurchasePriceHt, body.Version, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await PriceResultAsync(outcome, id, storeId, principal, store, pricing, cancellationToken);
@@ -642,10 +761,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> RecalculateAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, PricingService service, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<RecalculateRequest>(request, cancellationToken);
-        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid || body!.StoreId is not { } storeId)
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
         {
-            return Envelope(body, body?.RequestId, null, false) ?? Results.BadRequest(new ErrorResponse("store_required"));
+            return invalid;
         }
+
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var outcome = await service.RecalculateAsync(id, storeId, body.Currency, body.ExpectedSalePriceHt, body.Version, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await PriceResultAsync(outcome, id, storeId, principal, store, pricing, cancellationToken);
@@ -654,10 +780,17 @@ internal static class CatalogEndpoints
     private static async Task<IResult> SetManualPriceAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, PricingService service, ICatalogStore store, IPricingStore pricing, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync<ManualPriceRequest>(request, cancellationToken);
-        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid || body!.StoreId is not { } storeId)
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
         {
-            return Envelope(body, body?.RequestId, null, false) ?? Results.BadRequest(new ErrorResponse("store_required"));
+            return invalid;
         }
+
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var outcome = await service.SetManualPriceAsync(id, storeId, body.Currency, body.SalePriceHt, body.Reason, body.Version, body.RequestId!.Value, UserId(principal), cancellationToken);
         return await PriceResultAsync(outcome, id, storeId, principal, store, pricing, cancellationToken);
@@ -665,10 +798,17 @@ internal static class CatalogEndpoints
 
     private static async Task<IResult> PendingRecalculationsAsync(HttpRequest request, PricingService service, ICatalogStore store, CancellationToken cancellationToken)
     {
-        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }) || ParseGuid(request.Query["storeId"]) is not { } storeId)
+        if (!OnlyAllowed(request, new HashSet<string>(StringComparer.Ordinal) { "storeId" }))
         {
             return Results.BadRequest(InvalidQuery);
         }
+
+        if (QueryStore(request, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
 
         var outcome = await service.PreviewRecalculationsAsync(storeId, cancellationToken);
         return await ToResultAsync(outcome, async items =>
@@ -686,7 +826,13 @@ internal static class CatalogEndpoints
             return invalid;
         }
 
-        if (body!.StoreId is not { } storeId || body.Items is null || body.Items.Any(i => i.VariantId is null || i.Version is null || MoneyText.TryParse(i.ExpectedSalePriceHt, MoneyText.SaleScale) is null))
+        if (BodyStore(request, body!.StoreId, out var shop) is { } refused)
+        {
+            return refused;
+        }
+
+        var storeId = shop.Id;
+        if (body.Items is null || body.Items.Any(i => i.VariantId is null || i.Version is null || MoneyText.TryParse(i.ExpectedSalePriceHt, MoneyText.SaleScale) is null))
         {
             return Results.BadRequest(InvalidBody);
         }
@@ -756,7 +902,7 @@ internal static class CatalogEndpoints
             return Results.BadRequest(InvalidBody);
         }
 
-        var outcome = await service.CreateAsync(body.ToInput(), body.RequestId!.Value, UserId(principal), cancellationToken);
+        var outcome = await service.CreateAsync(body.ToInput(), body.RequestId!.Value, UserId(principal), cancellationToken, body.AllowDuplicateName ?? false);
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)), $"/api/suppliers/{outcome.Value}");
     }
 

@@ -89,10 +89,10 @@ public sealed class Phase05PostgreSqlTests(ITestOutputHelper output)
         Assert.Equal("tax_not_validated", saved["price"].GetProperty("ttcStatus").GetString());
         Assert.False(saved["price"].TryGetProperty("salePriceTtc", out _));
 
-        // MAD : même variante, autre magasin, autre devise, aucune conversion ; devise annoncée différente → refus.
-        var mismatch = await bench.PutAsync(admin, $"/api/pricing/variants/{variant}", new { requestId = NewId(), storeId = bench.StoreMa, currency = "EUR", purchasePriceHt = "400", coefficient = "2.2", expectedSalePriceHt = "880.00" });
+        // MAD : même variante, autre magasin (AUTRE SERVEUR, COR-05-01), autre devise, aucune conversion ; devise annoncée différente → refus.
+        var mismatch = await bench.PutMaAsync(admin, $"/api/pricing/variants/{variant}", new { requestId = NewId(), storeId = bench.StoreMa, currency = "EUR", purchasePriceHt = "400", coefficient = "2.2", expectedSalePriceHt = "880.00" });
         Assert.Equal("currency_mismatch", mismatch.Code);
-        var mad = await bench.PutAsync(admin, $"/api/pricing/variants/{variant}", new { requestId = NewId(), storeId = bench.StoreMa, purchasePriceHt = "19.99", coefficient = "2.2", expectedSalePriceHt = "43.98" });
+        var mad = await bench.PutMaAsync(admin, $"/api/pricing/variants/{variant}", new { requestId = NewId(), storeId = bench.StoreMa, purchasePriceHt = "19.99", coefficient = "2.2", expectedSalePriceHt = "43.98" });
         Assert.Equal("MAD", mad["price"].GetProperty("currency").GetString());
         Assert.Equal("43.98", mad["price"].GetProperty("salePriceHt").GetString());
         Assert.Equal("103.13", (await bench.GetAsync(admin, $"/api/pricing/variants/{variant}?storeId={bench.StoreBe}"))["price"].GetProperty("salePriceHt").GetString());
@@ -426,12 +426,13 @@ public sealed class Phase05PostgreSqlTests(ITestOutputHelper output)
 
         // Prix : coûts → costs.write exigé à l'application ; devise différente du magasin → erreur, aucune conversion.
         var pricesCsv = $"sku;prixachatht;coefficient;devise\nIMPSKU-{bench.Suffix}-1;20,00;2.5;EUR\n";
-        var prices = await bench.PostAsync(importer, "/api/imports", new { requestId = NewId(), kind = "prices", storeId = bench.StoreMa, fileName = "prix.csv", content = pricesCsv });
+        var prices = await bench.PostMaAsync(importer, "/api/imports", new { requestId = NewId(), kind = "prices", storeId = bench.StoreMa, fileName = "prix.csv", content = pricesCsv });
         var pb = prices["batchId"].GetGuid();
-        var pv = (await bench.GetAsync(importer, $"/api/imports/{pb}"))["batch"].GetProperty("version").GetUInt32();
-        var pricesCheck = await bench.PostAsync(importer, $"/api/imports/{pb}/check", new { requestId = NewId(), version = pv });
+        Assert.Equal(HttpStatusCode.NotFound, (await bench.GetAsync(importer, $"/api/imports/{pb}")).Status); // lot d'un autre magasin : invisible
+        var pv = (await bench.GetMaAsync(importer, $"/api/imports/{pb}"))["batch"].GetProperty("version").GetUInt32();
+        var pricesCheck = await bench.PostMaAsync(importer, $"/api/imports/{pb}/check", new { requestId = NewId(), version = pv });
         Assert.Equal(1, pricesCheck["error"].GetInt32());
-        var pricesReport = await bench.GetAsync(importer, $"/api/imports/{pb}");
+        var pricesReport = await bench.GetMaAsync(importer, $"/api/imports/{pb}");
         Assert.False(pricesReport["valuesVisible"].GetBoolean());
         Assert.Contains("currency_mismatch", pricesReport.Raw, StringComparison.Ordinal);
         Assert.Contains("purchasePriceHt", pricesReport.Raw, StringComparison.Ordinal);

@@ -4,6 +4,8 @@ using MMV.Api.Audit;
 using MMV.Api.Auth;
 using MMV.Api.Cors;
 using MMV.Api.Health;
+using MMV.Api.Installation;
+using MMV.Api.Realtime;
 using MMV.Application.Audit;
 using MMV.Infrastructure;
 
@@ -18,6 +20,10 @@ builder.Services.AddReadinessCheck();
 builder.Services.AddDesktopCors(builder.Configuration);
 builder.Services.AddMmvAuth(builder.Configuration);
 builder.Services.AddAppointmentSettings(builder.Configuration);
+// Un serveur local = un magasin (COR-05-01) : Installation:StoreCode, résolu à la première requête magasin.
+builder.Services.AddInstallation(builder.Configuration);
+// Temps réel (COR-05-02) : hub SignalR /hubs/changes, notifications après écriture confirmée.
+builder.Services.AddRealtime();
 // Journal d'audit (03-D2) : session et corrélation de la requête, enregistrés avant MMV.Infrastructure.
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
@@ -42,6 +48,7 @@ if (app.Environment.IsDevelopment())
 app.MapLiveness().RequireCors(DesktopCors.PolicyName);
 app.MapReadiness().RequireCors(DesktopCors.PolicyName);
 app.MapAuthEndpoints();
+app.MapRealtime();
 
 app.Run();
 

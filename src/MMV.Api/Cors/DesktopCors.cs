@@ -37,6 +37,11 @@ internal static class DesktopCors
                 .WithOrigins(origins)
                 .WithMethods(HttpMethods.Get, HttpMethods.Post, HttpMethods.Put)
                 .WithHeaders("Authorization", "Content-Type"));
+            // COR-05-02 : négociation SignalR (POST) et connexion WebSocket du hub, mêmes origines, sans identifiants.
+            options.AddPolicy(Realtime.RealtimeSetup.CorsPolicyName, policy => policy
+                .WithOrigins(origins)
+                .WithMethods(HttpMethods.Get, HttpMethods.Post)
+                .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent"));
         });
 
         return services;

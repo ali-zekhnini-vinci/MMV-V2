@@ -24,10 +24,10 @@ import { useClientList } from "./clientQueries.ts";
 import { useClientsService } from "./clientsService.ts";
 import { ClientsTable } from "./ClientsTable.tsx";
 import { LoadingBlock, StateBlock } from "./ClientStates.tsx";
-import { toListParams, useClientsUi } from "./clientsUi.ts";
+import { SEARCH_DEBOUNCE_MS, toListParams, useClientsUi } from "./clientsUi.ts";
 
 /** Délai de saisie avant d'interroger le serveur (une requête par pause, l'ancienne est annulée). */
-export const SEARCH_DEBOUNCE_MS = 300;
+export { SEARCH_DEBOUNCE_MS };
 
 const STATUS_LABEL: Record<ClientStatusFilter, string> = {
   active: "actifs uniquement",

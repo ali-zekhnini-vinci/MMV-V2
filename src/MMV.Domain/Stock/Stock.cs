@@ -25,12 +25,14 @@ public static class StockReasons
 {
     public const string Other = "other";
     public const string SupplierReceipt = "supplier_receipt";
+    public const string InitialStock = "initial_stock";
     public const int CommentMaxLength = 500;
 
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ByType { get; } = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         [MovementTypes.Receipt] = [SupplierReceipt],
-        [MovementTypes.ManualIn] = ["found", "internal_use_return", "customer_return_unsold", "entry_error", Other],
+        // « initial_stock » : stock initial saisi à la création d'un produit (assistant COR-05-06), code borné du même format.
+        [MovementTypes.ManualIn] = ["found", "internal_use_return", "customer_return_unsold", "entry_error", InitialStock, Other],
         [MovementTypes.ManualOut] = ["breakage", "loss", "theft", "internal_use", "supplier_return", "entry_error", Other],
         [MovementTypes.Adjustment] = ["count_correction", "breakage", "loss", "theft", "entry_error", Other],
         [MovementTypes.InventoryAdjustment] = ["count_correction", "breakage", "loss", "theft", "entry_error", Other],

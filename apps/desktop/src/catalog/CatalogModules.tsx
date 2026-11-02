@@ -4,17 +4,18 @@
 // - « Inventaire » (/inventaire) : stock par emplacement, mouvements, réceptions, inventaires.
 // Le Lot 6 range Produits, Inventaire et Fournisseurs dans la barre latérale ; le shell commun des Phases 02–04 n'est
 // pas modifié : les sections de chaque module forment une commande segmentée (.seg du Lot 6), alignée avec le SEUL
-// sélecteur du magasin actif (devise EUR ou MAD, jamais dupliqué dans les écrans).
+// badge du magasin de l'INSTALLATION (COR-05-01 : un serveur = un magasin, aucun sélecteur ; devise EUR ou MAD).
 import type { ReactNode } from "react";
 import { NavLink, Route, Routes } from "react-router";
 import { ForbiddenView } from "../views/ForbiddenView.tsx";
 import { CatalogAccessContext, catalogAccess } from "./catalogAccess.ts";
 import { CatalogListView } from "./CatalogListView.tsx";
-import { StoreProvider, StoreSelect, ToastProvider } from "./CatalogUi.tsx";
+import { RealtimeIndicator, StoreBadge, StoreProvider, ToastProvider } from "./CatalogUi.tsx";
 import { ImportView } from "./ImportView.tsx";
 import { InventoriesView, InventorySessionView } from "./InventoryViews.tsx";
 import { LensReferencesView } from "./LensReferencesView.tsx";
-import { ModelCreateView, ModelDetailView, ModelEditView } from "./ModelViews.tsx";
+import { ModelDetailView, ModelEditView } from "./ModelViews.tsx";
+import { ProductWizardView } from "./ProductWizard.tsx";
 import { BalancesView, MovementsView, ReceiptsView } from "./StockViews.tsx";
 import { SupplierCreateView, SupplierDetailView, SupplierEditView, SuppliersListView } from "./SupplierViews.tsx";
 import "../clients/Clients.css";
@@ -33,7 +34,8 @@ function ModuleFrame({ sections, children }: { sections: { to: string; label: st
                 </NavLink>
               ))}
             </nav>
-            <StoreSelect />
+            <RealtimeIndicator compact />
+            <StoreBadge />
           </div>
           {children}
         </div>
@@ -55,7 +57,7 @@ export function ProductsModule({ permissions }: { permissions: readonly string[]
       ]}>
         <Routes>
           <Route index element={<CatalogListView />} />
-          <Route path="nouveau" element={access.catalogWrite ? <ModelCreateView /> : <ForbiddenView reason="Création réservée au droit catalog.write." />} />
+          <Route path="nouveau" element={access.catalogWrite ? <ProductWizardView /> : <ForbiddenView reason="Création réservée au droit catalog.write." />} />
           <Route path="modele/:id" element={<ModelDetailView />} />
           <Route path="modele/:id/modifier" element={access.catalogWrite ? <ModelEditView /> : <ForbiddenView reason="Modification réservée au droit catalog.write." />} />
           <Route path="fournisseurs" element={access.suppliersRead ? <SuppliersListView /> : <ForbiddenView reason="Droit suppliers.read requis." />} />
