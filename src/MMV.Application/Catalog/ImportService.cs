@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,14 +23,16 @@ public sealed record ImportError(string Field, string Code);
 /// <summary>
 /// Aperçu après dépôt : en-têtes, premières lignes, correspondance proposée (appliquée sauf colonnes ambiguës),
 /// propositions détaillées avec leur confiance, séparateur détecté, séparateur décimal détecté ou ambigu, modèle
-/// fournisseur repris (COR-05-04).
+/// fournisseur repris (COR-05-04) ; analyse (moteur utilisé, durées, anomalies — UX-IA) et fichier identique déjà
+/// appliqué (refus annoncé avant le contrôle).
 /// </summary>
 public sealed record ImportPreview(
     Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount,
-    string Delimiter, IReadOnlyList<MappingSuggestion> Suggestions, string? DecimalSeparator, bool DecimalAmbiguous, bool ProfileApplied, Guid? SupplierId);
+    string Delimiter, IReadOnlyList<MappingSuggestion> Suggestions, string? DecimalSeparator, bool DecimalAmbiguous, bool ProfileApplied, Guid? SupplierId,
+    ImportAnalysis? Analysis = null, bool AlreadyApplied = false);
 
-/// <summary>Synthèse d'un contrôle à blanc ou d'une application.</summary>
-public sealed record ImportSummary(Guid BatchId, string Status, int Total, int Create, int Update, int Unchanged, int Error);
+/// <summary>Synthèse d'un contrôle à blanc ou d'une application ; durée serveur mesurée de l'opération (UX-IA).</summary>
+public sealed record ImportSummary(Guid BatchId, string Status, int Total, int Create, int Update, int Unchanged, int Error, long? ElapsedMs = null);
 
 /// <summary>
 /// Import CSV contrôlé (05-D, D-05-18) : dépôt (zone de préparation, empreinte SHA-256, aperçu, correspondance proposée) →
@@ -37,11 +40,18 @@ public sealed record ImportSummary(Guid BatchId, string Status, int Total, int C
 /// contre l'état COURANT dans la transaction, idempotente (même requête : état courant ; même fichier déjà appliqué :
 /// 409). Aucune suppression, aucun import destructif : les lignes absentes du fichier ne changent rien. Coûts importés
 /// seulement avec <c>costs.write</c>, prix manuels avec <c>pricing.manual</c> ; aucune conversion de devise ; montants
-/// lus en chaînes décimales ; cellules de type formule refusées.
+/// lus en chaînes décimales ; cellules de type formule refusées. Assistant IA LOCAL facultatif (UX-IA) : une seule
+/// analyse par fichier au dépôt, hors transaction, propositions validées par <see cref="ImportAssistantMerge"/> ;
+/// indisponible, en échec ou hors schéma : le moteur déterministe seul s'applique, sans erreur pour l'utilisateur.
+/// Modèle d'import du fournisseur APPRIS à chaque application réussie (même transaction).
 /// </summary>
 public sealed class ImportService(
-    ICatalogUnitOfWork unitOfWork, ICatalogStore store, IPricingStore pricing, IImportStore imports, IImportProfileStore profiles, TimeProvider clock, IAuditRecorder audit)
+    ICatalogUnitOfWork unitOfWork, ICatalogStore store, IPricingStore pricing, IImportStore imports, IImportProfileStore profiles, TimeProvider clock, IAuditRecorder audit,
+    IImportMappingAssistant? assistant = null)
 {
+    /// <summary>Lignes lues pour choisir les exemples transmis à l'assistant (quelques valeurs par colonne seulement).</summary>
+    private const int AssistantSampleRows = 50;
+
     /// <summary>Champs monétaires dont le séparateur décimal est détecté ou confirmé (<see cref="ImportOptions.DecimalSeparator"/>).</summary>
     public static readonly IReadOnlySet<string> MoneyFields = new HashSet<string>(StringComparer.Ordinal) { "purchasePriceHt", "coefficient", "salePriceHt" };
 
@@ -139,7 +149,9 @@ public sealed class ImportService(
             return Outcome.Invalid<ImportPreview>(errors);
         }
 
+        var parsing = Stopwatch.StartNew();
         var (table, parseError) = CsvTable.Parse(content!, ImportBatch.MaxRows);
+        var parseMs = parsing.ElapsedMilliseconds;
         if (table is null)
         {
             return Outcome.Invalid<ImportPreview>("content", parseError!);
@@ -153,12 +165,18 @@ public sealed class ImportService(
         var sha = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(content!)));
         var now = CatalogClock.Now(clock);
         var profile = supplierId is { } owner ? await profiles.FindAsync(owner, kind!, cancellationToken) : null;
-        var (mapping, _) = Propose(kind!, table, supplierId is not null, profile);
+        var (_, rules) = Propose(kind!, table, supplierId is not null, profile);
+        var reviewed = profile is null ? null : JsonSerializer.Deserialize<List<string>>(profile.HeadersJson, Json);
+        var analysis = await AnalyzeAsync(kind!, table, rules, supplierId is not null, reviewed, cancellationToken);
+        var (mapping, suggestions) = Propose(kind!, table, supplierId is not null, profile, analysis);
         var batch = ImportBatch.Upload(
             Guid.CreateVersion7(now), kind!, storeId, name!, sha, content!, table.Rows.Count, JsonSerializer.Serialize(mapping, Json), userId, now, requestId, supplierId);
         imports.Add(batch);
         CatalogAudit.Record(audit, userId, now, AuditActions.ImportsModule, AuditActions.ImportUploaded, AuditActions.ImportEntity, batch.Id,
-            [CatalogAudit.Field("kind", null, kind), CatalogAudit.Field("lineCount", null, table.Rows.Count.ToString(CultureInfo.InvariantCulture))]);
+        [
+            CatalogAudit.Field("kind", null, kind), CatalogAudit.Field("lineCount", null, table.Rows.Count.ToString(CultureInfo.InvariantCulture)),
+            CatalogAudit.Field("assistantStatus", null, analysis.Status), CatalogAudit.Field("assistantModel", null, analysis.Model),
+        ]);
         var commit = await unitOfWork.SaveAsync(cancellationToken);
         if (!commit.Saved)
         {
@@ -168,7 +186,29 @@ public sealed class ImportService(
                 : Outcome.Conflict<ImportPreview>();
         }
 
-        return Outcome.Created(await PreviewAsync(batch, table, cancellationToken));
+        var summary = new ImportAnalysis(analysis.Status, analysis.Model, parseMs, analysis.InferenceMs, ImportAssistantMerge.ValidWarnings(analysis.Warnings, table.Headers));
+        return Outcome.Created(await PreviewAsync(batch, table, cancellationToken, suggestions, summary));
+    }
+
+    /// <summary>
+    /// Analyse par l'assistant IA local, UNE fois par fichier, seulement s'il reste une colonne non reconnue, une ambiguïté
+    /// ou un champ requis absent. Aucune exception ne remonte (hors annulation) : échec = moteur déterministe seul.
+    /// </summary>
+    private async Task<AssistantAnalysis> AnalyzeAsync(
+        string kind, CsvTable table, IReadOnlyList<MappingSuggestion> rules, bool fromSupplier, IReadOnlyCollection<string>? reviewed, CancellationToken cancellationToken)
+    {
+        if (assistant is null)
+        {
+            return AssistantAnalysis.Failed(AssistantStatuses.Disabled, null);
+        }
+
+        if (!ImportAssistantMerge.Needed(kind, table.Headers, rules, reviewed))
+        {
+            return AssistantAnalysis.Failed(AssistantStatuses.NotNeeded, null);
+        }
+
+        var request = ImportAssistantMerge.BuildRequest(kind, table.Headers, [.. table.Rows.Take(AssistantSampleRows).Select(r => r.Cells)], fromSupplier);
+        return await assistant.AnalyzeAsync(request, cancellationToken);
     }
 
     /// <summary>
@@ -176,10 +216,15 @@ public sealed class ImportService(
     /// les colonnes monétaires (option ajoutée seulement s'il est certain — sinon l'écran demande confirmation).
     /// </summary>
     private static (Dictionary<string, string> Mapping, IReadOnlyList<MappingSuggestion> Suggestions) Propose(
-        string kind, CsvTable table, bool supplierKnown, SupplierImportProfile? profile)
+        string kind, CsvTable table, bool supplierKnown, SupplierImportProfile? profile, AssistantAnalysis? analysis = null)
     {
         var saved = profile is null ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(profile.MappingJson, Json);
         var suggestions = ImportMapper.Suggest(kind, table.Headers, supplierKnown, saved);
+        if (analysis is not null)
+        {
+            suggestions = ImportAssistantMerge.Merge(kind, table.Headers, suggestions, analysis, ImportAssistantMerge.Samples(table.Headers, [.. table.Rows.Take(AssistantSampleRows).Select(r => r.Cells)]));
+        }
+
         var mapping = ImportMapper.Applied(suggestions);
         foreach (var (key, value) in saved ?? [])
         {
@@ -285,6 +330,7 @@ public sealed class ImportService(
             return Outcome.Invalid<ImportSummary>(mappingErrors);
         }
 
+        var validation = Stopwatch.StartNew();
         var plan = await PlanAsync(batch, table, effective, cancellationToken);
         var now = CatalogClock.Now(clock);
         await imports.ReplaceRowsAsync(batch.Id, [.. plan.Rows.Select(r => ImportRow.Create(
@@ -294,7 +340,7 @@ public sealed class ImportService(
         CatalogAudit.Record(audit, userId, now, AuditActions.ImportsModule, AuditActions.ImportChecked, AuditActions.ImportEntity, batch.Id,
             [CatalogAudit.Field("lineCount", null, plan.Rows.Count.ToString(CultureInfo.InvariantCulture)), CatalogAudit.Field("status", null, ImportStatuses.Checked)]);
         var commit = await unitOfWork.SaveAsync(cancellationToken);
-        return commit.Saved ? Outcome.Ok(Summary(batch, plan.Rows)) : Outcome.Conflict<ImportSummary>();
+        return commit.Saved ? Outcome.Ok(Summary(batch, plan.Rows) with { ElapsedMs = validation.ElapsedMilliseconds }) : Outcome.Conflict<ImportSummary>();
     }
 
     // ---------- application ----------
@@ -306,6 +352,7 @@ public sealed class ImportService(
     /// </summary>
     public async Task<Outcome<ImportSummary>> ApplyAsync(Guid batchId, uint version, Guid requestId, CatalogActor actor, CancellationToken cancellationToken)
     {
+        var elapsed = Stopwatch.StartNew();
         await using var transaction = await unitOfWork.BeginAsync(cancellationToken);
         var batch = await imports.FindBatchAsync(batchId, cancellationToken);
         if (batch is null)
@@ -362,6 +409,11 @@ public sealed class ImportService(
             await action(actor.UserId, now, requestId, cancellationToken);
         }
 
+        if (batch.SupplierId is { } supplierId && batch.Kind is ImportKinds.Catalog or ImportKinds.Prices)
+        {
+            await LearnProfileAsync(supplierId, batch.Kind, mapping, table.Headers, actor.UserId, now, requestId, cancellationToken);
+        }
+
         batch.MarkApplied(actor.UserId, now, requestId);
         var summary = Summary(batch, plan.Rows);
         CatalogAudit.Record(audit, actor.UserId, now, AuditActions.ImportsModule, AuditActions.ImportApplied, AuditActions.ImportEntity, batch.Id,
@@ -379,7 +431,44 @@ public sealed class ImportService(
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return Outcome.Ok(summary);
+        return Outcome.Ok(summary with { ElapsedMs = elapsed.ElapsedMilliseconds });
+    }
+
+    /// <summary>
+    /// Apprentissage (UX-IA) : la correspondance d'un import APPLIQUÉ devient le modèle d'import du fournisseur (créé ou
+    /// remplacé, tracé), reproposé à son prochain fichier. Même transaction que l'application : rien n'est appris d'un
+    /// import refusé. Fournisseur archivé : rien n'est appris. Le séparateur décimal n'est JAMAIS appris (détecté à chaque
+    /// fichier) : un montant ambigu (« 1,234 ») du fichier suivant reste signalé au lieu d'être interprété en silence.
+    /// </summary>
+    private async Task LearnProfileAsync(Guid supplierId, string kind, Dictionary<string, string> mapping, IReadOnlyList<string> headers,
+        Guid userId, DateTimeOffset now, Guid requestId, CancellationToken cancellationToken)
+    {
+        if (await store.FindSupplierAsync(supplierId, cancellationToken) is null or { IsArchived: true }
+            || headers.Count > 200 || mapping.Count > 60 || CheckMapping(kind, mapping, headers, requireFields: false).Count > 0)
+        {
+            return;
+        }
+
+        var mappingJson = JsonSerializer.Serialize(mapping.Where(m => m.Key != ImportOptions.DecimalSeparator).ToDictionary(StringComparer.Ordinal), Json);
+        var headersJson = JsonSerializer.Serialize(headers, Json);
+        var profile = await profiles.FindAsync(supplierId, kind, cancellationToken);
+        if (profile is not null && profile.MappingJson == mappingJson && profile.HeadersJson == headersJson)
+        {
+            return;
+        }
+
+        if (profile is null)
+        {
+            profile = SupplierImportProfile.Create(Guid.CreateVersion7(now), supplierId, kind, mappingJson, headersJson, userId, now, requestId);
+            profiles.Add(profile);
+        }
+        else
+        {
+            profile.Update(mappingJson, headersJson, userId, now, requestId);
+        }
+
+        CatalogAudit.Record(audit, userId, now, AuditActions.ImportsModule, AuditActions.ImportProfileSaved, AuditActions.ImportProfileEntity, profile.Id,
+            [CatalogAudit.Field("supplierId", null, supplierId.ToString()), CatalogAudit.Field("kind", null, kind)]);
     }
 
     /// <summary>Abandon d'un lot non appliqué (définitif, sans effet sur le catalogue).</summary>
@@ -712,6 +801,8 @@ public sealed class ImportService(
         var takenBarcodes = barcodes.Count == 0 ? new HashSet<string>() : await store.TakenBarcodesAsync(barcodes, null, cancellationToken);
         var seenSku = new HashSet<string>(StringComparer.Ordinal);
         var seenBarcode = new HashSet<string>(StringComparer.Ordinal);
+        // UX-IA : une référence identifie UN article chez un fournisseur — répétée dans le même fichier, la ligne est refusée.
+        var seenSupplierReference = new HashSet<string>(StringComparer.Ordinal);
         var newModels = new Dictionary<string, (ProductModelDetails Details, Guid? Id)>(StringComparer.Ordinal);
         var plans = new List<RowPlan>();
         var actions = new List<ImportAction>();
@@ -821,6 +912,11 @@ public sealed class ImportService(
 
             if (supplierReference is not null && supplier is not null && !generatedSku && values.GetValueOrDefault("supplierCode") is null
                 && byReference.TryGetValue(CatalogKeys.Normalize(supplierReference), out var referenced) && !string.Equals(referenced.Sku, values["sku"], StringComparison.OrdinalIgnoreCase))
+            {
+                errors.Add(new("supplierReference", CatalogFieldErrors.Duplicate));
+            }
+
+            if (supplierReference is not null && supplier is not null && !seenSupplierReference.Add($"{supplier.Id:N}|{CatalogKeys.Normalize(supplierReference)}"))
             {
                 errors.Add(new("supplierReference", CatalogFieldErrors.Duplicate));
             }
@@ -1000,17 +1096,19 @@ public sealed class ImportService(
 
     // ---------- outils ----------
 
-    private async Task<ImportPreview> PreviewAsync(ImportBatch batch, CsvTable table, CancellationToken cancellationToken)
+    private async Task<ImportPreview> PreviewAsync(
+        ImportBatch batch, CsvTable table, CancellationToken cancellationToken, IReadOnlyList<MappingSuggestion>? merged = null, ImportAnalysis? analysis = null)
     {
         var profile = batch.SupplierId is { } supplierId ? await profiles.FindAsync(supplierId, batch.Kind, cancellationToken) : null;
-        var (_, suggestions) = Propose(batch.Kind, table, batch.SupplierId is not null, profile);
+        var suggestions = merged ?? Propose(batch.Kind, table, batch.SupplierId is not null, profile).Suggestions;
         var mapping = JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [];
         var (detected, ambiguous) = DetectDecimal(table, mapping);
         return new ImportPreview(
             batch.Id, table.Headers, [.. table.Rows.Take(10).Select(r => (IReadOnlyList<string>)[.. r.Cells])], mapping, batch.RowCount,
             table.Delimiter == '\t' ? "tab" : table.Delimiter.ToString(), suggestions,
             mapping.GetValueOrDefault(ImportOptions.DecimalSeparator) ?? detected?.ToString(), ambiguous && !mapping.ContainsKey(ImportOptions.DecimalSeparator),
-            suggestions.Any(s => s.Confidence == MatchConfidence.Profile), batch.SupplierId);
+            suggestions.Any(s => s.Confidence == MatchConfidence.Profile), batch.SupplierId,
+            analysis, await imports.AppliedFileExistsAsync(batch.FileSha256, batch.Kind, batch.StoreId, cancellationToken));
     }
 
     private static ImportSummary Summary(ImportBatch batch, IReadOnlyList<RowPlan> rows) =>
@@ -1124,10 +1222,10 @@ public sealed class ImportService(
     private static List<ImportError> FormulaErrors(Dictionary<string, string> values) =>
         [.. values.Where(v => CsvTable.LooksLikeFormula(v.Value) && v.Key is not ("phone")).Select(v => new ImportError(v.Key, "formula_not_allowed"))];
 
-    private static string? FamilyCode(string? value) =>
+    internal static string? FamilyCode(string? value) =>
         value is null ? null : Families.All.FirstOrDefault(f => f.Code == value.Trim() || CsvTable.NormalizeHeader(f.Label) == CsvTable.NormalizeHeader(value))?.Code;
 
-    private static string? Policy(string? value) => CsvTable.NormalizeHeader(value ?? string.Empty) switch
+    internal static string? Policy(string? value) => CsvTable.NormalizeHeader(value ?? string.Empty) switch
     {
         "stocked" or "stocke" or "stock" => StockPolicies.Stocked,
         "orderonly" or "surcommande" or "commande" or "commandealademande" => StockPolicies.OrderOnly,
@@ -1135,7 +1233,7 @@ public sealed class ImportService(
         _ => null,
     };
 
-    private static bool? Boolean(string? value) => CsvTable.NormalizeHeader(value ?? string.Empty) switch
+    internal static bool? Boolean(string? value) => CsvTable.NormalizeHeader(value ?? string.Empty) switch
     {
         "oui" or "true" or "1" or "yes" or "o" => true,
         "non" or "false" or "0" or "no" or "n" => false,

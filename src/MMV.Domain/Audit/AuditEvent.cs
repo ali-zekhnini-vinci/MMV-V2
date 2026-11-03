@@ -258,6 +258,8 @@ public static class AuditFieldPolicy
         // Phase 05 : codes de gestion non personnels et non confidentiels (aucun coût, aucun prix d'achat, aucun coefficient).
         "stockPolicy", "pricingMode", "movementType", "quantityDelta", "locationId", "storeId", "supplierId", "isPrimary",
         "lineCount", "status", "kind",
+        // UX-IA : moteur de correspondance d'un import (statut borné de l'assistant local, nom du modèle local).
+        "assistantStatus", "assistantModel",
     };
 
     public static AuditChange Change(string field, string? oldValue, string? newValue) =>

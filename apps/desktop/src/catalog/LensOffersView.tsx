@@ -14,11 +14,12 @@ import { errorMessage, useCatalogPreview, useCatalogQuery, useCatalogWrite, useT
 import { formatDateTime, formatMoney } from "./catalogFormat.ts";
 import { Badge, Banner, Card, EmptyState, ErrorBanner, ErrorState, Field, KeyValues, Loading, Lock, Modal, SelectField, Switch, TableScroll } from "./CatalogUi.tsx";
 import {
-  CHECK_LABELS, decimalOrNull, LENS_TYPE_LABELS, type LensCheck, type LensOffer, type LensOfferDetail, type LensRule, PRODUCTION_LABELS, RULE_KIND_LABELS, rangeText, reasonText,
+  CHECK_LABELS, decimalOrNull, indexLabel, ints, LENS_TYPE_LABELS, type LensCheck, type LensOffer, type LensOfferDetail, type LensRule, PRODUCTION_LABELS, RULE_KIND_LABELS, rangeText,
+  reasonText, ruleBody, type RuleDraft, ruleDraft,
 } from "./lensOffers.ts";
 import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
 
-export function LensOffersView({ refs }: { refs: LensReferences }) {
+export function LensOffersView({ refs, onCreate, onAddSuppliers }: { refs: LensReferences; onCreate?: () => void; onAddSuppliers?: (rangeId: string) => void }) {
   const access = useCatalogAccess();
   const offers = useCatalogQuery<LensOffer[]>("/api/catalog/lens-offers?status=all");
   const [editing, setEditing] = useState<{ rangeId: string; offer: LensOffer | null } | null>(null);
@@ -31,8 +32,9 @@ export function LensOffersView({ refs }: { refs: LensReferences }) {
   if (offers.isError) return <ErrorState error={offers.error} title="Impossible de charger les offres" onRetry={() => void offers.refetch()} />;
   if (ranges.length === 0) {
     return (
-      <EmptyState icon={FlaskConical} title="Aucune gamme de verres">
-        Créez d&apos;abord le fabricant et la gamme dans « Référentiel de base », puis déclarez ici ce que chaque fournisseur propose pour cette gamme.
+      <EmptyState icon={FlaskConical} title="Aucune gamme de verres"
+        action={onCreate && <Button variant="primary" onClick={onCreate}><Plus size={16} aria-hidden="true" />Créer votre première gamme</Button>}>
+        Une gamme se crée en une fois avec ses caractéristiques et les fournisseurs qui la fabriquent (plages, prix et délais de chacun).
       </EmptyState>
     );
   }
@@ -45,15 +47,24 @@ export function LensOffersView({ refs }: { refs: LensReferences }) {
       </Banner>
       {ranges.map((range) => {
         const items = list.filter((o) => o.rangeId === range.id);
+        const active = items.filter((o) => o.status === "active");
+        const summary = [
+          [...new Set(active.map((o) => LENS_TYPE_LABELS[o.lensType] ?? o.lensType))].join(", "),
+          [...new Set(active.map((o) => refs.indices.find((i) => i.id === o.indexId)?.name).filter((i) => i !== undefined))].map(indexLabel).join(", "),
+          [...new Set(active.flatMap((o) => o.treatmentIds).map((id) => refs.treatments.find((t) => t.id === id)?.name).filter(Boolean))].join(", "),
+        ].filter((x) => x !== "").join(" · ");
         return (
           <Card key={range.id} title={`${name(refs.manufacturers, range.manufacturerId)} — ${range.name}`} icon={FlaskConical} flush
             actions={<>
-              <Badge tone="accent">{items.filter((o) => o.status === "active").length} offre(s)</Badge>
+              <Badge tone="accent">{active.length} fournisseur{active.length > 1 ? "s" : ""}</Badge>
               {access.catalogConfigure && access.suppliersRead && (
-                <Button size="sm" onClick={() => setEditing({ rangeId: range.id, offer: null })}><Plus size={14} aria-hidden="true" />Offre fournisseur</Button>
+                <Button size="sm" onClick={() => (onAddSuppliers ? onAddSuppliers(range.id) : setEditing({ rangeId: range.id, offer: null }))}>
+                  <Plus size={14} aria-hidden="true" />Ajouter un fournisseur
+                </Button>
               )}
             </>}>
-            {items.length === 0 ? <p className="cat-empty-mini clients-muted">Aucune offre déclarée pour cette gamme.</p> : (
+            {summary !== "" && <div className="cat-card__body" style={{ paddingBottom: 0 }}><p className="clients-muted" style={{ margin: 0 }}>{summary}</p></div>}
+            {items.length === 0 ? <p className="cat-empty-mini clients-muted">Aucun fournisseur déclaré pour cette gamme.</p> : (
               <TableScroll label={`Offres — ${range.name}`}>
                 <table className="clients-table cat-table cat-table--inner cat-table--compact">
                   <thead><tr>
@@ -91,7 +102,7 @@ function OfferRows({ offer, refs, open, onToggle, onEdit }: { offer: LensOffer; 
           </button>
         </td>
         <td className="cat-strong">{offer.supplierName}</td>
-        <td>{LENS_TYPE_LABELS[offer.lensType] ?? offer.lensType}{index && <div className="cat-sub">indice {index}{offer.material ? ` · ${offer.material}` : ""}</div>}</td>
+        <td>{LENS_TYPE_LABELS[offer.lensType] ?? offer.lensType}{index && <div className="cat-sub">{indexLabel(index)}{offer.material ? ` · ${offer.material}` : ""}</div>}</td>
         <td className="cat-td-fill cat-secondary">{offer.treatmentIds.map(treatment).join(", ") || "—"}</td>
         <td><Badge tone={offer.production === "stocked" ? "ok" : "info"}>{offer.production === "stocked" ? "Stocké" : "Sur commande"}</Badge></td>
         <td className="tnum cat-nowrap">{rangeText(offer.sphereMin, offer.sphereMax)}</td>
@@ -195,7 +206,7 @@ function CompatibilityTester({ offer, refs }: { offer: LensOffer; refs: LensRefe
 
 // ---------- édition (niveau simple + mode avancé) ----------
 
-function RangeFields({ label, value, onChange, name, errors }: {
+export function RangeFields({ label, value, onChange, name, errors }: {
   label: string;
   value: { min: string; max: string };
   onChange: (value: { min: string; max: string }) => void;
@@ -225,31 +236,6 @@ function keptRule(r: LensRule) {
   };
 }
 
-interface RuleDraft {
-  kind: string;
-  effect: string;
-  manufacturing: string;
-  min: string;
-  max: string;
-  diameters: string;
-  maxSum: string;
-  treatmentIds: string[];
-  condCylMin: string;
-  condCylMax: string;
-  surcharge: string;
-  extraDays: string;
-  note: string;
-}
-
-const ruleDraft = (r?: LensRule): RuleDraft => ({
-  kind: r?.kind ?? "sphere_range", effect: r?.effect ?? "allow", manufacturing: r?.manufacturing ?? "standard",
-  min: r?.range ? String(r.range.min) : "", max: r?.range ? String(r.range.max) : "", diameters: r?.diameters?.join(", ") ?? "",
-  maxSum: r?.maxSphereCylinderSum ? String(r.maxSphereCylinderSum) : "", treatmentIds: r?.conditions?.treatmentIds ?? [],
-  condCylMin: r?.conditions?.cylinder ? String(r.conditions.cylinder.min) : "", condCylMax: r?.conditions?.cylinder ? String(r.conditions.cylinder.max) : "",
-  surcharge: r?.surchargeHt ? String(r.surchargeHt) : "", extraDays: r?.extraLeadDays ? String(r.extraLeadDays) : "", note: r?.note ?? "",
-});
-
-const ints = (text: string) => text.split(/[,;/\s]+/).filter(Boolean).map(Number).filter(Number.isInteger);
 
 function OfferEditor({ rangeId, offer, refs, onClose }: { rangeId: string; offer: LensOffer | null; refs: LensReferences; onClose: () => void }) {
   const access = useCatalogAccess();
@@ -278,7 +264,6 @@ function OfferEditor({ rangeId, offer, refs, onClose }: { rangeId: string; offer
   const errors = write.error?.error.fieldErrors;
   const activeTreatments = refs.treatments.filter((t) => t.status === "active");
   const costsEditable = access.costsWrite;
-  const setRule = (i: number, patch: Partial<RuleDraft>) => setRules(rules.map((r, j) => (j === i ? { ...r, ...patch } : r)));
 
   const body = {
     ...(offer ? { version: offer.version } : { rangeId, supplierId: supplier?.id }),
@@ -287,19 +272,7 @@ function OfferEditor({ rangeId, offer, refs, onClose }: { rangeId: string; offer
       : offer?.priceHt ? { priceHt: offer.priceHt, priceCurrency: offer.priceCurrency } : {}),
     diameters: ints(diameters), sphereMin: decimalOrNull(sph.min), sphereMax: decimalOrNull(sph.max), cylinderMin: decimalOrNull(cyl.min), cylinderMax: decimalOrNull(cyl.max),
     additionMin: decimalOrNull(add.min), additionMax: decimalOrNull(add.max), treatmentIds: treatments,
-    rules: advanced ? rules.map((r) => ({
-      kind: r.kind, effect: r.effect, manufacturing: r.manufacturing,
-      ...(["sphere_range", "cylinder_range", "addition_range"].includes(r.kind) ? { range: { min: decimalOrNull(r.min), max: decimalOrNull(r.max) } } : {}),
-      ...(r.kind === "diameters" ? { diameters: ints(r.diameters) } : {}),
-      ...(r.kind === "combination_limit" ? { maxSphereCylinderSum: decimalOrNull(r.maxSum) } : {}),
-      ...(r.treatmentIds.length > 0 || r.condCylMin || r.condCylMax ? { conditions: {
-        ...(r.treatmentIds.length > 0 ? { treatmentIds: r.treatmentIds } : {}),
-        ...(r.condCylMin || r.condCylMax ? { cylinder: { min: decimalOrNull(r.condCylMin), max: decimalOrNull(r.condCylMax) } } : {}),
-      } } : {}),
-      ...(costsEditable && r.surcharge.trim() !== "" ? { surchargeHt: decimalOrNull(r.surcharge) } : {}),
-      ...(r.extraDays.trim() !== "" ? { extraLeadDays: Number(r.extraDays) } : {}),
-      ...(r.note.trim() !== "" ? { note: r.note.trim() } : {}),
-    })) : (offer?.rules ?? []).map(keptRule),
+    rules: advanced ? rules.map((r) => ruleBody(r, costsEditable)) : (offer?.rules ?? []).map(keptRule),
     rulesComplete: advanced ? complete : offer?.rulesComplete ?? false,
     sourceReference: source.trim() || null, validFrom: validFrom || null, validUntil: validUntil || null, reason: reason.trim() || null,
   };
@@ -362,44 +335,64 @@ function OfferEditor({ rangeId, offer, refs, onClose }: { rangeId: string; offer
               <Switch label="Fiche fournisseur complète" checked={complete} onChange={setComplete}
                 hint="Cochez seulement si TOUTES les restrictions du fournisseur sont saisies : sinon les évaluations restent « à vérifier »." />
             </div>
+            <RulesEditor rules={rules} onChange={setRules} treatments={activeTreatments.filter((t) => treatments.includes(t.id))} costsEditable={costsEditable} errors={errors} />
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * Règles avancées d'une offre (restrictions conditionnelles, combinaisons, fabrication spéciale, diamètres) — partagé par
+ * la fiche d'offre et le parcours « Nouvelle gamme » ; règles STRUCTURÉES uniquement, validées par le serveur.
+ */
+export function RulesEditor({ rules, onChange, treatments, costsEditable, errors, prefix = "" }: {
+  rules: RuleDraft[];
+  onChange: (rules: RuleDraft[]) => void;
+  treatments: LensReference[];
+  costsEditable: boolean;
+  errors?: Record<string, string[]>;
+  prefix?: string;
+}) {
+  const setRule = (i: number, patch: Partial<RuleDraft>) => onChange(rules.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  return (
+    <>
             {rules.map((rule, i) => (
               <div key={i} className="cat-variant">
                 <div className="cat-variant__head">Règle {i + 1}<span className="cat-formbar__spacer" />
-                  <Button size="sm" variant="danger" onClick={() => setRules(rules.filter((_, j) => j !== i))}><Trash2 size={14} aria-hidden="true" />Retirer</Button>
+                  <Button size="sm" variant="danger" onClick={() => onChange(rules.filter((_, j) => j !== i))}><Trash2 size={14} aria-hidden="true" />Retirer</Button>
                 </div>
                 <div className="cat-grid cat-grid--3">
-                  <SelectField label="Type" name={`rules[${i}].kind`} value={rule.kind} onChange={(kind) => setRule(i, { kind })} errors={errors}
+                  <SelectField label="Type" name={`${prefix}rules[${i}].kind`} value={rule.kind} onChange={(kind) => setRule(i, { kind })} errors={errors}
                     options={Object.entries(RULE_KIND_LABELS).map(([value, label]) => ({ value, label }))} />
-                  <SelectField label="Effet" name={`rules[${i}].effect`} value={rule.effect} onChange={(effect) => setRule(i, { effect })} errors={errors}
+                  <SelectField label="Effet" name={`${prefix}rules[${i}].effect`} value={rule.effect} onChange={(effect) => setRule(i, { effect })} errors={errors}
                     options={[{ value: "allow", label: "Autoriser" }, { value: "deny", label: "Interdire" }]} />
-                  <SelectField label="Fabrication" name={`rules[${i}].manufacturing`} value={rule.manufacturing} onChange={(manufacturing) => setRule(i, { manufacturing })} errors={errors}
+                  <SelectField label="Fabrication" name={`${prefix}rules[${i}].manufacturing`} value={rule.manufacturing} onChange={(manufacturing) => setRule(i, { manufacturing })} errors={errors}
                     options={[{ value: "standard", label: "Standard" }, { value: "special", label: "Spéciale" }]} />
                   {["sphere_range", "cylinder_range", "addition_range"].includes(rule.kind) && (
                     <>
-                      <Field label="Min. (D)" name={`rules[${i}].rangeMin`} value={rule.min} onChange={(min) => setRule(i, { min })} inputMode="decimal" errors={errors} errorKey={`rules[${i}].range`} />
-                      <Field label="Max. (D)" name={`rules[${i}].rangeMax`} value={rule.max} onChange={(max) => setRule(i, { max })} inputMode="decimal" errors={errors} />
+                      <Field label="Min. (D)" name={`${prefix}rules[${i}].rangeMin`} value={rule.min} onChange={(min) => setRule(i, { min })} inputMode="decimal" errors={errors} errorKey={`${prefix}rules[${i}].range`} />
+                      <Field label="Max. (D)" name={`${prefix}rules[${i}].rangeMax`} value={rule.max} onChange={(max) => setRule(i, { max })} inputMode="decimal" errors={errors} />
                     </>
                   )}
-                  {rule.kind === "diameters" && <Field label="Diamètres (mm)" name={`rules[${i}].diameters`} value={rule.diameters} onChange={(diameters) => setRule(i, { diameters })} errors={errors} />}
-                  {rule.kind === "combination_limit" && <Field label="|SPH| + |CYL| max. (D)" name={`rules[${i}].maxSphereCylinderSum`} value={rule.maxSum} onChange={(maxSum) => setRule(i, { maxSum })} inputMode="decimal" errors={errors} />}
-                  <Field label="Si CYL entre (min.)" name={`rules[${i}].conditions.cylinderMin`} value={rule.condCylMin} onChange={(condCylMin) => setRule(i, { condCylMin })} inputMode="decimal" errors={errors} />
-                  <Field label="et (max.)" name={`rules[${i}].conditions.cylinderMax`} value={rule.condCylMax} onChange={(condCylMax) => setRule(i, { condCylMax })} inputMode="decimal" errors={errors} />
-                  {costsEditable && <Field label="Supplément HT" name={`rules[${i}].surchargeHt`} value={rule.surcharge} onChange={(surcharge) => setRule(i, { surcharge })} inputMode="decimal" errors={errors} />}
-                  <Field label="Délai supplémentaire (j)" name={`rules[${i}].extraLeadDays`} value={rule.extraDays} onChange={(extraDays) => setRule(i, { extraDays })} inputMode="numeric" errors={errors} />
-                  <Field label="Note fournisseur" name={`rules[${i}].note`} value={rule.note} onChange={(note) => setRule(i, { note })} errors={errors} span2 />
+                  {rule.kind === "diameters" && <Field label="Diamètres (mm)" name={`${prefix}rules[${i}].diameters`} value={rule.diameters} onChange={(diameters) => setRule(i, { diameters })} errors={errors} />}
+                  {rule.kind === "combination_limit" && <Field label="|SPH| + |CYL| max. (D)" name={`${prefix}rules[${i}].maxSphereCylinderSum`} value={rule.maxSum} onChange={(maxSum) => setRule(i, { maxSum })} inputMode="decimal" errors={errors} />}
+                  <Field label="Si CYL entre (min.)" name={`${prefix}rules[${i}].conditions.cylinderMin`} value={rule.condCylMin} onChange={(condCylMin) => setRule(i, { condCylMin })} inputMode="decimal" errors={errors} />
+                  <Field label="et (max.)" name={`${prefix}rules[${i}].conditions.cylinderMax`} value={rule.condCylMax} onChange={(condCylMax) => setRule(i, { condCylMax })} inputMode="decimal" errors={errors} />
+                  {costsEditable && <Field label="Supplément HT" name={`${prefix}rules[${i}].surchargeHt`} value={rule.surcharge} onChange={(surcharge) => setRule(i, { surcharge })} inputMode="decimal" errors={errors} />}
+                  <Field label="Délai supplémentaire (j)" name={`${prefix}rules[${i}].extraLeadDays`} value={rule.extraDays} onChange={(extraDays) => setRule(i, { extraDays })} inputMode="numeric" errors={errors} />
+                  <Field label="Note fournisseur" name={`${prefix}rules[${i}].note`} value={rule.note} onChange={(note) => setRule(i, { note })} errors={errors} span2 />
                 </div>
-                {activeTreatments.length > 0 && (
-                  <div className="cat-checks"><span className="clients-field__hint">S&apos;applique avec :</span>{activeTreatments.filter((t) => treatments.includes(t.id)).map((t) => (
+                {treatments.length > 0 && (
+                  <div className="cat-checks"><span className="clients-field__hint">S&apos;applique avec :</span>{treatments.map((t) => (
                     <label key={t.id} className="cat-check"><input type="checkbox" checked={rule.treatmentIds.includes(t.id)}
                       onChange={(e) => setRule(i, { treatmentIds: e.target.checked ? [...rule.treatmentIds, t.id] : rule.treatmentIds.filter((x) => x !== t.id) })} />{t.name}</label>
                   ))}</div>
                 )}
               </div>
             ))}
-            <div><Button size="sm" onClick={() => setRules([...rules, ruleDraft()])}><Plus size={14} aria-hidden="true" />Ajouter une règle</Button></div>
-          </div>
-        )}
-      </div>
-    </Modal>
+            <div><Button size="sm" onClick={() => onChange([...rules, ruleDraft()])}><Plus size={14} aria-hidden="true" />Ajouter une règle</Button></div>
+    </>
   );
 }

@@ -14,7 +14,12 @@ public sealed record PlannedPrice(string Mode, string? PurchasePriceHt, string? 
 /// <summary>Stock initial (variante stockée seulement) : emplacement du magasin de l'installation, quantité &gt; 0.</summary>
 public sealed record PlannedStock(Guid LocationId, int Quantity);
 
-public sealed record PlannedVariant(VariantInput Variant, IReadOnlyList<PlannedSupplierLink> Suppliers, PlannedPrice? Price, PlannedStock? Stock);
+/// <summary>
+/// Variante planifiée. <paramref name="Price"/> est OBLIGATOIRE (UX-IA, tarification obligatoire) ; null n'est admis
+/// par le type que pour produire le refus <c>variants[i].price required</c>. <paramref name="LowStockThreshold"/> :
+/// seuil d'alerte par (variante, magasin de l'installation), indépendant des emplacements (option A du propriétaire).
+/// </summary>
+public sealed record PlannedVariant(VariantInput Variant, IReadOnlyList<PlannedSupplierLink> Suppliers, PlannedPrice? Price, PlannedStock? Stock, int? LowStockThreshold = null);
 
 /// <summary>Résultat : modèle et variantes créés (dans l'ordre de la saisie, SKU définitifs).</summary>
 public sealed record ProductCreated(Guid ModelId, IReadOnlyList<(Guid VariantId, string Sku)> Variants);
@@ -23,7 +28,10 @@ public sealed record ProductCreated(Guid ModelId, IReadOnlyList<(Guid VariantId,
 /// Enregistrement final de l'assistant de création produit (COR-05-06) : modèle, variantes, rattachements fournisseur,
 /// tarifs et stock initial dans UNE transaction — les services existants s'y exécutent à l'identique (mêmes règles,
 /// mêmes droits, même audit), leurs portées de transaction devenant neutres. Le moindre refus annule TOUT : aucun
-/// produit orphelin, aucun mouvement sans produit valide, aucun tarif partiel. Idempotence : la réémission du même
+/// produit orphelin, aucun mouvement sans produit valide, aucun tarif partiel. Tarification OBLIGATOIRE (UX-IA, décision
+/// du 03/11/2026) : chaque variante porte un tarif valide (coefficient avec aperçu serveur confirmé, ou prix manuel avec
+/// <c>pricing.manual</c>) ; une seule variante sans tarif refuse toute la création. Seuil d'alerte facultatif par
+/// variante stockée, enregistré pour le magasin de l'installation. Idempotence : la réémission du même
 /// <c>requestId</c> renvoie le produit déjà créé (identifiants dérivés et déterministes pour chaque sous-écriture).
 /// Erreurs : chemin de champ préfixé par l'étape (<c>variants[1].price.coefficient</c>…).
 /// </summary>
@@ -115,6 +123,15 @@ public sealed class ProductCreationService(
                     return Prefixed(moved, $"variants[{i}].stock.");
                 }
             }
+
+            if (plan.LowStockThreshold is { } threshold)
+            {
+                var set = await stock.SetThresholdAsync(variantId, shop.Id, threshold, null, Derive(requestId, $"threshold:{i}"), actor.UserId, cancellationToken);
+                if (!set.IsSuccess)
+                {
+                    return Prefixed(set, $"variants[{i}].");
+                }
+            }
         }
 
         await transaction.CommitAsync(cancellationToken);
@@ -165,6 +182,12 @@ public sealed class ProductCreationService(
             {
                 return "stock_forbidden";
             }
+
+            // Même droit que PUT /api/stock/thresholds/{variantId}.
+            if (plan.LowStockThreshold is not null && !actor.Has(Permissions.StockAdjust))
+            {
+                return "threshold_forbidden";
+            }
         }
 
         return null;
@@ -176,9 +199,27 @@ public sealed class ProductCreationService(
         for (var i = 0; i < variants.Count; i++)
         {
             var plan = variants[i];
-            if (plan.Price is { } price && price.Mode is not (CoefficientMode or ManualMode))
+            if (plan.Price is null)
+            {
+                // Tarification obligatoire : aucune variante créée sans prix de vente HT (plus de mode « Plus tard »).
+                errors[$"variants[{i}].price"] = [CatalogFieldErrors.Required];
+            }
+            else if (plan.Price.Mode is not (CoefficientMode or ManualMode))
             {
                 errors[$"variants[{i}].price.mode"] = [CatalogFieldErrors.InvalidFormat];
+            }
+
+            if (plan.LowStockThreshold is { } threshold)
+            {
+                if (StockPolicies.TryParse(plan.Variant.StockPolicy) != StockPolicy.Stocked)
+                {
+                    // Seuil d'alerte sans objet pour une prestation ou un article exclusivement commandé.
+                    errors[$"variants[{i}].lowStockThreshold"] = [CatalogFieldErrors.NotAllowed];
+                }
+                else if (threshold is < 0 or > VariantStoreSetting.ThresholdMax)
+                {
+                    errors[$"variants[{i}].lowStockThreshold"] = [CatalogFieldErrors.OutOfRange];
+                }
             }
 
             if (plan.Suppliers.Count(s => s.IsPrimary) > 1)

@@ -11,7 +11,8 @@ namespace MMV.Application.Catalog;
 public sealed class CsvTable
 {
     /// <summary>Séparateurs admis, par ordre de préférence (le point-virgule l'emporte à égalité).</summary>
-    private static readonly char[] Delimiters = [';', ',', '\t'];
+    // UX-IA : barre verticale « | » ajoutée (exports de caisse ou d'ERP fournisseurs), dernière par préférence.
+    private static readonly char[] Delimiters = [';', ',', '\t', '|'];
 
     private CsvTable(char delimiter, IReadOnlyList<string> headers, IReadOnlyList<(int LineNo, string[] Cells)> rows)
     {
@@ -142,7 +143,7 @@ public sealed class CsvTable
     }
 
     /// <summary>
-    /// Séparateur (COR-05-04) : parmi « ; », « , » et tabulation, celui qui découpe les 20 premières lignes en un nombre
+    /// Séparateur (COR-05-04, UX-IA) : parmi « ; », « , », tabulation et « | », celui qui découpe les 20 premières lignes en un nombre
     /// de colonnes CONSTANT et le plus grand (guillemets respectés) ; à égalité, l'ordre de préférence. Un fichier d'une
     /// seule colonne garde « ; ».
     /// </summary>

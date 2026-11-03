@@ -1,10 +1,13 @@
-// Référentiel des verres correcteurs (Q03, D-05-21, COR-05-05) — écran V2 absent du Lot 6, dessiné avec ses
-// composants (commande segmentée, cartes .card, table.dt, badges, états). Deux vues : « Gammes et offres fournisseur »
-// (au quotidien : ce que chaque fournisseur propose réellement, testeur de correction, mode avancé à la demande) et
-// « Référentiel de base » (fabricants, gammes, indices, traitements — inchangé). Aucune valeur pré-remplie ; saisie par
-// catalog.configure ; archivage, jamais de suppression.
-import { Archive, Factory, Gem, Layers, type LucideIcon, Plus, RotateCcw, Sigma, Sparkles } from "lucide-react";
+// Catalogue des verres (Q03, D-05-21, COR-05-05, unifié UX-IA 03/11/2026) — écran V2 absent du Lot 6, dessiné avec ses
+// composants (cartes .card, table.dt, badges, états). UN seul espace : chaque gamme avec ses caractéristiques et les
+// fournisseurs qui la fabriquent (plages, restrictions, prix et délais propres à chacun, testeur de correction, mode
+// avancé à la demande) ; « Nouvelle gamme » ouvre le parcours en six étapes (gamme + plusieurs fournisseurs, tout ou
+// rien). Les listes de référence (fabricants, gammes, indices, traitements) restent gérables, repliées en bas de page.
+// Le modèle de données n'est PAS fusionné : références et offres fournisseur restent des entités distinctes.
+// Aucune valeur pré-remplie ; saisie par catalog.configure ; archivage, jamais de suppression.
+import { Archive, ChevronDown, ChevronRight, Factory, Gem, Layers, ListTree, type LucideIcon, Plus, RotateCcw, Sigma, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { LensOffersView } from "./LensOffersView.tsx";
 import type { LensReference, LensReferences } from "../api/catalog.ts";
 import { Button } from "../components/ui/button.tsx";
@@ -21,24 +24,35 @@ const SECTIONS: { key: keyof LensReferences; segment: string; title: string; ico
 
 export function LensReferencesView() {
   const access = useCatalogAccess();
+  const navigate = useNavigate();
   const data = useCatalogQuery<LensReferences>("/api/catalog/lens-references");
-  const [view, setView] = useState<"offers" | "basics">("offers");
+  const [lists, setLists] = useState(false);
+  const canCreate = access.catalogConfigure && access.suppliersRead;
   return (
     <section className="cat-screen" aria-labelledby="lens-title">
-      <PageHeader title="Référentiel des verres" subtitle="Gammes, offres réelles des fournisseurs et restrictions de fabrication — une variante de verre = gamme + indice + traitements"
-        titleExtra={!access.catalogConfigure && <Badge tone="arch">Lecture seule</Badge>} />
-      <div className="cat-seg" role="tablist" aria-label="Vue du référentiel">
-        <button type="button" role="tab" aria-selected={view === "offers"} className={view === "offers" ? "cat-seg__item is-active" : "cat-seg__item"} onClick={() => setView("offers")}>Gammes et offres fournisseur</button>
-        <button type="button" role="tab" aria-selected={view === "basics"} className={view === "basics" ? "cat-seg__item is-active" : "cat-seg__item"} onClick={() => setView("basics")}>Référentiel de base</button>
-      </div>
-      {data.isPending ? <Loading label="Chargement du référentiel des verres…" /> : data.isError ? (
-        <ErrorState error={data.error} title="Impossible de charger le référentiel" onRetry={() => void data.refetch()} />
-      ) : view === "offers" ? <LensOffersView refs={data.data} /> : (
-        <div className="cat-refgrid">
-          {SECTIONS.map((section) => (
-            <LensSection key={section.key} section={section} items={data.data[section.key]} manufacturers={data.data.manufacturers} canConfigure={access.catalogConfigure} />
-          ))}
-        </div>
+      <PageHeader title="Catalogue des verres" subtitle="Vos gammes de verres et les fournisseurs qui les fabriquent — plages, restrictions, prix et délais propres à chaque fournisseur"
+        titleExtra={!access.catalogConfigure && <Badge tone="arch">Lecture seule</Badge>}
+        actions={canCreate && <Button variant="primary" onClick={() => navigate("/produits/verres/nouvelle")}><Plus size={16} aria-hidden="true" />Nouvelle gamme</Button>} />
+      {data.isPending ? <Loading label="Chargement du catalogue des verres…" /> : data.isError ? (
+        <ErrorState error={data.error} title="Impossible de charger le catalogue des verres" onRetry={() => void data.refetch()} />
+      ) : (
+        <>
+          <LensOffersView refs={data.data} onCreate={canCreate ? () => navigate("/produits/verres/nouvelle") : undefined}
+            onAddSuppliers={canCreate ? (rangeId) => navigate(`/produits/verres/nouvelle?gamme=${rangeId}`) : undefined} />
+          <div>
+            <Button variant="tertiary" aria-expanded={lists} onClick={() => setLists((v) => !v)}>
+              {lists ? <ChevronDown size={16} aria-hidden="true" /> : <ChevronRight size={16} aria-hidden="true" />}<ListTree size={16} aria-hidden="true" />
+              Listes de référence (fabricants, gammes, indices, traitements)
+            </Button>
+          </div>
+          {lists && (
+            <div className="cat-refgrid">
+              {SECTIONS.map((section) => (
+                <LensSection key={section.key} section={section} items={data.data[section.key]} manufacturers={data.data.manufacturers} canConfigure={access.catalogConfigure} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </section>
   );

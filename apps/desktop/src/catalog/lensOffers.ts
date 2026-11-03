@@ -131,3 +131,60 @@ export function rangeText(min: string | number | null | undefined, max: string |
 
 /** Chaîne décimale envoyée au serveur (virgule admise, signe conservé) ou null. */
 export const decimalOrNull = (value: string) => (value.trim() === "" ? null : value.trim().replace(",", "."));
+
+/** « indice 1,6 » sans répéter le mot quand le nom de la liste de référence le contient déjà (« Indice 1,6 »). */
+export const indexLabel = (name: string) => (/^indice\b/i.test(name.trim()) ? name.trim() : `indice ${name.trim()}`);
+
+/** Liste d'entiers saisie librement (« 60, 65 / 70 »). */
+export const ints = (text: string) => text.split(/[,;/\s]+/).filter(Boolean).map(Number).filter(Number.isInteger);
+
+/** Règle avancée en cours de saisie (mode avancé de l'offre ou du parcours « Nouvelle gamme »). */
+export interface RuleDraft {
+  kind: string;
+  effect: string;
+  manufacturing: string;
+  min: string;
+  max: string;
+  diameters: string;
+  maxSum: string;
+  treatmentIds: string[];
+  condCylMin: string;
+  condCylMax: string;
+  surcharge: string;
+  extraDays: string;
+  note: string;
+}
+
+export const ruleDraft = (r?: LensRule): RuleDraft => ({
+  kind: r?.kind ?? "sphere_range", effect: r?.effect ?? "allow", manufacturing: r?.manufacturing ?? "standard",
+  min: r?.range ? String(r.range.min) : "", max: r?.range ? String(r.range.max) : "", diameters: r?.diameters?.join(", ") ?? "",
+  maxSum: r?.maxSphereCylinderSum ? String(r.maxSphereCylinderSum) : "", treatmentIds: r?.conditions?.treatmentIds ?? [],
+  condCylMin: r?.conditions?.cylinder ? String(r.conditions.cylinder.min) : "", condCylMax: r?.conditions?.cylinder ? String(r.conditions.cylinder.max) : "",
+  surcharge: r?.surchargeHt ? String(r.surchargeHt) : "", extraDays: r?.extraLeadDays ? String(r.extraLeadDays) : "", note: r?.note ?? "",
+});
+
+/** Corps API d'une règle (chaînes décimales) ; supplément transmis seulement avec costs.write. */
+export const ruleBody = (r: RuleDraft, costsEditable: boolean) => ({
+  kind: r.kind, effect: r.effect, manufacturing: r.manufacturing,
+  ...(["sphere_range", "cylinder_range", "addition_range"].includes(r.kind) ? { range: { min: decimalOrNull(r.min), max: decimalOrNull(r.max) } } : {}),
+  ...(r.kind === "diameters" ? { diameters: ints(r.diameters) } : {}),
+  ...(r.kind === "combination_limit" ? { maxSphereCylinderSum: decimalOrNull(r.maxSum) } : {}),
+  ...(r.treatmentIds.length > 0 || r.condCylMin || r.condCylMax ? { conditions: {
+    ...(r.treatmentIds.length > 0 ? { treatmentIds: r.treatmentIds } : {}),
+    ...(r.condCylMin || r.condCylMax ? { cylinder: { min: decimalOrNull(r.condCylMin), max: decimalOrNull(r.condCylMax) } } : {}),
+  } } : {}),
+  ...(costsEditable && r.surcharge.trim() !== "" ? { surchargeHt: decimalOrNull(r.surcharge) } : {}),
+  ...(r.extraDays.trim() !== "" ? { extraLeadDays: Number(r.extraDays) } : {}),
+  ...(r.note.trim() !== "" ? { note: r.note.trim() } : {}),
+});
+
+/** Étape du parcours « Nouvelle gamme » d'une erreur serveur (`offers[1].sphereMin` → Plages ; `range.name` → étape 1). */
+export function lensStepOfField(path: string): number {
+  if (/^(manufacturer|range)/.test(path)) return 0;
+  if (/^offers\[\d+\]\.(lensType|production)/.test(path)) return 1;
+  if (/^offers\[\d+\]\.(indexId|material|treatmentIds)/.test(path)) return 2;
+  if (/^offers\[\d+\]\.(priceHt|priceCurrency|leadTimeDays)/.test(path)) return 5;
+  if (/^offers\[\d+\]\./.test(path)) return 4;
+  if (/^offers/.test(path)) return 3;
+  return 0;
+}

@@ -24,7 +24,8 @@ export function decodeCsv(bytes: Uint8Array): { text: string; encoding: CsvEncod
   }
 }
 
-const DELIMITERS = [";", ",", "\t"] as const;
+// UX-IA : « | » ajouté, même ordre de préférence que le serveur (CsvTable.DetectDelimiter).
+const DELIMITERS = [";", ",", "\t", "|"] as const;
 
 /** Même règle que le serveur (`CsvTable.DetectDelimiter`) : nombre de colonnes constant et le plus grand. */
 export function detectDelimiter(text: string): string {

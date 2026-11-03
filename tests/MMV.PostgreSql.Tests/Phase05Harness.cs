@@ -242,6 +242,8 @@ internal sealed class Phase05Bench : IAsyncDisposable
                 {
                     ["ConnectionStrings:Mmv"] = connection,
                     ["Installation:StoreCode"] = storeCode,
+                    // UX-IA : assistant IA local désactivé dans le banc (résultats déterministes) ; activé par réglage explicite.
+                    ["ImportAssistant:Enabled"] = "false",
                 });
                 if (settings is not null)
                 {

@@ -1705,6 +1705,20 @@
   color: var(--accent);
 }
 
+/* UX-IA : pictogramme en tête d'une phrase d'aide ou d'information — sur la ligne du texte, jamais seul au-dessus. */
+.cat-screen .clients-field__hint > svg,
+.cat-screen p.clients-muted > svg {
+  display: inline;
+  vertical-align: -2px;
+}
+
+/* UX-IA : analyse en cours (serveur, assistant IA local) — même zone, bordure d'accent, curseur d'attente. */
+.cat-drop.is-busy {
+  border-color: var(--accent);
+  color: var(--accent);
+  cursor: progress;
+}
+
 .cat-drop__title {
   font-size: 15px;
   font-weight: var(--weight-bold);

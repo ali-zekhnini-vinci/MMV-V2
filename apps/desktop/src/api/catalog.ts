@@ -386,8 +386,25 @@ export interface ImportBatch {
 export interface MappingSuggestion {
   field: string;
   header: string;
-  confidence: "profile" | "exact" | "probable" | "ambiguous";
+  /** « assistant » : reconnu par l'assistant IA local et validé par le serveur (UX-IA) ; « ambiguous » : à confirmer, `field` = choix proposé. */
+  confidence: "profile" | "exact" | "probable" | "ambiguous" | "assistant";
   alternatives: string[];
+  source?: "rules" | "assistant";
+}
+
+/** Analyse au dépôt (UX-IA) : moteur utilisé, durées mesurées par le serveur, anomalies signalées (codes bornés). */
+export interface ImportAnalysis {
+  assistantStatus: "used" | "not_needed" | "disabled" | "unavailable" | "timeout" | "invalid_output";
+  assistantModel: string | null;
+  parseMs: number;
+  assistantMs: number;
+  warnings: { header: string; code: string }[];
+}
+
+export interface AssistantServiceStatus {
+  enabled: boolean;
+  available: boolean;
+  model: string | null;
 }
 
 export interface ImportPreview {
@@ -403,6 +420,8 @@ export interface ImportPreview {
   decimalAmbiguous: boolean;
   profileApplied: boolean;
   supplierId: string | null;
+  analysis?: ImportAnalysis | null;
+  alreadyApplied?: boolean;
 }
 
 export interface ImportSummary {
@@ -413,6 +432,7 @@ export interface ImportSummary {
   update: number;
   unchanged: number;
   error: number;
+  elapsedMs?: number | null;
 }
 
 export interface ImportReport {

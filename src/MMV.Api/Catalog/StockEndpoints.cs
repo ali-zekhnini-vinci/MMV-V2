@@ -97,7 +97,7 @@ internal sealed record ImportFieldResponse(string Key, bool Required);
 internal sealed record ImportPreviewResponse(
     Guid BatchId, IReadOnlyList<string> Headers, IReadOnlyList<IReadOnlyList<string>> SampleRows, IReadOnlyDictionary<string, string> SuggestedMapping, int RowCount,
     IReadOnlyList<ImportFieldResponse> Fields, bool Replayed, string Delimiter, IReadOnlyList<MappingSuggestion> Suggestions, string? DecimalSeparator, bool DecimalAmbiguous,
-    bool ProfileApplied, Guid? SupplierId);
+    bool ProfileApplied, Guid? SupplierId, ImportAnalysis? Analysis, bool AlreadyApplied);
 
 internal sealed record ImportBatchResponse(
     Guid Id, string Kind, Guid? StoreId, string FileName, string FileSha256, int RowCount, string Status, int? ErrorCount, bool ContainsCosts, bool ContainsManualPrices,
@@ -142,6 +142,8 @@ internal static class StockEndpoints
 
         var imports = api.MapGroup("/imports").WithTags("Imports").AddEndpointFilter(NoStore).RequireActiveStore().RequireAuthorization(P(Permissions.CatalogImport))
             .PublishesChanges(ChangeTopics.Imports, ChangeTopics.Catalog, ChangeTopics.Pricing, ChangeTopics.Suppliers, ChangeTopics.Stock);
+        // UX-IA : état de l'assistant IA local du serveur (activé, joignable, modèle) — aucun détail réseau servi.
+        imports.MapGet("/assistant", async (IImportMappingAssistant assistant, CancellationToken ct) => Results.Ok(await assistant.StatusAsync(ct)));
         imports.MapGet("/fields", () => Results.Ok(ImportService.Fields.ToDictionary(k => k.Key, k => k.Value.Select(f => new ImportFieldResponse(f.Key, f.Required)).ToList())));
         imports.MapGet("/", ListImportsAsync);
         imports.MapPost("/", UploadAsync);
@@ -584,7 +586,7 @@ internal static class StockEndpoints
         return await ToResultAsync(outcome, p => Task.FromResult<object?>(new ImportPreviewResponse(
             p.BatchId, p.Headers, p.SampleRows, p.SuggestedMapping, p.RowCount,
             [.. ImportService.Fields[body.Kind!].Select(f => new ImportFieldResponse(f.Key, f.Required))], outcome.Replayed,
-            p.Delimiter, p.Suggestions, p.DecimalSeparator, p.DecimalAmbiguous, p.ProfileApplied, p.SupplierId)), $"/api/imports/{outcome.Value?.BatchId}");
+            p.Delimiter, p.Suggestions, p.DecimalSeparator, p.DecimalAmbiguous, p.ProfileApplied, p.SupplierId, p.Analysis, p.AlreadyApplied)), $"/api/imports/{outcome.Value?.BatchId}");
     }
 
     /// <summary>Rapport ; valeurs des lignes d'un lot contenant des coûts servies seulement avec <c>costs.read</c>.</summary>

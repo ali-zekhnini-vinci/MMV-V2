@@ -39,7 +39,8 @@ internal sealed record ProductPriceRequest(
 internal sealed record ProductStockRequest(Guid? LocationId = null, int? Quantity = null);
 
 internal sealed record ProductVariantRequest(
-    VariantRequest? Variant = null, List<ProductSupplierRequest>? Suppliers = null, ProductPriceRequest? Price = null, ProductStockRequest? Stock = null);
+    VariantRequest? Variant = null, List<ProductSupplierRequest>? Suppliers = null, ProductPriceRequest? Price = null, ProductStockRequest? Stock = null,
+    int? LowStockThreshold = null);
 
 internal sealed record ProductCreateRequest(
     Guid? RequestId = null, Guid? StoreId = null, string? FamilyCode = null, string? Brand = null, string? Name = null, string? Description = null, Guid? LensRangeId = null,
@@ -95,6 +96,16 @@ internal sealed record LensOfferRequest(
             Range(r.Range), r.Diameters, r.MaxSphereCylinderSum, r.SurchargeHt, r.ExtraLeadDays, r.Note))],
         RulesComplete ?? false, SourceReference, ValidFrom, ValidUntil, Notes, Reason);
 }
+
+/// <summary>
+/// Catalogue des verres (UX-IA) : nouvelle gamme (fabricant existant ou nouveau) OU gamme existante, et offres de plusieurs
+/// fournisseurs, en une transaction. Chaque offre reprend le contrat <see cref="LensOfferRequest"/> (sans requestId,
+/// version ni gamme : ils viennent de l'enveloppe).
+/// </summary>
+internal sealed record LensCatalogRequest(
+    Guid? RequestId = null, Guid? ManufacturerId = null, string? ManufacturerName = null, Guid? RangeId = null, string? RangeName = null, List<LensOfferRequest>? Offers = null);
+
+internal sealed record LensCatalogResponse(Guid ManufacturerId, Guid RangeId, IReadOnlyList<Guid> OfferIds, bool Replayed);
 
 internal sealed record LensCheckRequest(string? Sphere = null, string? Cylinder = null, string? Addition = null, int? Diameter = null, List<Guid>? TreatmentIds = null, Guid? IndexId = null);
 
@@ -238,6 +249,7 @@ internal static class CatalogEndpoints
         catalog.MapGet("/lens-offers", ListLensOffersAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapGet("/lens-offers/{id:guid}", GetLensOfferAsync).RequireAuthorization(P(Permissions.CatalogRead));
         catalog.MapPost("/lens-offers", CreateLensOfferAsync).RequireAuthorization(P(Permissions.CatalogConfigure), P(Permissions.SuppliersRead));
+        catalog.MapPost("/lens-catalog", CreateLensCatalogAsync).RequireAuthorization(P(Permissions.CatalogConfigure), P(Permissions.SuppliersRead));
         catalog.MapPut("/lens-offers/{id:guid}", UpdateLensOfferAsync).RequireAuthorization(P(Permissions.CatalogConfigure));
         catalog.MapPost("/lens-offers/{id:guid}/archive", (Guid id, HttpRequest r, ClaimsPrincipal p, LensOfferService s, CancellationToken ct) => ArchiveLensOfferAsync(id, true, r, p, s, ct))
             .RequireAuthorization(P(Permissions.CatalogConfigure));
@@ -451,6 +463,27 @@ internal static class CatalogEndpoints
 
         var outcome = await service.CreateAsync(body!.RangeId, body.SupplierId, body.ToInput(), body.RequestId!.Value, Actor(principal), cancellationToken);
         return await ToResultAsync(outcome, x => Task.FromResult<object?>(new MutationResponse(x, outcome.Replayed)), $"/api/catalog/lens-offers/{outcome.Value}");
+    }
+
+    private static async Task<IResult> CreateLensCatalogAsync(HttpRequest request, ClaimsPrincipal principal, LensCatalogService service, CancellationToken cancellationToken)
+    {
+        var body = await ReadBodyAsync<LensCatalogRequest>(request, cancellationToken);
+        if (Envelope(body, body?.RequestId, null, requireVersion: false) is { } invalid)
+        {
+            return invalid;
+        }
+
+        var offers = body!.Offers ?? [];
+        if (offers.Any(o => o is null || o.SupplierId is null || o.RequestId is not null || o.Version is not null || o.RangeId is not null))
+        {
+            return Results.BadRequest(InvalidBody);
+        }
+
+        var outcome = await service.CreateAsync(
+            body.ManufacturerId, body.ManufacturerName, body.RangeId, body.RangeName, [.. offers.Select(o => new PlannedLensOffer(o.SupplierId!.Value, o.ToInput()))],
+            body.RequestId!.Value, Actor(principal), cancellationToken);
+        return await ToResultAsync(outcome, x => Task.FromResult<object?>(new LensCatalogResponse(x.ManufacturerId, x.RangeId, x.OfferIds, outcome.Replayed)),
+            $"/api/catalog/lens-offers?rangeId={outcome.Value?.RangeId}");
     }
 
     private static async Task<IResult> UpdateLensOfferAsync(Guid id, HttpRequest request, ClaimsPrincipal principal, LensOfferService service, CancellationToken cancellationToken)
@@ -673,7 +706,8 @@ internal static class CatalogEndpoints
                 v.Variant!.ToInput(),
                 [.. (v.Suppliers ?? []).Select(s => new PlannedSupplierLink(s.SupplierId!.Value, s.SupplierReference, s.IsPrimary ?? false, s.SupplierPriceHt, s.SupplierCurrency, s.LeadTimeDays))],
                 v.Price is { } p ? new PlannedPrice(p.Mode ?? ProductCreationService.CoefficientMode, p.PurchasePriceHt, p.Coefficient, p.ExpectedSalePriceHt, p.AcceptBelowCost ?? false, p.SalePriceHt, p.Reason) : null,
-                v.Stock is { } st ? new PlannedStock(st.LocationId!.Value, st.Quantity!.Value) : null))],
+                v.Stock is { } st ? new PlannedStock(st.LocationId!.Value, st.Quantity!.Value) : null,
+                v.LowStockThreshold))],
             shop.Id, body.RequestId!.Value, Actor(principal), cancellationToken);
         return await ToResultAsync(outcome, created => Task.FromResult<object?>(new ProductCreatedResponse(
             created.ModelId, [.. created.Variants.Select(v => new ProductCreatedVariantResponse(v.VariantId, v.Sku))], outcome.Replayed)), $"/api/catalog/models/{outcome.Value?.ModelId}");

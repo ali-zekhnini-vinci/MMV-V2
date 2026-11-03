@@ -6,7 +6,7 @@ import { mergeDraft } from "./catalogData.ts";
 import { suggestSupplierCode } from "./catalogFormat.ts";
 import { CATALOG_REALTIME } from "./catalogRealtime.ts";
 import { applyCorrections, decodeCsv, detectDelimiter, parseCsv, serializeCsv } from "./csvFile.ts";
-import { rangeText, reasonText } from "./lensOffers.ts";
+import { lensStepOfField, rangeText, reasonText } from "./lensOffers.ts";
 import { stepOfField } from "./productForm.ts";
 
 describe("CSV fournisseur (COR-05-04)", () => {
@@ -22,6 +22,8 @@ describe("CSV fournisseur (COR-05-04)", () => {
     expect(detectDelimiter("a\tb\n1\t2\n")).toBe("\t");
     expect(detectDelimiter('nom,prix\n"Dupont; Fils","12,50"\n')).toBe(",");
     expect(detectDelimiter("Ref;Désignation\n000123;Monture, acétate\n")).toBe(";");
+    // UX-IA : séparateur inhabituel « | » (exports de caisse / ERP), virgules décimales conservées dans les valeurs.
+    expect(detectDelimiter("Désignation|Réf. fourn.|Tarif net\nAlpha|IA-1|42,50\n")).toBe("|");
   });
 
   it("garde les zéros initiaux et réécrit sans perte", () => {
@@ -43,6 +45,9 @@ describe("Assistant de création (COR-05-06)", () => {
     expect(stepOfField("variants[1].suppliers[0].supplierReference")).toBe(2);
     expect(stepOfField("variants[0].price.coefficient")).toBe(3);
     expect(stepOfField("variants[2].stock.quantity")).toBe(4);
+    // UX-IA : tarif obligatoire et seuil d'alerte par variante.
+    expect(stepOfField("variants[1].price")).toBe(3);
+    expect(stepOfField("variants[0].lowStockThreshold")).toBe(4);
   });
 });
 
@@ -81,5 +86,18 @@ describe("Fournisseurs (COR-05-08) et verres (COR-05-05)", () => {
     expect(reasonText({ code: "sphere_out_of_range", severity: "error", values: { value: "-11.00", min: "-10.00", max: "+5.00" } }, () => "?"))
       .toBe("Sphère -11.00 hors des plages déclarées (-10.00 à +5.00)");
     expect(reasonText({ code: "rules_incomplete", severity: "warning" }, () => "?")).toContain("incomplète");
+  });
+});
+
+describe("Catalogue des verres unifié (UX-IA)", () => {
+  it("renvoie chaque erreur serveur à l'étape du parcours « Nouvelle gamme »", () => {
+    expect(lensStepOfField("manufacturer.name")).toBe(0);
+    expect(lensStepOfField("range.name")).toBe(0);
+    expect(lensStepOfField("offers[0].lensType")).toBe(1);
+    expect(lensStepOfField("offers[1].treatmentIds")).toBe(2);
+    expect(lensStepOfField("offers")).toBe(3);
+    expect(lensStepOfField("offers[1].sphereMin")).toBe(4);
+    expect(lensStepOfField("offers[0].rules[2].range")).toBe(4);
+    expect(lensStepOfField("offers[0].priceHt")).toBe(5);
   });
 });

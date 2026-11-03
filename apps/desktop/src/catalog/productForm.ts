@@ -72,12 +72,12 @@ export function useUnsavedGuard(dirty: boolean) {
 }
 
 
-export const WIZARD_STEPS = ["Informations générales", "Variantes", "Fournisseurs", "Tarification", "Stock initial et validation"] as const;
+export const WIZARD_STEPS = ["Informations générales", "Variantes", "Fournisseurs", "Tarification", "Stock, seuil et validation"] as const;
 
 /** Étape d'un chemin d'erreur serveur (`variants[1].price.coefficient` → Tarification). */
 export function stepOfField(path: string): number {
   if (/^variants\[\d+\]\.price/.test(path)) return 3;
-  if (/^variants\[\d+\]\.stock/.test(path)) return 4;
+  if (/^variants\[\d+\]\.(stock|lowStockThreshold)/.test(path)) return 4;
   if (/^variants\[\d+\]\.suppliers/.test(path)) return 2;
   if (/^variants(\[|$)/.test(path)) return 1;
   return 0;

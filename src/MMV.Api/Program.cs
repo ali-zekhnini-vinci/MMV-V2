@@ -22,6 +22,7 @@ builder.Services.AddMmvAuth(builder.Configuration);
 builder.Services.AddAppointmentSettings(builder.Configuration);
 // Un serveur local = un magasin (COR-05-01) : Installation:StoreCode, résolu à la première requête magasin.
 builder.Services.AddInstallation(builder.Configuration);
+builder.Services.AddImportAssistant();
 // Temps réel (COR-05-02) : hub SignalR /hubs/changes, notifications après écriture confirmée.
 builder.Services.AddRealtime();
 // Journal d'audit (03-D2) : session et corrélation de la requête, enregistrés avant MMV.Infrastructure.

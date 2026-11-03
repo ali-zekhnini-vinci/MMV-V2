@@ -26,10 +26,16 @@ public static class MatchConfidence
 
     /// <summary>Intitulé ambigu (ex. « Prix », « Ref » sans contexte) : jamais appliqué sans confirmation.</summary>
     public const string Ambiguous = "ambiguous";
+
+    /// <summary>Reconnu par l'assistant IA local en confiance haute, validé par le serveur (jamais pour un montant).</summary>
+    public const string Assistant = "assistant";
 }
 
-/// <summary>Proposition pour un champ MMV : colonne, confiance, autres champs possibles pour une colonne ambiguë.</summary>
-public sealed record MappingSuggestion(string Field, string Header, string Confidence, IReadOnlyList<string> Alternatives);
+/// <summary>
+/// Proposition pour un champ MMV : colonne, confiance, autres champs possibles pour une colonne ambiguë (le premier est
+/// le choix proposé), origine (<see cref="MatchSources"/> : règles ou assistant IA local).
+/// </summary>
+public sealed record MappingSuggestion(string Field, string Header, string Confidence, IReadOnlyList<string> Alternatives, string Source = MatchSources.Rules);
 
 /// <summary>Options d'import réservées dans la correspondance (préfixe « @ », jamais une colonne).</summary>
 public static class ImportOptions
@@ -53,8 +59,8 @@ public static class ImportOptions
 /// Correspondance automatique colonnes → champs (COR-05-04) SANS intelligence artificielle ni service tiers : règles,
 /// normalisation des intitulés (casse, accents, espaces et ponctuation ignorés), dictionnaire de synonymes français /
 /// anglais, contexte (fournisseur connu ⇒ « Ref » = référence fournisseur, sinon référence fabricant) et modèle
-/// fournisseur enregistré. Point d'extension futur documenté : un assistant LOCAL pourrait proposer des
-/// correspondances supplémentaires, toujours soumises à la même confirmation — aucune dépendance aujourd'hui.
+/// fournisseur enregistré. Ce moteur reste prioritaire et suffit seul ; l'assistant IA LOCAL (UX-IA,
+/// <see cref="ImportAssistantMerge"/>) ne complète que les colonnes qu'il laisse non reconnues ou ambiguës.
 /// </summary>
 public static class ImportMapper
 {
@@ -209,6 +215,13 @@ public static class ImportMapper
             {
                 Take(probable.Field, header, MatchConfidence.Probable);
             }
+        }
+
+        // UX-IA : fichier de montures sans colonne « variante » — le coloris sert de libellé de variante (même colonne admise),
+        // proposé « probable » ; jamais l'inverse.
+        if (kind == ImportKinds.Catalog && !result.ContainsKey("variantLabel") && result.TryGetValue("color", out var color) && color.Confidence != MatchConfidence.Ambiguous)
+        {
+            result["variantLabel"] = new MappingSuggestion("variantLabel", color.Header, MatchConfidence.Probable, []);
         }
 
         return [.. result.Values.OrderBy(s => ImportService.Fields[kind].ToList().FindIndex(f => f.Key == s.Field))];

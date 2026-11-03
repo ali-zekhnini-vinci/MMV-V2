@@ -116,4 +116,37 @@ public sealed class Phase05StoreContextTests(ITestOutputHelper output)
             ["Installation:StoreCode"] = storeCode ?? string.Empty,
         }));
     });
+
+    /// <summary>
+    /// UX-IA (03/11/2026) — routes ajoutées ou étendues : assistant produit (tarif, stock, seuil), import de tarifs et seuil
+    /// depuis la fiche refusent un autre magasin (404 store_not_found, rien d'écrit) ; aucun magasin n'est jamais choisi par le poste.
+    /// </summary>
+    [Phase05Fact]
+    public async Task UxAiRoutes_RefuseAnotherStore_NothingWritten()
+    {
+        await using var bench = await Phase05Bench.CreateAsync(output);
+        var admin = await bench.UserAsync("admin", Permissions.CatalogRead, Permissions.CatalogWrite, Permissions.CatalogImport, Permissions.PricingManual,
+            Permissions.StockRead, Permissions.StockMovementsWrite, Permissions.StockAdjust, Permissions.CostsRead, Permissions.CostsWrite);
+        var name = $"Autre magasin {bench.Suffix}";
+        var product = await bench.PostAsync(admin, "/api/catalog/products", new
+        {
+            requestId = NewId(), storeId = bench.StoreMa, familyCode = "optical_frames", name,
+            variants = new[] { new { variant = new { label = "Noir", stockPolicy = "stocked" }, price = new { mode = "manual", salePriceHt = "10.00" }, lowStockThreshold = 2 } },
+        });
+        Assert.True(product.Status == HttpStatusCode.NotFound && product.Code == "store_not_found", product.Raw);
+        Assert.Equal(0L, await bench.ScalarAsync<long>("SELECT count(*) FROM catalog.product_models WHERE name = @n", ("n", name)));
+
+        // Stock initial vers un emplacement d'un autre magasin : refusé avant écriture.
+        var foreignLocation = await bench.PostAsync(admin, "/api/catalog/products", new
+        {
+            requestId = NewId(), familyCode = "optical_frames", name,
+            variants = new[] { new { variant = new { label = "Noir", stockPolicy = "stocked" }, price = new { mode = "manual", salePriceHt = "10.00" }, stock = new { locationId = bench.LocationMa, quantity = 1 } } },
+        });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, foreignLocation.Status);
+        Assert.Equal(0L, await bench.ScalarAsync<long>("SELECT count(*) FROM catalog.product_models WHERE name = @n", ("n", name)));
+
+        var prices = await bench.PostAsync(admin, "/api/imports", new { requestId = NewId(), kind = "prices", storeId = bench.StoreMa, fileName = "tarifs.csv", content = "SKU;Prix vente HT\nX;1\n" });
+        Assert.True(prices.Status == HttpStatusCode.NotFound && prices.Code == "store_not_found", prices.Raw);
+        Assert.Equal(HttpStatusCode.OK, (await bench.GetAsync(admin, "/api/imports/assistant")).Status);
+    }
 }

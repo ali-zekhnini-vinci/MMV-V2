@@ -218,6 +218,24 @@ function RowAction({ label, icon: Icon, onClick }: { label: string; icon: typeof
   );
 }
 
+/**
+ * Seuil d'alerte ouvert depuis la fiche produit (UX-IA) : la ligne de solde de la variante (version du seuil) est lue
+ * par son SKU puis le même dialogue que l'écran Stock est affiché. Seuil par (variante, magasin), jamais par emplacement.
+ */
+export function VariantThresholdModal({ variantId, sku, onClose }: { variantId: string; sku: string; onClose: () => void }) {
+  const { store } = useActiveStore();
+  const balance = useCatalogQuery<Page<BalanceRow>>(store ? `/api/stock/balances${query({ storeId: store.id, q: sku, pageSize: 20 })}` : null);
+  const row = balance.data?.items.find((b) => b.variantId === variantId);
+  if (balance.isError) {
+    return (
+      <Modal open onClose={onClose} tone="warn" icon={Bell} title="Seuil d'alerte" actions={<Button onClick={onClose}>Fermer</Button>}>
+        <MovementError error={balance.error} />
+      </Modal>
+    );
+  }
+  return row ? <ThresholdModal row={row} onClose={onClose} /> : null;
+}
+
 function ThresholdModal({ row, onClose }: { row: BalanceRow; onClose: () => void }) {
   const { store } = useActiveStore();
   const toast = useToast();

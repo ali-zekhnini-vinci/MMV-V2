@@ -93,6 +93,7 @@ public static class DependencyInjection
         services.TryAddScoped<ILensOfferStore, LensOfferStore>();
         services.TryAddScoped<IImportProfileStore, ImportProfileStore>();
         services.TryAddScoped<LensOfferService>();
+        services.TryAddScoped<LensCatalogService>();
         services.TryAddScoped<StockService>();
         services.TryAddScoped<InventoryService>();
         services.TryAddScoped<ImportService>();

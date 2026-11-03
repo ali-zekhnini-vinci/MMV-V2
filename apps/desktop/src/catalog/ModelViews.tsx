@@ -6,7 +6,7 @@
 // coefficient / manuel, journal — recalcul jamais silencieux, coûts et prix manuel sous permission, devise du magasin
 // actif, aucun TTC inventé.
 import {
-  Archive, Boxes, Building2, Calculator, Coins, EllipsisVertical, History, Info, Layers, Lock as LockIcon, PackageOpen, Pencil, Plus,
+  Archive, Bell, Boxes, Building2, Calculator, Coins, EllipsisVertical, History, Info, Layers, Lock as LockIcon, PackageOpen, Pencil, Plus,
   RotateCcw, Save, Sparkles, Star, TrendingUp, Truck, X,
 } from "lucide-react";
 import { useState } from "react";
@@ -28,6 +28,7 @@ import {
 } from "./CatalogUi.tsx";
 import { errorMessage, useActiveStore, useCatalogPreview, useCatalogQuery, useCatalogWrite, useEditBase, useToast } from "./catalogData.ts";
 import { type SupplierChoice, SupplierCombobox } from "./SupplierCombobox.tsx";
+import { VariantThresholdModal } from "./StockViews.tsx";
 import { emptyVariant, orNull, skuPrefix, useFamilies, useUnsavedGuard, type VariantDraft, variantBody } from "./productForm.ts";
 
 export function UnsavedModal({ open, onLeave, onStay, onSave, saving }: { open: boolean; onLeave: () => void; onStay: () => void; onSave: () => void; saving: boolean }) {
@@ -557,6 +558,7 @@ function PriceCard({ detail }: { detail: VariantDetail }) {
   const price = row.price;
   const canEdit = row.status === "active" && ((access.pricingWrite && access.costsRead) || access.pricingManual || access.costsWrite);
   const [editing, setEditing] = useState(false);
+  const [thresholdOpen, setThresholdOpen] = useState(false);
   const badge = availabilityBadge(row.availability);
   const balances = detail.balances ?? [];
 
@@ -607,7 +609,16 @@ function PriceCard({ detail }: { detail: VariantDetail }) {
             <Badge tone={badge.tone} icon={badge.icon}>{AVAILABILITY_LABELS[row.availability]}</Badge>
           </div>
           <div className="cat-line"><span>En main · réservé</span><span className="cat-line__value">{row.stock.onHand} · {row.stock.reserved}</span></div>
-          <div className="cat-line"><span>Seuil d&apos;alerte</span><span className="cat-line__value">{row.stock.lowStockThreshold ?? "non défini"}</span></div>
+          <div className="cat-line">
+            <span>Seuil d&apos;alerte (magasin)</span>
+            <span className="cat-line__value">
+              {row.stock.lowStockThreshold ?? "non défini"}
+              {access.stockAdjust && row.status === "active" && (
+                <Button size="sm" variant="tertiary" onClick={() => setThresholdOpen(true)} aria-label="Modifier le seuil d'alerte"><Bell size={14} aria-hidden="true" />Modifier</Button>
+              )}
+            </span>
+          </div>
+          {thresholdOpen && <VariantThresholdModal variantId={row.variantId} sku={row.sku} onClose={() => setThresholdOpen(false)} />}
           {balances.length > 0 && (
             <TableScroll label="Stock par emplacement" side>
             <table className="clients-table cat-table cat-table--inner cat-table--compact cat-table--side" style={{ marginTop: 12 }}>
