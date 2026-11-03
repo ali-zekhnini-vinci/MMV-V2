@@ -202,3 +202,24 @@ Note datée : 0008 appliquée à `mmv_v2_dev` et `mmv_v2_test` (GO du propriéta
 | Q-05-S807 | Natif deux postes sur `mmv_v2_test` : COR-05-01 à 08, reconnexion, import CSV (Windows-1252, modèle, tarifs, réémission, correction), offres de verres (simple, testeur, avancé, révisions, vendeur) | **PASS** 69 / 69 |
 | Q-05-S808 | Purge des données d'essai | **PASS** résidu 0 |
 | Q-05-S809 | Comparaison visuelle au Lot 6 des écrans import CSV et offres de verres | `NOT_TESTED` — revue du propriétaire (G05-DESIGN) |
+
+## Lot UX-IA — résultats du 03/11/2026
+
+Exigences du mandat (§ 7) → preuves. `PASS` = exécuté sur l'arbre livré ; PostgreSQL : cluster jetable 55433 (aucune base réelle). Détail des suites : [`LIVRAISON_05_UX_IA.md`](LIVRAISON_05_UX_IA.md) § 3.
+
+| Exigence | Preuve | Statut |
+| --- | --- | --- |
+| Tarification obligatoire, refus d'une création incomplète | `Phase05ProductWizardTests.Wizard_RefusesAnyUnpricedVariant_*` (422 `variants[1].price`, rien d'écrit) ; natif 03 (blocage précis) | PASS |
+| Prix par variante, calcul coefficient, prix manuel avec permission | même test (100,00 € serveur, 149,90 € manuel, `manual_price_forbidden`) ; natif 04 | PASS |
+| Stock initial, seuil par variante et magasin, agrégation de deux emplacements, déclenchement de l'alerte | `Wizard_SetsThresholdPerStore_AlertOnAggregatedAvailable` (20 + 15 = 35, seuil 10 atteint → `low_stock`, `/api/stock/alerts`) ; natif 05, 09 | PASS |
+| Accès non autorisés | `threshold_forbidden`, `manual_price_forbidden`, `costs_forbidden` (verres), poste vendeur sans coûts ni création (natif 10, 26) | PASS |
+| Magasin unique | `SingleStoreRoutesTests` (aucune route d'écriture de magasin), `Phase05StoreContextTests.UxAiRoutes_RefuseAnotherStore_NothingWritten` | PASS |
+| Import : séparateur inhabituel, encodages, colonnes inconnues, réordonnées | `Phase05ImportAssistantTests` (« \| », colonnes réordonnées), `corrections.test.ts` (UTF-8 / Windows-1252 / UTF-16, « \| »), natif 11 à 17 (UTF-8 « \| » et Windows-1252 « ; ») | PASS |
+| Import : virgule ou point, données manquantes, doublons | `CorrectionsRulesTests` (montants), `Phase05ImportAssistantTests.MissingValues_AndDuplicateRows_*` | PASS |
+| Import : fournisseur connu, réimport | apprentissage + reprise sans inférence + `import_already_applied` (PG et natif 15, 16) | PASS |
+| Import : IA indisponible, résultat invalide, injection | `ImportAssistantTests` (sans réseau), `Phase05ImportAssistantTests` (faux service Ollama), banc réel « injection » | PASS |
+| Verres : plusieurs fournisseurs, plages différentes, restrictions conditionnelles, historique | `Phase05LensCatalogTests` ; natif 18 à 26 | PASS |
+| Verres : mode simple, mode avancé | natif 20, 21 | PASS |
+| Thèmes clair et sombre, fenêtre réduite, clavier | natif 07, 08, 14, 23 ; Tab / Entrée dans l'assistant, combobox au clavier | PASS (contrôles du scénario) |
+| Parcours réel entre deux postes | deux fenêtres Tauri, API de banc réelle (produit et gamme vus du vendeur) | PASS |
+| Vérification visuelle des nouveaux écrans | auto-revue des captures par l'agent (défauts corrigés, `UX_IA_05.md` journal) | **Revue du propriétaire requise** |

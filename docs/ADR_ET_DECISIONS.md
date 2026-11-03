@@ -190,3 +190,7 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 ## Note datée — 03/11/2026 (Phase 05, G05-SQL-0008)
 
 - GO conditionnel du propriétaire ; migration `0008_CatalogCorrections` **appliquée** à `mmv_v2_dev` puis `mmv_v2_test` ([`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md), preuves `docs/phase/05/evidence/sql0008/`). Aucune nouvelle décision d'architecture ; ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`.
+
+## Note datée — 03/11/2026 (Phase 05, lot UX-IA)
+
+- Mandat [`prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md`](../prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md) : décisions métier APPROVED par le propriétaire (magasin unique par installation, tarification obligatoire à la création, seuil d'alerte par variante et par magasin — option A). Décision technique du lot : **IA locale** (Ollama sur le serveur du magasin, point d'accès limité à la boucle locale, modèle configurable, `llama3.2` retenu après banc) **en assistance seulement** — l'IA propose une correspondance de colonnes, le serveur valide (colonnes, champs, valeurs), les montants restent confirmés par l'utilisateur, l'import reste possible sans IA. Aucun service en ligne, aucune nouvelle dépendance de base de données, PostgreSQL seul. Détail : `docs/phase/05/UX_IA_05.md`. ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`.

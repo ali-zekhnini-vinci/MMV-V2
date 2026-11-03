@@ -54,3 +54,7 @@ Légende : **Q** = tranché par Q01–Q20 · **M** = règle du mandat du 30/10/2
 
 - **QR-08 SKU** : le mandat du propriétaire du 31/10/2026 demande un SKU interne **généré automatiquement**, jamais exigé pour une création normale (« correctif Q05 »). Appliqué dans l'interface : SKU proposé (préfixe de famille + 6 symboles aléatoires), lecture seule par défaut, « Personnaliser » facultatif. Le serveur reste juge de l'unicité (`ux_product_variants_sku`) ; API, schéma et migration inchangés. La ligne QR-08 ci-dessus (30/10) est conservée telle quelle (O-05-20).
 - Fournisseur principal choisi à la création : rattaché à chaque variante par la route existante `PUT /api/catalog/variants/{id}/suppliers/{supplierId}` après la création (échec signalé, fiche incomplète autorisée).
+
+## Mise à jour 03/11/2026 (lot UX-IA)
+
+Choix techniques du lot : voir [`UX_IA_05.md`](UX_IA_05.md) § 2 (D-UX-01 à D-UX-10). En résumé : IA locale Ollama sur le serveur du magasin, point d'accès limité à la boucle locale, modèle `llama3.2` retenu après banc (`llama3` 8 B plus lent et moins précis), schéma JSON à clés fixes, une inférence par fichier, validation serveur des colonnes, des champs et des valeurs, montants toujours à confirmer, repli déterministe ; création atomique gamme + offres de verres par composition des services existants ; seuil d'alerte par (variante, magasin) réutilisant `stock.variant_store_settings`. Aucune nouvelle table.

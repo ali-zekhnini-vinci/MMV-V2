@@ -94,3 +94,11 @@ Rendus des 107 cadres (Edge sans interface, [`evidence/design/G05D_render-lot6.m
 - Preuves : `docs/phase/05/evidence/sql0008/` (journaux `P0508_*`, journal natif `COR05_native_run_0008_20261103.log`, 34 captures JPEG réduites `COR05_native_*_20261103.jpg`, banc d'amorçage `P0508_harness_seed.cs.txt` et purge `P0508_purge-test.ps1.txt`, sans secret).
 - Code modifié : `apps/desktop/src/catalog/SupplierCombobox.tsx` (O-05-24) ; tests `tests/MMV.PostgreSql.Tests/SchemaInspection.cs` (O-05-23), `Phase05Harness.cs` (O-05-26) ; scénario `apps/desktop/e2e/native-cor05.mjs` (étapes `importcsv`, `offres`, option `--csv-dir`).
 - Aucun fichier SQL ni migration modifié (manifeste 0008 : 8 / 8).
+
+## Mise à jour 03/11/2026 (lot UX-IA)
+
+- Mandat : [`prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md`](../../../prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md).
+- Code : `src/MMV.Application/Catalog/ProductCreationService.cs`, `ImportAssistantAi.cs` (nouveau), `ImportAssistant.cs`, `ImportService.cs`, `CsvTable.cs`, `LensCatalogService.cs` (nouveau) ; `src/MMV.Api/Installation/ImportAssistantService.cs` (nouveau), `src/MMV.Api/Catalog/CatalogEndpoints.cs`, `StockEndpoints.cs`, `src/MMV.Api/Program.cs`, `appsettings.json` ; `src/MMV.Domain/Audit/AuditEvent.cs` (liste blanche) ; `src/MMV.Infrastructure/DependencyInjection.cs`.
+- Poste : `apps/desktop/src/catalog/ProductWizard.tsx`, `ImportView.tsx`, `LensRangeWizard.tsx` (nouveau), `LensReferencesView.tsx`, `LensOffersView.tsx`, `lensOffers.ts`, `ModelViews.tsx`, `StockViews.tsx`, `productForm.ts`, `csvFile.ts`, `CatalogModules.tsx`, `Catalog.css`, `apps/desktop/src/api/catalog.ts`.
+- Tests : `tests/MMV.Api.Tests/Catalog/ImportAssistantTests.cs`, `SingleStoreRoutesTests.cs` ; `tests/MMV.PostgreSql.Tests/Phase05ImportAssistantTests.cs`, `Phase05LensCatalogTests.cs`, `Phase05ProductWizardTests.cs`, `Phase05StoreContextTests.cs`, `Phase05CorrectionsSchemaTests.cs` (inchangé), `Phase05Harness.cs` ; `apps/desktop/src/catalog/corrections.test.ts`.
+- Preuves : scénario natif `apps/desktop/e2e/native-uxai.mjs` ; `docs/phase/05/evidence/uxai/` (journal natif, banc Ollama, amorçage du banc sans secret, 26 captures JPEG réduites).

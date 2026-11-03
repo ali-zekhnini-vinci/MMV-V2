@@ -1,0 +1,120 @@
+#:project C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/src/MMV.Infrastructure/MMV.Infrastructure.csproj
+#:property TreatWarningsAsErrors=false
+#:property PublishAot=false
+#:property NoWarn=CA1303;CA1307;CA1031;CA2007;CA1849;CA1861;CA2000;CA1859;CA1822;CA1305;CA1310;CA1304;CA1311;CA1862;CA2234;CA1515;CA1050;CA1852
+// Banc natif UX-IA (outil JETABLE, hors dépôt) : données FICTIVES sur le cluster JETABLE uniquement (port 55433, base
+// mmv_v2_scratch) ; refuse toute autre cible et l'API du propriétaire (7267). Magasin NATIF-UX (EUR, deux emplacements),
+// comptes uxai-admin / uxai-vendeur, fournisseurs et listes de référence verres fictifs ; catalogue via l'API HTTPS de banc.
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Identity;
+using MMV.Domain.Identity;
+using MMV.Domain.Stores;
+using MMV.Infrastructure;
+using MMV.Infrastructure.Persistence;
+using Npgsql;
+
+const string Connection = "Host=127.0.0.1;Port=55433;Database=mmv_v2_scratch;Username=mmv_v2_scratch;Password=scratch";
+var api = new Uri(args[0]);
+var credsFile = args[1];
+var builder = new NpgsqlConnectionStringBuilder(Connection);
+if (builder.Port != 55433 || builder.Database != "mmv_v2_scratch" || api.Port == 7267)
+{
+    throw new InvalidOperationException("Cible refusée.");
+}
+
+var services = new ServiceCollection()
+    .AddInfrastructure(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = Connection }).Build())
+    .BuildServiceProvider();
+var Password = "Banc-" + Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
+if (File.Exists(credsFile))
+{
+    Password = JsonDocument.Parse(File.ReadAllText(credsFile)).RootElement[0].GetProperty("password").GetString()!;
+}
+
+var accounts = new List<object>();
+using (var scope = services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var hashing = scope.ServiceProvider.GetRequiredService<IPasswordHashing>();
+    var now = DateTimeOffset.UtcNow;
+    if (!context.Stores.Any(s => s.Code == "NATIF-UX"))
+    {
+        var shop = Store.Create(Guid.CreateVersion7(), "NATIF-UX", "Optique du Banc UX (fictif)", "BE", Currencies.Euro, now);
+        context.Stores.Add(shop);
+        context.Locations.Add(Location.Create(Guid.CreateVersion7(), shop.Id, "MAGASIN", "Magasin", true, now));
+        context.Locations.Add(Location.Create(Guid.CreateVersion7(), shop.Id, "RESERVE", "Réserve", false, now));
+    }
+
+    foreach (var (name, display, perms) in new[]
+    {
+        ("uxai-admin", "Admin Banc UX", Permissions.Phase05.Append(Permissions.AuditRead).ToArray()),
+        ("uxai-vendeur", "Vendeur Banc UX", new[] { Permissions.CatalogRead, Permissions.StockRead }),
+    })
+    {
+        var existing = context.Users.FirstOrDefault(u => u.UserName == name);
+        if (existing is null)
+        {
+            var user = new UserAccount(Guid.CreateVersion7(), name, display, now);
+            user.SetPasswordHash(hashing.Hash(user, Password));
+            foreach (var p in perms)
+            {
+                user.Grant(p);
+            }
+
+            context.Users.Add(user);
+        }
+
+        accounts.Add(new { key = name, userName = name, password = Password, displayName = display });
+    }
+
+    await context.SaveChangesAsync();
+}
+
+await File.WriteAllTextAsync(credsFile, JsonSerializer.Serialize(accounts));
+using var http = new HttpClient { BaseAddress = api };
+var login = await http.PostAsJsonAsync("/api/auth/login", new { userName = "uxai-admin", password = Password });
+var token = JsonDocument.Parse(await login.Content.ReadAsStringAsync()).RootElement.GetProperty("accessToken").GetString();
+http.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+async Task<JsonElement> Send(HttpMethod method, string path, object body)
+{
+    using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+    using var response = await http.SendAsync(request);
+    var text = await response.Content.ReadAsStringAsync();
+    if (!response.IsSuccessStatusCode)
+    {
+        Console.WriteLine($"{method} {path} → {(int)response.StatusCode} {text}");
+        return default;
+    }
+
+    return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
+}
+
+var store = JsonDocument.Parse(await http.GetStringAsync("/api/store")).RootElement;
+Console.WriteLine($"MAGASIN {store.GetProperty("store").GetProperty("code").GetString()} source={store.GetProperty("source").GetString()}");
+var suppliers = JsonDocument.Parse(await http.GetStringAsync("/api/suppliers?q=Banc%20UX")).RootElement;
+if (suppliers.ValueKind == JsonValueKind.Object && suppliers.TryGetProperty("totalCount", out var total) && total.GetInt32() > 0)
+{
+    Console.WriteLine("BANC déjà amorcé");
+    return 0;
+}
+
+foreach (var (code, name, country) in new[]
+{
+    ("UXLUX", "Lunetterie Générale Banc UX", "BE"), ("UXOPT", "Optique Diffusion Banc UX", "FR"),
+    ("UXVNORD", "Laboratoire Verres Nord Banc UX", "BE"), ("UXVSUD", "Laboratoire Verres Sud Banc UX", "FR"),
+})
+{
+    await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code, name, countryCode = country });
+}
+
+await Send(HttpMethod.Post, "/api/catalog/lens-references/manufacturers", new { requestId = Guid.NewGuid(), name = "Verrier Fictif UX" });
+await Send(HttpMethod.Post, "/api/catalog/lens-references/indices", new { requestId = Guid.NewGuid(), name = "Indice 1,5 UX", indexValue = "1.5" });
+await Send(HttpMethod.Post, "/api/catalog/lens-references/indices", new { requestId = Guid.NewGuid(), name = "Indice 1,6 UX", indexValue = "1.6" });
+await Send(HttpMethod.Post, "/api/catalog/lens-references/treatments", new { requestId = Guid.NewGuid(), name = "Anti-lumière bleue UX" });
+await Send(HttpMethod.Post, "/api/catalog/lens-references/treatments", new { requestId = Guid.NewGuid(), name = "Antireflet UX" });
+Console.WriteLine("SEED terminé");
+return 0;

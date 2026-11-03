@@ -119,3 +119,10 @@ Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; P
 - Migration 0008 **appliquée** à `mmv_v2_dev` et `mmv_v2_test` (script `9a75acea…287e715c` inchangé) ; les routes `/api/imports` (colonne `supplier_id`, profils) et `/api/catalog/lens-offers` sont opérationnelles sur les bases du propriétaire.
 - Combobox fournisseur : Entrée ne sélectionne rien tant que les suggestions affichées sont celles d'une saisie antérieure (temporisation ou requête en cours) — O-05-24.
 - Banc PostgreSQL en mode processus réel : magasin fixe `MMV_PG05_API_STORE` (défaut `T05BEREEL`), à configurer comme `Installation__StoreCode` du processus ; bancs à réglages serveur propres maintenus en mémoire — O-05-26.
+
+## Note datée — 03/11/2026 (lot UX-IA)
+
+- Assistant produit : `ProductCreationService` exige un tarif par variante et enregistre le seuil d'alerte (variante, magasin) dans la transaction de création ; route inchangée (`POST /api/catalog/products`), champ `lowStockThreshold` ajouté.
+- Import : `IImportMappingAssistant` (Application), `OllamaImportAssistant` (API, `src/MMV.Api/Installation/ImportAssistantService.cs`), validation et fusion `ImportAssistantMerge` (`src/MMV.Application/Catalog/ImportAssistantAi.cs`) ; analyse au dépôt hors transaction ; apprentissage du modèle fournisseur à l'application ; `GET /api/imports/assistant`.
+- Verres : `LensCatalogService` + `POST /api/catalog/lens-catalog` (gamme et offres en une transaction) ; écrans `LensReferencesView` (« Catalogue des verres ») et `LensRangeWizard`.
+- Aucune migration. Détail : [`UX_IA_05.md`](UX_IA_05.md).

@@ -189,3 +189,15 @@ Points ouverts — mise à jour :
 | O-05-22 | Export CSV des cadres 14, 54, 102 non implémenté (BL-05-09 non ratifié) | confirmer le report ou demander l'export | propriétaire |
 
 - 31/10/2026 (G05-DESIGN) : mandat, audit et ZIP de comparaison lus ; HTML Lot 6 original rendu (107 cadres) ; écrans Phase 05 recomposés (React / CSS seulement) ; banc natif (API copiée sur 7367, `mmv_v2_test`, données fictives, résidu 0) ; captures et planches ; suites frontend complètes PASS ; processus du propriétaire (MMV.Api 7267, `mmv-desktop`) jamais touchés ; `.env.development` intact. **STOP — `PHASE05_UX_LOT6_ALIGNED — OWNER_DESIGN_FINAL_REVIEW_REQUIRED`.**
+
+## Mise à jour des gates — 03/11/2026 (lot UX-IA)
+
+Mandat [`prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md`](../../../prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md) ; registre [`UX_IA_05.md`](UX_IA_05.md) ; livraison [`LIVRAISON_05_UX_IA.md`](LIVRAISON_05_UX_IA.md). Statut : **`PHASE05_UX_AI_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`**.
+
+| Gate | État au 03/11/2026 (UX-IA) |
+| --- | --- |
+| G05-SQL (nouvelle migration) | **Non requise** : aucune donnée persistée nouvelle (seuil option A déjà dans `stock.variant_store_settings`, modèles d'import déjà dans `imports.supplier_profiles`, offres de verres déjà dans `catalog.lens_offers`). Aucune base réelle touchée par ce lot. |
+| G05-DESIGN (nouveaux écrans) | **Revue visuelle du propriétaire requise** : assistant produit (étapes 3 à 5), import CSV (analyse, précisions, récapitulatif), catalogue des verres unifié et parcours « Nouvelle gamme ». Captures : `evidence/uxai/`. |
+| Décisions métier du mandat | APPROVED (propriétaire) : magasin unique, tarification obligatoire, seuil option A — appliquées (D-UX-01, D-UX-02). |
+| Décisions techniques du lot | D-UX-03 à D-UX-10 (`UX_IA_05.md` § 2), dont IA locale Ollama `llama3.2` sur le serveur, boucle locale seulement, validation serveur et confirmation des montants. |
+| Questions ouvertes | Q-UX-01 (tarif aussi obligatoire hors assistant ?), Q-UX-02 (droit du seuil), Q-UX-03 (performances sur le matériel des magasins). |
