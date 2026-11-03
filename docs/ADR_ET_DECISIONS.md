@@ -179,3 +179,9 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - Mandat : [`prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md`](../prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md). Migration `0007_CatalogStockModule` **appliquée** (`mmv_v2_dev` puis `mmv_v2_test`) par le seul script approuvé (`39c9c224…1eb6`), `lock_timeout` 5 s ; retour arrière = restauration de la sauvegarde prise avant application (aucun `Down` exécutable ; restauration complète non éprouvée, BL-04-05). Rapport : [`docs/phase/05/LIVRAISON_05_FINAL.md`](phase/05/LIVRAISON_05_FINAL.md).
 - Contrat de l'API inchangé ; correctif du poste seulement (O-05-14 : l'aperçu de prix part sans `requestId`, conformément au contrat). Aucun ADR modifié, aucune dépendance ajoutée.
 - ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; **ADR-010 `OPEN DECISION`** (fiscalité EUR / MAD, TTC indisponible) ; rôle SQL applicatif distinct toujours au backlog (BL-04-04, R-F-03).
+
+## Note datée — 02–03/11/2026 (Phase 05, corrections COR-05-01 à COR-05-08)
+
+- Mandat : [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md). Décisions du propriétaire appliquées : **un serveur local = un magasin** (architecture multi-magasins conservée dans les données ; magasin choisi par la configuration du serveur, jamais par le poste) ; **temps réel ASP.NET Core SignalR** (pas de sondage présenté comme équivalent).
+- Dépendances ajoutées : `@microsoft/signalr` 10.0.11 (poste), `Microsoft.AspNetCore.SignalR.Client` 10.0.13 (tests). Aucune IA, aucun service payant (import CSV par règles, synonymes et profils).
+- Migration additive `0008_CatalogCorrections` préparée, **non appliquée** (revue SQL du propriétaire). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` inchangé.

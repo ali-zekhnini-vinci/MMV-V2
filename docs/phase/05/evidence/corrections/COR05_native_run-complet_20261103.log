@@ -1,0 +1,70 @@
+2026-11-03T00:49:29.420Z ÉTAPE — magasin
+2026-11-03T00:49:29.455Z PASS — magasin de l'installation affiché sans sélection
+2026-11-03T00:49:29.465Z PASS — devise du magasin EUR
+2026-11-03T00:49:29.468Z PASS — aucun sélecteur de magasin
+2026-11-03T00:49:29.470Z PASS — indicateur temps réel « Connecté »
+2026-11-03T00:49:29.495Z PASS — magasin de l'installation affiché sans sélection
+2026-11-03T00:49:29.500Z PASS — devise du magasin EUR
+2026-11-03T00:49:29.506Z PASS — aucun sélecteur de magasin
+2026-11-03T00:49:29.506Z PASS — indicateur temps réel « Connecté »
+2026-11-03T00:49:30.991Z CAPTURE — <PREUVES>\COR05_native_01_catalogue_magasin_temps-reel_A_light_20261103.png 1366x768
+2026-11-03T00:49:30.991Z ÉTAPE — recherche
+2026-11-03T00:49:31.537Z PASS — recherche « Ray Ban » : 3 ligne(s)
+2026-11-03T00:49:32.064Z PASS — recherche « RX5228 » : 2 ligne(s)
+2026-11-03T00:49:32.282Z PASS — recherche « ray ban noir » : 2 ligne(s)
+2026-11-03T00:49:32.809Z PASS — recherche « rayban » : 3 ligne(s)
+2026-11-03T00:49:33.340Z PASS — recherche « ecaille » : 1 ligne(s)
+2026-11-03T00:49:33.560Z PASS — recherche « etui rigide modele 54 » : 1 ligne(s)
+2026-11-03T00:49:33.561Z PASS — mots surlignés comme dans Clients
+2026-11-03T00:49:35.008Z CAPTURE — <PREUVES>\COR05_native_02_recherche_etui-54_page-2_A_light_20261103.png 1366x768
+2026-11-03T00:49:35.536Z PASS — recherche « ray ban noir » : 2 ligne(s)
+2026-11-03T00:49:36.991Z CAPTURE — <PREUVES>\COR05_native_03_recherche_ray-ban-noir_A_light_20261103.png 1366x768
+2026-11-03T00:49:37.844Z PASS — recherche Stock « holbrook » : 2 lignes (2 emplacements)
+2026-11-03T00:49:38.000Z ÉTAPE — tempsreel
+2026-11-03T00:49:38.705Z PASS — B : Holbrook en main 6 au MAGASIN
+2026-11-03T00:49:40.775Z CAPTURE — <PREUVES>\COR05_native_04a_temps-reel_entree_stock_A_light_20261103.png 1366x768
+2026-11-03T00:49:41.085Z PASS — B mis à jour sans rechargement en 156 ms (stock 6 → 8)
+2026-11-03T00:49:42.539Z CAPTURE — <PREUVES>\COR05_native_04_temps-reel_stock_B_apres_entree_A_light_20261103.png 1366x768
+2026-11-03T00:49:42.539Z ÉTAPE — prix
+2026-11-03T00:49:43.792Z PASS — B (vendeur) : aucune colonne de coût
+2026-11-03T00:49:44.029Z PASS — A : aperçu serveur 61,25 × 2,6 = 159,25 €
+2026-11-03T00:49:44.031Z PASS — B : prix de vente 159,25 € reçu sans rechargement en 2 ms
+2026-11-03T00:49:44.031Z PASS — B : prix d'achat jamais affiché au vendeur
+2026-11-03T00:49:45.489Z CAPTURE — <PREUVES>\COR05_native_05c_temps-reel_prix_B_vendeur_light_20261103.png 1366x768
+2026-11-03T00:49:45.489Z ÉTAPE — assistant
+2026-11-03T00:49:45.677Z PASS — assistant : 5 étapes visibles
+2026-11-03T00:49:45.680Z PASS — assistant : contrôle de l'étape 1
+2026-11-03T00:49:47.256Z CAPTURE — <PREUVES>\COR05_native_06_assistant_etape1_A_light_20261103.png 1366x768
+2026-11-03T00:49:47.381Z PASS — combobox : suggestion par nom partiel
+2026-11-03T00:49:48.841Z CAPTURE — <PREUVES>\COR05_native_07_assistant_combobox_fournisseur_A_light_20261103.png 1366x768
+2026-11-03T00:49:49.026Z PASS — combobox : sélection au clavier (flèche + Entrée)
+2026-11-03T00:49:49.306Z PASS — aperçu serveur : 40,125 × 2,5 = 100,31 € (arrondi serveur)
+2026-11-03T00:49:50.741Z CAPTURE — <PREUVES>\COR05_native_08_assistant_tarif_coefficient_A_light_20261103.png 1366x768
+2026-11-03T00:49:52.255Z CAPTURE — <PREUVES>\COR05_native_09_assistant_resume_A_light_20261103.png 1366x768
+2026-11-03T00:49:52.581Z PASS — produit créé tout ou rien : prix 100,31 € sur la fiche
+2026-11-03T00:49:52.581Z PASS — SKU généré par le serveur (MON-xxxxxx)
+2026-11-03T00:49:52.581Z ÉTAPE — tableaux
+2026-11-03T00:49:54.595Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1920x1080_light_20261103.png 1920x1080
+2026-11-03T00:49:55.010Z PASS — fiche produit 1920×1080 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:49:56.775Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1920x1080_dark_20261103.png 1920x1080
+2026-11-03T00:49:57.185Z PASS — fiche produit 1920×1080 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:49:58.940Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1366x768_light_20261103.png 1366x768
+2026-11-03T00:49:59.352Z PASS — fiche produit 1366×768 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:01.123Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1366x768_dark_20261103.png 1366x768
+2026-11-03T00:50:01.539Z PASS — fiche produit 1366×768 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:03.317Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1024x700_light_20261103.png 1024x700
+2026-11-03T00:50:03.725Z PASS — fiche produit 1024×700 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:05.483Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1024x700_dark_20261103.png 1024x700
+2026-11-03T00:50:05.896Z PASS — fiche produit 1024×700 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:07.631Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_960x640_light_20261103.png 960x640
+2026-11-03T00:50:08.039Z PASS — fiche produit 960×640 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:09.779Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_960x640_dark_20261103.png 960x640
+2026-11-03T00:50:10.185Z PASS — fiche produit 960×640 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:10.489Z ÉTAPE — zoom
+2026-11-03T00:50:14.194Z PASS — zoom WebView2 effectif 125 %
+2026-11-03T00:50:15.656Z CAPTURE — <PREUVES>\COR05_native_10z_fiche_tableaux_1366x768_zoom125_light_20261103.png 1366x768
+2026-11-03T00:50:16.058Z PASS — zoom 125 % : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T00:50:19.044Z ÉTAPE — verres
+2026-11-03T00:50:19.069Z PASS — référentiel verres : vue « Gammes et offres fournisseur »
+2026-11-03T00:50:20.522Z CAPTURE — <PREUVES>\COR05_native_11_verres_offres_A_light_20261103.png 1366x768
+2026-11-03T00:50:20.523Z RÉSULTAT — 41 contrôle(s) PASS

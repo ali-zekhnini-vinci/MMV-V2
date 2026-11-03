@@ -42,7 +42,8 @@ const navButton = (label) =>
 const byText = (selector, label) => `[...document.querySelectorAll(${JSON.stringify(selector)})].find(e => e.textContent.trim() === ${JSON.stringify(label)})`;
 
 async function signIn(page, account) {
-  if (await page.evaluate(hasText(`Bonjour, ${account.displayName}`))) return;
+  // Session déjà ouverte (shell affiché) : la fenêtre garde son compte.
+  if (await page.evaluate(`document.querySelector('nav[aria-label="Navigation"]') !== null`)) return;
   await page.waitFor(hasText("Bienvenue,"), { label: "écran de connexion" });
   await page.evaluate("document.getElementById(document.querySelector('label[for]').htmlFor).focus()");
   await page.type(account.userName);
@@ -122,8 +123,10 @@ const steps = {
     await fill(b, ".clients-search input", "holbrook");
     await b.waitFor(`${rows} === 2`, { label: "B : stock Holbrook" });
     const availableB = () => b.evaluate("[...document.querySelectorAll('table.cat-table tbody tr')].find(r => r.innerText.includes('MAGASIN'))?.innerText ?? ''");
-    const before = await availableB();
-    check(/\b4\b/.test(before), "B : Holbrook en main 4 au MAGASIN");
+    // Colonne « En main » de la ligne MAGASIN (4e cellule) : valeur de départ relevée, pas supposée.
+    const onHandB = "Number([...document.querySelectorAll('table.cat-table tbody tr')].find(r => r.innerText.includes('MAGASIN')).cells[3].innerText.trim())";
+    const before = await b.evaluate(onHandB);
+    check(Number.isInteger(before) && (await availableB()) !== "", `B : Holbrook en main ${before} au MAGASIN`);
     await b.evaluate("window.__cor05_marker = 'non rechargé'");
     // Poste A : entrée de stock par l'écran (modale « Entrée »).
     await go(a, "Stock & inventaires", "document.querySelector('input[aria-label=\"Rechercher dans le stock\"]') !== null");
@@ -143,9 +146,36 @@ const steps = {
     await a.evaluate(`(${byText("[role=alertdialog] button", "Enregistrer le mouvement")}).click()`);
     await a.waitFor("document.querySelector('[role=alertdialog]') === null", { label: "A : entrée enregistrée", timeoutMs: 10000 });
     const t0 = Date.now();
-    await b.waitFor("[...document.querySelectorAll('table.cat-table tbody tr')].find(r => r.innerText.includes('MAGASIN'))?.innerText.match(/\\b6\\b/) !== null", { label: "B mis à jour automatiquement", timeoutMs: 10000 });
-    check(await b.evaluate("window.__cor05_marker === 'non rechargé'"), `B mis à jour sans rechargement en ${Date.now() - t0} ms (stock 4 → 6)`);
+    await b.waitFor(`${onHandB} === ${before + 2}`, { label: "B mis à jour automatiquement", timeoutMs: 10000 });
+    check(await b.evaluate("window.__cor05_marker === 'non rechargé'"), `B mis à jour sans rechargement en ${Date.now() - t0} ms (stock ${before} → ${before + 2})`);
     capture(processB, "04_temps-reel_stock_B_apres_entree_A_light", { width: 1366, height: 768 });
+  },
+
+  // COR-05-02 : prix modifié sur A (PA HT × coefficient, aperçu serveur) → B (vendeur, sans costs.read) voit le nouveau prix
+  // de vente sans rechargement et ne reçoit jamais le prix d'achat ni le coefficient.
+  async prix(a, b) {
+    const CAT = 'input[aria-label="Rechercher dans le catalogue"]';
+    for (const page of [a, b]) {
+      await go(page, "Produits", `document.querySelector('${CAT}') !== null`);
+      await fill(page, CAT, "holbrook");
+      await page.waitFor(`${rows} === 1`, { label: "Holbrook" });
+    }
+    await b.evaluate("window.__cor05_prix = 'non rechargé'");
+    check(await b.evaluate("!document.body.innerText.includes(\"Prix d'achat HT\") && !document.body.innerText.includes('Coef.')"), "B (vendeur) : aucune colonne de coût");
+    await a.evaluate("document.querySelector('table.cat-table tbody tr').click()");
+    await a.waitFor(`${byText("button", "Modifier le prix")} !== undefined`, { label: "A : fiche Holbrook" });
+    await a.evaluate(`(${byText("button", "Modifier le prix")}).click()`);
+    await a.waitFor("document.getElementById('cat-coefficient') !== null", { label: "A : éditeur de prix" });
+    await fill(a, "#cat-coefficient", "2,6");
+    await a.evaluate(`[...document.querySelectorAll('.cat-editor button')].find(x => x.textContent.trim() === 'Aperçu').click()`);
+    await a.waitFor(hasText("159,25"), { label: "A : aperçu serveur 61,25 × 2,6" });
+    check(true, "A : aperçu serveur 61,25 × 2,6 = 159,25 €");
+    await a.evaluate(`[...document.querySelectorAll('.cat-editor button')].find(x => x.textContent.trim() === 'Enregistrer ce prix').click()`);
+    const t0 = Date.now();
+    await b.waitFor(hasText("159,25"), { label: "B : nouveau prix", timeoutMs: 10000 });
+    check(await b.evaluate("window.__cor05_prix === 'non rechargé'"), `B : prix de vente 159,25 € reçu sans rechargement en ${Date.now() - t0} ms`);
+    check(await b.evaluate("!document.body.innerText.includes('61,25')"), "B : prix d'achat jamais affiché au vendeur");
+    capture(processB, "05c_temps-reel_prix_B_vendeur_light", { width: 1366, height: 768 });
   },
 
   // COR-05-02 : coupure de l'API puis reprise : états « reconnexion / déconnecté » puis « connecté » et resynchronisation.
@@ -236,6 +266,30 @@ const steps = {
       }
     }
     await theme(a, "light");
+  },
+
+  // COR-05-03 : zoom WebView2 réel 125 % (Ctrl++ du moteur), fiche produit 1366×768.
+  async zoom(a) {
+    const keys = (k) => execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", resolve("e2e/send-keys.ps1"), "-Process", processA, "-Keys", k, "-Repeat", "1"]);
+    await go(a, "Produits", `document.querySelector('input[aria-label="Rechercher dans le catalogue"]') !== null`);
+    await fill(a, 'input[aria-label="Rechercher dans le catalogue"]', "RX5228");
+    await a.waitFor(`${rows} === 2`, { label: "RX5228" });
+    await a.evaluate("document.querySelector('table.cat-table tbody tr').click()");
+    await a.waitFor(hasText("Historique de stock"), { label: "fiche produit" });
+    for (let i = 0; i < 8 && Math.abs((await a.zoomFactor()) - 1.25) > 0.01; i++) {
+      keys((await a.zoomFactor()) < 1.25 ? "^{ADD}" : "^{SUBTRACT}");
+      await a.sleep(400);
+    }
+    check(Math.abs((await a.zoomFactor()) - 1.25) < 0.01, "zoom WebView2 effectif 125 %");
+    capture(processA, "10z_fiche_tableaux_1366x768_zoom125_light", { width: 1366, height: 768 });
+    await a.sleep(400);
+    check(await a.evaluate(`[...document.querySelectorAll('.cat-card')].every(card => { const c = card.getBoundingClientRect();
+      return [...card.querySelectorAll('.cat-tscroll')].every(s => { const r = s.getBoundingClientRect(); return r.right <= c.right + 1; }); })
+      && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1`), "zoom 125 % : tableaux dans leurs cartes, aucun défilement horizontal de page");
+    for (let i = 0; i < 8 && Math.abs((await a.zoomFactor()) - 1) > 0.01; i++) {
+      keys("^{SUBTRACT}");
+      await a.sleep(400);
+    }
   },
 
   // COR-05-05 : référentiel verres (offres) — consultation et testeur.

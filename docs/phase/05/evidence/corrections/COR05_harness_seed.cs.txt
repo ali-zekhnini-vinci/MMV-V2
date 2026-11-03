@@ -1,0 +1,132 @@
+#:project C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/src/MMV.Infrastructure/MMV.Infrastructure.csproj
+#:property TreatWarningsAsErrors=false
+#:property PublishAot=false
+#:property NoWarn=CA1303;CA1307;CA1031;CA2007;CA1849;CA1861;CA2000;CA1859;CA1822;CA1305;CA1310;CA1304;CA1311;CA1862;CA2234;CA1515;CA1050;CA1852
+// Banc natif COR-05 (outil JETABLE, hors dépôt) : données FICTIVES sur le cluster JETABLE uniquement (port 55433,
+// base mmv_v2_scratch). Refuse toute autre cible. Comptes natif-*, magasin NATIF-BE (EUR), catalogue via l'API HTTPS.
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Identity;
+using MMV.Domain.Identity;
+using MMV.Domain.Stores;
+using MMV.Infrastructure;
+using MMV.Infrastructure.Persistence;
+using Npgsql;
+
+const string Connection = "Host=127.0.0.1;Port=55433;Database=mmv_v2_scratch;Username=mmv_v2_scratch;Password=scratch";
+var api = new Uri(args[0]);
+var credsFile = args[1];
+var builder = new NpgsqlConnectionStringBuilder(Connection);
+if (builder.Port != 55433 || builder.Database != "mmv_v2_scratch")
+{
+    throw new InvalidOperationException("Cible refusée.");
+}
+
+var services = new ServiceCollection()
+    .AddInfrastructure(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = Connection }).Build())
+    .BuildServiceProvider();
+const string Password = "<mot de passe de banc, hors dépôt>";
+var accounts = new List<object>();
+
+using (var scope = services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var hashing = scope.ServiceProvider.GetRequiredService<IPasswordHashing>();
+    var now = DateTimeOffset.UtcNow;
+    if (!context.Stores.Any())
+    {
+        var shop = Store.Create(Guid.CreateVersion7(), "NATIF-BE", "Optique du Banc (fictif)", "BE", Currencies.Euro, now);
+        context.Stores.Add(shop);
+        context.Locations.Add(Location.Create(Guid.CreateVersion7(), shop.Id, "MAGASIN", "Magasin", true, now));
+        context.Locations.Add(Location.Create(Guid.CreateVersion7(), shop.Id, "RESERVE", "Réserve", false, now));
+    }
+
+    foreach (var (name, display, perms) in new[]
+    {
+        ("natif-admin", "Admin Banc", Permissions.Phase05.Append(Permissions.AuditRead).ToArray()),
+        ("natif-vendeur", "Vendeur Banc", new[] { Permissions.CatalogRead, Permissions.StockRead }),
+    })
+    {
+        if (context.Users.Any(u => u.UserName == name))
+        {
+            accounts.Add(new { key = name, userName = name, password = Password, displayName = display });
+            continue;
+        }
+
+        var user = new UserAccount(Guid.CreateVersion7(), name, display, now);
+        user.SetPasswordHash(hashing.Hash(user, Password));
+        foreach (var p in perms)
+        {
+            user.Grant(p);
+        }
+
+        context.Users.Add(user);
+        accounts.Add(new { key = name, userName = name, password = Password, displayName = display });
+    }
+
+    await context.SaveChangesAsync();
+}
+
+await File.WriteAllTextAsync(credsFile, JsonSerializer.Serialize(accounts));
+using var http = new HttpClient { BaseAddress = api };
+var login = await http.PostAsJsonAsync("/api/auth/login", new { userName = "natif-admin", password = Password });
+var token = JsonDocument.Parse(await login.Content.ReadAsStringAsync()).RootElement.GetProperty("accessToken").GetString();
+http.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+async Task<JsonElement> Send(HttpMethod method, string path, object body)
+{
+    using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+    using var response = await http.SendAsync(request);
+    var text = await response.Content.ReadAsStringAsync();
+    if (!response.IsSuccessStatusCode)
+    {
+        Console.WriteLine($"{method} {path} → {(int)response.StatusCode} {text}");
+        return default;
+    }
+
+    return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
+}
+
+var store = JsonDocument.Parse(await http.GetStringAsync("/api/store")).RootElement;
+Console.WriteLine($"MAGASIN {store.GetProperty("store").GetProperty("code").GetString()} source={store.GetProperty("source").GetString()}");
+var location = store.GetProperty("store").GetProperty("locations")[0].GetProperty("id").GetGuid();
+if (JsonDocument.Parse(await http.GetStringAsync("/api/catalog/variants")).RootElement.GetProperty("totalCount").GetInt32() > 0)
+{
+    Console.WriteLine("CATALOGUE déjà présent");
+    return 0;
+}
+
+var lux = (await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = "LUXDIST", name = "Lunetterie Générale Distribution", countryCode = "BE", city = "Bruxelles" })).GetProperty("id").GetGuid();
+var opt = (await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = "OPTIDIF", name = "Optique Diffusion", countryCode = "FR", city = "Lille" })).GetProperty("id").GetGuid();
+await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = "VERLAB", name = "Laboratoire Verres Nord", countryCode = "BE" });
+
+async Task Product(string family, string brand, string name, (string Label, string Color, string Ref, string Pa, string Coef, int Qty)[] variants, Guid supplier, string policy = "stocked")
+{
+    var body = new
+    {
+        requestId = Guid.NewGuid(), familyCode = family, brand, name,
+        variants = variants.Select(v => new
+        {
+            variant = new { label = v.Label, stockPolicy = policy, attributes = new Dictionary<string, string> { ["color"] = v.Color } },
+            suppliers = new[] { new { supplierId = supplier, supplierReference = v.Ref, isPrimary = true } },
+            price = new { mode = "coefficient", purchasePriceHt = v.Pa, coefficient = v.Coef, expectedSalePriceHt = (decimal.Parse(v.Pa, System.Globalization.CultureInfo.InvariantCulture) * decimal.Parse(v.Coef, System.Globalization.CultureInfo.InvariantCulture)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture) },
+            stock = policy == "stocked" && v.Qty > 0 ? new { locationId = location, quantity = v.Qty } : null,
+        }).ToArray(),
+    };
+    var created = await Send(HttpMethod.Post, "/api/catalog/products", body);
+    Console.WriteLine(created.ValueKind == JsonValueKind.Undefined ? $"ÉCHEC {name}" : $"PRODUIT {name}");
+}
+
+await Product("optical_frames", "Ray-Ban", "RX5228", [("Noir 50", "Noir", "RB5228-2000", "48.0000", "2.5", 3), ("Écaille 50", "Écaille", "RB5228-2012", "48.0000", "2.5", 1)], lux);
+await Product("optical_frames", "Ray-Ban", "Clubmaster RX5154", [("Noir doré 49", "Noir", "RB5154-2000", "52.5000", "2.4", 2)], lux);
+await Product("sunglasses", "Oakley", "Holbrook OO9102", [("Noir mat", "Noir", "OO9102-01", "61.2500", "2.2", 4)], opt);
+await Product("optical_frames", "Lindberg", "Air Titanium 2017", [("Argent 52", "Argent", "LB-2017-10", "185.0000", "2.1", 0)], opt);
+for (var i = 1; i <= 54; i++)
+{
+    await Product("accessories", "Banc", $"Étui rigide modèle {i:00}", [($"Étui {i:00}", "Gris", $"ETUI-{i:000}", "3.1000", "3", 5)], opt);
+}
+
+Console.WriteLine("SEED terminé");
+return 0;

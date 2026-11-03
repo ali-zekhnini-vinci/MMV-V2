@@ -169,3 +169,19 @@ Rapport : [`LIVRAISON_05_DESIGN.md`](LIVRAISON_05_DESIGN.md) § 4 ; matrice visu
 | Q-05-D07 | Comparaison cadre par cadre (107) avec les rendus du HTML original | 55 MATCH, 30 ADAPTED_APPROVED, 10 ADAPTED_PROPOSED, 3 DEFERRED_PROPOSED, 9 NOT_TESTED |
 | Q-05-D08 | Acceptation visuelle | **OWNER_DESIGN_FINAL_REVIEW_REQUIRED** |
 | Q-05-D09 | Tests backend (`MMV.Api.Tests`, `MMV.PostgreSql.Tests`) | NOT_RERUN (aucun fichier backend, SQL ou contrat modifié) |
+
+## Corrections COR-05-01 à COR-05-08 — résultats du 02–03/11/2026
+
+Détail et preuves : [`CORRECTIONS_05.md`](CORRECTIONS_05.md). Cible PostgreSQL : cluster **jetable** (0001→0008) ; `mmv_v2_dev` / `mmv_v2_test` non touchés (0008 non appliquée).
+
+| Réf. | Contrôle | Résultat |
+|---|---|---|
+| Q-05-C01 | `MMV.Api.Tests` (dont `CorrectionsRulesTests` : évaluateur verres, montants, synonymes, séparateur, SKU, identifiants dérivés) | **PASS** 527 / 527 |
+| Q-05-C02 | `MMV.Maintenance.Tests` | **PASS** 50 / 50 |
+| Q-05-C03 | `MMV.PostgreSql.Tests --filter Stage=Phase05` (cluster jetable avec 0008 : magasin, recherche, temps réel SignalR, assistant, offres de verres, import CSV, schéma 0008) | **PASS** 20 / 20 ; processus HTTPS réel `NOT_TESTED` |
+| Q-05-C04 | `0008_CatalogCorrections.verify.sql` (cluster jetable) | **PASS** 14 / 14 |
+| Q-05-C05 | Vitest (dont `corrections.test.ts`) ; `npm run check` ; ESLint ; `vite build` | **PASS** 325 / 325 ; OK ; 0 erreur (1 avertissement préexistant) ; OK |
+| Q-05-C06 | Natif, 2 fenêtres Tauri réelles + API de banc 7367 : magasin, recherche catalogue / stock, stock A → B, prix A → B (vendeur sans coûts), assistant complet, combobox clavier et création rapide, tableaux 1920 / 1366 / 1024 / 960 clair et sombre, zoom 125 %, référentiel verres | **PASS** 41 / 41 (exécution complète) + contrôles dédiés |
+| Q-05-C07 | Natif : coupure de l'API puis reprise (indicateur, resynchronisation d'une donnée modifiée pendant la coupure) | **PASS** |
+| Q-05-C08 | Suites PostgreSQL complètes sur `mmv_v2_test` avec 0008 | `NOT_TESTED` (GO SQL requis) |
+| Q-05-C09 | Comparaison au Lot 6 des nouvelles surfaces (assistant, combobox, indicateur, offres de verres, import) | `NOT_TESTED` cadre par cadre — surfaces absentes du Lot 6, composées avec ses composants ; revue visuelle du propriétaire |

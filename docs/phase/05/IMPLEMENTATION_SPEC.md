@@ -102,3 +102,13 @@ Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; P
 - SKU interne **généré** sur le poste (`proposeSku` : préfixe de famille + 6 symboles de `crypto.getRandomValues`), personnalisable ; unicité contrôlée par le serveur (inchangé).
 - Prix : édition dans le bloc « Prix & disponibilité » ; enregistrement seulement d'une valeur **aperçue par le serveur** ; aucun calcul ni arrondi monétaire sur le poste (les seules sommes du poste sont des quantités entières des KPI de stock).
 - Détail : [`LIVRAISON_05_DESIGN.md`](LIVRAISON_05_DESIGN.md) § 2.
+
+## Note datée — 02–03/11/2026 (corrections COR-05-01 à COR-05-08)
+
+- **Mono-magasin** : `Installation:StoreCode` (sinon magasin unique de la base, sinon `503 store_not_configured` motivé) ; `storeId` des routes facultatif et simple assertion (`404 store_not_found` s'il désigne un autre magasin) ; contrôles d'appartenance des emplacements, réceptions, mouvements, inventaires et lots d'import ; `GET /api/store`.
+- **Temps réel** : hub `/hubs/changes` (SignalR, HTTPS, session MMV, `access_token` admis sur ce seul chemin), filtre `PublishesChanges` sur les groupes d'écriture (succès 2xx seulement ; routes POST de lecture marquées `NoChangeNotification`), événements sans valeur métier filtrés par droits, contrôle de révocation sans glissement (`Realtime:SessionCheckSeconds`). Poste : reconnexion sans fin, resynchronisation, indicateur, formulaires à version figée (`useEditBase`). CSP : `wss://<api>` à autoriser (ajouté au `devCsp` pour 7267 ; la CSP de production devra porter l'origine réelle).
+- **Création** : `POST /api/catalog/products` (une transaction, sous-requêtes dérivées, droits par section), SKU générés par le serveur (`SkuGenerator`), motif de stock `initial_stock`.
+- **Recherche** : `CatalogSearch` (catalogue, stock, fournisseurs) ; poste : délai commun `SEARCH_DEBOUNCE_MS`, page précédente conservée, surlignage.
+- **Import CSV** : détection d'encodage (poste) et de séparateur, `ImportMapper`, `NumberText`, options `@decimal` / `@familyCode` / `@stockPolicy`, profils `GET|PUT /api/imports/profiles/{supplierId}/{kind}`, rapprochement par référence fournisseur et code-barres, lot de corrections.
+- **Verres** : `GET|POST /api/catalog/lens-offers`, `GET|PUT /api/catalog/lens-offers/{id}`, `…/archive`, `…/reactivate`, `POST …/check` ; règles structurées ; contrat `LensPrescription` / `LensCompatibilityEvaluator` pour la Phase 06.
+- Migration additive 0008 **non appliquée** ; dossier [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md).
