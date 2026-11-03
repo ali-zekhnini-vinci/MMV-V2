@@ -185,3 +185,8 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 - Mandat : [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md). Décisions du propriétaire appliquées : **un serveur local = un magasin** (architecture multi-magasins conservée dans les données ; magasin choisi par la configuration du serveur, jamais par le poste) ; **temps réel ASP.NET Core SignalR** (pas de sondage présenté comme équivalent).
 - Dépendances ajoutées : `@microsoft/signalr` 10.0.11 (poste), `Microsoft.AspNetCore.SignalR.Client` 10.0.13 (tests). Aucune IA, aucun service payant (import CSV par règles, synonymes et profils).
 - Migration additive `0008_CatalogCorrections` préparée, **non appliquée** (revue SQL du propriétaire). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` inchangé.
+
+
+## Note datée — 03/11/2026 (Phase 05, G05-SQL-0008)
+
+- GO conditionnel du propriétaire ; migration `0008_CatalogCorrections` **appliquée** à `mmv_v2_dev` puis `mmv_v2_test` ([`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md), preuves `docs/phase/05/evidence/sql0008/`). Aucune nouvelle décision d'architecture ; ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`.

@@ -7,6 +7,21 @@
 
 - **GO finalisation 05-00** (propriétaire, 30/10/2026) : réponses Q01–Q20, intégration des références Lot 6, création autorisée de `feat/phase-05-catalogue-stock`, commits documentaires locaux — [`prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md`](../../../prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md). Interdits respectés : aucun backend, aucune migration `0007` générée ni appliquée, aucune table, aucune écriture ni connexion à `mmv_v2_dev` / `mmv_v2_test`, aucun processus arrêté, `apps/desktop/.env.development` intact (SHA-256 `58d1eb06…c3481d` avant / après), aucun `reset --hard` / `clean` / `stash`, aucun push / PR / merge, ancien dépôt non consulté.
 
+## Mise à jour des gates — 03/11/2026 (G05-SQL-0008 : GO conditionnel, application et preuves réelles)
+
+- **GO G05-SQL-0008** (propriétaire, 03/11/2026, après audit de la migration) : application de `docs/phase/05/sql/0008_CatalogCorrections.idempotent.sql`, SHA-256 imposé `9a75acea0173a5019b520362cf04a5ca10e1de814753603f21d46c1c287e715c`, sur `mmv_v2_dev` puis `mmv_v2_test` — [`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../../../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md). Le rapport d'audit cité (`MMV_V2_AUDIT_G05_SQL_0008_2026-11-03.md`) n'est pas présent dans l'espace de travail (O-05-25).
+- Précontrôle « écriture concurrente » d'abord **non conforme** (API 7267 et `tauri dev` du propriétaire connectés à `mmv_v2_dev`) : STOP avant toute écriture, question au propriétaire, qui a arrêté lui-même ses processus ; revérifié (0 session) avant chaque application.
+
+| Gate | État au 03/11/2026 |
+|---|---|
+| G05-SQL-0008 | **APPLIED** — dev 15:35:18, test 15:35:59 (+01:00), COMMIT, `verify.sql` 14 / 14 × 2, données préexistantes identiques ; preuves [`evidence/sql0008/`](evidence/sql0008/) |
+| G05-CORR (corrections) | **`PHASE05_CORRECTIONS_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`** — registre [`CORRECTIONS_05.md`](CORRECTIONS_05.md), rapport [`LIVRAISON_05_CORRECTIONS.md`](LIVRAISON_05_CORRECTIONS.md) |
+| G05-DESIGN | **OPEN** — inchangé (acceptation visuelle du propriétaire ; nouvelles captures natives import CSV et offres de verres à examiner) |
+| G05-FISCAL / G05-LEGAL | **OPEN** — inchangés |
+| G05-FINAL | **OWNER_FINAL_REVIEW_REQUIRED** — audit final du propriétaire ; Phase 05 non déclarée fusionnable ; aucun push, PR ni merge |
+
+Les états ci-dessous sont conservés tels que publiés.
+
 ## Mise à jour des gates — 02/11/2026 (corrections COR-05-01 à COR-05-08)
 
 - **GO corrections** (propriétaire, 02/11/2026) : huit corrections métier et ergonomiques validées, travail autonome — [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../../../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md).

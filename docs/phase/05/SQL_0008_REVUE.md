@@ -1,5 +1,7 @@
 # Phase 05 — Revue SQL consolidée des corrections : migration 0008_CatalogCorrections
 
+> **Note datée 03/11/2026 — APPLIQUÉE.** GO conditionnel du propriétaire ([`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../../../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md)). Script `9a75acea…287e715c` appliqué tel quel (aucune modification de 0007 ni de 0008, manifeste 8 / 8) via `Invoke-MmvSqlScript.ps1 -LockTimeout 5s` : `mmv_v2_dev` 15:35:18 puis `mmv_v2_test` 15:35:59, COMMIT, `verify.sql` 14 / 14 sur chaque base. Sauvegardes : `Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0008_20261103_153503.dump` (SHA-256 `6848B40F…6778230`) et `mmv_v2_test_avant_0008_20261103_153559.dump` (`FD9F2CEE…3C8BB821`), restauration complète non éprouvée. Preuves : [`evidence/sql0008/`](evidence/sql0008/). Le texte ci-dessous est conservé tel que relu.
+
 Statut : **`PHASE05_CORRECTIONS — OWNER_SQL_REVIEW_REQUIRED`** (02/11/2026). Migration **préparée, NON appliquée** à `mmv_v2_dev` ni à `mmv_v2_test`. Seul un cluster PostgreSQL 18 **jetable** l'a reçue (voir § 5). STOP obligatoire avant toute application (mandat du 02/11/2026, § 11).
 
 ## 1. Pourquoi une migration, et pourquoi une seule

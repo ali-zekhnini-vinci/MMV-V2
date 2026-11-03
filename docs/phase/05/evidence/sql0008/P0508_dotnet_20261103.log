@@ -1,0 +1,33 @@
+# dotnet test MMV.slnx (arbre livré, serveur en mémoire ; PostgreSQL 18.6 port 5433 : mmv_v2_dev lecture seule, mmv_v2_test écritures purgées)
+START 2026-11-03T16:19:45.2957653+01:00
+Nombre total de tests : 50
+     Réussi(s) : 50
+  Ignoré MMV.PostgreSql.Tests.Phase05RealHttpsTests.RealProcess_ServesTheBench_AndRefusesPlainHttp_NothingWritten [1 ms]
+Nombre total de tests : 89
+     Réussi(s) : 88
+    Ignoré(s) : 1
+Nombre total de tests : 527
+     Réussi(s) : 527
+END 2026-11-03T16:20:59.4795067+01:00 EXIT 0
+# Ordre des projets : MMV.Maintenance.Tests 50/50, MMV.PostgreSql.Tests 88/89 (+1 NOT_TESTED : processus réel non désigné), MMV.Api.Tests 527/527.
+
+# dotnet test tests/MMV.PostgreSql.Tests — passage via le PROCESSUS MMV.Api RÉEL (Kestrel https://localhost:7367, http://localhost:5367,
+#   copie du build hors dépôt, ConnectionStrings__Mmv = mmv_v2_test, Installation__StoreCode = T05BEREEL ; MMV_PG05_API_BASE/PLAIN/STORE)
+START 2026-11-03T16:21:11.8937508+01:00
+Nombre total de tests : 89
+     Réussi(s) : 89
+END 2026-11-03T16:21:52.7941144+01:00 EXIT 0
+# Bancs Phase 05 : 18 via le processus réel, 1 en mémoire (test temps réel à réglage serveur propre) ;
+#   purges : 19 résidu = 0, aucune autre.
+# HTTP en clair (processus réel) :
+HTTP en clair GET /api/stores -> 403 https_required
+HTTP en clair GET /api/catalog/families -> 403 https_required
+HTTP en clair GET /api/catalog/variants -> 403 https_required
+HTTP en clair GET /api/catalog/lens-references -> 403 https_required
+HTTP en clair GET /api/suppliers -> 403 https_required
+HTTP en clair GET /api/stock/balances?storeId=01a1a200-1118-7465-8b9a-977cc4cd7297 -> 403 https_required
+HTTP en clair GET /api/inventories -> 403 https_required
+HTTP en clair GET /api/imports -> 403 https_required
+HTTP en clair POST /api/suppliers -> 403 https_required, aucune ligne écrite
+# Correctif de TEST (O-05-26) : depuis COR-05-01 le mode processus réel était inopérant (chaque banc créait deux magasins aléatoires,
+#   503 ambiguous ; un premier passage a donné 71/89). Le banc réutilise désormais en mode réel un magasin FIXE (Phase05Harness.cs).

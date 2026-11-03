@@ -86,3 +86,11 @@ Rendus des 107 cadres (Edge sans interface, [`evidence/design/G05D_render-lot6.m
 - Outils de preuve : `apps/desktop/e2e/native-cor05.mjs` (scénario natif deux postes) ; preuves légères `docs/phase/05/evidence/corrections/` (42 captures JPEG réduites, journal de l'exécution complète, banc d'amorçage `COR05_harness_seed.cs.txt` sans secret).
 - Référence visuelle consultée : `references/phase05/lot6/_ds/…/assets/logo-dark.png` (copie de travail non versionnée, empreinte `3df57dec…`, identique à l'actif du Shell-Handoff) pour O-05-17 ; aucune copie versionnée.
 - Dépendances ajoutées : `@microsoft/signalr` 10.0.11 (poste, chargé à la demande) ; `Microsoft.AspNetCore.SignalR.Client` 10.0.13 (tests PostgreSQL seulement). Serveur : SignalR du cadre partagé ASP.NET Core (aucun paquet).
+
+
+## Mise à jour 03/11/2026 (G05-SQL-0008 appliquée)
+
+- Mandat : [`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../../../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md) ; rapport : [`LIVRAISON_05_CORRECTIONS.md`](LIVRAISON_05_CORRECTIONS.md).
+- Preuves : `docs/phase/05/evidence/sql0008/` (journaux `P0508_*`, journal natif `COR05_native_run_0008_20261103.log`, 34 captures JPEG réduites `COR05_native_*_20261103.jpg`, banc d'amorçage `P0508_harness_seed.cs.txt` et purge `P0508_purge-test.ps1.txt`, sans secret).
+- Code modifié : `apps/desktop/src/catalog/SupplierCombobox.tsx` (O-05-24) ; tests `tests/MMV.PostgreSql.Tests/SchemaInspection.cs` (O-05-23), `Phase05Harness.cs` (O-05-26) ; scénario `apps/desktop/e2e/native-cor05.mjs` (étapes `importcsv`, `offres`, option `--csv-dir`).
+- Aucun fichier SQL ni migration modifié (manifeste 0008 : 8 / 8).

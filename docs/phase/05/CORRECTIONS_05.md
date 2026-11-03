@@ -2,7 +2,9 @@
 
 Mandat : [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../../../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md) (GO du propriétaire du 02/11/2026 sur les huit corrections). Branche `feat/phase-05-catalogue-stock`, commits locaux uniquement (aucun push, aucune PR, aucun merge, aucune Phase 06).
 
-**Statut : `PHASE05_CORRECTIONS — OWNER_SQL_REVIEW_REQUIRED`** — la migration additive `0008_CatalogCorrections` (COR-05-04, COR-05-05) est préparée et éprouvée sur cluster jetable, **non appliquée** : revue [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md).
+**Statut (03/11/2026) : `PHASE05_CORRECTIONS_COMPLETE — OWNER_FINAL_REVIEW_REQUIRED`** — GO SQL du propriétaire ([`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../../../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md)) ; `0008_CatalogCorrections` **appliquée** à `mmv_v2_dev` et `mmv_v2_test` ; suites réelles et natif au vert (§ « Application de 0008 et preuves réelles »). Rapport : [`LIVRAISON_05_CORRECTIONS.md`](LIVRAISON_05_CORRECTIONS.md).
+
+*Historique —* **Statut (02/11/2026) : `PHASE05_CORRECTIONS — OWNER_SQL_REVIEW_REQUIRED`** — la migration additive `0008_CatalogCorrections` (COR-05-04, COR-05-05) est préparée et éprouvée sur cluster jetable, **non appliquée** : revue [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md).
 
 Statuts : `IMPLEMENTED` (code + tests automatisés au vert), `PENDING` (en cours), `NOT_TESTED` (preuve non encore produite). Les preuves natives (Tauri) et visuelles sont rapportées séparément ; un statut `IMPLEMENTED` ne vaut pas conformité visuelle.
 
@@ -10,6 +12,7 @@ Statuts : `IMPLEMENTED` (code + tests automatisés au vert), `PENDING` (en cours
 
 | Date | Entrée |
 | --- | --- |
+| 2026-11-03 | **G05-SQL-0008 appliquée** : précontrôles (8 / 8, scripts EF identiques, PG 18.6 / 5433, 0001–0007 sans 0008, aucune dérive ; écriture concurrente détectée → STOP, le propriétaire a arrêté ses processus), sauvegardes vérifiées, application dev puis test, `verify.sql` 14 / 14 × 2, données préexistantes identiques. Suites : `MMV.Api.Tests` 527 / 527, `MMV.Maintenance.Tests` 50 / 50, PostgreSQL 89 / 89 via le processus HTTPS réel (88 / 89 + 1 `NOT_TESTED` en mémoire), Vitest 325 / 325, check / ESLint / build OK. Natif deux postes sur `mmv_v2_test` : **69 / 69** (COR-05-01 à 08 + nouvelles étapes import CSV et offres de verres). Corrigés : O-05-23 (liste des migrations du test), O-05-24 (Entrée sur suggestions fournisseur périmées), O-05-26 (mode processus réel du banc). Résidu 0. |
 | 2026-11-03 | Natif, suite : **reconnexion PASS** (API de banc arrêtée : « Reconnexion en cours » en 1 s, « Déconnecté — données potentiellement obsolètes » vers 20 s ; reprise : « Connecté » en 8 s et donnée modifiée pendant la coupure affichée sans rechargement), **prix A → B PASS** (61,25 × 2,6 = 159,25 € reçu par le vendeur en 313 ms, prix d'achat jamais affiché), **zoom 125 % PASS** ; exécution complète du scénario **41 / 41 PASS** ; Vitest 325 / 325, `npm run check`, ESLint (0 erreur) et `vite build` relancés après le correctif combobox : **PASS** (les mentions `NOT_TESTED` / `NOT_RERUN` de l'entrée du 02/11 sont levées, sauf la comparaison Lot 6 des nouvelles surfaces). |
 | 2026-11-02 | Natif (2 fenêtres Tauri réelles + API de banc 7367 sur cluster jetable) : COR-05-01 (8 contrôles), COR-05-07 (recherche catalogue / stock), COR-05-02 (stock A → B sans rechargement), COR-05-06 + 08 (assistant complet, combobox clavier, aperçu 100,31 €, SKU serveur), COR-05-03 (tableaux contenus 1920 / 1366 / 1024 / 960, clair et sombre), COR-05-05 (vue offres) : **PASS**. Défaut trouvé et corrigé : combobox pré-surlignait la 1re suggestion (↓ + Entrée ouvrait la création rapide). `NOT_TESTED` : reconnexion après coupure, prix A → B, zoom 125 %, comparaison Lot 6 des nouvelles surfaces. O-05-17 (logo sombre) analysé : l'actif sombre actuel porte un fond blanc opaque ; le Lot 6 utilise `logo-dark.png` (composition empilée) — décision visuelle du propriétaire requise. Vitest / build `NOT_RERUN` après le correctif combobox (typecheck OK). |
 | 2026-11-02 | Lot B (schéma 0008, cluster jetable seulement) : COR-05-04 et COR-05-05 implémentés. `MMV.Api.Tests` 527 / 527 (dont 28 règles pures des corrections), `MMV.Maintenance.Tests` 50 / 50, PostgreSQL Phase 05 **20 / 20** (+1 `NOT_TESTED`) sur cluster jetable 0001→0008, `verify.sql` 0008 14 / 14, Vitest 325 / 325, ESLint 0 erreur, `vite build` OK. 0008 **non appliquée** à `mmv_v2_dev` / `mmv_v2_test`. |
@@ -22,11 +25,11 @@ Statuts : `IMPLEMENTED` (code + tests automatisés au vert), `PENDING` (en cours
 | COR-05-01 | Un serveur local = un magasin | IMPLEMENTED | `tests/MMV.PostgreSql.Tests/Phase05StoreContextTests.cs` (2) |
 | COR-05-02 | Synchronisation temps réel SignalR | IMPLEMENTED ; natif deux postes **PASS** (stock, prix, reconnexion) | `Phase05RealtimeTests.cs` (vrais clients SignalR .NET, WebSocket et LongPolling) |
 | COR-05-03 | Débordement des tableaux de la fiche produit | IMPLEMENTED ; natif **PASS** (4 résolutions × 2 thèmes, zoom 125 %) | revue CSS, Vitest |
-| COR-05-04 | Import CSV intelligent | IMPLEMENTED (code) ; PostgreSQL sur cluster jetable seulement ; bases du propriétaire `NOT_TESTED` (0008 non appliquée) | `Phase05CorrectionsSchemaTests.CsvImport_*`, `CorrectionsRulesTests` (nombres, synonymes, séparateur), `corrections.test.ts` (encodage, corrections) |
-| COR-05-05 | Référentiel verres (simple + avancé) | IMPLEMENTED (code) ; idem | `Phase05CorrectionsSchemaTests.LensOffers_*`, `CorrectionsRulesTests` (évaluateur, exemple −10 / +5) |
+| COR-05-04 | Import CSV intelligent | IMPLEMENTED ; *02/11 :* cluster jetable seulement ; **03/11 : PASS sur `mmv_v2_test` (0008 appliquée), API HTTPS réelle, natif PASS** (fichier Windows-1252, modèle fournisseur, tarifs, réémission sans doublon, correction) | `Phase05CorrectionsSchemaTests.CsvImport_*`, `CorrectionsRulesTests` (nombres, synonymes, séparateur), `corrections.test.ts` (encodage, corrections) |
+| COR-05-05 | Référentiel verres (simple + avancé) | IMPLEMENTED ; **03/11 : PASS sur `mmv_v2_test`, API HTTPS réelle, natif PASS** (saisie simple, testeur à vérifier / incompatible / compatible, mode avancé, révisions, vendeur sans coûts) | `Phase05CorrectionsSchemaTests.LensOffers_*`, `CorrectionsRulesTests` (évaluateur, exemple −10 / +5) |
 | COR-05-06 | Assistant de création en cinq étapes | IMPLEMENTED ; natif **PASS** | `Phase05ProductWizardTests.cs` |
 | COR-05-07 | Recherche harmonisée | IMPLEMENTED | `Phase05SearchTests.cs` |
-| COR-05-08 | Fournisseurs avec autocomplétion | IMPLEMENTED ; natif **PASS** (clavier, création rapide) | `Phase05SearchTests.cs` (recherche fournisseur), doublon de nom refusé (service) |
+| COR-05-08 | Fournisseurs avec autocomplétion | IMPLEMENTED ; natif **PASS** (clavier, création rapide) ; **03/11 : O-05-24 corrigé** (Entrée sans effet tant que les suggestions sont périmées), natif PASS | `Phase05SearchTests.cs` (recherche fournisseur), doublon de nom refusé (service) |
 
 ## COR-05-01 — Un serveur local = un magasin
 
@@ -127,3 +130,35 @@ Effet de bord à signaler : la modification de `apps/desktop/src-tauri/tauri.con
 O-05-17 (logo sombre) : vérifié, **non corrigé** — l'actif `logo-horizontal-dark-sidebar.png` porte un fond blanc opaque (texte clair dessus) ; l'actif du Lot 6 et du Shell-Handoff `logo-dark.png` est une composition empilée sur fond marine. Remplacer ou recréer l'identité visuelle est un choix du propriétaire (BL-05-C2).
 
 Exports CSV Catalogue / Stock / Fournisseurs (sujet G05-DESIGN) : **non livrés** dans ce mandat (non demandés comme correction ; R-F-07 maintenue). Prix d'achat à quatre décimales : conservés (`40.1250` servi par l'API, testé en PostgreSQL ; « 48,0000 € » affiché sur la fiche native, capture 10).
+
+## Application de 0008 et preuves réelles (03/11/2026)
+
+Mandat : [`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../../../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md). Preuves : [`evidence/sql0008/`](evidence/sql0008/).
+
+| Étape | Résultat | Preuve |
+| --- | --- | --- |
+| Précontrôles (branche, manifeste 8 / 8, scripts EF régénérés identiques, PG 18.6 / 5433, 5432 jamais contacté, 0001–0007 sans 0008, dérive) | **PASS** après arrêt par le propriétaire de son API 7267 et de `tauri dev` (2 connexions sur `mmv_v2_dev` à 15:30 → STOP et question, aucune écriture) | `P0508_preflight_20261103.log` |
+| Sauvegardes hors dépôt (`pg_dump` -Fc exit 0, non vides, SHA-256, `pg_restore --list` exit 0, 408 entrées, 0 objet 0008) | **PASS** — dev 219 440 o `6848B40F…6778230`, test 198 014 o `FD9F2CEE…3C8BB821` ; restauration complète **NON ÉPROUVÉE** | idem § 6 |
+| Application `mmv_v2_dev` puis `mmv_v2_test` (`Invoke-MmvSqlScript.ps1`, empreinte imposée, `LockTimeout 5s`) | **COMMIT** ×2, 0008 dans `__EFMigrationsHistory` (8 migrations) | `P0508_apply_mmv_v2_*.log` |
+| `0008_CatalogCorrections.verify.sql` | **14 / 14 OK** sur chaque base, 0 écart | `P0508_verify_20261103.log` |
+| Schéma exact (`SchemaStateTests`, `Phase05SchemaTests` sur l'inventaire 0008) | **PASS** | idem, `P0508_dotnet_20261103.log` |
+| Données préexistantes (empreintes md5 par table, objets, colonnes, contraintes, déclencheurs, fonctions) | **IDENTIQUES** ; seule `__EFMigrationsHistory` passe de 7 à 8 lignes | `P0508_fingerprints_20261103.log` |
+| `dotnet test MMV.slnx` (serveur en mémoire) | **PASS** 50 / 50, 527 / 527, PostgreSQL 88 / 89 (+1 `NOT_TESTED` : processus réel non désigné) | `P0508_dotnet_20261103.log` |
+| PostgreSQL Phases 02–05 via le **processus MMV.Api réel** HTTPS 7367 (dont COR-05-04 / 05, SignalR, magasin, assistant, recherche, permissions, HTTP en clair refusé `403 https_required`) | **PASS 89 / 89** ; 18 bancs via le processus réel, 1 en mémoire (temps réel à réglage propre) ; 19 purges à résidu 0 | idem |
+| Vitest ; `npm run check` ; ESLint ; `vite build` | **PASS** 325 / 325 ; OK ; 0 erreur (1 avertissement préexistant) ; OK | `P0508_frontend_20261103.log` |
+| Natif deux postes Tauri (WebView2) + API de banc réelle sur `mmv_v2_test`, données fictives | **PASS 69 / 69** | `COR05_native_run_0008_20261103.log`, 34 captures |
+| Purge des données d'essai de `mmv_v2_test` | **Résidu 0** : empreintes identiques à l'état post-0008 (6 familles + 8 migrations) | `P0508_fingerprints_20261103.log` |
+
+Nouvelles étapes natives (`apps/desktop/e2e/native-cor05.mjs`, option `--csv-dir`) :
+
+- **importcsv** (COR-05-04) : vrai fichier Windows-1252 à tabulation déposé depuis le disque (`DOM.setFileInputFiles`), encodage et séparateur détectés, « Modèle » accentué intact, « Ref » proposé « Probable — à vérifier » pour le fournisseur du fichier ; famille et politique choisies pour tout le fichier ; modèle d'import enregistré ; contrôle à blanc 3 créations / 0 erreur ; application tout ou rien ; tarifs du même fichier (« 1 071,50 », virgule décimale) appliqués en EUR ; réémission : modèle repris, 1 création / 1 modification / 2 inchangées (aucun doublon) ; ligne sans modèle : 1 erreur, « Appliquer » inactif, correction à l'écran puis nouvelle version 0 erreur.
+- **offres** (COR-05-05) : offre simple (fournisseur par combobox, type, indice, politique, délai, prix, plages SPH / ADD, diamètres, traitements, provenance) → « Incomplète » ; testeur SPH −6,00 « à vérifier » (avec l'avertissement « ni validation clinique ») puis −11,00 « incompatible » ; mode avancé (fiche complète, plage CYL) → révision n° 2 avec motif ; testeur « compatible » ; poste B vendeur : aucun prix ni bouton de création.
+
+## Réserves et observations (03/11/2026)
+
+- **O-05-23** (corrigé, test seulement) : `SchemaState.AllMigrationIds` n'incluait pas 0008 (oubli du lot B, invisible tant que 0008 n'était appliquée qu'au cluster jetable) ; `Assembly_DeclaresExactlyTheReviewedMigrations` échouait au précontrôle. Liste complétée dans `tests/MMV.PostgreSql.Tests/SchemaInspection.cs`.
+- **O-05-24** (corrigé, poste) : `SupplierCombobox` — pendant la temporisation de recherche, la liste affichait encore les suggestions de la saisie précédente et Entrée choisissait la première : une frappe rapide « optique d » + Entrée a rattaché **Laboratoire Verres Nord** au lieu d'Optique Diffusion (constaté sur capture native). Désormais Entrée ne choisit rien tant que les suggestions ne correspondent pas à la saisie ; prouvé en natif (contrôle « Entrée pendant la recherche »).
+- **O-05-25** : le rapport d'audit `MMV_V2_AUDIT_G05_SQL_0008_2026-11-03.md` cité par le mandat n'est pas présent dans l'espace de travail (dépôt, Downloads, Documents, Desktop) ; non lu.
+- **O-05-26** (corrigé, test seulement) : depuis COR-05-01, le mode « processus réel » du banc PostgreSQL (`MMV_PG05_API_BASE`) était inopérant (chaque banc créait deux magasins aléatoires → `503 ambiguous`, et le serveur garde en mémoire l'identifiant du magasin résolu) ; le banc réutilise désormais un magasin fixe en mode réel (`MMV_PG05_API_STORE`, défaut `T05BEREEL`, conservé par la purge puis supprimé par la purge de l'opérateur). Le test temps réel, qui exige un réglage serveur propre, reste en mémoire.
+- **O-05-27** (observation, non corrigée) : à 1366 px, le tableau des offres d'une gamme (12 colonnes) défile horizontalement dans sa carte et le détail déplié d'une offre (testeur compris) est rendu dans ce même défilement (capture 23) ; conforme à COR-05-03 (aucun débordement de page) mais lisibilité à revoir (BL-05-C4).
+- Bases du propriétaire : l'agent n'a écrit sur `mmv_v2_dev` que par le script 0008 ; aucune écriture de banc sur `mmv_v2_dev`. Les processus du propriétaire ont été arrêtés par lui seul ; ils n'ont pas été relancés par l'agent.

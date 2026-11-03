@@ -185,3 +185,20 @@ Détail et preuves : [`CORRECTIONS_05.md`](CORRECTIONS_05.md). Cible PostgreSQL 
 | Q-05-C07 | Natif : coupure de l'API puis reprise (indicateur, resynchronisation d'une donnée modifiée pendant la coupure) | **PASS** |
 | Q-05-C08 | Suites PostgreSQL complètes sur `mmv_v2_test` avec 0008 | `NOT_TESTED` (GO SQL requis) |
 | Q-05-C09 | Comparaison au Lot 6 des nouvelles surfaces (assistant, combobox, indicateur, offres de verres, import) | `NOT_TESTED` cadre par cadre — surfaces absentes du Lot 6, composées avec ses composants ; revue visuelle du propriétaire |
+
+
+## G05-SQL-0008 — application et suites réelles du 03/11/2026
+
+Note datée : 0008 appliquée à `mmv_v2_dev` et `mmv_v2_test` (GO du propriétaire du 03/11/2026). Q-05-C08 ci-dessus (`NOT_TESTED` au 02/11) est réalisé par Q-05-S801 à S806. Preuves : [`evidence/sql0008/`](evidence/sql0008/).
+
+| Réf. | Contrôle | Résultat |
+|---|---|---|
+| Q-05-S801 | Précontrôles (manifeste 8 / 8, scripts EF identiques, PG 18.6 / 5433, 0001–0007 sans 0008, dérive, aucune écriture concurrente) | **PASS** après arrêt de ses processus par le propriétaire |
+| Q-05-S802 | Sauvegardes dev / test (`pg_dump` exit 0, non vides, SHA-256, `pg_restore --list`) ; restauration complète | **PASS** ; restauration `NOT_TESTED` |
+| Q-05-S803 | Application dev puis test, COMMIT, `verify.sql` | **PASS** 14 / 14 × 2 |
+| Q-05-S804 | Intégrité des données préexistantes (empreintes par table et des objets 0001–0007) | **PASS** (identiques ; seul l'historique EF +1) |
+| Q-05-S805 | `dotnet test MMV.slnx` (mémoire) ; PostgreSQL Phases 02–05 via le processus HTTPS réel | **PASS** 50 / 50, 527 / 527, 88 / 89 (+1 `NOT_TESTED`) ; **89 / 89** en processus réel |
+| Q-05-S806 | Vitest ; check ; ESLint ; build | **PASS** 325 / 325 ; OK ; 0 erreur ; OK |
+| Q-05-S807 | Natif deux postes sur `mmv_v2_test` : COR-05-01 à 08, reconnexion, import CSV (Windows-1252, modèle, tarifs, réémission, correction), offres de verres (simple, testeur, avancé, révisions, vendeur) | **PASS** 69 / 69 |
+| Q-05-S808 | Purge des données d'essai | **PASS** résidu 0 |
+| Q-05-S809 | Comparaison visuelle au Lot 6 des écrans import CSV et offres de verres | `NOT_TESTED` — revue du propriétaire (G05-DESIGN) |

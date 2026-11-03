@@ -112,3 +112,10 @@ Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; P
 - **Import CSV** : détection d'encodage (poste) et de séparateur, `ImportMapper`, `NumberText`, options `@decimal` / `@familyCode` / `@stockPolicy`, profils `GET|PUT /api/imports/profiles/{supplierId}/{kind}`, rapprochement par référence fournisseur et code-barres, lot de corrections.
 - **Verres** : `GET|POST /api/catalog/lens-offers`, `GET|PUT /api/catalog/lens-offers/{id}`, `…/archive`, `…/reactivate`, `POST …/check` ; règles structurées ; contrat `LensPrescription` / `LensCompatibilityEvaluator` pour la Phase 06.
 - Migration additive 0008 **non appliquée** ; dossier [`SQL_0008_REVUE.md`](SQL_0008_REVUE.md).
+
+
+## Note datée — 03/11/2026 (G05-SQL-0008)
+
+- Migration 0008 **appliquée** à `mmv_v2_dev` et `mmv_v2_test` (script `9a75acea…287e715c` inchangé) ; les routes `/api/imports` (colonne `supplier_id`, profils) et `/api/catalog/lens-offers` sont opérationnelles sur les bases du propriétaire.
+- Combobox fournisseur : Entrée ne sélectionne rien tant que les suggestions affichées sont celles d'une saisie antérieure (temporisation ou requête en cours) — O-05-24.
+- Banc PostgreSQL en mode processus réel : magasin fixe `MMV_PG05_API_STORE` (défaut `T05BEREEL`), à configurer comme `Installation__StoreCode` du processus ; bancs à réglages serveur propres maintenus en mémoire — O-05-26.

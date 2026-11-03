@@ -1,0 +1,119 @@
+# Parcours natif complet COR-05-01 à 08 après application de 0008 : deux vraies fenêtres Tauri/WebView2 (mmv-cor05a / mmv-cor05b,
+# build de banc du front livré, VITE_MMV_API_BASE_URL=https://localhost:7367), API de banc RÉELLE sur mmv_v2_test (magasin NATIF-BE,
+# source single_store), données fictives (P0508_harness_seed.cs.txt), CSV fictifs Windows-1252. Scénario : apps/desktop/e2e/native-cor05.mjs
+# (--api-restart : coupure et reprise de l'API de banc ; --csv-dir). Captures : COR05_native_*_20261103.jpg (ce dossier).
+2026-11-03T15:16:53.342Z ÉTAPE — magasin
+2026-11-03T15:16:54.447Z PASS — magasin de l'installation affiché sans sélection
+2026-11-03T15:16:54.448Z PASS — devise du magasin EUR
+2026-11-03T15:16:54.448Z PASS — aucun sélecteur de magasin
+2026-11-03T15:16:54.449Z PASS — indicateur temps réel « Connecté »
+2026-11-03T15:16:54.919Z PASS — magasin de l'installation affiché sans sélection
+2026-11-03T15:16:54.920Z PASS — devise du magasin EUR
+2026-11-03T15:16:54.920Z PASS — aucun sélecteur de magasin
+2026-11-03T15:16:54.921Z PASS — indicateur temps réel « Connecté »
+2026-11-03T15:16:56.378Z CAPTURE — <PREUVES>\COR05_native_01_catalogue_magasin_temps-reel_A_light_20261103.png 1366x768
+2026-11-03T15:16:56.378Z ÉTAPE — recherche
+2026-11-03T15:16:56.910Z PASS — recherche « Ray Ban » : 3 ligne(s)
+2026-11-03T15:16:57.445Z PASS — recherche « RX5228 » : 2 ligne(s)
+2026-11-03T15:16:57.662Z PASS — recherche « ray ban noir » : 2 ligne(s)
+2026-11-03T15:16:58.198Z PASS — recherche « rayban » : 3 ligne(s)
+2026-11-03T15:16:58.731Z PASS — recherche « ecaille » : 1 ligne(s)
+2026-11-03T15:16:58.949Z PASS — recherche « etui rigide modele 54 » : 1 ligne(s)
+2026-11-03T15:16:58.949Z PASS — mots surlignés comme dans Clients
+2026-11-03T15:17:00.377Z CAPTURE — <PREUVES>\COR05_native_02_recherche_etui-54_page-2_A_light_20261103.png 1366x768
+2026-11-03T15:17:00.907Z PASS — recherche « ray ban noir » : 2 ligne(s)
+2026-11-03T15:17:02.328Z CAPTURE — <PREUVES>\COR05_native_03_recherche_ray-ban-noir_A_light_20261103.png 1366x768
+2026-11-03T15:17:03.183Z PASS — recherche Stock « holbrook » : 2 lignes (2 emplacements)
+2026-11-03T15:17:03.340Z ÉTAPE — tempsreel
+2026-11-03T15:17:04.044Z PASS — B : Holbrook en main 4 au MAGASIN
+2026-11-03T15:17:06.093Z CAPTURE — <PREUVES>\COR05_native_04a_temps-reel_entree_stock_A_light_20261103.png 1366x768
+2026-11-03T15:17:06.254Z PASS — B mis à jour sans rechargement en 1 ms (stock 4 → 6)
+2026-11-03T15:17:07.713Z CAPTURE — <PREUVES>\COR05_native_04_temps-reel_stock_B_apres_entree_A_light_20261103.png 1366x768
+2026-11-03T15:17:07.713Z ÉTAPE — prix
+2026-11-03T15:17:09.126Z PASS — B (vendeur) : aucune colonne de coût
+2026-11-03T15:17:09.654Z PASS — A : aperçu serveur 61,25 × 2,6 = 159,25 €
+2026-11-03T15:17:09.809Z PASS — B : prix de vente 159,25 € reçu sans rechargement en 154 ms
+2026-11-03T15:17:09.810Z PASS — B : prix d'achat jamais affiché au vendeur
+2026-11-03T15:17:11.244Z CAPTURE — <PREUVES>\COR05_native_05c_temps-reel_prix_B_vendeur_light_20261103.png 1366x768
+2026-11-03T15:17:11.244Z ÉTAPE — reconnexion
+2026-11-03T15:17:12.195Z PASS — B : « Reconnexion en cours » après coupure
+2026-11-03T15:17:32.285Z PASS — B : « Déconnecté — données potentiellement obsolètes »
+2026-11-03T15:17:33.726Z CAPTURE — <PREUVES>\COR05_native_05_temps-reel_deconnecte_B_light_20261103.png 1366x768
+2026-11-03T15:17:47.230Z PASS — B : reconnecté automatiquement, données relues
+2026-11-03T15:17:47.230Z ÉTAPE — assistant
+2026-11-03T15:17:47.408Z PASS — assistant : 5 étapes visibles
+2026-11-03T15:17:47.411Z PASS — assistant : contrôle de l'étape 1
+2026-11-03T15:17:48.959Z CAPTURE — <PREUVES>\COR05_native_06_assistant_etape1_A_light_20261103.png 1366x768
+2026-11-03T15:17:49.092Z PASS — combobox : suggestion par nom partiel
+2026-11-03T15:17:50.525Z CAPTURE — <PREUVES>\COR05_native_07_assistant_combobox_fournisseur_A_light_20261103.png 1366x768
+2026-11-03T15:17:50.706Z PASS — combobox : sélection au clavier (flèche + Entrée)
+2026-11-03T15:17:50.989Z PASS — aperçu serveur : 40,125 × 2,5 = 100,31 € (arrondi serveur)
+2026-11-03T15:17:52.425Z CAPTURE — <PREUVES>\COR05_native_08_assistant_tarif_coefficient_A_light_20261103.png 1366x768
+2026-11-03T15:17:53.941Z CAPTURE — <PREUVES>\COR05_native_09_assistant_resume_A_light_20261103.png 1366x768
+2026-11-03T15:17:54.577Z PASS — produit créé tout ou rien : prix 100,31 € sur la fiche
+2026-11-03T15:17:54.577Z PASS — SKU généré par le serveur (MON-xxxxxx)
+2026-11-03T15:17:54.577Z ÉTAPE — tableaux
+2026-11-03T15:17:56.784Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1920x1080_light_20261103.png 1920x1080
+2026-11-03T15:17:57.190Z PASS — fiche produit 1920×1080 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:17:58.961Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1920x1080_dark_20261103.png 1920x1080
+2026-11-03T15:17:59.376Z PASS — fiche produit 1920×1080 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:01.126Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1366x768_light_20261103.png 1366x768
+2026-11-03T15:18:01.528Z PASS — fiche produit 1366×768 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:03.259Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1366x768_dark_20261103.png 1366x768
+2026-11-03T15:18:03.663Z PASS — fiche produit 1366×768 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:05.420Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1024x700_light_20261103.png 1024x700
+2026-11-03T15:18:05.836Z PASS — fiche produit 1024×700 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:07.588Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_1024x700_dark_20261103.png 1024x700
+2026-11-03T15:18:07.999Z PASS — fiche produit 1024×700 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:09.733Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_960x640_light_20261103.png 960x640
+2026-11-03T15:18:10.134Z PASS — fiche produit 960×640 light : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:11.866Z CAPTURE — <PREUVES>\COR05_native_10_fiche_tableaux_960x640_dark_20261103.png 960x640
+2026-11-03T15:18:12.282Z PASS — fiche produit 960×640 dark : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:12.598Z ÉTAPE — zoom
+2026-11-03T15:18:16.281Z PASS — zoom WebView2 effectif 125 %
+2026-11-03T15:18:17.737Z CAPTURE — <PREUVES>\COR05_native_10z_fiche_tableaux_1366x768_zoom125_light_20261103.png 1366x768
+2026-11-03T15:18:18.150Z PASS — zoom 125 % : tableaux dans leurs cartes, aucun défilement horizontal de page
+2026-11-03T15:18:21.112Z ÉTAPE — verres
+2026-11-03T15:18:21.141Z PASS — référentiel verres : vue « Gammes et offres fournisseur »
+2026-11-03T15:18:22.575Z CAPTURE — <PREUVES>\COR05_native_11_verres_offres_A_light_20261103.png 1366x768
+2026-11-03T15:18:22.575Z ÉTAPE — importcsv
+2026-11-03T15:18:22.917Z PASS — Entrée pendant la recherche : aucun fournisseur choisi sur des suggestions périmées (O-05-24)
+2026-11-03T15:18:23.417Z PASS — fournisseur du fichier « Optique Diffusion » choisi au clavier
+2026-11-03T15:18:23.577Z PASS — fichier réel Windows-1252 détecté (aucun caractère de remplacement)
+2026-11-03T15:18:23.578Z PASS — séparateur tabulation détecté
+2026-11-03T15:18:23.578Z PASS — intitulé accentué « Modèle » lu intact
+2026-11-03T15:18:23.579Z PASS — « Ref » proposé comme référence du fournisseur (probable, à vérifier)
+2026-11-03T15:18:25.324Z CAPTURE — <PREUVES>\COR05_native_12_import_correspondance_A_light_20261103.png 1366x768
+2026-11-03T15:18:25.484Z PASS — contrôle à blanc : 3 créations, 0 erreur, rien écrit
+2026-11-03T15:18:25.484Z PASS — modèle d'import enregistré pour Optique Diffusion
+2026-11-03T15:18:27.241Z CAPTURE — <PREUVES>\COR05_native_13_import_controle-a-blanc_A_light_20261103.png 1366x768
+2026-11-03T15:18:27.395Z PASS — lot appliqué tout ou rien ; tarifs du même fichier proposés
+2026-11-03T15:18:29.124Z CAPTURE — <PREUVES>\COR05_native_14_import_applique_tarifs-proposes_A_light_20261103.png 1366x768
+2026-11-03T15:18:29.440Z PASS — tarifs : rapprochement par référence fournisseur, virgule décimale et milliers « 1 071,50 », 0 erreur
+2026-11-03T15:18:29.597Z PASS — tarifs appliqués dans la devise du magasin (EUR), sans conversion
+2026-11-03T15:18:31.341Z CAPTURE — <PREUVES>\COR05_native_15_import_tarifs_appliques_A_light_20261103.png 1366x768
+2026-11-03T15:18:31.511Z PASS — réémission : modèle d'import du fournisseur repris automatiquement
+2026-11-03T15:18:31.668Z PASS — réémission : 1 création, 1 modification, 2 inchangées — aucun doublon
+2026-11-03T15:18:33.427Z CAPTURE — <PREUVES>\COR05_native_16_import_reemission_sans-doublon_A_light_20261103.png 1366x768
+2026-11-03T15:18:33.902Z PASS — ligne sans modèle : 1 erreur, application refusée (tout ou rien)
+2026-11-03T15:18:33.903Z PASS — bouton « Appliquer » inactif tant qu'une erreur subsiste
+2026-11-03T15:18:35.641Z CAPTURE — <PREUVES>\COR05_native_17_import_erreur_correction_A_light_20261103.png 1366x768
+2026-11-03T15:18:36.168Z PASS — correction à l'écran : nouvelle version déposée, 0 erreur (l'originale reste tracée)
+2026-11-03T15:18:38.076Z CAPTURE — <PREUVES>\COR05_native_18_import_correction_appliquee_A_light_20261103.png 1366x768
+2026-11-03T15:18:38.076Z ÉTAPE — offres
+2026-11-03T15:18:42.308Z CAPTURE — <PREUVES>\COR05_native_19_verres_offre_saisie-simple_A_light_20261103.png 1366x768
+2026-11-03T15:18:42.475Z PASS — offre créée au niveau simple : fiche « Incomplète »
+2026-11-03T15:18:43.074Z PASS — testeur : SPH −6,00 dans la plage mais fiche incomplète → « à vérifier », jamais « compatible »
+2026-11-03T15:18:43.074Z PASS — testeur : avertissement « ni validation clinique ni garantie du fabricant »
+2026-11-03T15:18:44.823Z CAPTURE — <PREUVES>\COR05_native_20_verres_testeur_a-verifier_A_light_20261103.png 1366x768
+2026-11-03T15:18:45.196Z PASS — testeur : SPH −11,00 hors plage déclarée → « incompatible »
+2026-11-03T15:18:46.924Z CAPTURE — <PREUVES>\COR05_native_21_verres_testeur_incompatible_A_light_20261103.png 1366x768
+2026-11-03T15:18:49.025Z CAPTURE — <PREUVES>\COR05_native_22_verres_offre_mode-avance_A_light_20261103.png 1366x768
+2026-11-03T15:18:49.185Z PASS — mode avancé : fiche déclarée complète, plage CYL ajoutée, révision enregistrée
+2026-11-03T15:18:49.186Z PASS — historique : révisions n° 1 et n° 2 avec motif et auteur
+2026-11-03T15:18:50.000Z PASS — testeur : fiche complète, SPH/CYL/ADD dans les plages → « compatible » (règles enregistrées)
+2026-11-03T15:18:56.256Z CAPTURE — <PREUVES>\COR05_native_23_verres_testeur_compatible_A_light_20261103.png 1366x768
+2026-11-03T15:18:56.427Z PASS — B (vendeur, sans costs.read) : aucun prix fournisseur servi ni affiché
+2026-11-03T15:18:56.428Z PASS — B (sans catalog.configure) : aucune création d'offre proposée
+2026-11-03T15:18:57.873Z CAPTURE — <PREUVES>\COR05_native_24_verres_offres_vendeur_B_light_20261103.png 1366x768
+2026-11-03T15:18:57.873Z RÉSULTAT — 69 contrôle(s) PASS

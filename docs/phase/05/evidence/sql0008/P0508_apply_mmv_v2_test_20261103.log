@@ -1,0 +1,37 @@
+# ./scripts/Invoke-MmvSqlScript.ps1 -SecretsId mmv-v2-postgresql-tests -Key ConnectionStrings:MmvTest -Database mmv_v2_test \
+#   -Script docs/phase/05/sql/0008_CatalogCorrections.idempotent.sql -Sha256 9a75acea…287e715c -LockTimeout 5s
+# appliqué APRÈS contrôle entièrement conforme de mmv_v2_dev ; sessions juste avant : 0 ; début 2026-11-03T15:35:59.48+01:00, fin 15:35:59.77+01:00 ; exit 0
+PRECHECK OK : mmv_v2_test / mmv_v2_test / port 5433 / server_version_num 180006
+SCRIPT : docs/phase/05/sql/0008_CatalogCorrections.idempotent.sql (SHA-256 9A75ACEA0173A5019B520362CF04A5CA10E1DE814753603F21D46C1C287E715C)
+LOCK_TIMEOUT : 5s
+START TRANSACTION
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+DO
+COMMIT
+APPLIQUE : exit 0
+MIGRATIONS : 20261015125000_InitialBaseline, 20261015223849_AuthIdentity, 20261016230630_ClientsModule, 20261017150504_AppointmentsModule, 20261018163108_AuditJournal, 20261027134615_OpticalModule, 20261030005557_CatalogStockModule, 20261102183203_CatalogCorrections
