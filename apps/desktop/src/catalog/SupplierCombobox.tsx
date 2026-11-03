@@ -90,7 +90,11 @@ export function SupplierCombobox({ label, value, onChange, required, error, hint
       event.preventDefault();
       setActive((i) => (options === 0 ? -1 : i <= 0 ? options - 1 : i - 1));
     } else if (event.key === "Enter") {
-      if (open && options > 0) {
+      // Suggestions encore celles de la saisie précédente (temporisation ou requête en cours) : Entrée ne choisit rien,
+      // sinon une frappe rapide « optique d » + Entrée rattachait un autre fournisseur (O-05-24, natif du 03/11/2026).
+      if (open && loading) {
+        event.preventDefault();
+      } else if (open && options > 0) {
         event.preventDefault();
         pick(active < 0 ? 0 : Math.min(active, options - 1));
       }

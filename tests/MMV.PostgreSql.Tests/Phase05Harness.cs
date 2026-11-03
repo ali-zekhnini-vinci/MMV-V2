@@ -136,13 +136,23 @@ internal sealed class Phase05Bench : IAsyncDisposable
     /// </summary>
     public const string ApiBaseVariable = "MMV_PG05_API_BASE";
 
-    private Phase05Bench(WebApplicationFactory<Program> factory, WebApplicationFactory<Program> factoryMa, string suffix, ITestOutputHelper output)
+    /// <summary>
+    /// COR-05-01 : le processus réel sert UN magasin, celui de son <c>Installation__StoreCode</c>, et garde son identifiant
+    /// en mémoire. En mode processus réel, le magasin fictif Belgique est donc ce magasin FIXE (<c>MMV_PG05_API_STORE</c>,
+    /// défaut <see cref="DefaultRealApiStoreCode"/>), créé au premier banc puis réutilisé : la purge efface ses données et
+    /// ses emplacements, jamais le magasin lui-même (résidu d'une ligne <c>org.stores</c>, à purger par l'opérateur du banc).
+    /// </summary>
+    public const string ApiStoreVariable = "MMV_PG05_API_STORE";
+
+    public const string DefaultRealApiStoreCode = "T05BEREEL";
+
+    private Phase05Bench(WebApplicationFactory<Program> factory, WebApplicationFactory<Program> factoryMa, string suffix, ITestOutputHelper output, bool inMemory)
     {
         Factory = factory;
         FactoryMa = factoryMa;
         Suffix = suffix;
         _output = output;
-        RealApi = RealApiBase();
+        RealApi = inMemory ? null : RealApiBase();
         Client = RealApi is null
             ? factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") })
             : new HttpClient { BaseAddress = RealApi };
@@ -169,6 +179,12 @@ internal sealed class Phase05Bench : IAsyncDisposable
         return uri;
     }
 
+    public static string RealApiStoreCode()
+    {
+        var value = Environment.GetEnvironmentVariable(ApiStoreVariable);
+        return string.IsNullOrWhiteSpace(value) ? DefaultRealApiStoreCode : value.Trim().ToUpperInvariant();
+    }
+
     public WebApplicationFactory<Program> Factory { get; }
 
     /// <summary>
@@ -184,7 +200,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
 
     public string Suffix { get; }
 
-    public string StoreBeCode => $"T05BE{Suffix}";
+    public string StoreBeCode => RealApi is null ? $"T05BE{Suffix}" : RealApiStoreCode();
 
     public string StoreMaCode => $"T05MA{Suffix}";
 
@@ -193,6 +209,9 @@ internal sealed class Phase05Bench : IAsyncDisposable
     public Dictionary<string, Guid> UserIds { get; } = new(StringComparer.Ordinal);
 
     public List<Guid> Stores { get; } = [];
+
+    /// <summary>Magasin fixe du processus réel : ses données sont purgées, la ligne du magasin est conservée.</summary>
+    public Guid? KeptStore { get; private set; }
 
     public Guid StoreBe { get; private set; }
 
@@ -210,6 +229,9 @@ internal sealed class Phase05Bench : IAsyncDisposable
     {
         var connection = Phase05Target.ConnectionString!;
         var suffix = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        // Réglages propres au serveur (ex. contrôle de session du temps réel) : le processus réel ne peut pas les recevoir,
+        // ce banc reste donc en mémoire.
+        var inMemory = settings is not null || RealApiBase() is null;
         WebApplicationFactory<Program> Server(string storeCode) => new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -227,7 +249,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
                 }
             });
         });
-        var bench = new Phase05Bench(Server($"T05BE{suffix}"), Server($"T05MA{suffix}"), suffix, output);
+        var bench = new Phase05Bench(Server(inMemory ? $"T05BE{suffix}" : RealApiStoreCode()), Server($"T05MA{suffix}"), suffix, output, inMemory);
         await bench.SeedStoresAsync();
         output.WriteLine($"banc Phase 05 sur {Phase05Target.Name}, suffixe {bench.Suffix}, HTTP : {bench.RealApi?.ToString() ?? "serveur en mémoire"}");
         return bench;
@@ -319,9 +341,11 @@ internal sealed class Phase05Bench : IAsyncDisposable
         using var scope = Factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
         var now = DateTimeOffset.UtcNow;
-        var be = Store.Create(Guid.CreateVersion7(), $"T05BE{Suffix}", "Banc fictif Belgique", "BE", Currencies.Euro, now);
+        var kept = RealApi is null ? null : await context.Stores.SingleOrDefaultAsync(s => s.Code == StoreBeCode);
+        var be = kept ?? Store.Create(Guid.CreateVersion7(), StoreBeCode, "Banc fictif Belgique", "BE", Currencies.Euro, now);
         var ma = Store.Create(Guid.CreateVersion7(), $"T05MA{Suffix}", "Banc fictif Maroc", "MA", Currencies.Dirham, now);
-        context.Stores.AddRange(be, ma);
+        context.Stores.AddRange(kept is null ? [be, ma] : [ma]);
+        KeptStore = RealApi is null ? null : be.Id;
         var beDefault = Location.Create(Guid.CreateVersion7(), be.Id, "MAGASIN", "Magasin", true, now);
         var beBack = Location.Create(Guid.CreateVersion7(), be.Id, "RESERVE", "Réserve", false, now);
         var maDefault = Location.Create(Guid.CreateVersion7(), ma.Id, "MAGASIN", "Magasin", true, now);
@@ -354,6 +378,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
             await using var command = new NpgsqlCommand(sql, connection, transaction);
             command.Parameters.AddWithValue("u", Users.ToArray());
             command.Parameters.AddWithValue("s", Stores.ToArray());
+            command.Parameters.AddWithValue("k", KeptStore ?? Guid.Empty);
             await command.ExecuteNonQueryAsync();
         }
 
@@ -391,7 +416,7 @@ internal sealed class Phase05Bench : IAsyncDisposable
         await Run("DELETE FROM catalog.lens_references WHERE created_by_user_id = ANY(@u)");
         await Run("DELETE FROM catalog.suppliers WHERE created_by_user_id = ANY(@u)");
         await Run("DELETE FROM org.locations WHERE store_id = ANY(@s)");
-        await Run("DELETE FROM org.stores WHERE id = ANY(@s)");
+        await Run("DELETE FROM org.stores WHERE id = ANY(@s) AND id <> @k");
         await Run("DELETE FROM audit.events WHERE actor_user_id = ANY(@u)");
         await Run("DELETE FROM auth.users WHERE id = ANY(@u)");
         foreach (var table in tables)
@@ -402,13 +427,14 @@ internal sealed class Phase05Bench : IAsyncDisposable
         await transaction.CommitAsync();
         await using var residue = new NpgsqlCommand(
             """
-            SELECT (SELECT count(*) FROM org.stores WHERE id = ANY(@s)) + (SELECT count(*) FROM auth.users WHERE id = ANY(@u))
+            SELECT (SELECT count(*) FROM org.stores WHERE id = ANY(@s) AND id <> @k) + (SELECT count(*) FROM auth.users WHERE id = ANY(@u))
                  + (SELECT count(*) FROM catalog.product_variants WHERE created_by_user_id = ANY(@u)) + (SELECT count(*) FROM audit.events WHERE actor_user_id = ANY(@u))
                  + (SELECT count(*) FROM stock.movements m JOIN org.locations l ON l.id = m.location_id WHERE l.store_id = ANY(@s))
             """,
             connection);
         residue.Parameters.AddWithValue("u", Users.ToArray());
         residue.Parameters.AddWithValue("s", Stores.ToArray());
+        residue.Parameters.AddWithValue("k", KeptStore ?? Guid.Empty);
         Residue = (int)(long)(await residue.ExecuteScalarAsync())!;
         _output.WriteLine($"purge du banc {Suffix} : résidu = {Residue}");
         Client.Dispose();

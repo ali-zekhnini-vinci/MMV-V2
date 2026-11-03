@@ -55,13 +55,13 @@ public sealed record SchemaState(
 
     /// <summary>
     /// Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule ;
-    /// phase 03-D2 : + AuditJournal ; phase 04-B : + OpticalModule ; phase 05 : + CatalogStockModule, préparée, G05-SQL
-    /// requise avant toute application).
+    /// phase 03-D2 : + AuditJournal ; phase 04-B : + OpticalModule ; phase 05 : + CatalogStockModule ; corrections
+    /// phase 05 : + CatalogCorrections, oubliée au lot B et ajoutée au précontrôle du 03/11/2026, O-05-23).
     /// </summary>
     public static readonly string[] AllMigrationIds =
     [
         BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId, OpticalModuleMigrationId,
-        CatalogStockModuleMigrationId,
+        CatalogStockModuleMigrationId, CatalogCorrectionsMigrationId,
     ];
 
     /// <summary>
