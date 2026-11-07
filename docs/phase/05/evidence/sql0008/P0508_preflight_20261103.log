@@ -1,0 +1,185 @@
+# G05-SQL 0008 — précontrôles (03/11/2026, avant toute écriture). Lecture seule : sessions psql default_transaction_read_only=on ;
+# identifiants lus dans les user-secrets, jamais affichés. Mandat : prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md
+## 0. Dépôt
+Branche feat/phase-05-catalogue-stock, HEAD 1504056 (docs natives des corrections). Seule modification suivie avant travaux : apps/desktop/.env.development
+  (propriétaire, sha256 a215e1f012848afc5f5fb1dd87efadc718c20fb3316201713ef70a18bd7d2e4e, NON touchée, NON indexée).
+Rapport d'audit MMV_V2_AUDIT_G05_SQL_0008_2026-11-03.md : ABSENT de l'espace de travail (dépôt, Downloads, Documents, Desktop) — O-05-25.
+## 1. Empreintes (dans le dépôt)
+sha256sum -c docs/phase/05/sql/0008_MANIFEST.sha256 : 8 / 8 OK
+  0008_CatalogCorrections.idempotent.sql = 9a75acea0173a5019b520362cf04a5ca10e1de814753603f21d46c1c287e715c (= empreinte imposée par le mandat)
+sha256sum -c docs/phase/05/sql/0007_MANIFEST.sha256 : 10 / 12 OK ; divergent seulement MmvDbContextModelSnapshot.cs et CatalogStockModel.cs,
+  entrées partagées qui évoluent avec toute migration (attendu, SQL_0008_REVUE.md § 1) ; scripts 0007 et Invoke-MmvSqlScript.ps1 : OK.
+## 2. Scripts régénérés depuis la migration EF Core (build hors dépôt, BOM et CR retirés)
+dotnet-ef 10.0.4 migrations script 20261030005557_CatalogStockModule 20261102183203_CatalogCorrections [--idempotent] --no-build
+  idempotent : 9a75acea0173a5019b520362cf04a5ca10e1de814753603f21d46c1c287e715c — cmp : IDENTIQUE octet pour octet
+  direct     : b21057be31416a5bf4bff05414a84adc623afe8f909f0a2c4e9d6239a7b96ba9 — cmp : IDENTIQUE octet pour octet
+migrations has-pending-model-changes : "No changes have been made to the model since the last migration."
+migrations list : 8 migrations, la dernière = 20261102183203_CatalogCorrections
+## 3. Serveurs et processus
+Écoute : 5433 (PostgreSQL 18, PID 8600) ; 5432 (PostgreSQL 17, PID 6816) JAMAIS contacté.
+15:30 : processus du propriétaire ACTIFS — MMV.Api (dotnet run --launch-profile https, MMV.Api.exe PID 9860, 7267/5022, démarré 14:59:55)
+  et tauri dev (vite 1420, mmv-desktop.exe) ; pg_stat_activity : 2 connexions sur mmv_v2_dev (dernière requête 15:30), 0 sur mmv_v2_test.
+  => précontrôle « aucune écriture concurrente » NON CONFORME pour mmv_v2_dev : STOP, question posée au propriétaire (aucun processus arrêté par l'agent).
+  Réponse du propriétaire : « Je les arrête, puis GO ». Revérification 15:34:14 : aucun MMV.Api / tauri, ports 7267/5022/1420 libres,
+  pg_stat_activity : 0 session sur mmv_v2_dev et mmv_v2_test. Revérifié de nouveau juste avant chaque application (0 session).
+## 4. Identité et historique (les deux bases, lecture seule)
+ mmv_v2_dev  | mmv_v2_dev  | 5433 | PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit | 180006 | ro=on | super=f
+ mmv_v2_test | mmv_v2_test | 5433 | PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit | 180006 | ro=on | super=f
+__EFMigrationsHistory (les deux) : 0001 InitialBaseline … 0007 20261030005557_CatalogStockModule (7 lignes, ProductVersion 10.0.4) — 0008 ABSENTE.
+## 5. Dérive de schéma (MMV.PostgreSql.Tests, SchemaStateTests + TargetIdentityTests, lecture seule)
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches [170 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5432;Database=mmv_v2_test;User"···) [1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=mmv_v2_test;User"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=localhost;Port=5433;Database=postgres;Usernam"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: "Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use"···) [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches [6 ms]
+  Réussi MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget [< 1 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState [80 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [963 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [83 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations [45 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [13 ms]
+Nombre total de tests : 12
+     Réussi(s) : 9
+     Non réussi(s) : 3
+Lecture : ContainsOnlyAKnownState PASS sur les deux bases (aucun objet inattendu) ; TargetIdentity 7 / 7 PASS ;
+AllMigrationsApplied (dev, test) : ÉCHEC ATTENDU PAR CONSTRUCTION (0008 absente) ;
+Assembly_DeclaresExactlyTheReviewedMigrations : ÉCHEC dû au TEST (liste SchemaState.AllMigrationIds sans 0008, oubli du lot B — O-05-23) ;
+  liste complétée (tests/MMV.PostgreSql.Tests/SchemaInspection.cs, aucun SQL), relance : 10 / 12, seuls les deux AllMigrationsApplied échouent (par construction).
+## 6. Sauvegardes (pg_dump 18.6 -Fc, hors dépôt) — lisibles ; RESTAURATION COMPLÈTE NON ÉPROUVÉE
+### mmv_v2_dev
+START : 2026-11-03T15:35:03.2161447+01:00
+pg_dump (PostgreSQL) 18.6
+PG_DUMP EXIT : 0
+DUMP : C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0008_20261103_153503.dump
+SIZE : 219440
+SHA256 : 6848B40FFEF7DD86008B4992EC6E97EEC48ACA58144BBE8222381F3DE7778230
+PG_RESTORE --LIST EXIT : 0
+LIST : 423 lignes -> C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_dev_avant_0008_20261103_153503.dump.list.txt ; SHA256 liste 927A65E6EC7595709AA2DC080AD8C5EA5EA9CF4B60C5F1096406A90F7DB6FDB2
+ENTRIES : 408
+  CONSTRAINT appointments  2
+  CONSTRAINT audit         1
+  CONSTRAINT auth          4
+  CONSTRAINT catalog       7
+  CONSTRAINT clients       1
+  CONSTRAINT imports       2
+  CONSTRAINT optical       4
+  CONSTRAINT org           3
+  CONSTRAINT pricing       3
+  CONSTRAINT public        1
+  CONSTRAINT stock         7
+  FK CONSTRAINT            97
+  FUNCTION audit           1
+  FUNCTION catalog         2
+  FUNCTION imports         2
+  FUNCTION optical         2
+  FUNCTION org             2
+  FUNCTION stock           2
+  INDEX appointments       7
+  INDEX audit              3
+  INDEX auth               3
+  INDEX catalog            31
+  INDEX clients            5
+  INDEX imports            7
+  INDEX optical            27
+  INDEX org                3
+  INDEX pricing            7
+  INDEX stock              32
+  SCHEMA -                 10
+  SEQUENCE clients         1
+  SEQUENCE optical         2
+  SEQUENCE SET             6
+  SEQUENCE stock           3
+  TABLE appointments       2
+  TABLE audit              1
+  TABLE auth               4
+  TABLE catalog            7
+  TABLE clients            1
+  TABLE DATA               34
+  TABLE imports            2
+  TABLE optical            4
+  TABLE org                2
+  TABLE pricing            3
+  TABLE public             1
+  TABLE stock              7
+  TRIGGER audit            2
+  TRIGGER catalog          12
+  TRIGGER imports          4
+  TRIGGER optical          8
+  TRIGGER org              4
+  TRIGGER pricing          6
+  TRIGGER stock            14
+SCHEMAS : appointments, audit, auth, catalog, clients, imports, optical, org, pricing, stock
+TABLE DATA : appointments.appointments, appointments.responsibles, audit.events, auth.bootstrap_record, auth.sessions, auth.user_permissions, auth.users, catalog.families, catalog.lens_references, catalog.product_models, catalog.product_variants, catalog.suppliers, catalog.variant_lens_treatments, catalog.variant_suppliers, clients.clients, imports.batches, imports.rows, optical.measurement_revisions, optical.measurements, optical.prescription_revisions, optical.prescriptions, org.locations, org.stores, pricing.price_history, pricing.tax_categories, pricing.variant_store_prices, public.__EFMigrationsHistory, stock.balances, stock.inventory_lines, stock.inventory_sessions, stock.movements, stock.receipt_lines, stock.receipts, stock.variant_store_settings
+OBJETS 0008 DANS LA SAUVEGARDE (attendu 0) : 0
+END : 2026-11-03T15:35:03.7771902+01:00
+
+### mmv_v2_test
+START : 2026-11-03T15:35:59.0531146+01:00
+pg_dump (PostgreSQL) 18.6
+PG_DUMP EXIT : 0
+DUMP : C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_test_avant_0008_20261103_153559.dump
+SIZE : 198014
+SHA256 : FD9F2CEE4152CA12F951B3FF50652DD69E647DA2E96E0AD24005F6CA3C8BB821
+PG_RESTORE --LIST EXIT : 0
+LIST : 423 lignes -> C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes\mmv_v2_test_avant_0008_20261103_153559.dump.list.txt ; SHA256 liste 6F2C94404B6426E678A4710FC85556657C18E65FF76FA3E9FEDB0A3D790149EA
+ENTRIES : 408
+  CONSTRAINT appointments  2
+  CONSTRAINT audit         1
+  CONSTRAINT auth          4
+  CONSTRAINT catalog       7
+  CONSTRAINT clients       1
+  CONSTRAINT imports       2
+  CONSTRAINT optical       4
+  CONSTRAINT org           3
+  CONSTRAINT pricing       3
+  CONSTRAINT public        1
+  CONSTRAINT stock         7
+  FK CONSTRAINT            97
+  FUNCTION audit           1
+  FUNCTION catalog         2
+  FUNCTION imports         2
+  FUNCTION optical         2
+  FUNCTION org             2
+  FUNCTION stock           2
+  INDEX appointments       7
+  INDEX audit              3
+  INDEX auth               3
+  INDEX catalog            31
+  INDEX clients            5
+  INDEX imports            7
+  INDEX optical            27
+  INDEX org                3
+  INDEX pricing            7
+  INDEX stock              32
+  SCHEMA -                 10
+  SEQUENCE clients         1
+  SEQUENCE optical         2
+  SEQUENCE SET             6
+  SEQUENCE stock           3
+  TABLE appointments       2
+  TABLE audit              1
+  TABLE auth               4
+  TABLE catalog            7
+  TABLE clients            1
+  TABLE DATA               34
+  TABLE imports            2
+  TABLE optical            4
+  TABLE org                2
+  TABLE pricing            3
+  TABLE public             1
+  TABLE stock              7
+  TRIGGER audit            2
+  TRIGGER catalog          12
+  TRIGGER imports          4
+  TRIGGER optical          8
+  TRIGGER org              4
+  TRIGGER pricing          6
+  TRIGGER stock            14
+SCHEMAS : appointments, audit, auth, catalog, clients, imports, optical, org, pricing, stock
+TABLE DATA : appointments.appointments, appointments.responsibles, audit.events, auth.bootstrap_record, auth.sessions, auth.user_permissions, auth.users, catalog.families, catalog.lens_references, catalog.product_models, catalog.product_variants, catalog.suppliers, catalog.variant_lens_treatments, catalog.variant_suppliers, clients.clients, imports.batches, imports.rows, optical.measurement_revisions, optical.measurements, optical.prescription_revisions, optical.prescriptions, org.locations, org.stores, pricing.price_history, pricing.tax_categories, pricing.variant_store_prices, public.__EFMigrationsHistory, stock.balances, stock.inventory_lines, stock.inventory_sessions, stock.movements, stock.receipt_lines, stock.receipts, stock.variant_store_settings
+OBJETS 0008 DANS LA SAUVEGARDE (attendu 0) : 0
+END : 2026-11-03T15:35:59.4647024+01:00
+
+## 7. Empreintes de contenu avant application : voir P0508_fingerprints_20261103.log
+VERDICT : précontrôles conformes après arrêt par le propriétaire de ses processus => application autorisée par le mandat (§ 3).

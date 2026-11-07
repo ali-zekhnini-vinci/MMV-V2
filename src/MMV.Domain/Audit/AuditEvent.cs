@@ -147,12 +147,101 @@ public static class AuditActions
 
     public static string Optical(string entity, string verb) => $"{entity}.{verb}";
 
+    /// <summary>
+    /// Phase 05 : modules <c>catalog</c>, <c>pricing</c>, <c>suppliers</c>, <c>stock</c>, <c>inventory</c>, <c>imports</c>
+    /// (événements sans dossier client). Les champs modifiés ne contiennent JAMAIS de prix d'achat, coefficient, marge,
+    /// prix fournisseur ni coût de réception : seulement le nom du champ ; les valeurs vivent dans
+    /// <c>pricing.price_history</c>, servi sous <c>costs.read</c>.
+    /// </summary>
+    public const string CatalogModule = "catalog";
+    public const string PricingModule = "pricing";
+    public const string SuppliersModule = "suppliers";
+    public const string StockModule = "stock";
+    public const string InventoryModule = "inventory";
+    public const string ImportsModule = "imports";
+
+    public const string ModelEntity = "model";
+    public const string VariantEntity = "variant";
+    public const string LensReferenceEntity = "lens_reference";
+    public const string SupplierEntity = "supplier";
+    public const string StockMovementEntity = "stock_movement";
+    public const string ReceiptEntity = "receipt";
+    public const string InventoryEntity = "inventory";
+    public const string ImportEntity = "import";
+    public const string LensOfferEntity = "lens_offer";
+    public const string ImportProfileEntity = "import_profile";
+
+    public const string ModelCreated = "model.created";
+    public const string ModelUpdated = "model.updated";
+    public const string ModelArchived = "model.archived";
+    public const string ModelReactivated = "model.reactivated";
+    public const string VariantCreated = "variant.created";
+    public const string VariantUpdated = "variant.updated";
+    public const string VariantPolicyChanged = "variant.policy_changed";
+    public const string VariantArchived = "variant.archived";
+    public const string VariantReactivated = "variant.reactivated";
+    public const string LensReferenceCreated = "lens_reference.created";
+    public const string LensReferenceUpdated = "lens_reference.updated";
+    public const string LensReferenceArchived = "lens_reference.archived";
+    public const string LensReferenceReactivated = "lens_reference.reactivated";
+    public const string SupplierCreated = "supplier.created";
+    public const string SupplierUpdated = "supplier.updated";
+    public const string SupplierArchived = "supplier.archived";
+    public const string SupplierReactivated = "supplier.reactivated";
+    public const string SupplierLinkAdded = "supplier_link.added";
+    public const string SupplierLinkUpdated = "supplier_link.updated";
+    public const string SupplierLinkRemoved = "supplier_link.removed";
+    public const string PriceChanged = "price.changed";
+    public const string PricePurchaseChanged = "price.purchase_changed";
+    public const string PriceRecalculated = "price.recalculated";
+    public const string PriceManualSet = "price.manual_set";
+    public const string StockMovementRecorded = "stock_movement.recorded";
+    public const string StockAdjustmentRecorded = "stock_adjustment.recorded";
+    public const string StockThresholdChanged = "stock_threshold.changed";
+    public const string ReceiptRecorded = "receipt.recorded";
+    public const string InventoryOpened = "inventory.opened";
+    public const string InventoryValidated = "inventory.validated";
+    public const string InventoryAbandoned = "inventory.abandoned";
+    public const string ImportUploaded = "import.uploaded";
+    public const string ImportChecked = "import.checked";
+    public const string ImportApplied = "import.applied";
+    public const string ImportCancelled = "import.cancelled";
+
+    // Corrections Phase 05 (COR-05-04, COR-05-05).
+    public const string LensOfferCreated = "lens_offer.created";
+    public const string LensOfferUpdated = "lens_offer.updated";
+    public const string LensOfferArchived = "lens_offer.archived";
+    public const string LensOfferReactivated = "lens_offer.reactivated";
+    public const string ImportProfileSaved = "import_profile.saved";
+
+    // CSV-IMPORT-AI-01 (assistant d'import, migration 0009).
+    public const string ImportAnalysisRequested = "import.analysis_requested";
+    public const string ImportAnalysisCancelled = "import.analysis_cancelled";
+    public const string ImportDecisionRecorded = "import.decision_recorded";
+    public const string ImportRulesOnlyChosen = "import.rules_only_chosen";
+
+    public static IReadOnlyList<string> Phase05 { get; } =
+    [
+        ModelCreated, ModelUpdated, ModelArchived, ModelReactivated,
+        VariantCreated, VariantUpdated, VariantPolicyChanged, VariantArchived, VariantReactivated,
+        LensReferenceCreated, LensReferenceUpdated, LensReferenceArchived, LensReferenceReactivated,
+        SupplierCreated, SupplierUpdated, SupplierArchived, SupplierReactivated,
+        SupplierLinkAdded, SupplierLinkUpdated, SupplierLinkRemoved,
+        PriceChanged, PricePurchaseChanged, PriceRecalculated, PriceManualSet,
+        StockMovementRecorded, StockAdjustmentRecorded, StockThresholdChanged, ReceiptRecorded,
+        InventoryOpened, InventoryValidated, InventoryAbandoned,
+        ImportUploaded, ImportChecked, ImportApplied, ImportCancelled,
+        LensOfferCreated, LensOfferUpdated, LensOfferArchived, LensOfferReactivated, ImportProfileSaved,
+        ImportAnalysisRequested, ImportAnalysisCancelled, ImportDecisionRecorded, ImportRulesOnlyChosen,
+    ];
+
     public static IReadOnlyList<string> All { get; } =
     [
         ClientCreated, ClientUpdated, ClientArchived, ClientReactivated,
         AppointmentCreated, AppointmentUpdated, AppointmentMoved, AppointmentResponsibleChanged, AppointmentCancelled, AppointmentRestored,
         .. OpticalVerbs.Select(verb => Optical(PrescriptionEntity, verb)),
         .. OpticalVerbs.Select(verb => Optical(MeasurementEntity, verb)),
+        .. Phase05,
     ];
 }
 
@@ -173,6 +262,14 @@ public static class AuditFieldPolicy
     {
         "startsAtUtc", "durationMinutes", "reasonCode", "responsibleUserId",
         "revisionNo", "baseRevisionNo", "rectificationReasonCode", "invalidationReasonCode",
+        // Phase 05 : codes de gestion non personnels et non confidentiels (aucun coût, aucun prix d'achat, aucun coefficient).
+        "stockPolicy", "pricingMode", "movementType", "quantityDelta", "locationId", "storeId", "supplierId", "isPrimary",
+        "lineCount", "status", "kind",
+        // UX-IA : moteur de correspondance d'un import (statut borné de l'assistant local, nom du modèle local).
+        "assistantStatus", "assistantModel",
+        // CSV-IMPORT-AI-01 : traçabilité de l'assistant (parcours, destination, révision, tentative, modèle, types de décision,
+        // empreinte de l'original) — aucun montant, aucune valeur de cellule.
+        "pipeline", "target", "revision", "attempt", "analysisAttempt", "decisions", "model", "types", "originalSha256",
     };
 
     public static AuditChange Change(string field, string? oldValue, string? newValue) =>

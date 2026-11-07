@@ -1,0 +1,11 @@
+# MMV V2 — revue SQL des corrections Phase 05 (migration 0008_CatalogCorrections) — manifeste SHA-256
+# Fichiers du depot (LF, tels que commites). Verification depuis la racine : sha256sum -c docs/phase/05/sql/0008_MANIFEST.sha256 (Git Bash) ou Get-FileHash.
+# NON APPLIQUE : aucune execution sur mmv_v2_dev / mmv_v2_test avant le GO explicite du proprietaire (STOP obligatoire, mandat du 02/11/2026, section 11).
+9a75acea0173a5019b520362cf04a5ca10e1de814753603f21d46c1c287e715c  docs/phase/05/sql/0008_CatalogCorrections.idempotent.sql
+b21057be31416a5bf4bff05414a84adc623afe8f909f0a2c4e9d6239a7b96ba9  docs/phase/05/sql/0008_CatalogCorrections.sql
+492eb83431d65edfc9b13a6aaf505edc0746f569712c4fe764005ecca4401d34  docs/phase/05/sql/0008_CatalogCorrections.verify.sql
+990872f19220b2c99c9515290fa38605cc7cacb4152fc12d910e00c76385163e  docs/phase/05/sql/0008_CatalogCorrections.schema-diff.txt
+91241c9397213d26ba255681af05f91cc2336b10b648d778332571cd8544f132  docs/phase/05/sql/0008_CatalogCorrections.schema-inventory.txt
+1f82e1c3e239cfb37328722d64d972929470877213fa73f05a337b8fc7329385  src/MMV.Infrastructure/Persistence/Migrations/20261102183203_CatalogCorrections.cs
+4379629f954faa5962c6ad541e53563c6bdc3b5319345fb3fc560f2c66b56496  src/MMV.Infrastructure/Persistence/Migrations/20261102183203_CatalogCorrections.Designer.cs
+2a7438000120c09ae09d0ea18ac545bc54eb23845076620cd078581669bf14a4  src/MMV.Infrastructure/Persistence/Migrations/MmvDbContextModelSnapshot.cs

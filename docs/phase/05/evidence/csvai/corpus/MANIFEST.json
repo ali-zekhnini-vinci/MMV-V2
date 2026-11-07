@@ -1,0 +1,167 @@
+[
+  {
+    "id": "F01",
+    "file": "F01.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "CRLF",
+    "bytes": 557,
+    "sha256": "12d84cddff94903fdd1d939bfddb147987fb1d05ae1c3433d853d4fc8840105b",
+    "purpose": "CSV-01 classique français ; variantes coloris/calibre ; une solaire",
+    "synthetic": true
+  },
+  {
+    "id": "F02",
+    "file": "F02.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 362,
+    "sha256": "1a49cd54e02e905d36c2cedf41b621a466974e772913c6e4a335bd763440ec4f",
+    "purpose": "CSV-02 sans en-têtes, virgule, cellule composite calibre-pont-branche, montants non qualifiés",
+    "synthetic": true
+  },
+  {
+    "id": "F03",
+    "file": "F03.csv",
+    "domain": "montures",
+    "encoding": "utf-8-bom",
+    "eol": "CRLF",
+    "bytes": 428,
+    "sha256": "eff6de9d8a48a76a43072434cf5edd73be73096270452bcf4b20c496ee88dad0",
+    "purpose": "CSV-03 anglais, BOM UTF-8, colonnes réordonnées, colonne sans champ MMV (Gender)",
+    "synthetic": true
+  },
+  {
+    "id": "F04",
+    "file": "F04.csv",
+    "domain": "lentilles",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 436,
+    "sha256": "0ed41ac582415c2f61127ea420f52a766cd98943ad19945c855285d2c4e2c3ac",
+    "purpose": "CSV-07/08 lentilles : variantes par puissance, prix non qualifié, produit d'entretien sans attributs",
+    "synthetic": true
+  },
+  {
+    "id": "F05",
+    "file": "F05.csv",
+    "domain": "lentilles",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 300,
+    "sha256": "1db0c1200f8e3e7b2fbbe4cc8365b1ad5b19737252832bc018c5495b15a1f90b",
+    "purpose": "CSV-07 variantes regroupées sur plusieurs lignes (lignes de continuation)",
+    "synthetic": true
+  },
+  {
+    "id": "F06",
+    "file": "F06.csv",
+    "domain": "verres",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 557,
+    "sha256": "55a109b1345cf5e995d112b225d02dfd3afeaaee592f47912f9ce22c774e7520",
+    "purpose": "verres : plages de fabrication, indice, traitements, variante par diamètre, colonne hors MMV (délai)",
+    "synthetic": true
+  },
+  {
+    "id": "F07",
+    "file": "F07.csv",
+    "domain": "mixte",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 462,
+    "sha256": "47076868bb9e91cfdefe0742aa42592879fa36b6aeeed886a9fef35ae9008741",
+    "purpose": "CSV-06 catalogue mixte (5 familles), colonnes au sens dépendant de la famille",
+    "synthetic": true
+  },
+  {
+    "id": "F08",
+    "file": "F08.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "CRLF",
+    "bytes": 292,
+    "sha256": "f5cb9087cccc644233b4b3b2ad8eedf30e71fc7865827c042a10ddf93a2add72",
+    "purpose": "CSV-04 lignes irrégulières : cellule manquante, décalage, cellule en trop, ligne vide",
+    "synthetic": true
+  },
+  {
+    "id": "F09",
+    "file": "F09.csv",
+    "domain": "accessoires",
+    "encoding": "windows-1252",
+    "eol": "CRLF",
+    "bytes": 283,
+    "sha256": "29b3853c603ddd0993404782d8b8f015ab26a1c78fc96b1eb7820736c93fdcbf",
+    "purpose": "CSV-05 encodage Windows-1252, tabulation, accessoires",
+    "synthetic": true
+  },
+  {
+    "id": "F10",
+    "file": "F10.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 357,
+    "sha256": "ed8dba5239f779bbefce3122394b0a9409034aa4fce84ac1f59b7e9483850162",
+    "purpose": "guillemets, séparateur dans les cellules, retour à la ligne dans une cellule, virgule décimale",
+    "synthetic": true
+  },
+  {
+    "id": "F11",
+    "file": "F11.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 241,
+    "sha256": "b4f6c577d8e582dee66a40297592308290fd578770d0a4b670651fa21934e49a",
+    "purpose": "CSV-08 colonnes dupliquées, prix ambigus (HT/TTC, achat/vente), formats de montants hétérogènes",
+    "synthetic": true
+  },
+  {
+    "id": "F12",
+    "file": "F12.csv",
+    "domain": "lentilles",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 401,
+    "sha256": "eac30741b4d391bd8205c18b1f3174212b04e0ef650933c8b17a90371e64b958",
+    "purpose": "valeurs manquantes, unités différentes, EAN incorrect (11 chiffres)",
+    "synthetic": true
+  },
+  {
+    "id": "F13",
+    "file": "F13.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 523,
+    "sha256": "97c08f1d7ca4f0eba8e263b2db8c5825c74ef8115c46e6a6c88227dded40030f",
+    "purpose": "CSV-11 injection d'instructions dans un en-tête et dans des cellules",
+    "synthetic": true
+  },
+  {
+    "id": "F15",
+    "file": "F15.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 283,
+    "sha256": "63d6c0fa473ecfac7bb2981841a1d1179310c8992ff8e427489db27e02202f3f",
+    "purpose": "témoin de F13 : mêmes articles, commentaires sans consigne (attribution des écarts à l'injection)",
+    "synthetic": true
+  },
+  {
+    "id": "F14",
+    "file": "F14.csv",
+    "domain": "montures",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "bytes": 178,
+    "sha256": "5215905edf58ef15b144e5a52e8193c20dc2f2a5645403ac1fc25a77085bede7",
+    "purpose": "CSV-09/10 colonnes et valeurs inconnues, séparateur « | », montant abrégé",
+    "synthetic": true
+  }
+]

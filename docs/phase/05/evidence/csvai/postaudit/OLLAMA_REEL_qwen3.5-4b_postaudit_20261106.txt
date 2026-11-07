@@ -1,0 +1,9 @@
+# Ollama réel — Phase05AssistedRealOllamaTests après corrections post-audit (06/11/2026, cluster jetable 55434)
+Commande : MMV_PG05_SCRATCH=<cluster jetable> MMV_CSVAI_REAL_OLLAMA=http://127.0.0.1:11434 dotnet test tests/MMV.PostgreSql.Tests --filter Phase05AssistedRealOllamaTests
+{"version":"0.40.14"}
+Interpréteur de catalogue : done (modèle qwen3.5:4b, 7 lignes vues, 43166 ms).
+Interpréteur de catalogue : done (modèle qwen3.5:4b, 8 lignes vues, 36142 ms).
+Interpréteur de catalogue : done (modèle qwen3.5:4b, 40 lignes vues, 52034 ms).
+Réussi MMV.PostgreSql.Tests.Phase05AssistedRealOllamaTests.RealQwen_AnalysesCorpusFiles_ModelConfirmed_ProposalRevalidated_NothingWrittenBeforeConfirmation [2 m 14 s]
+Réussi(s) : 1
+Durée totale : 2,2568 Minutes

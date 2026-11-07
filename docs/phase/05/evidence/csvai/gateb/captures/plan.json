@@ -1,0 +1,308 @@
+[
+ {
+  "name": "L01_depot-vide_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-vide",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L02_depot-fichier_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-fichier",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L03_depot-refus_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-refus",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L04_analyse-attente_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-attente",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L05_analyse-cours_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-cours",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L06_analyse-terminee_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-terminee",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L07_analyse-indispo_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-indispo",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L08_verif-liste_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-liste",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L09_verif-sku_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-sku",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L09_verif-sku-choix_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-sku",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Modifier le SKU de la ligne 10",
+    "selector": "label"
+   },
+   {
+    "type": "MON-LU2041-HA",
+    "selector": "input.cat-fix__input"
+   }
+  ]
+ },
+ {
+  "name": "L10_verif-commercial_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-commercial",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L10_verif-commercial-choix_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-commercial",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Prix d'achat HT",
+    "selector": "label"
+   }
+  ]
+ },
+ {
+  "name": "L11_controle-bloque_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=controle-bloque",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L12_controle-pret_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=controle-pret",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "L13_import-confirmation_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=import-confirmation",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L14_import-cours_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=import-cours",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L15_import-reussi_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=import-reussi",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "L16_historique-deplie_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-vide&history=open",
+  "width": 1440,
+  "height": 1300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D17_depot-fichier_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-fichier&theme=dark",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "D18_analyse-cours_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-cours&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D19_analyse-terminee_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-terminee&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D20_analyse-indispo_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-indispo&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D21_verif-sku_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-sku&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D21_verif-sku-choix_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-sku&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Modifier le SKU de la ligne 10",
+    "selector": "label"
+   },
+   {
+    "type": "MON-LU2041-HA",
+    "selector": "input.cat-fix__input"
+   }
+  ]
+ },
+ {
+  "name": "D22_verif-commercial_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-commercial&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D22_verif-commercial-choix_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-commercial&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Prix d'achat HT",
+    "selector": "label"
+   }
+  ]
+ },
+ {
+  "name": "D23_controle-pret_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=controle-pret&theme=dark",
+  "width": 1440,
+  "height": 2300,
+  "waitMs": 2500
+ },
+ {
+  "name": "D24_import-confirmation_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=import-confirmation&theme=dark",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "D25_import-reussi_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=import-reussi&theme=dark",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500
+ },
+ {
+  "name": "D26_historique-deplie_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-vide&history=open&theme=dark",
+  "width": 1440,
+  "height": 1300,
+  "waitMs": 2500
+ },
+ {
+  "name": "R27_analyse-cours_1366x768",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-cours",
+  "width": 1366,
+  "height": 768,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R28_verif-sku_1366x768",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-sku",
+  "width": 1366,
+  "height": 768,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R29_controle-pret_1280x720",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=controle-pret",
+  "width": 1280,
+  "height": 720,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R30_analyse-terminee_1920x1080",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-terminee",
+  "width": 1920,
+  "height": 1080,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R31_verif-liste_1920x1080",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-liste",
+  "width": 1920,
+  "height": 1080,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R32_verif-commercial_1366x768_zoom125",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=verif-commercial",
+  "width": 1366,
+  "height": 768,
+  "scale": 1.25,
+  "waitMs": 2500
+ },
+ {
+  "name": "R33_analyse-cours_1024x768",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=analyse-cours",
+  "width": 1024,
+  "height": 768,
+  "scale": 1,
+  "waitMs": 2500
+ },
+ {
+  "name": "R34_depot-fichier_1024x768",
+  "url": "http://127.0.0.1:1520/import-wizard-bench.html?state=depot-fichier",
+  "width": 1024,
+  "height": 768,
+  "scale": 1,
+  "waitMs": 2500
+ }
+]

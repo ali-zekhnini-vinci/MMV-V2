@@ -1,0 +1,21 @@
+{
+  "id": "F09",
+  "header_line": "L1",
+  "file_family": ["accessories"],
+  "columns": {
+    "c0": {"accept": ["modelName"]},
+    "c1": {"accept": ["color", "variantLabel"]},
+    "c2": {"accept": ["manufacturerReference"]},
+    "c3": {"accept": ["purchasePriceHt"]},
+    "c4": {"accept": ["salePriceHt"]},
+    "c5": {"accept": ["material"]}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["accessories"]},
+    "L3": {"kind": "data", "family": ["accessories"]},
+    "L4": {"kind": "data", "family": ["accessories"]},
+    "L5": {"kind": "data", "family": ["accessories"]}
+  },
+  "groups": [["L2", "L3"], ["L4"], ["L5"]]
+}

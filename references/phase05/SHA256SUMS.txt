@@ -1,0 +1,15 @@
+88cf0aa328630a56fc5c47b763df7820615e967f27aab8c5b7bb2500f67e2eda  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/_ds_bundle.js
+3df57decabf76455374f0051b6dec006dffe8b55ad7aeabd6b6e3cce8e3856cb  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/assets/logo-dark.png
+3570c6f9f0a08f60428e8fe1be6d426c0d9e4f9c5ce65eb7b128a311f1913a71  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/assets/logo-horizontal.png
+99d81fe93bb0fbf3019f816d52cb7fe1c894c3c1ae6b7f307d41097e86fbc859  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/styles.css
+d5ca8e35701776c514e19d03f19f27c97fbe2594c6afd4b86a3c5d70ac40c320  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/base.css
+1a9bf7858d61e17b4aca196ec3e2469254dc4724dba378c78de04d48157ff92c  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/colors.css
+6d834a2bfbbcbe9fe38ffa7828775309bd8a1e5155c94b6a43d83b0b60c3918b  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/fonts.css
+0861f3679dcead974a2baa82b06b8eda07f3ef74ffd27e9f3397afc0419b4a66  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/radii.css
+aabd33b441a5937b34ef162729103d11466b750da4848a02707d007b961b8bdb  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/shadows.css
+589f06b2d380ccbfe4ace5d0ee3a82edf2170ee3140604b0d30dc07787f5a70f  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/spacing.css
+da0dea77a4462e93ea66937c23f2ef822c54db4a60840166f91c28fae5132d7f  lot6/_ds/mmv-managemyvision-design-system-90800da0-d730-42af-b51e-c94dbc7d7135/tokens/typography.css
+6ca2cec033b8aa35b4ec4188c2bc95ab3cd5aaaa8c469e82a4a7e04b8bbc35e7  lot6/MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html
+eb6cac0de244e7eea2d636303984d08624e954ace8242efd77b2521b44c420a2  lot6/scraps/lot6-check.png
+2a2d2ee09170beb7f4d19c13cb80705d6fff6924a48f91cf5628e186914b9a20  lot6/scraps/lot6-s1.png
+ae4f0ac8449655e17cca1e3b179effcb6817a3b0d8dc47f112a9c39c25c39fd7  lot6/support.js

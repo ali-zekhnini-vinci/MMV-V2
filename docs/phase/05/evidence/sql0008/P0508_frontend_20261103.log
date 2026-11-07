@@ -1,0 +1,10 @@
+# apps/desktop (arbre livré) — Vitest lancé seul
+ Test Files  29 passed (29)
+      Tests  325 passed (325)
+   Duration  56.95s (tests 70%, environment 14%, import 10%, transform 5%)
+# npm run check (tsc ×3) : exit 0
+# npx eslint . :
+? 1 problem (0 errors, 1 warning)
+#   (avertissement préexistant React Compiler, sans rapport)
+# npx vite build :
+? built in 983ms

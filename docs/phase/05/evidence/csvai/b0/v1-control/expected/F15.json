@@ -1,0 +1,21 @@
+{
+  "id": "F15",
+  "header_line": "L1",
+  "file_family": ["optical_frames"],
+  "columns": {
+    "c0": {"accept": ["brand"]},
+    "c1": {"accept": ["modelName"]},
+    "c2": {"accept": ["color", "variantLabel"]},
+    "c3": {"accept": ["purchasePriceHt"]},
+    "c4": {"accept": ["salePriceTtc"]},
+    "c5": {"accept": ["notes", "unknown"], "truth_unknown": true, "flag_optional": true}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["optical_frames"]},
+    "L3": {"kind": "data", "family": ["optical_frames"]},
+    "L4": {"kind": "data", "family": ["optical_frames"]},
+    "L5": {"kind": "data", "family": ["optical_frames"]}
+  },
+  "groups": [["L2", "L3"], ["L4", "L5"]]
+}

@@ -1,0 +1,707 @@
+## relations (propriétaire = rôle applicatif)
+catalog.families kind=r owner_is_db_owner=t acl=default
+catalog.ix_lens_references_archived_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_lens_references_created_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_lens_references_manufacturer_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_lens_references_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_models_archived_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_models_created_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_models_family_name kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_models_lens_range_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_models_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_variants_archived_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_variants_created_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_variants_lens_index_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_variants_model_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_product_variants_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_suppliers_archived_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_suppliers_created_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_suppliers_name kind=i owner_is_db_owner=t acl=default
+catalog.ix_suppliers_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_variant_lens_treatments_treatment_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_variant_suppliers_created_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_variant_suppliers_removed_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_variant_suppliers_supplier_id kind=i owner_is_db_owner=t acl=default
+catalog.ix_variant_suppliers_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+catalog.lens_references kind=r owner_is_db_owner=t acl=default
+catalog.pk_families kind=i owner_is_db_owner=t acl=default
+catalog.pk_lens_references kind=i owner_is_db_owner=t acl=default
+catalog.pk_product_models kind=i owner_is_db_owner=t acl=default
+catalog.pk_product_variants kind=i owner_is_db_owner=t acl=default
+catalog.pk_suppliers kind=i owner_is_db_owner=t acl=default
+catalog.pk_variant_lens_treatments kind=i owner_is_db_owner=t acl=default
+catalog.pk_variant_suppliers kind=i owner_is_db_owner=t acl=default
+catalog.product_models kind=r owner_is_db_owner=t acl=default
+catalog.product_variants kind=r owner_is_db_owner=t acl=default
+catalog.suppliers kind=r owner_is_db_owner=t acl=default
+catalog.ux_lens_references_kind_parent_name kind=i owner_is_db_owner=t acl=default
+catalog.ux_product_models_creation_request_id kind=i owner_is_db_owner=t acl=default
+catalog.ux_product_variants_barcode kind=i owner_is_db_owner=t acl=default
+catalog.ux_product_variants_creation_request_id kind=i owner_is_db_owner=t acl=default
+catalog.ux_product_variants_sku kind=i owner_is_db_owner=t acl=default
+catalog.ux_suppliers_code kind=i owner_is_db_owner=t acl=default
+catalog.ux_suppliers_creation_request_id kind=i owner_is_db_owner=t acl=default
+catalog.ux_variant_suppliers_one_primary kind=i owner_is_db_owner=t acl=default
+catalog.variant_lens_treatments kind=r owner_is_db_owner=t acl=default
+catalog.variant_suppliers kind=r owner_is_db_owner=t acl=default
+imports.batches kind=r owner_is_db_owner=t acl=default
+imports.ix_batches_applied_by_user_id kind=i owner_is_db_owner=t acl=default
+imports.ix_batches_checked_by_user_id kind=i owner_is_db_owner=t acl=default
+imports.ix_batches_store_id kind=i owner_is_db_owner=t acl=default
+imports.ix_batches_uploaded_at kind=i owner_is_db_owner=t acl=default
+imports.ix_batches_uploaded_by_user_id kind=i owner_is_db_owner=t acl=default
+imports.pk_batches kind=i owner_is_db_owner=t acl=default
+imports.pk_rows kind=i owner_is_db_owner=t acl=default
+imports.rows kind=r owner_is_db_owner=t acl=default
+imports.ux_batches_applied_file kind=i owner_is_db_owner=t acl=default
+imports.ux_batches_creation_request_id kind=i owner_is_db_owner=t acl=default
+org.ak_stores_id_currency kind=i owner_is_db_owner=t acl=default
+org.locations kind=r owner_is_db_owner=t acl=default
+org.pk_locations kind=i owner_is_db_owner=t acl=default
+org.pk_stores kind=i owner_is_db_owner=t acl=default
+org.stores kind=r owner_is_db_owner=t acl=default
+org.ux_locations_one_default kind=i owner_is_db_owner=t acl=default
+org.ux_locations_store_code kind=i owner_is_db_owner=t acl=default
+org.ux_stores_code kind=i owner_is_db_owner=t acl=default
+pricing.ix_price_history_changed_by_user_id kind=i owner_is_db_owner=t acl=default
+pricing.ix_price_history_store_id kind=i owner_is_db_owner=t acl=default
+pricing.ix_price_history_supplier_id kind=i owner_is_db_owner=t acl=default
+pricing.ix_price_history_variant_store_changed kind=i owner_is_db_owner=t acl=default
+pricing.ix_tax_categories_validated_by_user_id kind=i owner_is_db_owner=t acl=default
+pricing.ix_variant_store_prices_store_currency kind=i owner_is_db_owner=t acl=default
+pricing.ix_variant_store_prices_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+pricing.pk_price_history kind=i owner_is_db_owner=t acl=default
+pricing.pk_tax_categories kind=i owner_is_db_owner=t acl=default
+pricing.pk_variant_store_prices kind=i owner_is_db_owner=t acl=default
+pricing.price_history kind=r owner_is_db_owner=t acl=default
+pricing.tax_categories kind=r owner_is_db_owner=t acl=default
+pricing.variant_store_prices kind=r owner_is_db_owner=t acl=default
+stock.balances kind=r owner_is_db_owner=t acl=default
+stock.inventory_lines kind=r owner_is_db_owner=t acl=default
+stock.inventory_number_seq kind=S owner_is_db_owner=t acl=default
+stock.inventory_sessions kind=r owner_is_db_owner=t acl=default
+stock.ix_balances_location_id kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_lines_counted_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_lines_location_id kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_lines_variant_location kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_sessions_abandoned_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_sessions_opened_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_sessions_scope_family_code kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_sessions_store_status kind=i owner_is_db_owner=t acl=default
+stock.ix_inventory_sessions_validated_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_location_id kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_performed_at kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_performed_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_source kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_supplier_id kind=i owner_is_db_owner=t acl=default
+stock.ix_movements_variant_location_seq kind=i owner_is_db_owner=t acl=default
+stock.ix_receipt_lines_variant_id kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_completes_receipt_id kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_location_id kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_received_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_store_currency kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_store_received kind=i owner_is_db_owner=t acl=default
+stock.ix_receipts_supplier_id kind=i owner_is_db_owner=t acl=default
+stock.ix_variant_store_settings_store_id kind=i owner_is_db_owner=t acl=default
+stock.ix_variant_store_settings_updated_by_user_id kind=i owner_is_db_owner=t acl=default
+stock.movements kind=r owner_is_db_owner=t acl=default
+stock.movements_seq_seq kind=S owner_is_db_owner=t acl=default
+stock.pk_balances kind=i owner_is_db_owner=t acl=default
+stock.pk_inventory_lines kind=i owner_is_db_owner=t acl=default
+stock.pk_inventory_sessions kind=i owner_is_db_owner=t acl=default
+stock.pk_movements kind=i owner_is_db_owner=t acl=default
+stock.pk_receipt_lines kind=i owner_is_db_owner=t acl=default
+stock.pk_receipts kind=i owner_is_db_owner=t acl=default
+stock.pk_variant_store_settings kind=i owner_is_db_owner=t acl=default
+stock.receipt_lines kind=r owner_is_db_owner=t acl=default
+stock.receipt_number_seq kind=S owner_is_db_owner=t acl=default
+stock.receipts kind=r owner_is_db_owner=t acl=default
+stock.ux_inventory_lines_movement_id kind=i owner_is_db_owner=t acl=default
+stock.ux_inventory_sessions_creation_request_id kind=i owner_is_db_owner=t acl=default
+stock.ux_inventory_sessions_number kind=i owner_is_db_owner=t acl=default
+stock.ux_movements_request_variant_location kind=i owner_is_db_owner=t acl=default
+stock.ux_movements_seq kind=i owner_is_db_owner=t acl=default
+stock.ux_receipt_lines_movement_id kind=i owner_is_db_owner=t acl=default
+stock.ux_receipts_number kind=i owner_is_db_owner=t acl=default
+stock.ux_receipts_request_id kind=i owner_is_db_owner=t acl=default
+stock.variant_store_settings kind=r owner_is_db_owner=t acl=default
+## colonnes
+catalog.families.allowed_policies text[] notnull=t default=- identity=- generated=-
+catalog.families.code character varying(32) notnull=t default=- identity=- generated=-
+catalog.families.label_fr character varying(60) notnull=t default=- identity=- generated=-
+catalog.families.sort_order integer notnull=t default=- identity=- generated=-
+catalog.lens_references.archive_reason character varying(500) notnull=f default=- identity=- generated=-
+catalog.lens_references.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+catalog.lens_references.archived_by_user_id uuid notnull=f default=- identity=- generated=-
+catalog.lens_references.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.lens_references.created_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.lens_references.id uuid notnull=t default=- identity=- generated=-
+catalog.lens_references.index_value numeric(4,3) notnull=f default=- identity=- generated=-
+catalog.lens_references.kind character varying(16) notnull=t default=- identity=- generated=-
+catalog.lens_references.last_request_id uuid notnull=f default=- identity=- generated=-
+catalog.lens_references.manufacturer_id uuid notnull=f default=- identity=- generated=-
+catalog.lens_references.name character varying(120) notnull=t default=- identity=- generated=-
+catalog.lens_references.name_key character varying(120) notnull=t default=- identity=- generated=-
+catalog.lens_references.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.lens_references.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.product_models.archive_reason character varying(500) notnull=f default=- identity=- generated=-
+catalog.product_models.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+catalog.product_models.archived_by_user_id uuid notnull=f default=- identity=- generated=-
+catalog.product_models.attributes jsonb notnull=t default=- identity=- generated=-
+catalog.product_models.brand character varying(100) notnull=f default=- identity=- generated=-
+catalog.product_models.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.product_models.created_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.product_models.creation_request_id uuid notnull=f default=- identity=- generated=-
+catalog.product_models.description character varying(2000) notnull=f default=- identity=- generated=-
+catalog.product_models.family_code character varying(32) notnull=t default=- identity=- generated=-
+catalog.product_models.id uuid notnull=t default=- identity=- generated=-
+catalog.product_models.last_request_id uuid notnull=f default=- identity=- generated=-
+catalog.product_models.lens_range_id uuid notnull=f default=- identity=- generated=-
+catalog.product_models.name character varying(200) notnull=t default=- identity=- generated=-
+catalog.product_models.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.product_models.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.product_variants.archive_reason character varying(500) notnull=f default=- identity=- generated=-
+catalog.product_variants.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+catalog.product_variants.archived_by_user_id uuid notnull=f default=- identity=- generated=-
+catalog.product_variants.attributes jsonb notnull=t default=- identity=- generated=-
+catalog.product_variants.barcode character varying(14) notnull=f default=- identity=- generated=-
+catalog.product_variants.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.product_variants.created_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.product_variants.creation_request_id uuid notnull=f default=- identity=- generated=-
+catalog.product_variants.id uuid notnull=t default=- identity=- generated=-
+catalog.product_variants.label character varying(200) notnull=t default=- identity=- generated=-
+catalog.product_variants.last_request_id uuid notnull=f default=- identity=- generated=-
+catalog.product_variants.lens_index_id uuid notnull=f default=- identity=- generated=-
+catalog.product_variants.manufacturer_reference character varying(64) notnull=f default=- identity=- generated=-
+catalog.product_variants.model_id uuid notnull=t default=- identity=- generated=-
+catalog.product_variants.sku character varying(64) notnull=t default=- identity=- generated=-
+catalog.product_variants.sku_key character varying(64) notnull=t default=- identity=- generated=-
+catalog.product_variants.stock_policy character varying(16) notnull=t default=- identity=- generated=-
+catalog.product_variants.tax_category_code character varying(32) notnull=f default=- identity=- generated=-
+catalog.product_variants.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.product_variants.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.suppliers.address_line character varying(200) notnull=f default=- identity=- generated=-
+catalog.suppliers.archive_reason character varying(500) notnull=f default=- identity=- generated=-
+catalog.suppliers.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+catalog.suppliers.archived_by_user_id uuid notnull=f default=- identity=- generated=-
+catalog.suppliers.city character varying(100) notnull=f default=- identity=- generated=-
+catalog.suppliers.code character varying(32) notnull=t default=- identity=- generated=-
+catalog.suppliers.code_key character varying(32) notnull=t default=- identity=- generated=-
+catalog.suppliers.contact_name character varying(120) notnull=f default=- identity=- generated=-
+catalog.suppliers.country_code character(2) notnull=t default=- identity=- generated=-
+catalog.suppliers.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.suppliers.created_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.suppliers.creation_request_id uuid notnull=f default=- identity=- generated=-
+catalog.suppliers.email character varying(254) notnull=f default=- identity=- generated=-
+catalog.suppliers.id uuid notnull=t default=- identity=- generated=-
+catalog.suppliers.last_request_id uuid notnull=f default=- identity=- generated=-
+catalog.suppliers.legal_identifiers jsonb notnull=t default=- identity=- generated=-
+catalog.suppliers.name character varying(200) notnull=t default=- identity=- generated=-
+catalog.suppliers.notes character varying(2000) notnull=f default=- identity=- generated=-
+catalog.suppliers.phone character varying(32) notnull=f default=- identity=- generated=-
+catalog.suppliers.postal_code character varying(16) notnull=f default=- identity=- generated=-
+catalog.suppliers.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.suppliers.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_lens_treatments.treatment_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_lens_treatments.variant_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.created_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.is_primary boolean notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.last_request_id uuid notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.lead_time_days integer notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.removed_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.removed_by_user_id uuid notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.supplier_currency character(3) notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.supplier_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.supplier_price_ht numeric(14,4) notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.supplier_reference character varying(64) notnull=f default=- identity=- generated=-
+catalog.variant_suppliers.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+catalog.variant_suppliers.variant_id uuid notnull=t default=- identity=- generated=-
+imports.batches.applied_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+imports.batches.applied_by_user_id uuid notnull=f default=- identity=- generated=-
+imports.batches.checked_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+imports.batches.checked_by_user_id uuid notnull=f default=- identity=- generated=-
+imports.batches.contains_costs boolean notnull=t default=- identity=- generated=-
+imports.batches.contains_manual_prices boolean notnull=t default=- identity=- generated=-
+imports.batches.content text notnull=t default=- identity=- generated=-
+imports.batches.creation_request_id uuid notnull=t default=- identity=- generated=-
+imports.batches.error_count integer notnull=f default=- identity=- generated=-
+imports.batches.file_name character varying(200) notnull=t default=- identity=- generated=-
+imports.batches.file_sha256 character(64) notnull=t default=- identity=- generated=-
+imports.batches.id uuid notnull=t default=- identity=- generated=-
+imports.batches.kind character varying(16) notnull=t default=- identity=- generated=-
+imports.batches.last_request_id uuid notnull=f default=- identity=- generated=-
+imports.batches.mapping jsonb notnull=t default=- identity=- generated=-
+imports.batches.row_count integer notnull=t default=- identity=- generated=-
+imports.batches.status character varying(16) notnull=t default=- identity=- generated=-
+imports.batches.store_id uuid notnull=f default=- identity=- generated=-
+imports.batches.uploaded_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+imports.batches.uploaded_by_user_id uuid notnull=t default=- identity=- generated=-
+imports.rows.batch_id uuid notnull=t default=- identity=- generated=-
+imports.rows.errors jsonb notnull=t default=- identity=- generated=-
+imports.rows.line_no integer notnull=t default=- identity=- generated=-
+imports.rows.outcome character varying(16) notnull=t default=- identity=- generated=-
+imports.rows.target_key character varying(200) notnull=f default=- identity=- generated=-
+imports.rows.values_json jsonb notnull=t default=- identity=- generated=-
+org.locations.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+org.locations.code character varying(32) notnull=t default=- identity=- generated=-
+org.locations.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+org.locations.id uuid notnull=t default=- identity=- generated=-
+org.locations.is_default boolean notnull=t default=- identity=- generated=-
+org.locations.name character varying(120) notnull=t default=- identity=- generated=-
+org.locations.store_id uuid notnull=t default=- identity=- generated=-
+org.stores.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+org.stores.code character varying(32) notnull=t default=- identity=- generated=-
+org.stores.country_code character(2) notnull=t default=- identity=- generated=-
+org.stores.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+org.stores.currency_code character(3) notnull=t default=- identity=- generated=-
+org.stores.fiscal_profile_status character varying(16) notnull=t default=- identity=- generated=-
+org.stores.fiscal_validated_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+org.stores.id uuid notnull=t default=- identity=- generated=-
+org.stores.name character varying(120) notnull=t default=- identity=- generated=-
+pricing.price_history.changed_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+pricing.price_history.changed_by_user_id uuid notnull=t default=- identity=- generated=-
+pricing.price_history.currency_code character(3) notnull=t default=- identity=- generated=-
+pricing.price_history.field character varying(32) notnull=t default=- identity=- generated=-
+pricing.price_history.id uuid notnull=t default=- identity=- generated=-
+pricing.price_history.new_mode character varying(16) notnull=f default=- identity=- generated=-
+pricing.price_history.new_value numeric(14,4) notnull=f default=- identity=- generated=-
+pricing.price_history.old_mode character varying(16) notnull=f default=- identity=- generated=-
+pricing.price_history.old_value numeric(14,4) notnull=f default=- identity=- generated=-
+pricing.price_history.origin character varying(16) notnull=t default=- identity=- generated=-
+pricing.price_history.reason character varying(500) notnull=f default=- identity=- generated=-
+pricing.price_history.request_id uuid notnull=t default=- identity=- generated=-
+pricing.price_history.store_id uuid notnull=f default=- identity=- generated=-
+pricing.price_history.supplier_id uuid notnull=f default=- identity=- generated=-
+pricing.price_history.variant_id uuid notnull=t default=- identity=- generated=-
+pricing.tax_categories.code character varying(32) notnull=t default=- identity=- generated=-
+pricing.tax_categories.label character varying(120) notnull=t default=- identity=- generated=-
+pricing.tax_categories.legal_reference character varying(200) notnull=f default=- identity=- generated=-
+pricing.tax_categories.rate numeric(7,4) notnull=f default=- identity=- generated=-
+pricing.tax_categories.store_id uuid notnull=t default=- identity=- generated=-
+pricing.tax_categories.validated_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+pricing.tax_categories.validated_by_user_id uuid notnull=f default=- identity=- generated=-
+pricing.variant_store_prices.coefficient numeric(8,4) notnull=f default=- identity=- generated=-
+pricing.variant_store_prices.currency_code character(3) notnull=t default=- identity=- generated=-
+pricing.variant_store_prices.last_request_id uuid notnull=f default=- identity=- generated=-
+pricing.variant_store_prices.pricing_mode character varying(16) notnull=t default=- identity=- generated=-
+pricing.variant_store_prices.purchase_price_ht numeric(14,4) notnull=f default=- identity=- generated=-
+pricing.variant_store_prices.sale_price_ht numeric(12,2) notnull=f default=- identity=- generated=-
+pricing.variant_store_prices.store_id uuid notnull=t default=- identity=- generated=-
+pricing.variant_store_prices.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+pricing.variant_store_prices.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+pricing.variant_store_prices.variant_id uuid notnull=t default=- identity=- generated=-
+stock.balances.last_movement_seq bigint notnull=f default=- identity=- generated=-
+stock.balances.location_id uuid notnull=t default=- identity=- generated=-
+stock.balances.on_hand integer notnull=t default=- identity=- generated=-
+stock.balances.reserved integer notnull=t default=0 identity=- generated=-
+stock.balances.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+stock.balances.variant_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_lines.applied_delta integer notnull=f default=- identity=- generated=-
+stock.inventory_lines.comment character varying(500) notnull=f default=- identity=- generated=-
+stock.inventory_lines.counted_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+stock.inventory_lines.counted_by_user_id uuid notnull=f default=- identity=- generated=-
+stock.inventory_lines.counted_quantity integer notnull=f default=- identity=- generated=-
+stock.inventory_lines.expected_at_count integer notnull=f default=- identity=- generated=-
+stock.inventory_lines.expected_at_open integer notnull=t default=- identity=- generated=-
+stock.inventory_lines.last_request_id uuid notnull=f default=- identity=- generated=-
+stock.inventory_lines.location_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_lines.movement_id uuid notnull=f default=- identity=- generated=-
+stock.inventory_lines.reason_code character varying(32) notnull=f default=- identity=- generated=-
+stock.inventory_lines.resolution character varying(16) notnull=f default=- identity=- generated=-
+stock.inventory_lines.session_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_lines.variant_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_sessions.abandon_reason character varying(500) notnull=f default=- identity=- generated=-
+stock.inventory_sessions.abandoned_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+stock.inventory_sessions.abandoned_by_user_id uuid notnull=f default=- identity=- generated=-
+stock.inventory_sessions.blind boolean notnull=t default=- identity=- generated=-
+stock.inventory_sessions.creation_request_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_sessions.id uuid notnull=t default=- identity=- generated=-
+stock.inventory_sessions.last_request_id uuid notnull=f default=- identity=- generated=-
+stock.inventory_sessions.location_ids uuid[] notnull=t default=- identity=- generated=-
+stock.inventory_sessions.number character varying(24) notnull=t default=('INV-'::text || to_char(nextval('stock.inventory_number_seq'::regclass), 'FM999999999999000000'::text)) identity=- generated=-
+stock.inventory_sessions.opened_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+stock.inventory_sessions.opened_by_user_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_sessions.scope_family_code character varying(32) notnull=f default=- identity=- generated=-
+stock.inventory_sessions.scope_type character varying(16) notnull=t default=- identity=- generated=-
+stock.inventory_sessions.status character varying(16) notnull=t default=- identity=- generated=-
+stock.inventory_sessions.store_id uuid notnull=t default=- identity=- generated=-
+stock.inventory_sessions.uncounted_resolution character varying(16) notnull=f default=- identity=- generated=-
+stock.inventory_sessions.validated_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
+stock.inventory_sessions.validated_by_user_id uuid notnull=f default=- identity=- generated=-
+stock.movements.comment character varying(500) notnull=f default=- identity=- generated=-
+stock.movements.currency_code character(3) notnull=f default=- identity=- generated=-
+stock.movements.id uuid notnull=t default=- identity=- generated=-
+stock.movements.location_id uuid notnull=t default=- identity=- generated=-
+stock.movements.movement_type character varying(32) notnull=t default=- identity=- generated=-
+stock.movements.performed_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+stock.movements.performed_by_user_id uuid notnull=t default=- identity=- generated=-
+stock.movements.quantity_after integer notnull=t default=- identity=- generated=-
+stock.movements.quantity_before integer notnull=t default=- identity=- generated=-
+stock.movements.quantity_delta integer notnull=t default=- identity=- generated=-
+stock.movements.reason_code character varying(32) notnull=t default=- identity=- generated=-
+stock.movements.request_id uuid notnull=t default=- identity=- generated=-
+stock.movements.seq bigint notnull=t default=- identity=a generated=-
+stock.movements.source_id uuid notnull=f default=- identity=- generated=-
+stock.movements.source_type character varying(32) notnull=f default=- identity=- generated=-
+stock.movements.supplier_id uuid notnull=f default=- identity=- generated=-
+stock.movements.unit_cost_ht numeric(14,4) notnull=f default=- identity=- generated=-
+stock.movements.variant_id uuid notnull=t default=- identity=- generated=-
+stock.receipt_lines.announced_quantity integer notnull=f default=- identity=- generated=-
+stock.receipt_lines.line_no integer notnull=t default=- identity=- generated=-
+stock.receipt_lines.movement_id uuid notnull=f default=- identity=- generated=-
+stock.receipt_lines.receipt_id uuid notnull=t default=- identity=- generated=-
+stock.receipt_lines.received_quantity integer notnull=t default=- identity=- generated=-
+stock.receipt_lines.unit_cost_ht numeric(14,4) notnull=f default=- identity=- generated=-
+stock.receipt_lines.variant_id uuid notnull=t default=- identity=- generated=-
+stock.receipts.completes_receipt_id uuid notnull=f default=- identity=- generated=-
+stock.receipts.currency_code character(3) notnull=t default=- identity=- generated=-
+stock.receipts.id uuid notnull=t default=- identity=- generated=-
+stock.receipts.location_id uuid notnull=t default=- identity=- generated=-
+stock.receipts.notes character varying(500) notnull=f default=- identity=- generated=-
+stock.receipts.number character varying(24) notnull=t default=('REC-'::text || to_char(nextval('stock.receipt_number_seq'::regclass), 'FM999999999999000000'::text)) identity=- generated=-
+stock.receipts.received_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+stock.receipts.received_by_user_id uuid notnull=t default=- identity=- generated=-
+stock.receipts.request_id uuid notnull=t default=- identity=- generated=-
+stock.receipts.store_id uuid notnull=t default=- identity=- generated=-
+stock.receipts.supplier_document_reference character varying(64) notnull=f default=- identity=- generated=-
+stock.receipts.supplier_id uuid notnull=t default=- identity=- generated=-
+stock.variant_store_settings.last_request_id uuid notnull=f default=- identity=- generated=-
+stock.variant_store_settings.low_stock_threshold integer notnull=f default=- identity=- generated=-
+stock.variant_store_settings.store_id uuid notnull=t default=- identity=- generated=-
+stock.variant_store_settings.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
+stock.variant_store_settings.updated_by_user_id uuid notnull=t default=- identity=- generated=-
+stock.variant_store_settings.variant_id uuid notnull=t default=- identity=- generated=-
+## contraintes
+catalog.families ck_families_code_format CHECK (((code)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+catalog.families ck_families_policies CHECK (((allowed_policies <@ ARRAY['stocked'::text, 'order_only'::text, 'service'::text]) AND (cardinality(allowed_policies) >= 1)))
+catalog.families pk_families PRIMARY KEY (code)
+catalog.lens_references ck_lens_references_index_value CHECK (((((kind)::text = 'index'::text) = (index_value IS NOT NULL)) AND ((index_value IS NULL) OR ((index_value > (1)::numeric) AND (index_value < 2.5)))))
+catalog.lens_references ck_lens_references_kind CHECK (((kind)::text = ANY ((ARRAY['manufacturer'::character varying, 'range'::character varying, 'index'::character varying, 'treatment'::character varying])::text[])))
+catalog.lens_references ck_lens_references_name CHECK ((btrim((name)::text) <> ''::text))
+catalog.lens_references ck_lens_references_parent CHECK (((((kind)::text = 'range'::text) AND (manufacturer_id IS NOT NULL)) OR ((kind)::text = 'treatment'::text) OR (((kind)::text = ANY ((ARRAY['manufacturer'::character varying, 'index'::character varying])::text[])) AND (manufacturer_id IS NULL))))
+catalog.lens_references fk_lens_references_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.lens_references fk_lens_references_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.lens_references fk_lens_references_manufacturer FOREIGN KEY (manufacturer_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
+catalog.lens_references fk_lens_references_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.lens_references pk_lens_references PRIMARY KEY (id)
+catalog.product_models ck_product_models_attributes CHECK ((jsonb_typeof(attributes) = 'object'::text))
+catalog.product_models ck_product_models_lens_range CHECK ((((family_code)::text = 'ophthalmic_lenses'::text) = (lens_range_id IS NOT NULL)))
+catalog.product_models ck_product_models_name CHECK ((btrim((name)::text) <> ''::text))
+catalog.product_models fk_product_models_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_models fk_product_models_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_models fk_product_models_families FOREIGN KEY (family_code) REFERENCES catalog.families(code) ON DELETE RESTRICT
+catalog.product_models fk_product_models_lens_range FOREIGN KEY (lens_range_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
+catalog.product_models fk_product_models_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_models pk_product_models PRIMARY KEY (id)
+catalog.product_variants ck_product_variants_attributes CHECK ((jsonb_typeof(attributes) = 'object'::text))
+catalog.product_variants ck_product_variants_barcode CHECK (((barcode IS NULL) OR ((barcode)::text ~ '^([0-9]{8}|[0-9]{12,14})$'::text)))
+catalog.product_variants ck_product_variants_label CHECK ((btrim((label)::text) <> ''::text))
+catalog.product_variants ck_product_variants_policy CHECK (((stock_policy)::text = ANY ((ARRAY['stocked'::character varying, 'order_only'::character varying, 'service'::character varying])::text[])))
+catalog.product_variants ck_product_variants_sku CHECK (((btrim((sku)::text) <> ''::text) AND ((sku_key)::text = lower(btrim((sku)::text)))))
+catalog.product_variants ck_product_variants_tax_category_format CHECK (((tax_category_code IS NULL) OR ((tax_category_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)))
+catalog.product_variants fk_product_variants_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_variants fk_product_variants_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_variants fk_product_variants_lens_index FOREIGN KEY (lens_index_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
+catalog.product_variants fk_product_variants_models FOREIGN KEY (model_id) REFERENCES catalog.product_models(id) ON DELETE RESTRICT
+catalog.product_variants fk_product_variants_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.product_variants pk_product_variants PRIMARY KEY (id)
+catalog.suppliers ck_suppliers_code CHECK (((btrim((code)::text) <> ''::text) AND ((code_key)::text = lower(btrim((code)::text)))))
+catalog.suppliers ck_suppliers_country_format CHECK ((country_code ~ '^[A-Z]{2}$'::text))
+catalog.suppliers ck_suppliers_legal_identifiers CHECK ((jsonb_typeof(legal_identifiers) = 'object'::text))
+catalog.suppliers ck_suppliers_name CHECK ((btrim((name)::text) <> ''::text))
+catalog.suppliers fk_suppliers_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.suppliers fk_suppliers_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.suppliers fk_suppliers_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.suppliers pk_suppliers PRIMARY KEY (id)
+catalog.variant_lens_treatments fk_variant_lens_treatments_treatment FOREIGN KEY (treatment_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
+catalog.variant_lens_treatments fk_variant_lens_treatments_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE CASCADE
+catalog.variant_lens_treatments pk_variant_lens_treatments PRIMARY KEY (variant_id, treatment_id)
+catalog.variant_suppliers ck_variant_suppliers_currency CHECK ((((supplier_price_ht IS NULL) = (supplier_currency IS NULL)) AND ((supplier_currency IS NULL) OR (supplier_currency ~ '^[A-Z]{3}$'::text))))
+catalog.variant_suppliers ck_variant_suppliers_lead_time CHECK (((lead_time_days IS NULL) OR ((lead_time_days >= 0) AND (lead_time_days <= 365))))
+catalog.variant_suppliers ck_variant_suppliers_price CHECK (((supplier_price_ht IS NULL) OR (supplier_price_ht >= (0)::numeric)))
+catalog.variant_suppliers ck_variant_suppliers_removed CHECK ((((removed_at_utc IS NULL) = (removed_by_user_id IS NULL)) AND ((removed_at_utc IS NULL) OR (NOT is_primary))))
+catalog.variant_suppliers fk_variant_suppliers_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.variant_suppliers fk_variant_suppliers_removed_by_users FOREIGN KEY (removed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.variant_suppliers fk_variant_suppliers_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
+catalog.variant_suppliers fk_variant_suppliers_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+catalog.variant_suppliers fk_variant_suppliers_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+catalog.variant_suppliers pk_variant_suppliers PRIMARY KEY (variant_id, supplier_id)
+imports.batches ck_batches_kind CHECK (((kind)::text = ANY ((ARRAY['catalog'::character varying, 'suppliers'::character varying, 'prices'::character varying])::text[])))
+imports.batches ck_batches_lifecycle CHECK (((((status)::text = 'applied'::text) = (applied_at_utc IS NOT NULL)) AND ((applied_at_utc IS NULL) = (applied_by_user_id IS NULL)) AND ((checked_at_utc IS NULL) = (checked_by_user_id IS NULL)) AND ((applied_at_utc IS NULL) OR (checked_at_utc IS NOT NULL))))
+imports.batches ck_batches_mapping CHECK ((jsonb_typeof(mapping) = 'object'::text))
+imports.batches ck_batches_sha256 CHECK ((file_sha256 ~ '^[0-9a-f]{64}$'::text))
+imports.batches ck_batches_size CHECK (((octet_length(content) <= 2097152) AND (row_count >= 0) AND (row_count <= 5000)))
+imports.batches ck_batches_status CHECK (((status)::text = ANY ((ARRAY['uploaded'::character varying, 'checked'::character varying, 'applied'::character varying, 'cancelled'::character varying])::text[])))
+imports.batches ck_batches_store CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))
+imports.batches fk_batches_applied_by_users FOREIGN KEY (applied_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+imports.batches fk_batches_checked_by_users FOREIGN KEY (checked_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+imports.batches fk_batches_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+imports.batches fk_batches_uploaded_by_users FOREIGN KEY (uploaded_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+imports.batches pk_batches PRIMARY KEY (id)
+imports.rows ck_rows_json CHECK (((jsonb_typeof(values_json) = 'object'::text) AND (jsonb_typeof(errors) = 'array'::text)))
+imports.rows ck_rows_line_no CHECK ((line_no >= 1))
+imports.rows ck_rows_outcome CHECK (((outcome)::text = ANY ((ARRAY['create'::character varying, 'update'::character varying, 'unchanged'::character varying, 'error'::character varying])::text[])))
+imports.rows fk_rows_batches FOREIGN KEY (batch_id) REFERENCES imports.batches(id) ON DELETE RESTRICT
+imports.rows pk_rows PRIMARY KEY (batch_id, line_no)
+org.locations ck_locations_code_format CHECK (((code)::text ~ '^[A-Z0-9][A-Z0-9_-]{0,31}$'::text))
+org.locations fk_locations_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+org.locations pk_locations PRIMARY KEY (id)
+org.stores ak_stores_id_currency UNIQUE (id, currency_code)
+org.stores ck_stores_code_format CHECK (((code)::text ~ '^[A-Z0-9][A-Z0-9_-]{0,31}$'::text))
+org.stores ck_stores_country_format CHECK ((country_code ~ '^[A-Z]{2}$'::text))
+org.stores ck_stores_currency CHECK ((currency_code = ANY (ARRAY['EUR'::bpchar, 'MAD'::bpchar])))
+org.stores ck_stores_fiscal_status CHECK (((fiscal_profile_status)::text = ANY ((ARRAY['not_validated'::character varying, 'validated'::character varying])::text[])))
+org.stores ck_stores_fiscal_validation CHECK ((((fiscal_profile_status)::text = 'validated'::text) = (fiscal_validated_at_utc IS NOT NULL)))
+org.stores pk_stores PRIMARY KEY (id)
+pricing.price_history ck_price_history_currency CHECK ((currency_code ~ '^[A-Z]{3}$'::text))
+pricing.price_history ck_price_history_field CHECK (((field)::text = ANY ((ARRAY['purchase_price_ht'::character varying, 'coefficient'::character varying, 'pricing_mode'::character varying, 'sale_price_ht'::character varying, 'supplier_price_ht'::character varying])::text[])))
+pricing.price_history ck_price_history_mode CHECK (((((field)::text = 'pricing_mode'::text) = (new_mode IS NOT NULL)) AND ((old_mode IS NULL) OR ((field)::text = 'pricing_mode'::text))))
+pricing.price_history ck_price_history_origin CHECK (((origin)::text = ANY ((ARRAY['edit'::character varying, 'recalculation'::character varying, 'manual_price'::character varying, 'import'::character varying, 'receipt'::character varying])::text[])))
+pricing.price_history ck_price_history_scope CHECK (((((field)::text = 'supplier_price_ht'::text) = (supplier_id IS NOT NULL)) AND (((field)::text = 'supplier_price_ht'::text) OR (store_id IS NOT NULL))))
+pricing.price_history fk_price_history_changed_by_users FOREIGN KEY (changed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+pricing.price_history fk_price_history_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+pricing.price_history fk_price_history_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
+pricing.price_history fk_price_history_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+pricing.price_history pk_price_history PRIMARY KEY (id)
+pricing.tax_categories ck_tax_categories_code_format CHECK (((code)::text ~ '^[a-z][a-z_]{0,31}$'::text))
+pricing.tax_categories ck_tax_categories_rate CHECK (((rate IS NULL) OR ((rate >= (0)::numeric) AND (rate < (1)::numeric))))
+pricing.tax_categories ck_tax_categories_validation CHECK ((((rate IS NULL) = (validated_at_utc IS NULL)) AND ((validated_at_utc IS NULL) = (validated_by_user_id IS NULL))))
+pricing.tax_categories fk_tax_categories_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+pricing.tax_categories fk_tax_categories_validated_by_users FOREIGN KEY (validated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+pricing.tax_categories pk_tax_categories PRIMARY KEY (store_id, code)
+pricing.variant_store_prices ck_variant_store_prices_coefficient CHECK (((coefficient IS NULL) OR ((coefficient > (0)::numeric) AND (coefficient <= (100)::numeric))))
+pricing.variant_store_prices ck_variant_store_prices_coefficient_mode CHECK ((((pricing_mode)::text = 'manual'::text) OR (sale_price_ht IS NULL) OR ((purchase_price_ht IS NOT NULL) AND (coefficient IS NOT NULL))))
+pricing.variant_store_prices ck_variant_store_prices_mode CHECK (((pricing_mode)::text = ANY ((ARRAY['coefficient'::character varying, 'manual'::character varying])::text[])))
+pricing.variant_store_prices ck_variant_store_prices_purchase CHECK (((purchase_price_ht IS NULL) OR (purchase_price_ht >= (0)::numeric)))
+pricing.variant_store_prices ck_variant_store_prices_sale CHECK (((sale_price_ht IS NULL) OR (sale_price_ht >= (0)::numeric)))
+pricing.variant_store_prices fk_variant_store_prices_store_currency FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT
+pricing.variant_store_prices fk_variant_store_prices_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+pricing.variant_store_prices fk_variant_store_prices_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+pricing.variant_store_prices pk_variant_store_prices PRIMARY KEY (variant_id, store_id)
+stock.balances ck_balances_on_hand CHECK ((on_hand >= 0))
+stock.balances ck_balances_reserved CHECK (((reserved >= 0) AND (reserved <= on_hand)))
+stock.balances fk_balances_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT
+stock.balances fk_balances_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+stock.balances pk_balances PRIMARY KEY (variant_id, location_id)
+stock.inventory_lines ck_inventory_lines_applied CHECK ((((movement_id IS NOT NULL) = ((applied_delta IS NOT NULL) AND (applied_delta <> 0))) AND ((movement_id IS NULL) OR ((resolution)::text = ANY ((ARRAY['applied'::character varying, 'set_to_zero'::character varying])::text[])))))
+stock.inventory_lines ck_inventory_lines_count CHECK ((((counted_quantity IS NULL) = (expected_at_count IS NULL)) AND ((counted_quantity IS NULL) = (counted_at_utc IS NULL)) AND ((counted_at_utc IS NULL) = (counted_by_user_id IS NULL))))
+stock.inventory_lines ck_inventory_lines_quantities CHECK (((expected_at_open >= 0) AND ((counted_quantity IS NULL) OR ((counted_quantity >= 0) AND (counted_quantity <= 1000000)))))
+stock.inventory_lines ck_inventory_lines_reason CHECK ((((reason_code IS NULL) OR ((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text)) AND ((comment IS NULL) OR (reason_code IS NOT NULL)) AND (((reason_code)::text IS DISTINCT FROM 'other'::text) OR (comment IS NOT NULL))))
+stock.inventory_lines ck_inventory_lines_resolution CHECK (((resolution IS NULL) OR ((resolution)::text = ANY ((ARRAY['applied'::character varying, 'no_difference'::character varying, 'excluded'::character varying, 'set_to_zero'::character varying])::text[]))))
+stock.inventory_lines fk_inventory_lines_counted_by_users FOREIGN KEY (counted_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.inventory_lines fk_inventory_lines_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT
+stock.inventory_lines fk_inventory_lines_movements FOREIGN KEY (movement_id) REFERENCES stock.movements(id) ON DELETE RESTRICT
+stock.inventory_lines fk_inventory_lines_sessions FOREIGN KEY (session_id) REFERENCES stock.inventory_sessions(id) ON DELETE RESTRICT
+stock.inventory_lines fk_inventory_lines_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+stock.inventory_lines pk_inventory_lines PRIMARY KEY (session_id, variant_id, location_id)
+stock.inventory_sessions ck_inventory_sessions_lifecycle CHECK (((((status)::text = 'validated'::text) = (validated_at_utc IS NOT NULL)) AND ((validated_at_utc IS NULL) = (validated_by_user_id IS NULL)) AND ((validated_at_utc IS NULL) = (uncounted_resolution IS NULL)) AND (((status)::text = 'abandoned'::text) = (abandoned_at_utc IS NOT NULL)) AND ((abandoned_at_utc IS NULL) = (abandoned_by_user_id IS NULL)) AND ((abandoned_at_utc IS NULL) = (abandon_reason IS NULL))))
+stock.inventory_sessions ck_inventory_sessions_locations CHECK ((cardinality(location_ids) >= 1))
+stock.inventory_sessions ck_inventory_sessions_number_format CHECK (((number)::text ~ '^INV-[0-9]{6,18}$'::text))
+stock.inventory_sessions ck_inventory_sessions_scope CHECK ((((scope_type)::text = ANY ((ARRAY['full'::character varying, 'family'::character varying, 'selection'::character varying])::text[])) AND (((scope_type)::text = 'family'::text) = (scope_family_code IS NOT NULL))))
+stock.inventory_sessions ck_inventory_sessions_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'validated'::character varying, 'abandoned'::character varying])::text[])))
+stock.inventory_sessions ck_inventory_sessions_uncounted CHECK (((uncounted_resolution IS NULL) OR ((uncounted_resolution)::text = ANY ((ARRAY['exclude'::character varying, 'set_to_zero'::character varying])::text[]))))
+stock.inventory_sessions fk_inventory_sessions_abandoned_by_users FOREIGN KEY (abandoned_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.inventory_sessions fk_inventory_sessions_families FOREIGN KEY (scope_family_code) REFERENCES catalog.families(code) ON DELETE RESTRICT
+stock.inventory_sessions fk_inventory_sessions_opened_by_users FOREIGN KEY (opened_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.inventory_sessions fk_inventory_sessions_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+stock.inventory_sessions fk_inventory_sessions_validated_by_users FOREIGN KEY (validated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.inventory_sessions pk_inventory_sessions PRIMARY KEY (id)
+stock.movements ck_movements_delta CHECK (((quantity_delta <> 0) AND (quantity_after = (quantity_before + quantity_delta)) AND (quantity_before >= 0) AND (quantity_after >= 0)))
+stock.movements ck_movements_reason CHECK ((((reason_code)::text ~ '^[a-z][a-z_]{0,31}$'::text) AND (((reason_code)::text <> 'other'::text) OR (comment IS NOT NULL))))
+stock.movements ck_movements_receipt CHECK (((((movement_type)::text = 'receipt'::text) = (supplier_id IS NOT NULL)) AND ((unit_cost_ht IS NULL) OR (((movement_type)::text = 'receipt'::text) AND (unit_cost_ht >= (0)::numeric))) AND ((unit_cost_ht IS NULL) = (currency_code IS NULL))))
+stock.movements ck_movements_sign CHECK (((((movement_type)::text <> ALL ((ARRAY['receipt'::character varying, 'manual_in'::character varying])::text[])) OR (quantity_delta > 0)) AND (((movement_type)::text <> 'manual_out'::text) OR (quantity_delta < 0))))
+stock.movements ck_movements_source CHECK ((((source_type IS NULL) = (source_id IS NULL)) AND ((source_type IS NULL) OR ((source_type)::text = ANY ((ARRAY['receipt'::character varying, 'inventory_session'::character varying])::text[])))))
+stock.movements ck_movements_type CHECK (((movement_type)::text = ANY ((ARRAY['receipt'::character varying, 'manual_in'::character varying, 'manual_out'::character varying, 'adjustment'::character varying, 'inventory_adjustment'::character varying])::text[])))
+stock.movements fk_movements_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT
+stock.movements fk_movements_performed_by_users FOREIGN KEY (performed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.movements fk_movements_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
+stock.movements fk_movements_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+stock.movements pk_movements PRIMARY KEY (id)
+stock.receipt_lines ck_receipt_lines_cost CHECK (((unit_cost_ht IS NULL) OR (unit_cost_ht >= (0)::numeric)))
+stock.receipt_lines ck_receipt_lines_line_no CHECK ((line_no >= 1))
+stock.receipt_lines ck_receipt_lines_movement CHECK (((received_quantity > 0) = (movement_id IS NOT NULL)))
+stock.receipt_lines ck_receipt_lines_quantities CHECK (((received_quantity >= 0) AND ((announced_quantity IS NULL) OR (announced_quantity >= 0)) AND ((received_quantity > 0) OR (COALESCE(announced_quantity, 0) > 0))))
+stock.receipt_lines fk_receipt_lines_movements FOREIGN KEY (movement_id) REFERENCES stock.movements(id) ON DELETE RESTRICT
+stock.receipt_lines fk_receipt_lines_receipts FOREIGN KEY (receipt_id) REFERENCES stock.receipts(id) ON DELETE RESTRICT
+stock.receipt_lines fk_receipt_lines_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+stock.receipt_lines pk_receipt_lines PRIMARY KEY (receipt_id, line_no)
+stock.receipts ck_receipts_number_format CHECK (((number)::text ~ '^REC-[0-9]{6,18}$'::text))
+stock.receipts fk_receipts_completes FOREIGN KEY (completes_receipt_id) REFERENCES stock.receipts(id) ON DELETE RESTRICT
+stock.receipts fk_receipts_locations FOREIGN KEY (location_id) REFERENCES org.locations(id) ON DELETE RESTRICT
+stock.receipts fk_receipts_received_by_users FOREIGN KEY (received_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.receipts fk_receipts_store_currency FOREIGN KEY (store_id, currency_code) REFERENCES org.stores(id, currency_code) ON DELETE RESTRICT
+stock.receipts fk_receipts_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
+stock.receipts pk_receipts PRIMARY KEY (id)
+stock.variant_store_settings ck_variant_store_settings_threshold CHECK (((low_stock_threshold IS NULL) OR ((low_stock_threshold >= 0) AND (low_stock_threshold <= 100000))))
+stock.variant_store_settings fk_variant_store_settings_stores FOREIGN KEY (store_id) REFERENCES org.stores(id) ON DELETE RESTRICT
+stock.variant_store_settings fk_variant_store_settings_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
+stock.variant_store_settings fk_variant_store_settings_variants FOREIGN KEY (variant_id) REFERENCES catalog.product_variants(id) ON DELETE RESTRICT
+stock.variant_store_settings pk_variant_store_settings PRIMARY KEY (variant_id, store_id)
+## index
+CREATE INDEX ix_balances_location_id ON stock.balances USING btree (location_id)
+CREATE INDEX ix_batches_applied_by_user_id ON imports.batches USING btree (applied_by_user_id)
+CREATE INDEX ix_batches_checked_by_user_id ON imports.batches USING btree (checked_by_user_id)
+CREATE INDEX ix_batches_store_id ON imports.batches USING btree (store_id)
+CREATE INDEX ix_batches_uploaded_at ON imports.batches USING btree (uploaded_at_utc)
+CREATE INDEX ix_batches_uploaded_by_user_id ON imports.batches USING btree (uploaded_by_user_id)
+CREATE INDEX ix_inventory_lines_counted_by_user_id ON stock.inventory_lines USING btree (counted_by_user_id)
+CREATE INDEX ix_inventory_lines_location_id ON stock.inventory_lines USING btree (location_id)
+CREATE INDEX ix_inventory_lines_variant_location ON stock.inventory_lines USING btree (variant_id, location_id)
+CREATE INDEX ix_inventory_sessions_abandoned_by_user_id ON stock.inventory_sessions USING btree (abandoned_by_user_id)
+CREATE INDEX ix_inventory_sessions_opened_by_user_id ON stock.inventory_sessions USING btree (opened_by_user_id)
+CREATE INDEX ix_inventory_sessions_scope_family_code ON stock.inventory_sessions USING btree (scope_family_code)
+CREATE INDEX ix_inventory_sessions_store_status ON stock.inventory_sessions USING btree (store_id, status)
+CREATE INDEX ix_inventory_sessions_validated_by_user_id ON stock.inventory_sessions USING btree (validated_by_user_id)
+CREATE INDEX ix_lens_references_archived_by_user_id ON catalog.lens_references USING btree (archived_by_user_id)
+CREATE INDEX ix_lens_references_created_by_user_id ON catalog.lens_references USING btree (created_by_user_id)
+CREATE INDEX ix_lens_references_manufacturer_id ON catalog.lens_references USING btree (manufacturer_id)
+CREATE INDEX ix_lens_references_updated_by_user_id ON catalog.lens_references USING btree (updated_by_user_id)
+CREATE INDEX ix_movements_location_id ON stock.movements USING btree (location_id)
+CREATE INDEX ix_movements_performed_at ON stock.movements USING btree (performed_at_utc)
+CREATE INDEX ix_movements_performed_by_user_id ON stock.movements USING btree (performed_by_user_id)
+CREATE INDEX ix_movements_source ON stock.movements USING btree (source_type, source_id)
+CREATE INDEX ix_movements_supplier_id ON stock.movements USING btree (supplier_id)
+CREATE INDEX ix_movements_variant_location_seq ON stock.movements USING btree (variant_id, location_id, seq DESC)
+CREATE INDEX ix_price_history_changed_by_user_id ON pricing.price_history USING btree (changed_by_user_id)
+CREATE INDEX ix_price_history_store_id ON pricing.price_history USING btree (store_id)
+CREATE INDEX ix_price_history_supplier_id ON pricing.price_history USING btree (supplier_id)
+CREATE INDEX ix_price_history_variant_store_changed ON pricing.price_history USING btree (variant_id, store_id, changed_at_utc)
+CREATE INDEX ix_product_models_archived_by_user_id ON catalog.product_models USING btree (archived_by_user_id)
+CREATE INDEX ix_product_models_created_by_user_id ON catalog.product_models USING btree (created_by_user_id)
+CREATE INDEX ix_product_models_family_name ON catalog.product_models USING btree (family_code, name)
+CREATE INDEX ix_product_models_lens_range_id ON catalog.product_models USING btree (lens_range_id)
+CREATE INDEX ix_product_models_updated_by_user_id ON catalog.product_models USING btree (updated_by_user_id)
+CREATE INDEX ix_product_variants_archived_by_user_id ON catalog.product_variants USING btree (archived_by_user_id)
+CREATE INDEX ix_product_variants_created_by_user_id ON catalog.product_variants USING btree (created_by_user_id)
+CREATE INDEX ix_product_variants_lens_index_id ON catalog.product_variants USING btree (lens_index_id)
+CREATE INDEX ix_product_variants_model_id ON catalog.product_variants USING btree (model_id)
+CREATE INDEX ix_product_variants_updated_by_user_id ON catalog.product_variants USING btree (updated_by_user_id)
+CREATE INDEX ix_receipt_lines_variant_id ON stock.receipt_lines USING btree (variant_id)
+CREATE INDEX ix_receipts_completes_receipt_id ON stock.receipts USING btree (completes_receipt_id)
+CREATE INDEX ix_receipts_location_id ON stock.receipts USING btree (location_id)
+CREATE INDEX ix_receipts_received_by_user_id ON stock.receipts USING btree (received_by_user_id)
+CREATE INDEX ix_receipts_store_currency ON stock.receipts USING btree (store_id, currency_code)
+CREATE INDEX ix_receipts_store_received ON stock.receipts USING btree (store_id, received_at_utc)
+CREATE INDEX ix_receipts_supplier_id ON stock.receipts USING btree (supplier_id)
+CREATE INDEX ix_suppliers_archived_by_user_id ON catalog.suppliers USING btree (archived_by_user_id)
+CREATE INDEX ix_suppliers_created_by_user_id ON catalog.suppliers USING btree (created_by_user_id)
+CREATE INDEX ix_suppliers_name ON catalog.suppliers USING btree (name)
+CREATE INDEX ix_suppliers_updated_by_user_id ON catalog.suppliers USING btree (updated_by_user_id)
+CREATE INDEX ix_tax_categories_validated_by_user_id ON pricing.tax_categories USING btree (validated_by_user_id)
+CREATE INDEX ix_variant_lens_treatments_treatment_id ON catalog.variant_lens_treatments USING btree (treatment_id)
+CREATE INDEX ix_variant_store_prices_store_currency ON pricing.variant_store_prices USING btree (store_id, currency_code)
+CREATE INDEX ix_variant_store_prices_updated_by_user_id ON pricing.variant_store_prices USING btree (updated_by_user_id)
+CREATE INDEX ix_variant_store_settings_store_id ON stock.variant_store_settings USING btree (store_id)
+CREATE INDEX ix_variant_store_settings_updated_by_user_id ON stock.variant_store_settings USING btree (updated_by_user_id)
+CREATE INDEX ix_variant_suppliers_created_by_user_id ON catalog.variant_suppliers USING btree (created_by_user_id)
+CREATE INDEX ix_variant_suppliers_removed_by_user_id ON catalog.variant_suppliers USING btree (removed_by_user_id)
+CREATE INDEX ix_variant_suppliers_supplier_id ON catalog.variant_suppliers USING btree (supplier_id)
+CREATE INDEX ix_variant_suppliers_updated_by_user_id ON catalog.variant_suppliers USING btree (updated_by_user_id)
+CREATE UNIQUE INDEX ak_stores_id_currency ON org.stores USING btree (id, currency_code)
+CREATE UNIQUE INDEX pk_balances ON stock.balances USING btree (variant_id, location_id)
+CREATE UNIQUE INDEX pk_batches ON imports.batches USING btree (id)
+CREATE UNIQUE INDEX pk_families ON catalog.families USING btree (code)
+CREATE UNIQUE INDEX pk_inventory_lines ON stock.inventory_lines USING btree (session_id, variant_id, location_id)
+CREATE UNIQUE INDEX pk_inventory_sessions ON stock.inventory_sessions USING btree (id)
+CREATE UNIQUE INDEX pk_lens_references ON catalog.lens_references USING btree (id)
+CREATE UNIQUE INDEX pk_locations ON org.locations USING btree (id)
+CREATE UNIQUE INDEX pk_movements ON stock.movements USING btree (id)
+CREATE UNIQUE INDEX pk_price_history ON pricing.price_history USING btree (id)
+CREATE UNIQUE INDEX pk_product_models ON catalog.product_models USING btree (id)
+CREATE UNIQUE INDEX pk_product_variants ON catalog.product_variants USING btree (id)
+CREATE UNIQUE INDEX pk_receipt_lines ON stock.receipt_lines USING btree (receipt_id, line_no)
+CREATE UNIQUE INDEX pk_receipts ON stock.receipts USING btree (id)
+CREATE UNIQUE INDEX pk_rows ON imports.rows USING btree (batch_id, line_no)
+CREATE UNIQUE INDEX pk_stores ON org.stores USING btree (id)
+CREATE UNIQUE INDEX pk_suppliers ON catalog.suppliers USING btree (id)
+CREATE UNIQUE INDEX pk_tax_categories ON pricing.tax_categories USING btree (store_id, code)
+CREATE UNIQUE INDEX pk_variant_lens_treatments ON catalog.variant_lens_treatments USING btree (variant_id, treatment_id)
+CREATE UNIQUE INDEX pk_variant_store_prices ON pricing.variant_store_prices USING btree (variant_id, store_id)
+CREATE UNIQUE INDEX pk_variant_store_settings ON stock.variant_store_settings USING btree (variant_id, store_id)
+CREATE UNIQUE INDEX pk_variant_suppliers ON catalog.variant_suppliers USING btree (variant_id, supplier_id)
+CREATE UNIQUE INDEX ux_batches_applied_file ON imports.batches USING btree (file_sha256, kind, store_id) NULLS NOT DISTINCT WHERE ((status)::text = 'applied'::text)
+CREATE UNIQUE INDEX ux_batches_creation_request_id ON imports.batches USING btree (creation_request_id)
+CREATE UNIQUE INDEX ux_inventory_lines_movement_id ON stock.inventory_lines USING btree (movement_id) WHERE (movement_id IS NOT NULL)
+CREATE UNIQUE INDEX ux_inventory_sessions_creation_request_id ON stock.inventory_sessions USING btree (creation_request_id)
+CREATE UNIQUE INDEX ux_inventory_sessions_number ON stock.inventory_sessions USING btree (number)
+CREATE UNIQUE INDEX ux_lens_references_kind_parent_name ON catalog.lens_references USING btree (kind, manufacturer_id, name_key) NULLS NOT DISTINCT
+CREATE UNIQUE INDEX ux_locations_one_default ON org.locations USING btree (store_id) WHERE (is_default AND (archived_at_utc IS NULL))
+CREATE UNIQUE INDEX ux_locations_store_code ON org.locations USING btree (store_id, code)
+CREATE UNIQUE INDEX ux_movements_request_variant_location ON stock.movements USING btree (request_id, variant_id, location_id)
+CREATE UNIQUE INDEX ux_movements_seq ON stock.movements USING btree (seq)
+CREATE UNIQUE INDEX ux_product_models_creation_request_id ON catalog.product_models USING btree (creation_request_id)
+CREATE UNIQUE INDEX ux_product_variants_barcode ON catalog.product_variants USING btree (barcode) WHERE (barcode IS NOT NULL)
+CREATE UNIQUE INDEX ux_product_variants_creation_request_id ON catalog.product_variants USING btree (creation_request_id) WHERE (creation_request_id IS NOT NULL)
+CREATE UNIQUE INDEX ux_product_variants_sku ON catalog.product_variants USING btree (sku_key)
+CREATE UNIQUE INDEX ux_receipt_lines_movement_id ON stock.receipt_lines USING btree (movement_id) WHERE (movement_id IS NOT NULL)
+CREATE UNIQUE INDEX ux_receipts_number ON stock.receipts USING btree (number)
+CREATE UNIQUE INDEX ux_receipts_request_id ON stock.receipts USING btree (request_id)
+CREATE UNIQUE INDEX ux_stores_code ON org.stores USING btree (code)
+CREATE UNIQUE INDEX ux_suppliers_code ON catalog.suppliers USING btree (code_key)
+CREATE UNIQUE INDEX ux_suppliers_creation_request_id ON catalog.suppliers USING btree (creation_request_id)
+CREATE UNIQUE INDEX ux_variant_suppliers_one_primary ON catalog.variant_suppliers USING btree (variant_id) WHERE is_primary
+## séquences
+stock.inventory_number_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f
+stock.movements_seq_seq type=bigint start=1 increment=1 min=1 max=9223372036854775807 cycle=f
+stock.receipt_number_seq type=bigint start=1 increment=1 min=1 max=999999999999999999 cycle=f
+## fonctions (empreinte md5 du corps)
+catalog.reject_change returns=trigger md5=e71c56c16f74b3bb1f3a09bda12d7cb6
+catalog.reject_delete returns=trigger md5=ab5e33d93d21746977f2461a51199c54
+imports.reject_closed_batch_change returns=trigger md5=ff901600685705a998daf630ec4758a0
+imports.reject_closed_row_change returns=trigger md5=03f64a3f0748969045d299f714d94ef8
+org.reject_location_change returns=trigger md5=e14c197f0861ebd579ad522240a748a5
+org.reject_store_change returns=trigger md5=fde8f6ac7fc45b7dccb40da6ababcf09
+stock.reject_closed_session_change returns=trigger md5=20f267d394a345b60849fcb4aa15f4b9
+stock.reject_resolved_line_change returns=trigger md5=42ae33340f478028842f4b5bacafffa6
+## déclencheurs
+CREATE TRIGGER trg_balances_no_delete BEFORE DELETE ON stock.balances FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_balances_no_truncate BEFORE TRUNCATE ON stock.balances FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_batches_frozen BEFORE DELETE OR UPDATE ON imports.batches FOR EACH ROW EXECUTE FUNCTION imports.reject_closed_batch_change()
+CREATE TRIGGER trg_batches_no_truncate BEFORE TRUNCATE ON imports.batches FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_families_no_delete BEFORE DELETE ON catalog.families FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_families_no_truncate BEFORE TRUNCATE ON catalog.families FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_inventory_lines_frozen BEFORE INSERT OR DELETE OR UPDATE ON stock.inventory_lines FOR EACH ROW EXECUTE FUNCTION stock.reject_resolved_line_change()
+CREATE TRIGGER trg_inventory_lines_no_truncate BEFORE TRUNCATE ON stock.inventory_lines FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_inventory_sessions_frozen BEFORE DELETE OR UPDATE ON stock.inventory_sessions FOR EACH ROW EXECUTE FUNCTION stock.reject_closed_session_change()
+CREATE TRIGGER trg_inventory_sessions_no_truncate BEFORE TRUNCATE ON stock.inventory_sessions FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_lens_references_no_delete BEFORE DELETE ON catalog.lens_references FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_lens_references_no_truncate BEFORE TRUNCATE ON catalog.lens_references FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_locations_guard BEFORE DELETE OR UPDATE ON org.locations FOR EACH ROW EXECUTE FUNCTION org.reject_location_change()
+CREATE TRIGGER trg_locations_no_truncate BEFORE TRUNCATE ON org.locations FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_movements_append_only BEFORE DELETE OR UPDATE ON stock.movements FOR EACH ROW EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_movements_no_truncate BEFORE TRUNCATE ON stock.movements FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_price_history_append_only BEFORE DELETE OR UPDATE ON pricing.price_history FOR EACH ROW EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_price_history_no_truncate BEFORE TRUNCATE ON pricing.price_history FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_product_models_no_delete BEFORE DELETE ON catalog.product_models FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_product_models_no_truncate BEFORE TRUNCATE ON catalog.product_models FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_product_variants_no_delete BEFORE DELETE ON catalog.product_variants FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_product_variants_no_truncate BEFORE TRUNCATE ON catalog.product_variants FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_receipt_lines_append_only BEFORE DELETE OR UPDATE ON stock.receipt_lines FOR EACH ROW EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_receipt_lines_no_truncate BEFORE TRUNCATE ON stock.receipt_lines FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_receipts_append_only BEFORE DELETE OR UPDATE ON stock.receipts FOR EACH ROW EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_receipts_no_truncate BEFORE TRUNCATE ON stock.receipts FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change()
+CREATE TRIGGER trg_rows_frozen BEFORE INSERT OR DELETE OR UPDATE ON imports.rows FOR EACH ROW EXECUTE FUNCTION imports.reject_closed_row_change()
+CREATE TRIGGER trg_rows_no_truncate BEFORE TRUNCATE ON imports.rows FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_stores_guard BEFORE DELETE OR UPDATE ON org.stores FOR EACH ROW EXECUTE FUNCTION org.reject_store_change()
+CREATE TRIGGER trg_stores_no_truncate BEFORE TRUNCATE ON org.stores FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_suppliers_no_delete BEFORE DELETE ON catalog.suppliers FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_suppliers_no_truncate BEFORE TRUNCATE ON catalog.suppliers FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_tax_categories_no_delete BEFORE DELETE ON pricing.tax_categories FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_tax_categories_no_truncate BEFORE TRUNCATE ON pricing.tax_categories FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_store_prices_no_delete BEFORE DELETE ON pricing.variant_store_prices FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_store_prices_no_truncate BEFORE TRUNCATE ON pricing.variant_store_prices FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_store_settings_no_delete BEFORE DELETE ON stock.variant_store_settings FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_store_settings_no_truncate BEFORE TRUNCATE ON stock.variant_store_settings FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_suppliers_no_delete BEFORE DELETE ON catalog.variant_suppliers FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
+CREATE TRIGGER trg_variant_suppliers_no_truncate BEFORE TRUNCATE ON catalog.variant_suppliers FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
+## données insérées par la migration
+catalog.families accessories label=Accessoires policies={stocked,order_only} sort=5
+catalog.families contact_lenses_solutions label=Lentilles et solutions policies={stocked,order_only} sort=4
+catalog.families ophthalmic_lenses label=Verres correcteurs policies={stocked,order_only} sort=3
+catalog.families optical_frames label=Montures optiques policies={stocked,order_only} sort=1
+catalog.families services label=Prestations policies={service} sort=6
+catalog.families sunglasses label=Lunettes de soleil policies={stocked,order_only} sort=2
+## contrainte des permissions (recréée par 0007)
+CHECK (((permission)::text = ANY ((ARRAY['system.admin'::character varying, 'clients.read'::character varying, 'clients.write'::character varying, 'clients.archive'::character varying, 'appointments.read'::character varying, 'appointments.write'::character varying, 'appointments.cancel'::character varying, 'audit.read'::character varying, 'optical.read'::character varying, 'optical.prescriptions.write'::character varying, 'optical.measurements.write'::character varying, 'optical.invalidate'::character varying, 'catalog.read'::character varying, 'catalog.write'::character varying, 'catalog.archive'::character varying, 'catalog.configure'::character varying, 'catalog.import'::character varying, 'pricing.write'::character varying, 'pricing.manual'::character varying, 'costs.read'::character varying, 'costs.write'::character varying, 'suppliers.read'::character varying, 'suppliers.write'::character varying, 'stock.read'::character varying, 'stock.movements.write'::character varying, 'stock.adjust'::character varying, 'inventory.count'::character varying, 'inventory.validate'::character varying])::text[])))

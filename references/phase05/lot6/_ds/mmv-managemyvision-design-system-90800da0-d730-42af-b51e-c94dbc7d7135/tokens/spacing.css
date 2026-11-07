@@ -1,0 +1,24 @@
+/* ============================================================
+   MMV — Spacing scale. Base unit 4px; use multiples everywhere.
+   (Espacements: 4 · 8 · 12 · 16 · 24 · 32 — from the DS extension.)
+   ============================================================ */
+:root{
+  --space-0:0;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:24px;
+  --space-6:32px;
+  --space-7:40px;
+  --space-8:48px;
+  --space-10:64px;
+  --space-12:80px;
+
+  /* Layout constants (MMV desktop shell) */
+  --sidebar-width:260px;
+  --sidebar-width-collapsed:72px;
+  --topbar-height:64px;
+  --statusbar-height:32px;
+  --content-max:1280px;
+}

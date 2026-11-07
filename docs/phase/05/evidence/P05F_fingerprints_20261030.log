@@ -1,0 +1,247 @@
+# Empreintes de contenu (md5 de chaque table, objets, contraintes hors ck_user_permissions_permission, déclencheurs des schémas 0001–0006)
+# requête :
+#   SELECT table_schema||'.'||table_name AS t,
+#     (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint AS n,
+#     (xpath('/row/h/text()', query_to_xml(format('SELECT md5(coalesce(string_agg(x::text, E''\n'' ORDER BY x::text), '''')) AS h FROM %I.%I x', table_schema, table_name), false, true, '')))[1]::text AS md5
+#   FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema') ORDER BY 1;
+#   SELECT md5(string_agg(n.nspname||'.'||c.relname||':'||c.relkind::text, ',' ORDER BY n.nspname, c.relname)) AS objects_md5, count(*) AS objects
+#   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','auth','clients','appointments','audit','optical');
+#   SELECT md5(string_agg(conname||'='||pg_get_constraintdef(oid), E'\n' ORDER BY conrelid::regclass::text, conname)) AS constraints_md5, count(*)
+#   FROM pg_constraint WHERE connamespace::regnamespace::text IN ('public','auth','clients','appointments','audit','optical') AND conname <> 'ck_user_permissions_permission';
+#   SELECT md5(string_agg(tgrelid::regclass::text||'.'||tgname||':'||tgenabled::text, ',' ORDER BY tgrelid::regclass::text, tgname)) AS triggers_md5, count(*) FROM pg_trigger WHERE NOT tgisinternal AND tgrelid::regclass::text !~ '^(org|catalog|pricing|stock|imports)\.';
+#   
+#   
+#   
+
+## mmv_v2_dev AVANT 0007
+               t                | n  |               md5                
+--------------------------------+----+----------------------------------
+ appointments.appointments      |  1 | b3a6addd792bee3c2d8e8a3da64c99e8
+ appointments.responsibles      |  0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                   | 12 | ed653e8d9ddbe36d9e81a0878545b9b3
+ auth.bootstrap_record          |  1 | 1bdf7397a72a6d97008fa1fe70636aac
+ auth.sessions                  | 35 | fc3e1abeb9f40eefaf223aab0f475bd5
+ auth.user_permissions          | 12 | 31f26a5bdcc1613b76495420fe014a33
+ auth.users                     |  1 | 3e9f56f226061a9780b253171bfa6c94
+ clients.clients                |  1 | fdf03f496022aa4e70a298355f3860c8
+ optical.measurement_revisions  |  1 | 012a33674d3532b9cea1de6095dff216
+ optical.measurements           |  1 | b20cc986db1109bc73daf6d3e16e2d36
+ optical.prescription_revisions |  2 | 0994f76310854aa28b53078971f3d054
+ optical.prescriptions          |  1 | 0fa95d03e039d41137bb91595bad0dea
+ public.__EFMigrationsHistory   |  6 | 419556d63f4de17df59d2c44d1fed2de
+(13 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ 924dbe72b8bc508331f47cd8344a3ea5 |      74
+(1 row)
+
+         constraints_md5          | count 
+----------------------------------+-------
+ ee2c717d0f4d69063c2ec2fa0abfa836 |   195
+(1 row)
+
+           triggers_md5           | count 
+----------------------------------+-------
+ c40e0f1eedce1a95b360d559d14811be |    10
+(1 row)
+
+
+## mmv_v2_dev APRÈS 0007
+                t                | n  |               md5                
+---------------------------------+----+----------------------------------
+ appointments.appointments       |  1 | b3a6addd792bee3c2d8e8a3da64c99e8
+ appointments.responsibles       |  0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 12 | ed653e8d9ddbe36d9e81a0878545b9b3
+ auth.bootstrap_record           |  1 | 1bdf7397a72a6d97008fa1fe70636aac
+ auth.sessions                   | 35 | fc3e1abeb9f40eefaf223aab0f475bd5
+ auth.user_permissions           | 12 | 31f26a5bdcc1613b76495420fe014a33
+ auth.users                      |  1 | 3e9f56f226061a9780b253171bfa6c94
+ catalog.families                |  6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       |  0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 |  1 | fdf03f496022aa4e70a298355f3860c8
+ imports.batches                 |  0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    |  0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   |  1 | 012a33674d3532b9cea1de6095dff216
+ optical.measurements            |  1 | b20cc986db1109bc73daf6d3e16e2d36
+ optical.prescription_revisions  |  2 | 0994f76310854aa28b53078971f3d054
+ optical.prescriptions           |  1 | 0fa95d03e039d41137bb91595bad0dea
+ org.locations                   |  0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    |  0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    |  7 | 1501ba254f791f190cdf8931c0ae93a7
+ stock.balances                  |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    |  0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ 924dbe72b8bc508331f47cd8344a3ea5 |      74
+(1 row)
+
+         constraints_md5          | count 
+----------------------------------+-------
+ ee2c717d0f4d69063c2ec2fa0abfa836 |   195
+(1 row)
+
+           triggers_md5           | count 
+----------------------------------+-------
+ c40e0f1eedce1a95b360d559d14811be |    10
+(1 row)
+
+
+## mmv_v2_test AVANT 0007
+               t                | n |               md5                
+--------------------------------+---+----------------------------------
+ appointments.appointments      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ appointments.responsibles      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.bootstrap_record          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.sessions                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.user_permissions          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.users                     | 0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurements           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescription_revisions | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescriptions          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory   | 6 | 419556d63f4de17df59d2c44d1fed2de
+(13 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ 924dbe72b8bc508331f47cd8344a3ea5 |      74
+(1 row)
+
+         constraints_md5          | count 
+----------------------------------+-------
+ ee2c717d0f4d69063c2ec2fa0abfa836 |   195
+(1 row)
+
+           triggers_md5           | count 
+----------------------------------+-------
+ c40e0f1eedce1a95b360d559d14811be |    10
+(1 row)
+
+
+## mmv_v2_test APRÈS 0007
+                t                | n |               md5                
+---------------------------------+---+----------------------------------
+ appointments.appointments       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ appointments.responsibles       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.bootstrap_record           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.sessions                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.user_permissions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.users                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.families                | 6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.batches                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurements            | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescription_revisions  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescriptions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.locations                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    | 7 | 1501ba254f791f190cdf8931c0ae93a7
+ stock.balances                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    | 0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ 924dbe72b8bc508331f47cd8344a3ea5 |      74
+(1 row)
+
+         constraints_md5          | count 
+----------------------------------+-------
+ ee2c717d0f4d69063c2ec2fa0abfa836 |   195
+(1 row)
+
+           triggers_md5           | count 
+----------------------------------+-------
+ c40e0f1eedce1a95b360d559d14811be |    10
+(1 row)
+
+
+## mmv_v2_dev FIN DE SESSION (après tous les essais, aucun sur dev)
+                t                | n  |               md5                
+---------------------------------+----+----------------------------------
+ appointments.appointments       |  1 | b3a6addd792bee3c2d8e8a3da64c99e8
+ appointments.responsibles       |  0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 12 | ed653e8d9ddbe36d9e81a0878545b9b3
+ auth.bootstrap_record           |  1 | 1bdf7397a72a6d97008fa1fe70636aac
+ auth.sessions                   | 35 | fc3e1abeb9f40eefaf223aab0f475bd5
+ auth.user_permissions           | 12 | 31f26a5bdcc1613b76495420fe014a33
+ auth.users                      |  1 | 3e9f56f226061a9780b253171bfa6c94
+ catalog.families                |  6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments |  0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       |  0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 |  1 | fdf03f496022aa4e70a298355f3860c8
+ imports.batches                 |  0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    |  0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   |  1 | 012a33674d3532b9cea1de6095dff216
+ optical.measurements            |  1 | b20cc986db1109bc73daf6d3e16e2d36
+ optical.prescription_revisions  |  2 | 0994f76310854aa28b53078971f3d054
+ optical.prescriptions           |  1 | 0fa95d03e039d41137bb91595bad0dea
+ org.locations                   |  0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          |  0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    |  0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    |  7 | 1501ba254f791f190cdf8931c0ae93a7
+ stock.balances                  |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  |  0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    |  0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ 924dbe72b8bc508331f47cd8344a3ea5 |      74
+(1 row)
+
+         constraints_md5          | count 
+----------------------------------+-------
+ ee2c717d0f4d69063c2ec2fa0abfa836 |   195
+(1 row)
+
+           triggers_md5           | count 
+----------------------------------+-------
+ c40e0f1eedce1a95b360d559d14811be |    10
+(1 row)
+

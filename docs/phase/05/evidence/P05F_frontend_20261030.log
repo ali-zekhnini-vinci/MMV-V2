@@ -1,0 +1,28 @@
+# Frontend — arbre final (30/10/2026), apps/desktop ; .env.development du propriétaire présent et modifié (VITE_MMV_OPTICAL_MODULE), non touché
+# npm run check
+> tsc -p tsconfig.json && tsc -p tsconfig.node.json && tsc -p tsconfig.test.json
+
+exit 0
+# eslint .
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+# vitest run (1)
+ Test Files  28 passed (28)
+      Tests  311 passed (311)
+   Duration  55.20s (tests 74%, environment 11%, import 9%, transform 5%)
+# vitest run (2)
+ Test Files  28 passed (28)
+      Tests  311 passed (311)
+   Duration  55.79s (tests 76%, environment 10%, import 9%, transform 4%)
+# vite build
+
+✓ built in 943ms
+
+# O-05-11 — preuves d'isolation (src/optical/realAppIsolation.test.tsx, src/test/setup.ts)
+- Avant correctif : realAppIsolation.test.tsx 1 FAIL (« aucune activation par défaut » lisait la copie de travail de .env.development).
+- Après correctif, même .env.development : 6 / 6 PASS ; suite complète 309 / 309 (deux passages), puis 311 / 311 avec catalog.test.ts.
+- Témoin positif : .env.test.local TEMPORAIRE (VITE_MMV_OPTICAL_MODULE=enabled, VITE_MMV_CATALOG_MODULE=enabled), src/optical + src/catalog + src/shell : 59 / 59 PASS ; fichier supprimé.
+- Témoin négatif : même fichier temporaire, setup.ts de HEAD (sans neutralisation) : 4 FAIL / 59 — la neutralisation est nécessaire ; setup.ts restauré, fichier supprimé.
+- Délais : aucun échec ni dépassement de délai sur quatre passages complets (O-04-51 / tests lents non reproduits) ; vitest exécuté seul, sans build .NET concurrent.

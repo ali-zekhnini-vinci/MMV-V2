@@ -1,0 +1,99 @@
+2026-10-30T15:21:50.511Z SCÉNARIO — catalogue-05
+2026-10-30T15:21:50.512Z PARCOURS 05 — API https://localhost:7367, suffixe DC27E3, magasins fictifs Bruxelles (EUR) et Casablanca (MAD)
+2026-10-30T15:21:51.884Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-30T15:21:51.885Z PASS — zoom WebView2 effectif 100 %
+2026-10-30T15:21:53.719Z PASS — thème light
+2026-10-30T15:21:53.721Z PASS — menu Produits
+2026-10-30T15:21:54.188Z PASS — famille affichée : N05-DC27E3-MON
+2026-10-30T15:21:54.188Z PASS — famille affichée : N05-DC27E3-SOL
+2026-10-30T15:21:54.189Z PASS — famille affichée : N05-DC27E3-VER
+2026-10-30T15:21:54.189Z PASS — famille affichée : N05-DC27E3-LEN
+2026-10-30T15:21:54.190Z PASS — famille affichée : N05-DC27E3-ACC
+2026-10-30T15:21:54.190Z PASS — famille affichée : N05-DC27E3-SRV
+2026-10-30T15:21:54.191Z PASS — prix de vente BE (41,25 × 2,5 = 103,13 €) affiché
+2026-10-30T15:21:54.865Z CAPTURE — <EVIDENCE>\P05F_native_p05_01_catalogue_six-familles_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:21:54.867Z PASS — Nouveau produit
+2026-10-30T15:21:54.873Z PASS — Famille = Accessoires
+2026-10-30T15:21:55.788Z CAPTURE — <EVIDENCE>\P05F_native_p05_02_nouveau-produit_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:21:55.789Z PASS — Enregistrer le produit
+2026-10-30T15:21:56.029Z PASS — API : variante créée (accessoires, stockée)
+2026-10-30T15:21:56.151Z PASS — Aperçu
+2026-10-30T15:21:56.306Z PASS — Enregistrer ce prix
+2026-10-30T15:21:56.621Z PASS — API : prix BE 103.13 EUR (achat 41.2500, coefficient 2.5000)
+2026-10-30T15:21:57.306Z CAPTURE — <EVIDENCE>\P05F_native_p05_03_prix-coefficient-eur_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:21:57.309Z PASS — magasin actif : Casablanca
+2026-10-30T15:21:57.593Z PASS — Aperçu MAD
+2026-10-30T15:21:57.752Z PASS — Enregistrer ce prix MAD
+2026-10-30T15:21:58.071Z PASS — API : prix MA 43.98 MAD
+2026-10-30T15:21:58.075Z PASS — API : prix BE inchangé (103.13 EUR), aucune conversion
+2026-10-30T15:21:58.733Z CAPTURE — <EVIDENCE>\P05F_native_p05_04_prix-coefficient-mad_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:21:58.737Z PASS — magasin actif : Bruxelles
+2026-10-30T15:21:58.868Z PASS — Appliquer le prix manuel
+2026-10-30T15:21:59.183Z PASS — API : mode manuel
+2026-10-30T15:21:59.187Z PASS — API : 99.90 EUR, coefficient 2.5000 conservé
+2026-10-30T15:21:59.918Z CAPTURE — <EVIDENCE>\P05F_native_p05_05_prix-manuel_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:21:59.932Z PASS — menu Stock & inventaires
+2026-10-30T15:22:00.095Z PASS — Entrée (monture)
+2026-10-30T15:22:00.155Z PASS — Confirmer l'entrée
+2026-10-30T15:22:00.473Z PASS — API : en main 8 → 10
+2026-10-30T15:22:00.475Z PASS — Sortie (monture)
+2026-10-30T15:22:00.547Z PASS — Confirmer la sortie excessive
+2026-10-30T15:22:00.705Z PASS — API : sortie refusée, stock inchangé, jamais négatif
+2026-10-30T15:22:00.706Z REFUS — Stock insuffisant : le stock ne peut pas devenir négatif.
+2026-10-30T15:22:01.518Z CAPTURE — <EVIDENCE>\P05F_native_p05_06_sortie-refusee-stock-negatif_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:01.520Z PASS — Annuler
+2026-10-30T15:22:01.521Z PASS — Réceptions
+2026-10-30T15:22:01.690Z PASS — action « Recevoir le reliquat » proposée
+2026-10-30T15:22:02.471Z CAPTURE — <EVIDENCE>\P05F_native_p05_07_receptions-partielle_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:02.472Z PASS — Inventaires
+2026-10-30T15:22:02.630Z PASS — ouvrir l'inventaire
+2026-10-30T15:22:02.850Z PASS — Compter
+2026-10-30T15:22:03.167Z PASS — API : ligne comptée 2 (écart −1 à justifier)
+2026-10-30T15:22:03.948Z CAPTURE — <EVIDENCE>\P05F_native_p05_08_inventaire-comptage_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:03.951Z PASS — menu Produits
+2026-10-30T15:22:03.956Z PASS — Import CSV
+2026-10-30T15:22:03.961Z PASS — Type = Fournisseurs
+2026-10-30T15:22:03.964Z PASS — dépôt du fichier fournisseurs.csv (sélecteur de fichier de l'interface)
+2026-10-30T15:22:04.124Z PASS — Contrôler (à blanc)
+2026-10-30T15:22:04.291Z PASS — API : contrôle à blanc, aucun fournisseur écrit
+2026-10-30T15:22:05.064Z CAPTURE — <EVIDENCE>\P05F_native_p05_09_import-controle-a-blanc_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:05.065Z PASS — Appliquer (tout ou rien)
+2026-10-30T15:22:05.385Z PASS — API : 2 fournisseurs importés
+2026-10-30T15:22:05.387Z PASS — Catalogue
+2026-10-30T15:22:05.392Z PASS — Import CSV (nouveau dépôt)
+2026-10-30T15:22:05.396Z PASS — Type = Fournisseurs
+2026-10-30T15:22:05.397Z PASS — dépôt du fichier fournisseurs.csv (sélecteur de fichier de l'interface)
+2026-10-30T15:22:05.556Z PASS — Contrôler le réimport
+2026-10-30T15:22:05.715Z PASS — Appliquer le réimport
+2026-10-30T15:22:05.874Z PASS — API : aucun doublon (toujours 2)
+2026-10-30T15:22:05.875Z PASS — Catalogue
+2026-10-30T15:22:05.880Z PASS — Import CSV (nouveau dépôt)
+2026-10-30T15:22:05.884Z PASS — Type = Catalogue (modèles et variantes)
+2026-10-30T15:22:05.885Z PASS — dépôt du fichier catalogue.csv (sélecteur de fichier de l'interface)
+2026-10-30T15:22:06.044Z PASS — Contrôler le catalogue
+2026-10-30T15:22:06.202Z PASS — application impossible tant qu'une ligne est en erreur (tout ou rien)
+2026-10-30T15:22:06.207Z PASS — API : aucune variante importée
+2026-10-30T15:22:06.844Z CAPTURE — <EVIDENCE>\P05F_native_p05_10_import-rejet-tout-ou-rien_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:06.845Z PASS — Fournisseurs
+2026-10-30T15:22:07.632Z CAPTURE — <EVIDENCE>\P05F_native_p05_11_fournisseurs_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:07.633Z PASS — Référentiel verres
+2026-10-30T15:22:08.417Z CAPTURE — <EVIDENCE>\P05F_native_p05_12_referentiel-verres_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:08.734Z PASS — thème dark
+2026-10-30T15:22:08.735Z PASS — Catalogue
+2026-10-30T15:22:09.473Z CAPTURE — <EVIDENCE>\P05F_native_p05_13_catalogue_dark_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:09.474Z PASS — fiche de la monture
+2026-10-30T15:22:10.318Z CAPTURE — <EVIDENCE>\P05F_native_p05_14_fiche-prix_dark_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:11.688Z PASS — fenêtre 1366×768 (client 1366x768)
+2026-10-30T15:22:12.214Z CAPTURE — <EVIDENCE>\P05F_native_p05_15_fiche-prix_dark_1366x768_20261030T152150Z.png 1366x768
+2026-10-30T15:22:13.570Z PASS — fenêtre 1920×1080 (client 1920x1080)
+2026-10-30T15:22:13.885Z PASS — thème light
+2026-10-30T15:22:15.705Z PASS — menu Produits (vendeur)
+2026-10-30T15:22:16.173Z PASS — vendeur : aucun « Nouveau produit » (catalog.write absent)
+2026-10-30T15:22:16.174Z PASS — fiche de la monture (vendeur)
+2026-10-30T15:22:16.330Z PASS — vendeur : aucun coût affiché (prix d'achat, coefficient, marge)
+2026-10-30T15:22:16.330Z PASS — vendeur : prix de vente affiché
+2026-10-30T15:22:16.391Z PASS — API (vendeur) : aucune clé de coût servie
+2026-10-30T15:22:17.146Z CAPTURE — <EVIDENCE>\P05F_native_p05_16_vendeur-sans-couts_light_1920x1080_20261030T152150Z.png 1920x1080
+2026-10-30T15:22:17.149Z PASS — menu Stock (vendeur)
+2026-10-30T15:22:17.155Z PASS — vendeur : aucune action d'entrée/sortie (stock.movements.write absent)
+2026-10-30T15:22:17.155Z TERMINÉ — catalogue-05

@@ -1,0 +1,116 @@
+# Suites du 07/11/2026 (GATE D), rejouées APRÈS la dernière modification du code (route POST d'annulation, 07/11 ~02:45 UTC).
+# Build : dotnet build MMV.slnx --artifacts-path bin/gated -p:NuGetAudit=false -> 0 avertissement, 0 erreur.
+# MMV.Api.Tests : Réussi!  - échec :     0, réussite :   670, ignorée(s) :     0, total :   670, durée : 1 m 17 s - MMV.Api.Tests.dll (net10.0)
+# MMV.Maintenance.Tests : Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+# MMV.PostgreSql.Tests sur mmv_v2_test (0001-0009 appliquées), Ollama réel MMV_CSVAI_REAL_OLLAMA=http://127.0.0.1:11434 : {'Passed': 107, 'NotExecuted': 1} (NotExecuted = test HTTPS en processus réel, rejoué ci-dessous)
+# Processus HTTPS réel (API de banc 7367 du build final, magasin T05BEREEL, MMV_PG05_API_BASE / MMV_PG05_API_PLAIN, filtre Phase05RealHttpsTests|Phase05PostgreSqlTests) : Réussi!  - échec :     0, réussite :     8, ignorée(s) :     0, total :     8, durée : 12 s - MMV.PostgreSql.Tests.dll (net10.0)
+# Front (apps/desktop) : npm run check (tsc) rc=0 ; Test Files  32 passed (32) ; Tests  341 passed (341) ; ESLint 0 erreur, 1 avertissement préexistant (src/clients/ClientsTable.tsx, react-hooks/incompatible-library).
+
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsConcurrencyPostgreSqlTests.TwoStations_SameSlot_ACommits_BWaitsThenIsRefused(reception: False)
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsConcurrencyPostgreSqlTests.TwoStations_SameSlot_ACommits_BWaitsThenIsRefused(reception: True)
+Passed	00:00:01	MMV.PostgreSql.Tests.AppointmentsHttpPostgreSqlTests.AppointmentsHttpMatrix_RightsConflictsAndInputValidation_OnRealPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ArchivedClientAndIneligibleCollaborator_AreRefused_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ClientHistory_FiltersOrdersPaginatesAndCounts_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.Constraints_AreEnforcedByPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.List_IsOrderedByStartThenId_AndCarriesTheLastEditor_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.Move_KeepingAResponsibleNoLongerEligible_IsRefused_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.PersonalAppointment_OverlapConsecutiveCancelRestore_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.ReceptionCapacity_IsComputedAtEachInstant_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.SimultaneousReceptionBookings_SameTransactionView_SecondIsRefused
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.SimultaneousReceptionBookings_TwoConnections_SecondWaitsForTheFirst
+Passed	00:00:00	MMV.PostgreSql.Tests.AppointmentsPostgreSqlTests.StartedAppointment_KeepsItsBooking_OnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.AppointmentWrites_AreAuditedInTheirTransaction_RefusalsAreNot
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.AuditJournalScript_ProducesExactlyTheExpectedSchema
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.ClientWrites_InsertTheirEventInTheSameSave_WithActorSessionAndNoPersonalValue
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.FailedSave_WritesNeitherTheBusinessChangeNorItsEvent
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.Journal_IsAppendOnly_AndAcceptsTheAuditReadPermission
+Passed	00:00:00	MMV.PostgreSql.Tests.AuditPostgreSqlTests.UpdatesWithoutRealChange_RewriteNoRow_AndRecordNoEvent
+Passed	00:00:01	MMV.PostgreSql.Tests.AuthHttpPostgreSqlTests.AuthMatrix_OnRealPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.DevDatabase_IsTheAllowedBootstrapTarget
+Passed	00:00:00	MMV.PostgreSql.Tests.BootstrapTargetPostgreSqlTests.TestDatabase_IsRefusedAsBootstrapTarget
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientReferenceFormatPostgreSqlTests.ReferenceExpression_PadsToSixDigitsAndNeverTruncates
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ClientsHttpMatrix_OnRealPostgreSql
+Passed	00:00:01	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ClientsHttpPermissionsAndLifecycle_OnRealPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.ConcurrentWriter_IsDetectedByXmin_WithoutOverwrite
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Constraints_AreEnforcedByPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.CreateUpdateArchiveReactivate_RoundTripOnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Duplicates_AreAllowed_WithDistinctReferences
+Passed	00:00:00	MMV.PostgreSql.Tests.ClientsPostgreSqlTests.Search_IsAccentAndCaseInsensitive_AndArchivedAreFiltered
+Passed	00:00:00	MMV.PostgreSql.Tests.IdentityPostgreSqlTests.BootstrapRecord_IsASingletonEnforcedByPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.IdentityPostgreSqlTests.Bootstrap_SucceedsOnce_ThenIsRefused
+Passed	00:00:00	MMV.PostgreSql.Tests.IdentityPostgreSqlTests.LoginSessionLogoutAndDeactivation_RoundTripOnPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.IdentityPostgreSqlTests.UnknownPermissionAndDuplicateUserName_AreRejectedByPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalConcurrencyPostgreSqlTests.TwoStations_SameDraftAndSameRequests_NeverProduceDuplicatesOrTwoConfirmations
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: ConfirmDraft)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: Create)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: CreateMeasurement)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: DiscardRectification)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: EditDraft)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.ArchiveCommitsAfterTheCheck_WriteIsRefused_NothingWritten(write: StartRectification)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: Deactivation)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurementHoldsTheMeasurerLock_LossWaits_HistoryKept_NewMeasurementsRefused(loss: PermissionRevoked)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: Deactivation)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.MeasurerLostAfterTheCheck_NewMeasurementIsRefused_NothingWritten(loss: PermissionRevoked)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: ConfirmDraft)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: Create)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: CreateMeasurement)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: DiscardRectification)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: EditDraft)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalLifecycleRacePostgreSqlTests.WriteHoldsTheClientLock_ArchiveWaits_ThenSucceeds(write: StartRectification)
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalPostgreSqlTests.Constraints_AndTriggers_ProtectTheModel
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalPostgreSqlTests.CreateAndConfirm_WritesRecordRevisionAndEventsInOneSave_ValuesExact
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalPostgreSqlTests.Reads_ListsDetailAndMeasurers_OnRealPostgreSql
+Passed	00:00:00	MMV.PostgreSql.Tests.OpticalPostgreSqlTests.Refusals_AndUnchangedSaves_WriteNothing
+Passed	00:00:04	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Analysis_LateResultAfterCancel_IsDiscarded_ThenRulesOnlyChoice_ThenRetry
+Passed	00:00:12	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Analysis_Unavailable_InvalidOutput_ModelMismatch_NeverSilentFallback
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05AssistedImportTests.ConcurrentDecisions_OnTheSameRevision_OnlyOneWins
+Passed	00:00:03	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_GateD_CharacteristicChangedAfterCheckOrDuringApply_CheckStale_UnrelatedChangeKept
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_OffersOfSeveralSuppliers_ReferencesDecided_RangesNeverCompleted_CombinedRestriction_ToVerify
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_PostAudit_IdentityGeometry_CompletenessRevalidated_NothingErased_CurrencyConfirmed_ReplayIdentical
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_DuplicateSkuAccepted_Diagnosed_Corrected_MoneyConfirmed_Checked_Applied
+Passed	00:00:04	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_GateD_PriceChangedAfterCheckOrDuringApply_CheckStale_NeverOverwritten
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05AssistedImportTests.TechnicalRefusalsOnly_BusinessAnomaliesAccepted_AndInjectionNeverObeyed
+Passed	00:01:52	MMV.PostgreSql.Tests.Phase05AssistedRealOllamaTests.RealQwen_AnalysesCorpusFiles_ModelConfirmed_ProposalRevalidated_NothingWrittenBeforeConfirmation
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05CorrectionsSchemaTests.CsvImport_DetectsFormats_MapsSynonyms_SupplierProfile_NoDuplicates
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05CorrectionsSchemaTests.LensOffers_SimpleAndAdvancedRules_ThreeOutcomes_Revisions_Costs
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.Inventories_Full_And_Partial_UncountedRules
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.ReservedStock_CannotBeTakenOut_NorAdjustedBelow
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.SixFamilies_ModelsAndVariants_LensCatalog
+Passed	00:00:03	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.SixteenPermissions_EachIsRequiredByItsRoute
+Passed	00:00:06	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.AssistantDown_OrInvalidOutput_FallsBackToRules_ImportStillWorks
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.InjectionInFile_CannotMapPricesWithoutConfirmation_NorReachTheDatabase
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.MissingValues_AndDuplicateRows_AreReported_PerLine_NothingApplied
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.UnusualSupplierFile_MappedByAssistant_LearnedProfile_ReusedWithoutInference_ReimportRefused
+Passed	00:00:03	MMV.PostgreSql.Tests.Phase05LensCatalogTests.NewRange_WithSeveralSuppliers_OwnRangesPerSupplier_AllOrNothing_History
+Passed	00:00:02	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Catalog_Pricing_CostsProjection_EurAndMad
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Import_CheckApply_AllOrNothing_Replay_Permissions
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Inventory_CountValidate_ConcurrentMovement_Permissions_Blind
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Permissions_EachRoute_RequiresItsOwnRight_AndSystemAdminGivesNone
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Stock_ConcurrentOutputs_NeverOversell
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Stock_NegativeForbidden_Receipts_Partial_Adjustments_Policies
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Suppliers_Links_Primary_Incomplete_And_ArchivedSupplier
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_CreatesEverything_InOneTransaction_OrNothing
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_RefusesAnyUnpricedVariant_AndPricesEachVariantIndependently
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_SetsThresholdPerStore_AlertOnAggregatedAvailable
+NotExecuted	00:00:00	MMV.PostgreSql.Tests.Phase05RealHttpsTests.RealProcess_ServesTheBench_AndRefusesPlainHttp_NothingWritten
+Passed	00:00:05	MMV.PostgreSql.Tests.Phase05RealtimeTests.Stations_ReceiveConfirmedChanges_FilteredByRightsAndStore_WithoutAmounts
+Passed	00:00:00	MMV.PostgreSql.Tests.Phase05SchemaTests.AssistantReviewedInventory_DiffersOnlyByTheGuardFunctionBodiesLineEndings
+Passed	00:00:00	MMV.PostgreSql.Tests.Phase05SchemaTests.Phase05Schemas_MatchTheReviewedInventory_AndPreviousStagesAreUnchanged
+Passed	00:00:00	MMV.PostgreSql.Tests.Phase05SchemaTests.ReviewedInventory_DiffersOnlyByTheFunctionBodiesLineEndings
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05SearchTests.Search_Catalog_Stock_Suppliers_AreServerSide_AccentAndCaseInsensitive
+Passed	00:00:02	MMV.PostgreSql.Tests.Phase05StoreContextTests.Server_WithoutStoreCode_AndSeveralStores_FailsSafely
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05StoreContextTests.Store_IsTheInstallationStore_AndAnotherStoreIsNeverServed
+Passed	00:00:01	MMV.PostgreSql.Tests.Phase05StoreContextTests.UxAiRoutes_RefuseAnotherStore_NothingWritten
+Passed	00:00:00	MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations
+Passed	00:00:00	MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied
+Passed	00:00:00	MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState
+Passed	00:00:00	MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied
+Passed	00:00:00	MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.DevDatabase_IdentityMatches
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.TestDatabase_IdentityMatches
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.Validate_AcceptsExactTestTarget
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: &quot;Host=192.0.2.10;Port=5433;Database=mmv_v2_test;Use&quot;···)
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: &quot;Host=localhost;Port=5432;Database=mmv_v2_test;User&quot;···)
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: &quot;Host=localhost;Port=5433;Database=mmv_v2_test;User&quot;···)
+Passed	00:00:00	MMV.PostgreSql.Tests.TargetIdentityTests.Validate_RefusesForeignTargetWithoutConnecting(connectionString: &quot;Host=localhost;Port=5433;Database=postgres;Usernam&quot;···)
+Passed	00:00:00	MMV.PostgreSql.Tests.TransactionalRollbackTests.TestDatabase_TemporaryWriteIsRolledBackWithoutResidue

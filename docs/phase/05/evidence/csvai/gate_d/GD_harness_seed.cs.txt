@@ -1,0 +1,112 @@
+#:project C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/src/MMV.Infrastructure/MMV.Infrastructure.csproj
+#:property TreatWarningsAsErrors=false
+#:property PublishAot=false
+#:property NoWarn=CA1303;CA1307;CA1031;CA2007;CA1849;CA1861;CA2000;CA1859;CA1822;CA1305;CA1310;CA1304;CA1311;CA1862;CA2234;CA1515;CA1050;CA1852
+// Banc natif GATE D (CSV-IMPORT-AI-01, 07/11/2026 ; outil JETABLE) : données FICTIVES sur mmv_v2_test UNIQUEMENT
+// (port 5433, chaîne lue dans les user-secrets mmv-v2-postgresql-tests, jamais affichée). Refuse toute autre cible.
+// Magasin NATIF-GD (EUR), comptes gd-admin / gd-vendeur (mot de passe de banc aléatoire, hors dépôt), fournisseurs et
+// référentiel des verres fictifs, une offre de verres existante (circuit stocké, fiche complète) créés par l'API HTTPS de banc.
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MMV.Application.Identity;
+using MMV.Domain.Identity;
+using MMV.Domain.Stores;
+using MMV.Infrastructure;
+using MMV.Infrastructure.Persistence;
+using Npgsql;
+
+var secrets = JsonDocument.Parse(File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "UserSecrets", "mmv-v2-postgresql-tests", "secrets.json")));
+var connection = secrets.RootElement.GetProperty("ConnectionStrings:MmvTest").GetString()!;
+var api = new Uri(args[0]);
+var credsFile = args[1];
+var builder = new NpgsqlConnectionStringBuilder(connection);
+if (builder.Host is not ("localhost" or "127.0.0.1") || builder.Port != 5433 || builder.Database != "mmv_v2_test" || builder.Username != "mmv_v2_test" || api.Port == 7267)
+{
+    throw new InvalidOperationException("Cible refusée.");
+}
+
+var services = new ServiceCollection()
+    .AddInfrastructure(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Mmv"] = connection }).Build())
+    .BuildServiceProvider();
+var password = File.Exists(credsFile) ? JsonDocument.Parse(File.ReadAllText(credsFile)).RootElement[0].GetProperty("password").GetString()! : "Banc-" + Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
+var accounts = new List<object>();
+using (var scope = services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<MmvDbContext>();
+    var hashing = scope.ServiceProvider.GetRequiredService<IPasswordHashing>();
+    var now = DateTimeOffset.UtcNow;
+    if (!context.Stores.Any())
+    {
+        var shop = Store.Create(Guid.CreateVersion7(), "NATIF-GD", "Optique du Banc GATE D (fictif)", "BE", Currencies.Euro, now);
+        context.Stores.Add(shop);
+        context.Locations.Add(Location.Create(Guid.CreateVersion7(), shop.Id, "MAGASIN", "Magasin", true, now));
+    }
+
+    foreach (var (name, display, perms) in new[]
+    {
+        ("gd-admin", "Admin GATE D", Permissions.Phase05.Append(Permissions.AuditRead).ToArray()),
+        ("gd-vendeur", "Vendeur GATE D", new[] { Permissions.CatalogRead, Permissions.StockRead }),
+    })
+    {
+        if (!context.Users.Any(u => u.UserName == name))
+        {
+            var user = new UserAccount(Guid.CreateVersion7(), name, display, now);
+            user.SetPasswordHash(hashing.Hash(user, password));
+            foreach (var p in perms)
+            {
+                user.Grant(p);
+            }
+
+            context.Users.Add(user);
+        }
+
+        accounts.Add(new { key = name, userName = name, password, displayName = display });
+    }
+
+    await context.SaveChangesAsync();
+}
+
+await File.WriteAllTextAsync(credsFile, JsonSerializer.Serialize(accounts));
+using var http = new HttpClient { BaseAddress = api };
+var login = await http.PostAsJsonAsync("/api/auth/login", new { userName = "gd-admin", password });
+var token = JsonDocument.Parse(await login.Content.ReadAsStringAsync()).RootElement.GetProperty("accessToken").GetString();
+http.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+async Task<JsonElement> Send(HttpMethod method, string path, object body)
+{
+    using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
+    using var response = await http.SendAsync(request);
+    var text = await response.Content.ReadAsStringAsync();
+    if (!response.IsSuccessStatusCode)
+    {
+        throw new InvalidOperationException($"{method} {path} → {(int)response.StatusCode} {text}");
+    }
+
+    return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
+}
+
+var store = JsonDocument.Parse(await http.GetStringAsync("/api/store")).RootElement;
+Console.WriteLine($"MAGASIN {store.GetProperty("store").GetProperty("code").GetString()} source={store.GetProperty("source").GetString()}");
+var suppliers = JsonDocument.Parse(await http.GetStringAsync("/api/suppliers")).RootElement.ToString();
+if (suppliers.Contains("LUXGD", StringComparison.Ordinal))
+{
+    Console.WriteLine("BANC déjà amorcé");
+    return 0;
+}
+
+await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = "LUXGD", name = "Lunetterie Banc Distribution", countryCode = "BE" });
+var lab = (await Send(HttpMethod.Post, "/api/suppliers", new { requestId = Guid.NewGuid(), code = "VERGD", name = "Laboratoire Verres Banc", countryCode = "BE" })).GetProperty("id").GetGuid();
+var manufacturer = (await Send(HttpMethod.Post, "/api/catalog/lens-references/manufacturers", new { requestId = Guid.NewGuid(), name = "Verrier Banc" })).GetProperty("id").GetGuid();
+var range = (await Send(HttpMethod.Post, "/api/catalog/lens-references/ranges", new { requestId = Guid.NewGuid(), name = "Confort Banc", manufacturerId = manufacturer })).GetProperty("id").GetGuid();
+var index = (await Send(HttpMethod.Post, "/api/catalog/lens-references/indices", new { requestId = Guid.NewGuid(), name = "Indice 1.60", indexValue = "1.60" })).GetProperty("id").GetGuid();
+var treatment = (await Send(HttpMethod.Post, "/api/catalog/lens-references/treatments", new { requestId = Guid.NewGuid(), name = "Durci Banc" })).GetProperty("id").GetGuid();
+await Send(HttpMethod.Post, "/api/catalog/lens-offers", new
+{
+    requestId = Guid.NewGuid(), rangeId = range, supplierId = lab, lensType = "progressive", indexId = index, production = "stocked", leadTimeDays = 2, priceHt = "30.0000",
+    priceCurrency = "EUR", diameters = new[] { 65 }, sphereMin = "-4.00", sphereMax = "4.00", additionMin = "0.75", additionMax = "3.50", treatmentIds = new[] { treatment },
+    rulesComplete = true, sourceReference = "Fiche labo banc", notes = "offre saisie à la main", reason = "Amorçage du banc",
+});
+Console.WriteLine("SEED terminé (2 fournisseurs, 4 références de verres, 1 offre stockée complète)");
+return 0;

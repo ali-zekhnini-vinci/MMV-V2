@@ -1,0 +1,71 @@
+# Parcours natif UX-IA (03/11/2026) : deux fenêtres Tauri/WebView2 (mmv-uxaia administrateur, mmv-uxaib vendeur), build de banc du front livré
+# (VITE_MMV_API_BASE_URL=https://localhost:7367), API MMV.Api de banc RÉELLE sur le cluster jetable 55433 (magasin NATIF-UX, Installation:StoreCode),
+# assistant IA local réel (Ollama 127.0.0.1:11434, llama3.2). Scénario : apps/desktop/e2e/native-uxai.mjs. Données fictives (UXAI_harness_seed.cs.txt).
+# Exécution sur le build précédant le seul contrôle « référence fournisseur en double dans le fichier » (ajouté ensuite, couvert par la suite PostgreSQL).
+2026-11-03T22:06:34.399Z ÉTAPE — produit
+2026-11-03T22:06:35.823Z PASS — clavier : Tab quitte le champ « Nom du modèle » vers le champ suivant
+2026-11-03T22:06:37.487Z CAPTURE — <PREUVES>\UXAI_native_01_produit_etape1_A_light_20261103.png 1366x768
+2026-11-03T22:06:37.577Z PASS — clavier : Entrée sur « Suivant » ouvre l'étape 2 (Variantes)
+2026-11-03T22:06:40.951Z PASS — deux fournisseurs, le premier principal par défaut, prix fournisseur HT par variante
+2026-11-03T22:06:42.368Z CAPTURE — <PREUVES>\UXAI_native_02_produit_fournisseurs_A_light_20261103.png 1366x768
+2026-11-03T22:06:42.376Z PASS — tarification : le mode « Plus tard » n'existe plus
+2026-11-03T22:06:42.376Z PASS — prix d'achat repris du fournisseur principal (même devise)
+2026-11-03T22:06:42.586Z PASS — blocage précis : aperçu serveur requis pour « Noir 58 »
+2026-11-03T22:06:44.003Z CAPTURE — <PREUVES>\UXAI_native_03_produit_tarif-incomplet-bloque_A_light_20261103.png 1366x768
+2026-11-03T22:06:44.167Z PASS — aperçu calculé par le serveur : 40,00 × 2,5 = 100,00 € HT
+2026-11-03T22:06:46.001Z CAPTURE — <PREUVES>\UXAI_native_04_produit_tarifs-coefficient-et-manuel_A_light_20261103.png 1366x768
+2026-11-03T22:06:46.819Z PASS — seuil expliqué : stock disponible agrégé du magasin, tous emplacements
+2026-11-03T22:06:48.252Z CAPTURE — <PREUVES>\UXAI_native_05_produit_stock-seuil_A_light_20261103.png 1366x768
+2026-11-03T22:06:48.561Z PASS — récapitulatif : prix de vente HT des deux variantes
+2026-11-03T22:06:50.017Z CAPTURE — <PREUVES>\UXAI_native_06_produit_recapitulatif_A_light_20261103.png 1366x768
+2026-11-03T22:06:51.767Z CAPTURE — <PREUVES>\UXAI_native_07_produit_recapitulatif_A_dark_20261103.png 1366x768
+2026-11-03T22:06:53.175Z CAPTURE — <PREUVES>\UXAI_native_08_produit_recapitulatif_fenetre-reduite_A_dark_20261103.png 1024x640
+2026-11-03T22:06:53.660Z PASS — création atomique : fiche produit ouverte
+2026-11-03T22:06:53.663Z PASS — fiche : seuil 10 pour le magasin
+2026-11-03T22:06:59.974Z CAPTURE — <PREUVES>\UXAI_native_09_produit_fiche_modifier-seuil_A_light_20261103.png 1366x768
+2026-11-03T22:07:00.138Z PASS — seuil modifié depuis la fiche produit (12)
+2026-11-03T22:07:01.128Z PASS — B (vendeur) : prix d'achat jamais affiché
+2026-11-03T22:07:01.128Z PASS — B (vendeur, sans catalog.write) : aucune création proposée
+2026-11-03T22:07:02.552Z CAPTURE — <PREUVES>\UXAI_native_10_produit_vu-du-vendeur_B_light_20261103.png 1366x768
+2026-11-03T22:07:02.552Z ÉTAPE — import
+2026-11-03T22:07:03.148Z PASS — assistant IA local du serveur actif (llama3.2)
+2026-11-03T22:07:05.551Z CAPTURE — <PREUVES>\UXAI_native_11_import_depot_A_light_20261103.png 1366x768
+2026-11-03T22:07:14.009Z MESURE — dépôt + analyse affichés en 8458 ms
+2026-11-03T22:07:14.010Z PASS — séparateur inhabituel « | » détecté
+2026-11-03T22:07:14.011Z ANALYSE —  Assistant IA local (llama3.2) consulté pour les colonnes non reconnues par les règles — ses propositions ont été vérifiées par le serveur. lecture 0 ms · assistant 8,3 s
+2026-11-03T22:07:14.011Z PASS — assistant IA local consulté pour les colonnes non reconnues (durées affichées)
+2026-11-03T22:07:14.012Z QUESTIONS — ["Quelle famille pour tout le fichier ?","Quelle politique de stock pour tout le fichier ?"]
+2026-11-03T22:07:14.012Z PASS — seules les précisions nécessaires sont demandées (2)
+2026-11-03T22:07:15.453Z CAPTURE — <PREUVES>\UXAI_native_12_import_analyse_precisions_A_light_20261103.png 1366x768
+2026-11-03T22:07:15.628Z PASS — contrôle à blanc : 0 ligne en erreur
+2026-11-03T22:07:15.629Z PASS — bouton unique « Importer 3 lignes »
+2026-11-03T22:07:17.102Z CAPTURE — <PREUVES>\UXAI_native_13_import_recapitulatif_A_light_20261103.png 1366x768
+2026-11-03T22:07:18.558Z CAPTURE — <PREUVES>\UXAI_native_14_import_recapitulatif_fenetre-reduite_A_light_20261103.png 1024x640
+2026-11-03T22:07:18.722Z PASS — correspondance apprise pour le fournisseur
+2026-11-03T22:07:24.719Z CAPTURE — <PREUVES>\UXAI_native_15_import_termine_correspondance-apprise_A_light_20261103.png 1366x768
+2026-11-03T22:07:24.883Z PASS — réimport : correspondance apprise reprise
+2026-11-03T22:07:24.883Z PASS — réimport : aucune inférence (règles + correspondance apprise)
+2026-11-03T22:07:24.884Z PASS — réimport : contrôle automatique, 3 lignes sans changement
+2026-11-03T22:07:24.885Z PASS — réimport : rien à importer, bouton inactif (aucun doublon possible)
+2026-11-03T22:07:26.318Z CAPTURE — <PREUVES>\UXAI_native_16_import_reimport-refuse_A_light_20261103.png 1366x768
+2026-11-03T22:07:33.200Z PASS — tarifs : encodage Windows-1252 détecté sur le poste
+2026-11-03T22:07:33.201Z QUESTIONS — ["Que contient la colonne « Tarif » ?","Que contient la colonne « Prix public conseillé » ?"]
+2026-11-03T22:07:33.201Z PASS — montant proposé par l'assistant : confirmation demandée, jamais appliqué seul
+2026-11-03T22:07:34.929Z CAPTURE — <PREUVES>\UXAI_native_17_import_tarifs_montants-a-confirmer_A_light_20261103.png 1366x768
+2026-11-03T22:07:34.929Z ÉTAPE — verres
+2026-11-03T22:07:35.251Z PASS — une seule entrée « Catalogue des verres » (plus d'espace « Référentiel de base » séparé)
+2026-11-03T22:07:36.882Z CAPTURE — <PREUVES>\UXAI_native_18_verres_etape1_gamme_A_light_20261103.png 1366x768
+2026-11-03T22:07:40.465Z CAPTURE — <PREUVES>\UXAI_native_19_verres_fournisseurs_A_light_20261103.png 1366x768
+2026-11-03T22:07:40.470Z PASS — mode simple par défaut
+2026-11-03T22:07:42.715Z CAPTURE — <PREUVES>\UXAI_native_20_verres_plages_mode-simple_A_light_20261103.png 1366x768
+2026-11-03T22:07:45.467Z CAPTURE — <PREUVES>\UXAI_native_21_verres_plages_mode-avance_restriction_A_light_20261103.png 1366x768
+2026-11-03T22:07:48.016Z CAPTURE — <PREUVES>\UXAI_native_22_verres_recapitulatif_A_light_20261103.png 1366x768
+2026-11-03T22:07:49.748Z CAPTURE — <PREUVES>\UXAI_native_23_verres_recapitulatif_A_dark_20261103.png 1366x768
+2026-11-03T22:07:50.224Z PASS — gamme et deux offres fournisseur créées en une opération
+2026-11-03T22:07:56.483Z CAPTURE — <PREUVES>\UXAI_native_24_verres_catalogue-unifie_A_light_20261103.png 1366x768
+2026-11-03T22:07:57.058Z PASS — restriction conditionnelle du fournisseur appliquée par le testeur
+2026-11-03T22:07:58.798Z CAPTURE — <PREUVES>\UXAI_native_25_verres_restriction-testee_A_light_20261103.png 1366x768
+2026-11-03T22:07:59.284Z PASS — B (vendeur) : aucune création de gamme proposée
+2026-11-03T22:07:59.285Z PASS — B (vendeur) : aucun prix fournisseur affiché
+2026-11-03T22:08:00.716Z CAPTURE — <PREUVES>\UXAI_native_26_verres_vu-du-vendeur_B_light_20261103.png 1366x768
+2026-11-03T22:08:00.716Z RÉSULTAT — 33 contrôle(s) PASS

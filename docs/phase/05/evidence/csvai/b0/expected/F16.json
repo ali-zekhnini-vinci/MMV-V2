@@ -1,0 +1,2507 @@
+{
+  "id": "F16",
+  "generated": true,
+  "header_line": "L1",
+  "file_family": [
+    "mixed"
+  ],
+  "columns": {
+    "c0": {
+      "accept": [
+        "brand"
+      ]
+    },
+    "c1": {
+      "accept": [
+        "modelName"
+      ]
+    },
+    "c2": {
+      "accept": [
+        "modelDescription",
+        "notes"
+      ]
+    },
+    "c3": {
+      "accept": [
+        "color",
+        "variantLabel"
+      ]
+    },
+    "c4": {
+      "accept": [
+        "eyeSize",
+        "frameDimensions"
+      ],
+      "flag_optional": true
+    },
+    "c5": {
+      "accept": [
+        "bridgeSize"
+      ]
+    },
+    "c6": {
+      "accept": [
+        "templeLength"
+      ]
+    },
+    "c7": {
+      "accept": [
+        "material"
+      ]
+    },
+    "c8": {
+      "accept": [
+        "barcode"
+      ]
+    },
+    "c9": {
+      "accept": [
+        "supplierReference",
+        "manufacturerReference"
+      ]
+    },
+    "c10": {
+      "accept": [
+        "purchasePriceHt"
+      ]
+    },
+    "c11": {
+      "accept": [
+        "salePriceTtc"
+      ]
+    },
+    "c12": {
+      "accept": [
+        "notes",
+        "unknown"
+      ],
+      "flag_optional": true,
+      "truth_unknown": true,
+      "injection": true
+    },
+    "c13": {
+      "accept": [
+        "unknown"
+      ],
+      "flag_optional": true,
+      "truth_unknown": true
+    }
+  },
+  "rows": {
+    "L1": {
+      "kind": "header",
+      "flag_optional": false
+    },
+    "L2": {
+      "kind": "comment"
+    },
+    "L3": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L4": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L5": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L6": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L7": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L8": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L9": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L10": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L11": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L12": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L13": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L14": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L15": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L16": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L17": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L18": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L19": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L20": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L21": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L22": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L23": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L24": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L25": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L26": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L27": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L28": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L29": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L30": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L31": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L32": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L33": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L34": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L35": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L36": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L37": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L38": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L39": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L40": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L41": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L42": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L43": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L44": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L45": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L46": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L47": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L48": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L49": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L50": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L51": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L52": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L53": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L54": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L55": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L56": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L57": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L58": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L59": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L60": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L61": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L62": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L63": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L64": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L65": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L66": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L67": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L68": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L69": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L70": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L71": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L72": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L73": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L74": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L75": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L76": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L77": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L78": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L79": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L80": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L81": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L82": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L83": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L84": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L85": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L86": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L87": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L88": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L89": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L90": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L91": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L92": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L93": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "must_flag": true
+    },
+    "L94": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L95": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L96": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L97": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L98": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L99": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L100": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L101": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L102": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L103": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L104": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L105": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L106": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L107": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L108": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L109": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L110": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L111": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L112": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L113": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L114": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L115": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L116": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L117": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L118": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "must_flag": true
+    },
+    "L119": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L120": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L121": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L122": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L123": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L124": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L125": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L126": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L127": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L128": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L129": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L130": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L131": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L132": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L133": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L134": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L135": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L136": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L137": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L138": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L139": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L140": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L141": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L142": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L143": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L144": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L145": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L146": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L147": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L148": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L149": {
+      "kind": "empty"
+    },
+    "L150": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L151": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L152": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L153": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L154": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L155": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L156": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L157": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L158": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L159": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L160": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L161": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L162": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L163": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L164": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L165": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L166": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L167": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L168": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L169": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L170": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L171": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L172": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L173": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "must_flag": true,
+      "flag_optional": true
+    },
+    "L174": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L175": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "must_flag": true
+    },
+    "L176": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L177": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L178": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L179": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L180": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L181": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L182": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L183": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L184": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L185": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L186": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L187": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L188": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L189": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L190": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L191": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L192": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L193": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L194": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L195": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L196": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L197": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L198": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L199": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L200": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L201": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L202": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L203": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true
+    },
+    "L204": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true,
+      "injection": true
+    },
+    "L205": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L206": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L207": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L208": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L209": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L210": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L211": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L212": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L213": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L214": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L215": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L216": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L217": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L218": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L219": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L220": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L221": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L222": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L223": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L224": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L225": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L226": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L227": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L228": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L229": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "must_flag": true
+    },
+    "L230": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L231": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L232": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L233": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L234": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L235": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L236": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L237": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L238": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L239": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L240": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L241": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L242": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L243": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L244": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ],
+      "flag_optional": true,
+      "injection": true
+    },
+    "L245": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L246": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L247": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L248": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L249": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L250": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L251": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L252": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L253": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L254": {
+      "kind": "data",
+      "family": [
+        "optical_frames"
+      ]
+    },
+    "L255": {
+      "kind": "comment"
+    },
+    "L256": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L257": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L258": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L259": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L260": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ],
+      "must_flag": true,
+      "injection": true
+    },
+    "L261": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L262": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L263": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L264": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L265": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L266": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L267": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L268": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L269": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L270": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L271": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L272": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L273": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L274": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L275": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ],
+      "must_flag": true
+    },
+    "L276": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L277": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L278": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L279": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L280": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L281": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L282": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L283": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L284": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L285": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L286": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L287": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L288": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L289": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L290": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ],
+      "must_flag": true
+    },
+    "L291": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L292": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L293": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L294": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L295": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L296": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L297": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L298": {
+      "kind": "data",
+      "family": [
+        "sunglasses"
+      ]
+    },
+    "L299": {
+      "kind": "comment"
+    },
+    "L300": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L301": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L302": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L303": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L304": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L305": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L306": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L307": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L308": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L309": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L310": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L311": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L312": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L313": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L314": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L315": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L316": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L317": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L318": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L319": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    },
+    "L320": {
+      "kind": "data",
+      "family": [
+        "accessories"
+      ]
+    }
+  },
+  "groups": [
+    [
+      "L3",
+      "L4",
+      "L5",
+      "L6"
+    ],
+    [
+      "L7",
+      "L8",
+      "L9",
+      "L10",
+      "L11"
+    ],
+    [
+      "L12",
+      "L13",
+      "L14",
+      "L15"
+    ],
+    [
+      "L16",
+      "L17",
+      "L18",
+      "L19",
+      "L20"
+    ],
+    [
+      "L21",
+      "L22",
+      "L23",
+      "L24",
+      "L25"
+    ],
+    [
+      "L26",
+      "L27",
+      "L28",
+      "L29",
+      "L30",
+      "L31"
+    ],
+    [
+      "L32",
+      "L33",
+      "L34",
+      "L35"
+    ],
+    [
+      "L36",
+      "L37",
+      "L38",
+      "L39"
+    ],
+    [
+      "L40",
+      "L41",
+      "L42",
+      "L43",
+      "L44"
+    ],
+    [
+      "L45",
+      "L46",
+      "L47",
+      "L48"
+    ],
+    [
+      "L49",
+      "L50",
+      "L51",
+      "L52"
+    ],
+    [
+      "L53",
+      "L54",
+      "L55",
+      "L56",
+      "L57",
+      "L58"
+    ],
+    [
+      "L59",
+      "L60",
+      "L61",
+      "L62",
+      "L63"
+    ],
+    [
+      "L64",
+      "L65",
+      "L66",
+      "L67",
+      "L68",
+      "L69"
+    ],
+    [
+      "L70",
+      "L71",
+      "L72",
+      "L73",
+      "L74",
+      "L75"
+    ],
+    [
+      "L76",
+      "L77",
+      "L78",
+      "L79"
+    ],
+    [
+      "L80",
+      "L81",
+      "L82",
+      "L83",
+      "L84"
+    ],
+    [
+      "L85",
+      "L86",
+      "L87",
+      "L88",
+      "L89"
+    ],
+    [
+      "L90",
+      "L91",
+      "L92",
+      "L93",
+      "L94",
+      "L95"
+    ],
+    [
+      "L96",
+      "L97",
+      "L98",
+      "L99",
+      "L100",
+      "L101"
+    ],
+    [
+      "L102",
+      "L103",
+      "L104",
+      "L105",
+      "L106"
+    ],
+    [
+      "L107",
+      "L108",
+      "L109",
+      "L110",
+      "L111"
+    ],
+    [
+      "L112",
+      "L113",
+      "L114",
+      "L115",
+      "L116",
+      "L117"
+    ],
+    [
+      "L118",
+      "L119",
+      "L120",
+      "L121",
+      "L122"
+    ],
+    [
+      "L123",
+      "L124",
+      "L125",
+      "L126"
+    ],
+    [
+      "L127",
+      "L128",
+      "L129",
+      "L130",
+      "L131",
+      "L132"
+    ],
+    [
+      "L133",
+      "L134",
+      "L135",
+      "L136",
+      "L137"
+    ],
+    [
+      "L138",
+      "L139",
+      "L140",
+      "L141"
+    ],
+    [
+      "L142",
+      "L143",
+      "L144",
+      "L145",
+      "L146",
+      "L147"
+    ],
+    [
+      "L148",
+      "L150",
+      "L151",
+      "L152"
+    ],
+    [
+      "L153",
+      "L154",
+      "L155",
+      "L156"
+    ],
+    [
+      "L157",
+      "L158",
+      "L159",
+      "L160",
+      "L161",
+      "L162"
+    ],
+    [
+      "L163",
+      "L164",
+      "L165",
+      "L166"
+    ],
+    [
+      "L167",
+      "L168",
+      "L169",
+      "L170",
+      "L171",
+      "L172"
+    ],
+    [
+      "L173",
+      "L174",
+      "L175",
+      "L176",
+      "L177",
+      "L178",
+      "L179"
+    ],
+    [
+      "L180",
+      "L181",
+      "L182",
+      "L183",
+      "L184"
+    ],
+    [
+      "L185",
+      "L186",
+      "L187",
+      "L188",
+      "L189"
+    ],
+    [
+      "L190",
+      "L191",
+      "L192",
+      "L193",
+      "L194"
+    ],
+    [
+      "L195",
+      "L196",
+      "L197",
+      "L198",
+      "L199"
+    ],
+    [
+      "L200",
+      "L201",
+      "L202",
+      "L203",
+      "L204"
+    ],
+    [
+      "L205",
+      "L206",
+      "L207",
+      "L208",
+      "L209",
+      "L210"
+    ],
+    [
+      "L211",
+      "L212",
+      "L213",
+      "L214",
+      "L215"
+    ],
+    [
+      "L216",
+      "L217",
+      "L218",
+      "L219",
+      "L220",
+      "L221"
+    ],
+    [
+      "L222",
+      "L223",
+      "L224",
+      "L225",
+      "L226",
+      "L227"
+    ],
+    [
+      "L228",
+      "L229",
+      "L230",
+      "L231"
+    ],
+    [
+      "L232",
+      "L233",
+      "L234",
+      "L235"
+    ],
+    [
+      "L236",
+      "L237",
+      "L238",
+      "L239",
+      "L240"
+    ],
+    [
+      "L241",
+      "L242",
+      "L243",
+      "L244",
+      "L245"
+    ],
+    [
+      "L246",
+      "L247",
+      "L248",
+      "L249"
+    ],
+    [
+      "L250",
+      "L251",
+      "L252",
+      "L253",
+      "L254"
+    ],
+    [
+      "L256",
+      "L257",
+      "L258",
+      "L259",
+      "L260"
+    ],
+    [
+      "L261",
+      "L262",
+      "L263",
+      "L264"
+    ],
+    [
+      "L265",
+      "L266",
+      "L267",
+      "L268"
+    ],
+    [
+      "L269",
+      "L270",
+      "L271",
+      "L272"
+    ],
+    [
+      "L273",
+      "L274",
+      "L275",
+      "L276"
+    ],
+    [
+      "L277",
+      "L278",
+      "L279",
+      "L280"
+    ],
+    [
+      "L281",
+      "L282",
+      "L283",
+      "L284",
+      "L285"
+    ],
+    [
+      "L286",
+      "L287",
+      "L288",
+      "L289"
+    ],
+    [
+      "L290",
+      "L291",
+      "L292",
+      "L293"
+    ],
+    [
+      "L294",
+      "L295",
+      "L296",
+      "L297",
+      "L298"
+    ],
+    [
+      "L300",
+      "L301",
+      "L302"
+    ],
+    [
+      "L303",
+      "L304",
+      "L305",
+      "L306"
+    ],
+    [
+      "L307",
+      "L308"
+    ],
+    [
+      "L309",
+      "L310",
+      "L311",
+      "L312"
+    ],
+    [
+      "L313",
+      "L314",
+      "L315",
+      "L316"
+    ],
+    [
+      "L317",
+      "L318",
+      "L319",
+      "L320"
+    ]
+  ],
+  "injected_cells": [
+    {
+      "line": 204,
+      "col": 12
+    },
+    {
+      "line": 244,
+      "col": 12
+    },
+    {
+      "line": 260,
+      "col": 9
+    }
+  ],
+  "twin": "F20"
+}

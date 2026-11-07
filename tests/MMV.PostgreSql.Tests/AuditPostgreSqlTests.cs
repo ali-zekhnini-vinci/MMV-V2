@@ -204,7 +204,10 @@ public sealed class AuditPostgreSqlTests(ITestOutputHelper output)
         await using var fixture = await RolledBackScope.OpenAsync(output);
         var connection = (NpgsqlConnection)fixture.Context.Database.GetDbConnection();
         var opticalApplied = await fixture.ScalarAsync<bool>("SELECT to_regclass('optical.prescriptions') IS NOT NULL");
-        IReadOnlyList<string> Differences(SchemaState s) => opticalApplied
+        var catalogApplied = await fixture.ScalarAsync<bool>("SELECT to_regclass('catalog.product_variants') IS NOT NULL");
+        IReadOnlyList<string> Differences(SchemaState s) => catalogApplied
+            ? s.CatalogStockModuleDifferences(PostgreSqlTarget.Test.Role)
+            : opticalApplied
             ? s.OpticalModuleDifferences(PostgreSqlTarget.Test.Role)
             : s.AuditJournalDifferences(PostgreSqlTarget.Test.Role);
 

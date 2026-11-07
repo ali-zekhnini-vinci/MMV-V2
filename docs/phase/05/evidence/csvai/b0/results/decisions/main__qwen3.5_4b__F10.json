@@ -1,0 +1,368 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 4,
+    "sampled": 4,
+    "complete": true
+  },
+  "applicable": true,
+  "confirmations": 0,
+  "blockers": {
+    "header": 0,
+    "columns": 0,
+    "familyClasses": 0,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Modèle",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : modèle"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Description",
+      "field": "modelDescription",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelDescription",
+      "ruleAlternatives": [],
+      "ai": "modelDescription",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : description"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Coloris",
+      "field": "color",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "color",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Calibre",
+      "field": "eyeSize",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "eyeSize",
+      "ruleAlternatives": [],
+      "ai": "eyeSize",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : calibre"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Prix public TTC",
+      "field": "salePriceTtc",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "salePriceTtc",
+      "ruleAlternatives": [],
+      "ai": "salePriceTtc",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente TTC"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": "barcode",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : code-barres"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2,
+        3
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 1,
+      "lines": [
+        4
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "c5 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "LU-7070",
+          "value": "LU-7070",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelDescription",
+          "raw": "Monture acétate, double pont, \"effet bois\"",
+          "value": "Monture acétate, double pont, \"effet bois\"",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Chêne clair",
+          "value": "Chêne clair",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "53",
+          "value": "53",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "159,00",
+          "value": "159.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "barcode",
+          "raw": "3760000000400",
+          "value": "3760000000400",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "c5 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "LU-7070",
+          "value": "LU-7070",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelDescription",
+          "raw": "Monture acétate, double pont, \"effet bois\"",
+          "value": "Monture acétate, double pont, \"effet bois\"",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Noyer",
+          "value": "Noyer",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "53",
+          "value": "53",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "159,00",
+          "value": "159.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "barcode",
+          "raw": "3760000000417",
+          "value": "3760000000417",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "c5 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "LU-7071",
+          "value": "LU-7071",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelDescription",
+          "raw": "Monture métal\nfine, plaquettes ajustables",
+          "value": "Monture métal\nfine, plaquettes ajustables",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Or",
+          "value": "Or",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "51",
+          "value": "51",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "149,00",
+          "value": "149.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "barcode",
+          "raw": "3760000000424",
+          "value": "3760000000424",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        }
+      ]
+    }
+  ]
+}

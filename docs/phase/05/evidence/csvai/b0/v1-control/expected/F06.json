@@ -1,0 +1,29 @@
+{
+  "id": "F06",
+  "header_line": "L1",
+  "file_family": ["ophthalmic_lenses"],
+  "columns": {
+    "c0": {"accept": ["lensManufacturer", "brand"]},
+    "c1": {"accept": ["lensRange", "modelName"]},
+    "c2": {"accept": ["lensType"]},
+    "c3": {"accept": ["lensIndex"]},
+    "c4": {"accept": ["lensMaterial", "material"], "flag_optional": true},
+    "c5": {"accept": ["lensTreatments"]},
+    "c6": {"accept": ["sphereMin"]},
+    "c7": {"accept": ["sphereMax"]},
+    "c8": {"accept": ["cylinderMax"]},
+    "c9": {"accept": ["additionMax"], "flag_optional": true},
+    "c10": {"accept": ["diameter"]},
+    "c11": {"accept": ["purchasePriceHt", "priceUnqualified"], "flag_optional": true},
+    "c12": {"accept": ["unknown", "notes"], "truth_unknown": true, "flag_optional": true}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["ophthalmic_lenses"]},
+    "L3": {"kind": "data", "family": ["ophthalmic_lenses"]},
+    "L4": {"kind": "data", "family": ["ophthalmic_lenses"]},
+    "L5": {"kind": "data", "family": ["ophthalmic_lenses"]},
+    "L6": {"kind": "data", "family": ["ophthalmic_lenses"], "flag_optional": true}
+  },
+  "groups": [["L2"], ["L3", "L4"], ["L5"], ["L6"]]
+}

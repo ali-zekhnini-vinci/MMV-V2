@@ -1,0 +1,335 @@
+{
+  "header": {
+    "present": false,
+    "status": "VALIDE",
+    "rules": "absent",
+    "ai": null
+  },
+  "aiUsed": false,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": null,
+  "applicable": false,
+  "confirmations": 3,
+  "blockers": {
+    "header": 0,
+    "columns": 2,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "",
+      "field": "barcode",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": null,
+      "ruleAlternatives": [
+        "barcode"
+      ],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs au format code-barres",
+        "fichier sans en-têtes : chaque colonne est confirmée par l'utilisateur"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "",
+      "field": "frameDimensions",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": null,
+      "ruleAlternatives": [
+        "frameDimensions"
+      ],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs composites calibre-pont-branche",
+        "fichier sans en-têtes : chaque colonne est confirmée par l'utilisateur"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs"
+      ]
+    }
+  ],
+  "groups": [],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000110",
+          "value": "3760000000110",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 1
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        }
+      ]
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000127",
+          "value": "3760000000127",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000134",
+          "value": "3760000000134",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "55-17-145",
+          "value": "55-17-145",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000141",
+          "value": "3760000000141",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000158",
+          "value": "3760000000158",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    }
+  ]
+}

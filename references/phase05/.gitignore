@@ -1,0 +1,5 @@
+# Phase 05 (mandat du 30/10/2026, § 3) : la maquette Lot 6 et ses captures ne sont PAS versionnées.
+# Motif : le fichier cite des identifiants de l'ancien logiciel (cas d'usage, DTO) et des coordonnées de fournisseurs
+# (e-mails, téléphones) dont le caractère fictif n'est pas établi. Récupération : README.md, § « Versionnement ».
+lot6/*.dc.html
+lot6/scraps/

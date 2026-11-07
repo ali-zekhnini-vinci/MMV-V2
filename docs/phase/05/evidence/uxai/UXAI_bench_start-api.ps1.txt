@@ -1,0 +1,18 @@
+param([string] $Source, [string] $Target, [string] $Log, [int] $Https = 7367, [int] $Http = 5367, [string] $StoreCode = 'NATIF-UX')
+# API MMV.Api de banc UX-IA (copie du build) sur le cluster JETABLE 55433 uniquement ; API du propriétaire (7267) intouchée.
+# Assistant IA local activé (Ollama 127.0.0.1:11434, modèle llama3.2).
+$ErrorActionPreference = 'Stop'
+foreach ($p in $Https, $Http) { if (Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue) { throw "port $p busy" } }
+if (Test-Path $Target) { Remove-Item $Target -Recurse -Force }
+Copy-Item $Source $Target -Recurse
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
+$env:ConnectionStrings__Mmv = 'Host=127.0.0.1;Port=55433;Database=mmv_v2_scratch;Username=mmv_v2_scratch;Password=scratch'
+$env:Auth__LoginAttemptsPerMinute = '10000'
+$env:Installation__StoreCode = $StoreCode
+$env:ImportAssistant__Enabled = 'true'
+$env:ImportAssistant__Model = 'llama3.2'
+$env:Cors__AllowedOrigins__0 = 'http://tauri.localhost'
+$p = Start-Process -FilePath 'dotnet' -ArgumentList @("`"$Target\MMV.Api.dll`"", '--urls', "https://localhost:$Https;http://localhost:$Http") `
+    -WorkingDirectory $Target -RedirectStandardOutput $Log -RedirectStandardError "$Log.err" -WindowStyle Hidden -PassThru
+Remove-Item Env:ConnectionStrings__Mmv
+"API PID $($p.Id) https $Https http $Http log $Log"

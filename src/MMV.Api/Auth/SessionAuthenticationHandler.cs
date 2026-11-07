@@ -23,12 +23,22 @@ internal sealed class SessionAuthenticationHandler(
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var header = Request.Headers.Authorization.ToString();
-        if (!header.StartsWith("Bearer ", StringComparison.Ordinal))
+        string token;
+        if (header.StartsWith("Bearer ", StringComparison.Ordinal))
+        {
+            token = header["Bearer ".Length..].Trim();
+        }
+        else if (Request.Path.StartsWithSegments(Realtime.RealtimeSetup.HubPath, StringComparison.Ordinal)
+            && Request.Query["access_token"] is { Count: 1 } queryToken && !string.IsNullOrEmpty(queryToken[0]))
+        {
+            // COR-05-02 : un WebSocket de navigateur ne peut pas porter d'en-tête Authorization ; jeton accepté en
+            // paramètre SUR LE SEUL CHEMIN DU HUB (HTTPS obligatoire, journalisation des requêtes au niveau Warning).
+            token = queryToken[0]!.Trim();
+        }
+        else
         {
             return AuthenticateResult.NoResult();
         }
-
-        var token = header["Bearer ".Length..].Trim();
         var auth = Context.RequestServices.GetRequiredService<AuthService>();
         var session = await auth.AuthenticateAsync(token, Context.RequestAborted);
         if (session is null)

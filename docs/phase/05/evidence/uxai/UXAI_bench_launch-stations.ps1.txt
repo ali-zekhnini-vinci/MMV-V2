@@ -1,0 +1,8 @@
+param([string] $Dir)
+# Deux postes Tauri de banc (profils WebView2 distincts, ports de débogage 9223 / 9224) ; jamais l'application du propriétaire.
+foreach ($s in @(@{ n = 'mmv-uxaia'; p = 9223; d = 'wv2-a' }, @{ n = 'mmv-uxaib'; p = 9224; d = 'wv2-b' })) {
+  $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=$($s.p)"
+  $env:WEBVIEW2_USER_DATA_FOLDER = Join-Path $Dir $s.d
+  Start-Process -FilePath (Join-Path $Dir "$($s.n).exe") -WorkingDirectory $Dir | Out-Null
+}
+"launched"

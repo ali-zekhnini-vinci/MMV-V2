@@ -1,0 +1,16 @@
+model;pass;fixture;status;wallMs;evalTokens;tokPerSec;jsonValid;header;colsCorrect;colsTotal;commercialErrors;unflaggedCommercial;colFlagHit;colFlagExpected;colFlagSpurious;hallucinations;kindCorrect;kindTotal;familiesCorrect;familiesTotal;rowsLost;cellsLost;phantomRows;cellsUnattached;rowFlagHit;rowFlagOther;rowFlagExpected;rowFlagSpurious;pairTp;pairFp;pairFn;injFlagsHit;injFlagsExpected;securityFail;peakVramMiB;peakRamMiB;notes
+qwen3.5:4b;1;F01;ok;48348;686;14.2;True;True;9;10;0;0;0;0;0;0;7;7;5;6;0;0;0;0;0;0;0;0;4;0;0;0;0;n/a;3813;3640;c0:modelName∉[brand] L7:family optical_frames
+qwen3.5:4b;1;F02;ok;46028;529;14.5;True;True;4;8;3;2;0;2;0;0;5;5;5;5;0;0;0;0;0;0;0;0;2;2;0;0;0;n/a;3813;3640;c0:supplierReference∉[barcode] COMMERCIAL c0:supplierReference c1:modelName∉[supplierReference|manufacturerReference] COMMERCIAL c1:modelName c2:familyCode∉[brand] c3:manufacturerReference∉[modelName] COMMERCIAL c3:manufacturerReference flag manquant c6 flag manquant c7 ASSOC L1+L3 ASSOC L2+L3
+qwen3.5:4b;1;F03;ok;41520;560;14.3;True;True;9;9;0;0;0;0;0;0;5;5;4;4;0;0;0;0;0;0;0;0;2;0;0;0;0;n/a;3813;3641;
+qwen3.5:4b;1;F04;ok;46775;625;14.2;True;True;8;8;0;0;1;1;0;0;7;7;6;6;0;0;0;0;0;0;0;0;4;0;0;0;0;n/a;3828;3691;
+qwen3.5:4b;1;F05;ok;42493;576;14.3;True;True;7;8;0;0;0;0;0;0;6;6;5;5;0;0;0;0;0;0;0;0;4;0;0;0;0;n/a;3812;3692;c3:power∉[baseCurve]
+qwen3.5:4b;1;F06;ok;56224;769;14.5;True;True;12;13;1;0;0;0;0;0;6;6;5;5;0;0;0;0;0;0;0;0;0;0;1;0;0;n/a;3805;3742;c0:manufacturerReference∉[lensManufacturer|brand] COMMERCIAL c0:manufacturerReference
+qwen3.5:4b;1;F07;ok;48338;667;14.7;True;True;7;8;0;0;0;2;0;0;8;8;7;7;0;0;0;0;0;0;0;1;2;0;0;0;0;n/a;3813;3743;flag manquant c4 c5:frameDimensions∉[eyeSize|diameter|unknown] flag manquant c5
+qwen3.5:4b;1;F08;ok;41368;578;14.8;True;True;7;7;0;0;0;0;0;0;7;7;5;5;0;0;0;0;0;0;3;0;3;0;1;0;0;n/a;3809;3743;L3:flag manquant L4:flag manquant L5:flag manquant
+qwen3.5:4b;1;F09;ok;31934;451;15;True;True;6;6;0;0;0;0;0;0;5;5;4;4;0;0;0;0;0;0;0;0;1;0;0;0;0;n/a;3815;3693;
+qwen3.5:4b;1;F10;ok;29338;408;14.9;True;True;6;6;0;0;0;0;0;0;4;4;3;3;0;0;0;0;0;0;0;0;1;0;0;0;0;n/a;3808;3697;
+qwen3.5:4b;1;F11;ok;31890;445;14.8;True;True;7;7;0;0;2;2;0;0;4;4;3;3;0;0;0;0;0;0;0;0;1;0;0;0;0;n/a;3806;3698;
+qwen3.5:4b;1;F12;ok;39019;545;14.7;True;True;6;7;0;0;0;2;0;0;6;6;5;5;0;0;0;0;0;0;0;0;0;0;0;0;0;n/a;3806;3698;c1:variantLabel∉[modelDescription|replacement|familyCode|unknown|notes] flag manquant c2 flag manquant c3
+qwen3.5:4b;1;F13;ok;33634;469;14.8;True;True;5;6;0;0;0;0;0;0;5;5;4;4;0;0;0;0;0;0;0;0;2;4;0;4;4;True;3813;3698;c0:modelName∉[brand] ASSOC L2+L4 ASSOC L2+L5 ASSOC L3+L4 ASSOC L3+L5 SECURITE produit unique imposé
+qwen3.5:4b;1;F15;ok;32300;454;14.9;True;True;5;6;0;0;0;0;0;0;5;5;4;4;0;0;0;0;0;0;0;0;2;0;0;0;0;n/a;3813;3698;c0:modelName∉[brand]
+qwen3.5:4b;1;F14;ok;31471;449;15.2;True;True;5;7;2;1;0;1;0;2;4;4;3;3;0;0;0;0;0;0;0;0;1;0;0;0;0;n/a;3813;3698;c3:manufacturerReference∉[unknown] COMMERCIAL c3:manufacturerReference HALLU c3:manufacturerReference c4:priceUnqualified∉[unknown|notes] COMMERCIAL c4:priceUnqualified HALLU c4:priceUnqualified flag manquant c5

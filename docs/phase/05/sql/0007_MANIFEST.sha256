@@ -1,0 +1,16 @@
+# MMV V2 — dossier G05-SQL (migration 0007_CatalogStockModule, Phase 05) — manifeste SHA-256
+# Fichiers du depot (LF, tels que commites). Verification depuis la racine : sha256sum -c docs/phase/05/sql/0007_MANIFEST.sha256 (Git Bash) ou Get-FileHash.
+# NON APPLIQUE : aucune execution sur mmv_v2_dev / mmv_v2_test avant le GO G05-SQL du proprietaire.
+# Script a appliquer : docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql (premiere ligne ci-dessous).
+39c9c22400a3319d80724cd63110977ec39de912c3f60f3f2bc0bdbb426e1eb6  docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql
+908c708dd56e2be0dad5d809e5a4ca6fed677cddda4072abb758565b94efdd06  docs/phase/05/sql/0007_CatalogStockModule.sql
+44f077f7c27b114978c55e592025624b69f6f50b1a6365749f7dd092fd3e12cc  docs/phase/05/sql/0007_CatalogStockModule.verify.sql
+bafc0f107a0c3b61f58c766dbbe29e8cf4bf43482057798b493cd7fb910cbb93  docs/phase/05/sql/0007_CatalogStockModule.schema-diff.txt
+b163e2237d8dac722140df81bab83913ec11c9de156d4808ffd8eb12a32722b7  docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt
+b9a10e4f498128a452851eefb41218331cb34dac3f5b919d2c127bfbac8c0302  src/MMV.Infrastructure/Persistence/Migrations/20261030005557_CatalogStockModule.cs
+f19585f5afa8611832abf6acb5affb449e0b4ac0b47f3cac970b3dfb0198e1eb  src/MMV.Infrastructure/Persistence/Migrations/20261030005557_CatalogStockModule.Designer.cs
+3786c4e863da5437fe417acc89561f9c58a5efc3ac7e7881735c114076984ac3  src/MMV.Infrastructure/Persistence/Migrations/MmvDbContextModelSnapshot.cs
+a361186f83ff1729740a4a6706ab0065857ad900b2492f08afb89b4373f39037  src/MMV.Infrastructure/Catalog/CatalogStockModel.cs
+009c756314ceb531a87d73873a03b73ee3fc95d6ac3d7fe08fb05690f544e959  src/MMV.Domain/Identity/Permissions.cs
+7901986a6041b490ff55c7bd1ca172616a2ecaba8a89831693b910c1fa4cca52  scripts/Invoke-MmvSqlScript.ps1
+2047a9ca51c75101c79968c5ebc74aaf3c94549ed73804899b8777b9d3f9dc52  docs/phase/05/G05_SQL_DOSSIER.md

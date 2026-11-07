@@ -1,0 +1,9 @@
+{
+  "productName": "MMV V2 UXAI banc",
+  "identifier": "com.mmv.v2.uxaitest",
+  "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src ipc: http://ipc.localhost https://localhost:7367 wss://localhost:7367"
+    }
+  }
+}

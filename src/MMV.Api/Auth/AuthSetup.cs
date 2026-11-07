@@ -35,6 +35,9 @@ internal static class AuthSetup
     public const string OpticalMeasurementsWritePolicy = "OpticalMeasurementsWrite";
     public const string OpticalInvalidatePolicy = "OpticalInvalidate";
 
+    /// <summary>Phase 05 : magasins lisibles avec <c>catalog.read</c> OU <c>stock.read</c>.</summary>
+    public const string StoresReadPolicy = "StoresRead";
+
     /// <summary>Limitation de débit de <c>POST /api/auth/login</c>, par adresse IP distante.</summary>
     public const string LoginRateLimitPolicy = "login";
 
@@ -75,6 +78,22 @@ internal static class AuthSetup
             .AddPolicy(OpticalMeasurementsWritePolicy, policy => RequireOptical(policy, Permissions.OpticalMeasurementsWrite))
             .AddPolicy(OpticalInvalidatePolicy, policy => RequireOptical(policy, Permissions.OpticalInvalidate));
 
+        // Phase 05 : une policy par droit ; une route en cumule plusieurs (RequireAuthorization(p1, p2) : TOUTES exigées).
+        var builder = services.AddAuthorizationBuilder();
+        foreach (var permission in Permissions.Phase05.Append(Permissions.AuditRead))
+        {
+            builder.AddPolicy(Permission(permission), policy => policy
+                .RequireAuthenticatedUser()
+                .RequireClaim(SessionAuthenticationHandler.PermissionClaim, permission));
+        }
+
+        // Liste des magasins : utile au catalogue comme au stock (l'un OU l'autre droit de lecture).
+        builder.AddPolicy(StoresReadPolicy, policy => policy
+            .RequireAuthenticatedUser()
+            .RequireAssertion(context =>
+                context.User.HasClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.CatalogRead)
+                || context.User.HasClaim(SessionAuthenticationHandler.PermissionClaim, Permissions.StockRead)));
+
         var permitPerMinute = configuration.GetValue("Auth:LoginAttemptsPerMinute", 10);
         services.AddRateLimiter(options =>
         {
@@ -93,6 +112,9 @@ internal static class AuthSetup
 
         return services;
     }
+
+    /// <summary>Nom de la policy d'un droit de la Phase 05 (ou <c>audit.read</c>) : exige ce seul droit.</summary>
+    public static string Permission(string permission) => "perm:" + permission;
 
     /// <summary>Chaque exigence est cumulative (toutes les revendications sont exigées).</summary>
     private static AuthorizationPolicyBuilder RequireOptical(AuthorizationPolicyBuilder policy, params string[] operations)

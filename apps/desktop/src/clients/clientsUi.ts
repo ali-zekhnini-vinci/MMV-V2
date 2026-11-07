@@ -11,6 +11,9 @@ export interface ClientListState {
   page: number;
 }
 
+/** Pause de frappe avant la recherche serveur (Clients, Dossier optique, Catalogue et stock — COR-05-07). */
+export const SEARCH_DEBOUNCE_MS = 300;
+
 export const INITIAL_LIST_STATE: ClientListState = {
   search: "",
   status: "active",

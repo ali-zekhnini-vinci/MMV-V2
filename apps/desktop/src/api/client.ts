@@ -24,6 +24,8 @@ export interface ApiError {
   code?: string;
   /** Codes d'erreur par champ (`{ errors: { champ: [codes] } }`) pour 400/422 ; bornés, jamais affichés tels quels. */
   fieldErrors?: Record<string, string[]>;
+  /** Motif borné complémentaire (`{ code, reason }`, ex. `store_not_configured` → `ambiguous`) ; jamais un texte libre. */
+  reason?: string;
 }
 
 export type ApiResult<T> =
@@ -64,11 +66,12 @@ const CODE_PATTERN = /^[a-z0-9_.-]{1,64}$/;
 const FIELD_PATTERN = /^[A-Za-z0-9_.]{1,64}$/;
 
 /** Extrait `{ code, errors }` d'un corps d'erreur, en ignorant tout ce qui n'est pas un code borné. */
-export function parseErrorBody(body: unknown): Pick<ApiError, "code" | "fieldErrors"> {
+export function parseErrorBody(body: unknown): Pick<ApiError, "code" | "fieldErrors" | "reason"> {
   if (typeof body !== "object" || body === null || Array.isArray(body)) return {};
-  const { code, errors } = body as Record<string, unknown>;
-  const result: Pick<ApiError, "code" | "fieldErrors"> = {};
+  const { code, errors, reason } = body as Record<string, unknown>;
+  const result: Pick<ApiError, "code" | "fieldErrors" | "reason"> = {};
   if (typeof code === "string" && CODE_PATTERN.test(code)) result.code = code;
+  if (typeof reason === "string" && CODE_PATTERN.test(reason)) result.reason = reason;
   if (typeof errors === "object" && errors !== null && !Array.isArray(errors)) {
     const fieldErrors: Record<string, string[]> = {};
     for (const [field, codes] of Object.entries(errors as Record<string, unknown>).slice(0, 50)) {
@@ -88,7 +91,7 @@ export function apiError(kind: ApiErrorKind, status?: number): ApiError {
 }
 
 export interface RequestOptions<T> {
-  method?: "GET" | "POST" | "PUT";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   /** Corps JSON (POST). */
   body?: unknown;
   /** Jeton de session opaque, envoyé en `Authorization: Bearer`. */

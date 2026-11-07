@@ -1,0 +1,3 @@
+# Corpus et sorties des bancs CSV-IA : octets exacts (empreintes des manifestes), jamais normalises par Git.
+*.csv -text
+*.jsonl -text

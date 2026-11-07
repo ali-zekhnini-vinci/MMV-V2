@@ -45,13 +45,27 @@ public sealed record SchemaState(
     public const string AppointmentsModuleMigrationId = "20261017150504_AppointmentsModule";
     public const string AuditJournalMigrationId = "20261018163108_AuditJournal";
     public const string OpticalModuleMigrationId = "20261027134615_OpticalModule";
+    public const string CatalogStockModuleMigrationId = "20261030005557_CatalogStockModule";
+
+    /// <summary>Corrections de la Phase 05 (COR-05-04 / COR-05-05) : objets dans les schémas de la Phase 05 uniquement.</summary>
+    public const string CatalogCorrectionsMigrationId = "20261102183203_CatalogCorrections";
+
+    /// <summary>CSV-IMPORT-AI-01 (G05-SQL-0009, préparée, NON appliquée aux bases du propriétaire) : schéma imports seulement.</summary>
+    public const string CsvImportAssistantMigrationId = "20261106154105_CsvImportAssistant";
+
+    /// <summary>Schémas créés par 0007_CatalogStockModule (Phase 05) ; leur inventaire exact est contrôlé par <see cref="Phase05Schema"/>.</summary>
+    public static readonly string[] Phase05Schemas = ["catalog", "imports", "org", "pricing", "stock"];
 
     /// <summary>
     /// Migrations de l'assembly, dans l'ordre (phase 03-A2 : + ClientsModule ; phase 03-B2 : + AppointmentsModule ;
-    /// phase 03-D2 : + AuditJournal ; phase 04-B : + OpticalModule, préparée, G04-SQL requise avant toute application).
+    /// phase 03-D2 : + AuditJournal ; phase 04-B : + OpticalModule ; phase 05 : + CatalogStockModule ; corrections
+    /// phase 05 : + CatalogCorrections, oubliée au lot B et ajoutée au précontrôle du 03/11/2026, O-05-23).
     /// </summary>
     public static readonly string[] AllMigrationIds =
-        [BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId, OpticalModuleMigrationId];
+    [
+        BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId, OpticalModuleMigrationId,
+        CatalogStockModuleMigrationId, CatalogCorrectionsMigrationId, CsvImportAssistantMigrationId,
+    ];
 
     /// <summary>
     /// Base vide, baseline seule, baseline + identité, + clients, + rendez-vous ou + journal d'audit : aucun autre
@@ -61,12 +75,43 @@ public sealed record SchemaState(
     {
         if (IsEmpty || BaselineDifferences(role).Count == 0 || AuthIdentityDifferences(role).Count == 0
             || ClientsModuleDifferences(role).Count == 0 || AppointmentsModuleDifferences(role).Count == 0
-            || AuditJournalDifferences(role).Count == 0)
+            || AuditJournalDifferences(role).Count == 0 || OpticalModuleDifferences(role).Count == 0)
         {
             return [];
         }
 
-        return OpticalModuleDifferences(role);
+        return CatalogStockModuleDifferences(role);
+    }
+
+    /// <summary>
+    /// Exactement l'état produit par 0001 à 0007_CatalogStockModule (docs/phase/05/sql/, Phase 05) : tous les objets
+    /// antérieurs inchangés (contrôle de l'étape 0006 sur l'état privé des cinq schémas de la Phase 05), les cinq schémas
+    /// présents, chaque relation possédée par <paramref name="role"/> avec les droits par défaut. Le détail des colonnes,
+    /// contraintes, index, séquences, fonctions et déclencheurs de la Phase 05 est comparé à l'instantané versionné par
+    /// <see cref="Phase05Schema"/> (test <c>Phase05SchemaTests</c>).
+    /// </summary>
+    public IReadOnlyList<string> CatalogStockModuleDifferences(string role)
+    {
+        bool InPhase05(string line) => Phase05Schemas.Any(schema => line.StartsWith($"{schema}.", StringComparison.Ordinal) || line.Contains($" on {schema}.", StringComparison.Ordinal));
+        var differences = new List<string>();
+        if (!HistoryRows.Contains($"{CatalogStockModuleMigrationId} 10.0.4", StringComparer.Ordinal))
+        {
+            differences.Add($"historique : {CatalogStockModuleMigrationId} absente");
+        }
+
+        differences.AddRange(Phase05Schemas.Where(schema => !ExtraSchemas.Contains(schema, StringComparer.Ordinal)).Select(schema => $"schéma {schema} absent"));
+        differences.AddRange(Relations.Where(InPhase05).Where(r => !r.EndsWith($" owner={role} acl=default", StringComparison.Ordinal)).Select(r => $"relation non conforme : {r}"));
+        var previous = this with
+        {
+            ExtraSchemas = [.. ExtraSchemas.Where(schema => !Phase05Schemas.Contains(schema, StringComparer.Ordinal))],
+            Relations = [.. Relations.Where(r => !InPhase05(r))],
+            Routines = [.. Routines.Where(r => !InPhase05(r))],
+            Decorations = [.. Decorations.Where(d => !InPhase05(d))],
+            HistoryRows = [.. HistoryRows.Where(h => !h.StartsWith(CatalogStockModuleMigrationId, StringComparison.Ordinal)
+                && !h.StartsWith(CatalogCorrectionsMigrationId, StringComparison.Ordinal) && !h.StartsWith(CsvImportAssistantMigrationId, StringComparison.Ordinal))],
+        };
+        differences.AddRange(previous.OpticalModuleDifferences(role));
+        return differences;
     }
 
     public bool HistoryExists => Relations.Any(r => r.StartsWith("public.__EFMigrationsHistory ", StringComparison.Ordinal));

@@ -1,0 +1,574 @@
+{
+  "header": {
+    "present": false,
+    "status": "AMBIGU",
+    "rules": "absent",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 5,
+    "sampled": 5,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 9,
+  "blockers": {
+    "header": 1,
+    "columns": 7,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "",
+      "field": "supplierReference",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "barcode"
+      ],
+      "ai": "supplierReference",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs au format code-barres",
+        "présence d'en-têtes à confirmer : colonne à confirmer",
+        "réserve sur la suggestion : valeurs au format code-barres"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "",
+      "field": "variantLabel",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "variantLabel",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "eyeSize",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "proposition IA « eyeSize » refusée : valeurs hors plage 20–80"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "",
+      "field": "material",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "material",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "",
+      "field": "shape",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "shape",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "",
+      "field": "frameDimensions",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": null,
+      "ruleAlternatives": [
+        "frameDimensions"
+      ],
+      "ai": "lensTint",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs composites calibre-pont-branche",
+        "proposition IA « lensTint » refusée : valeurs numériques",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "",
+      "field": "salePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "salePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "",
+      "field": "salePriceTtc",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "salePriceTtc",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    }
+  ],
+  "groups": [],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "en-tête ou article : à confirmer",
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "3760000000110",
+          "value": "3760000000110",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 1,
+          "field": "variantLabel",
+          "raw": "LUN3010-C01",
+          "value": "LUN3010-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 3,
+          "field": "material",
+          "raw": "LU-3010",
+          "value": "LU-3010",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 4,
+          "field": "shape",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 6,
+          "field": "salePriceHt",
+          "raw": "45.00",
+          "value": "45.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 7,
+          "field": "salePriceTtc",
+          "raw": "149.00",
+          "value": "149.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        }
+      ]
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "3760000000127",
+          "value": "3760000000127",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "variantLabel",
+          "raw": "LUN3010-C02",
+          "value": "LUN3010-C02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "material",
+          "raw": "LU-3010",
+          "value": "LU-3010",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "shape",
+          "raw": "Rouge cerise",
+          "value": "Rouge cerise",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "salePriceHt",
+          "raw": "45.00",
+          "value": "45.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 7,
+          "field": "salePriceTtc",
+          "raw": "149.00",
+          "value": "149.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "3760000000134",
+          "value": "3760000000134",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "variantLabel",
+          "raw": "LUN3011-C01",
+          "value": "LUN3011-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "material",
+          "raw": "LU-3011",
+          "value": "LU-3011",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "shape",
+          "raw": "Gris acier",
+          "value": "Gris acier",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "55-17-145",
+          "value": "55-17-145",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "salePriceHt",
+          "raw": "47.50",
+          "value": "47.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 7,
+          "field": "salePriceTtc",
+          "raw": "155.00",
+          "value": "155.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "3760000000141",
+          "value": "3760000000141",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "variantLabel",
+          "raw": "VER91-01",
+          "value": "VER91-01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "material",
+          "raw": "VR-91",
+          "value": "VR-91",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "shape",
+          "raw": "Vert sapin",
+          "value": "Vert sapin",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "salePriceHt",
+          "raw": "36.00",
+          "value": "36.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 7,
+          "field": "salePriceTtc",
+          "raw": "109.00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "aucune colonne d'identité validée : regroupement impossible"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "3760000000158",
+          "value": "3760000000158",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "variantLabel",
+          "raw": "VER91-02",
+          "value": "VER91-02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "material",
+          "raw": "VR-91",
+          "value": "VR-91",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "shape",
+          "raw": "Bordeaux",
+          "value": "Bordeaux",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "salePriceHt",
+          "raw": "36.00",
+          "value": "36.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 7,
+          "field": "salePriceTtc",
+          "raw": "109.00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    }
+  ]
+}

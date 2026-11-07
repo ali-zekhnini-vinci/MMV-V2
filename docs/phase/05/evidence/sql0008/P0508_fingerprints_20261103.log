@@ -1,0 +1,366 @@
+# Empreintes de contenu des objets PRÉEXISTANTS (0001–0007), avant / après 0008, puis après les bancs. Requête (lecture seule) :
+#   \pset footer on
+#   -- Empreintes de contenu des objets PRÉEXISTANTS (0001-0007). Les objets créés par 0008 sont exclus ;
+#   -- imports.batches est hachée sans la colonne ajoutée supplier_id (to_jsonb(x) - 'supplier_id').
+#   SELECT table_schema||'.'||table_name AS t,
+#     (xpath('/row/c/text()', query_to_xml(format('SELECT count(*) AS c FROM %I.%I', table_schema, table_name), false, true, '')))[1]::text::bigint AS n,
+#     (xpath('/row/h/text()', query_to_xml(format('SELECT md5(coalesce(string_agg(%s, E''\n'' ORDER BY %s), '''')) AS h FROM %I.%I x',
+#        CASE WHEN table_schema='imports' AND table_name='batches' THEN '(to_jsonb(x) - ''supplier_id'')::text' ELSE 'x::text' END,
+#        CASE WHEN table_schema='imports' AND table_name='batches' THEN '(to_jsonb(x) - ''supplier_id'')::text' ELSE 'x::text' END,
+#        table_schema, table_name), false, true, '')))[1]::text AS md5
+#   FROM information_schema.tables
+#   WHERE table_type='BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema')
+#     AND NOT (table_schema='catalog' AND table_name LIKE 'lens_offer%') AND NOT (table_schema='imports' AND table_name='supplier_profiles')
+#   ORDER BY 1;
+#   SELECT md5(string_agg(n.nspname||'.'||c.relname||':'||c.relkind::text||':'||pg_get_userbyid(c.relowner)||':'||coalesce(c.relacl::text,'-'), ',' ORDER BY n.nspname, c.relname)) AS objects_md5, count(*) AS objects
+#   FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+#   WHERE n.nspname IN ('public','auth','clients','appointments','audit','optical','org','catalog','pricing','stock','imports')
+#     AND c.relname !~ '(lens_offer|supplier_profiles)' AND c.relname <> 'ix_batches_supplier_id';
+#   SELECT md5(string_agg(table_schema||'.'||table_name||'.'||column_name||':'||data_type||':'||is_nullable||':'||coalesce(column_default,'-'), ',' ORDER BY table_schema, table_name, ordinal_position)) AS columns_md5, count(*) AS columns
+#   FROM information_schema.columns
+#   WHERE table_schema IN ('public','auth','clients','appointments','audit','optical','org','catalog','pricing','stock','imports')
+#     AND table_name !~ '(lens_offer|supplier_profiles)' AND NOT (table_schema='imports' AND table_name='batches' AND column_name='supplier_id');
+#   SELECT md5(string_agg(conrelid::regclass::text||'.'||conname||'='||pg_get_constraintdef(oid), E'\n' ORDER BY conrelid::regclass::text, conname)) AS constraints_md5, count(*) AS constraints
+#   FROM pg_constraint
+#   WHERE connamespace::regnamespace::text IN ('public','auth','clients','appointments','audit','optical','org','catalog','pricing','stock','imports')
+#     AND conrelid::regclass::text !~ '(lens_offer|supplier_profiles)' AND conname <> 'fk_batches_suppliers';
+#   SELECT md5(string_agg(tgrelid::regclass::text||'.'||tgname||':'||tgenabled::text||':'||pg_get_triggerdef(oid), ',' ORDER BY tgrelid::regclass::text, tgname)) AS triggers_md5, count(*) AS triggers
+#   FROM pg_trigger WHERE NOT tgisinternal AND tgrelid::regclass::text !~ '(lens_offer|supplier_profiles)';
+#   SELECT md5(string_agg(p.oid::regprocedure::text||'='||pg_get_functiondef(p.oid), E'\n' ORDER BY p.oid::regprocedure::text)) AS functions_md5, count(*) AS functions
+#   FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+#   WHERE n.nspname IN ('public','auth','clients','appointments','audit','optical','org','catalog','pricing','stock','imports');
+## mmv_v2_dev AVANT 0008 (15:35:03)
+                t                |  n  |               md5                
+---------------------------------+-----+----------------------------------
+ appointments.appointments       |   2 | 37ffe9e0b33898839260edd019577372
+ appointments.responsibles       |   0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 108 | eafc896cf4d7b5bc813515b4e71f6eda
+ auth.bootstrap_record           |   1 | 1bdf7397a72a6d97008fa1fe70636aac
+ auth.sessions                   |  49 | 298f215b124bd574f102db63824cdacd
+ auth.user_permissions           |  28 | 26bdced0b04677cd190cb1e13f54694d
+ auth.users                      |   1 | 3e9f56f226061a9780b253171bfa6c94
+ catalog.families                |   6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         |   4 | 9c2e3bd666869e42cc6fc22b27b7b722
+ catalog.product_models          |   7 | 097cc7dee4edea65b6338a2f49dcd8af
+ catalog.product_variants        |  10 | e9255fcc089881aea34cd645aecfd5e7
+ catalog.suppliers               |   1 | df4a3292341f8197e6733201be2cfb91
+ catalog.variant_lens_treatments |   1 | 372e8aaa23968c2090008b6b15511fa2
+ catalog.variant_suppliers       |   6 | 1bb72a5f5505602c40263aff2d9358d2
+ clients.clients                 |   1 | fdf03f496022aa4e70a298355f3860c8
+ imports.batches                 |  10 | f9cb1769383094f77fb13e5697874ea1
+ imports.rows                    |  44 | 445f6b3b1ec5aa7d23a1c51b4b35cea0
+ optical.measurement_revisions   |   2 | d1feb6ea3ddf97a3689a157d4b9c5769
+ optical.measurements            |   2 | bdbfd618c2303a4b38f052aee8fd8f5a
+ optical.prescription_revisions  |   2 | 0994f76310854aa28b53078971f3d054
+ optical.prescriptions           |   1 | 0fa95d03e039d41137bb91595bad0dea
+ org.locations                   |   1 | 7e2429b8c65d0da947c0dd2ebb7a268a
+ org.stores                      |   1 | b5323f4df4ebb56ad026fa54870ee3ef
+ pricing.price_history           |  23 | e43083969b927e8c5ab5e8c24ad387c4
+ pricing.tax_categories          |   0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    |   9 | 5890cc1d48e26a8da147413884588529
+ public.__EFMigrationsHistory    |   7 | 1501ba254f791f190cdf8931c0ae93a7
+ stock.balances                  |   5 | 03c5f7a481645d2caed8dcaf84ab6332
+ stock.inventory_lines           |   2 | e0ebb39fac8993d9f9adb3cfb736f8d7
+ stock.inventory_sessions        |   2 | eaf27afb375f55f8e01f5e7d46133cd2
+ stock.movements                 |   6 | af27ccb0f54574d3345141fdc6292284
+ stock.receipt_lines             |   3 | 25f0736980cb5e4bb2271352823183d1
+ stock.receipts                  |   3 | e42dfd04977d15f7fdcad4deda10550f
+ stock.variant_store_settings    |   3 | 7cd14faca9b2a9f23ae447317b2fadf1
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ f9c7f9c4e779fe2bbd0a6cb4def268e2 |     200
+(1 row)
+
+           columns_md5            | columns 
+----------------------------------+---------
+ e9b3e7eeb58e1b9310972dee00b7f547 |     432
+(1 row)
+
+         constraints_md5          | constraints 
+----------------------------------+-------------
+ 38e064f9d1c728bdb5ffe94c59bb1d55 |         507
+(1 row)
+
+           triggers_md5           | triggers 
+----------------------------------+----------
+ 08383cfdd5301a047f48d28322bc0426 |       50
+(1 row)
+
+          functions_md5           | functions 
+----------------------------------+-----------
+ 6e075809a63bdfcc577ea1f2f90c74cb |        11
+(1 row)
+
+EXIT 0
+
+## mmv_v2_dev APRÈS 0008 (15:35:19)
+                t                |  n  |               md5                
+---------------------------------+-----+----------------------------------
+ appointments.appointments       |   2 | 37ffe9e0b33898839260edd019577372
+ appointments.responsibles       |   0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 108 | eafc896cf4d7b5bc813515b4e71f6eda
+ auth.bootstrap_record           |   1 | 1bdf7397a72a6d97008fa1fe70636aac
+ auth.sessions                   |  49 | 298f215b124bd574f102db63824cdacd
+ auth.user_permissions           |  28 | 26bdced0b04677cd190cb1e13f54694d
+ auth.users                      |   1 | 3e9f56f226061a9780b253171bfa6c94
+ catalog.families                |   6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         |   4 | 9c2e3bd666869e42cc6fc22b27b7b722
+ catalog.product_models          |   7 | 097cc7dee4edea65b6338a2f49dcd8af
+ catalog.product_variants        |  10 | e9255fcc089881aea34cd645aecfd5e7
+ catalog.suppliers               |   1 | df4a3292341f8197e6733201be2cfb91
+ catalog.variant_lens_treatments |   1 | 372e8aaa23968c2090008b6b15511fa2
+ catalog.variant_suppliers       |   6 | 1bb72a5f5505602c40263aff2d9358d2
+ clients.clients                 |   1 | fdf03f496022aa4e70a298355f3860c8
+ imports.batches                 |  10 | f9cb1769383094f77fb13e5697874ea1
+ imports.rows                    |  44 | 445f6b3b1ec5aa7d23a1c51b4b35cea0
+ optical.measurement_revisions   |   2 | d1feb6ea3ddf97a3689a157d4b9c5769
+ optical.measurements            |   2 | bdbfd618c2303a4b38f052aee8fd8f5a
+ optical.prescription_revisions  |   2 | 0994f76310854aa28b53078971f3d054
+ optical.prescriptions           |   1 | 0fa95d03e039d41137bb91595bad0dea
+ org.locations                   |   1 | 7e2429b8c65d0da947c0dd2ebb7a268a
+ org.stores                      |   1 | b5323f4df4ebb56ad026fa54870ee3ef
+ pricing.price_history           |  23 | e43083969b927e8c5ab5e8c24ad387c4
+ pricing.tax_categories          |   0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    |   9 | 5890cc1d48e26a8da147413884588529
+ public.__EFMigrationsHistory    |   8 | 5697915b42768204c0f316d56db9433c
+ stock.balances                  |   5 | 03c5f7a481645d2caed8dcaf84ab6332
+ stock.inventory_lines           |   2 | e0ebb39fac8993d9f9adb3cfb736f8d7
+ stock.inventory_sessions        |   2 | eaf27afb375f55f8e01f5e7d46133cd2
+ stock.movements                 |   6 | af27ccb0f54574d3345141fdc6292284
+ stock.receipt_lines             |   3 | 25f0736980cb5e4bb2271352823183d1
+ stock.receipts                  |   3 | e42dfd04977d15f7fdcad4deda10550f
+ stock.variant_store_settings    |   3 | 7cd14faca9b2a9f23ae447317b2fadf1
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ f9c7f9c4e779fe2bbd0a6cb4def268e2 |     200
+(1 row)
+
+           columns_md5            | columns 
+----------------------------------+---------
+ e9b3e7eeb58e1b9310972dee00b7f547 |     432
+(1 row)
+
+         constraints_md5          | constraints 
+----------------------------------+-------------
+ 38e064f9d1c728bdb5ffe94c59bb1d55 |         507
+(1 row)
+
+           triggers_md5           | triggers 
+----------------------------------+----------
+ 08383cfdd5301a047f48d28322bc0426 |       50
+(1 row)
+
+          functions_md5           | functions 
+----------------------------------+-----------
+ 6e075809a63bdfcc577ea1f2f90c74cb |        11
+(1 row)
+
+EXIT 0
+
+## mmv_v2_test AVANT 0008
+                t                | n |               md5                
+---------------------------------+---+----------------------------------
+ appointments.appointments       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ appointments.responsibles       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.bootstrap_record           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.sessions                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.user_permissions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.users                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.families                | 6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.batches                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurements            | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescription_revisions  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescriptions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.locations                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    | 7 | 1501ba254f791f190cdf8931c0ae93a7
+ stock.balances                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    | 0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ d776fde0f0ad0b2c6739166b54405c38 |     200
+(1 row)
+
+           columns_md5            | columns 
+----------------------------------+---------
+ e9b3e7eeb58e1b9310972dee00b7f547 |     432
+(1 row)
+
+         constraints_md5          | constraints 
+----------------------------------+-------------
+ 38e064f9d1c728bdb5ffe94c59bb1d55 |         507
+(1 row)
+
+           triggers_md5           | triggers 
+----------------------------------+----------
+ 08383cfdd5301a047f48d28322bc0426 |       50
+(1 row)
+
+          functions_md5           | functions 
+----------------------------------+-----------
+ 6e075809a63bdfcc577ea1f2f90c74cb |        11
+(1 row)
+
+EXIT 0
+
+## mmv_v2_test APRÈS 0008
+                t                | n |               md5                
+---------------------------------+---+----------------------------------
+ appointments.appointments       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ appointments.responsibles       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.bootstrap_record           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.sessions                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.user_permissions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.users                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.families                | 6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.batches                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurements            | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescription_revisions  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescriptions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.locations                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    | 8 | 5697915b42768204c0f316d56db9433c
+ stock.balances                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    | 0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ d776fde0f0ad0b2c6739166b54405c38 |     200
+(1 row)
+
+           columns_md5            | columns 
+----------------------------------+---------
+ e9b3e7eeb58e1b9310972dee00b7f547 |     432
+(1 row)
+
+         constraints_md5          | constraints 
+----------------------------------+-------------
+ 38e064f9d1c728bdb5ffe94c59bb1d55 |         507
+(1 row)
+
+           triggers_md5           | triggers 
+----------------------------------+----------
+ 08383cfdd5301a047f48d28322bc0426 |       50
+(1 row)
+
+          functions_md5           | functions 
+----------------------------------+-----------
+ 6e075809a63bdfcc577ea1f2f90c74cb |        11
+(1 row)
+
+EXIT 0
+
+## mmv_v2_test APRÈS les bancs et la purge finale (16:22)
+                t                | n |               md5                
+---------------------------------+---+----------------------------------
+ appointments.appointments       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ appointments.responsibles       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ audit.events                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.bootstrap_record           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.sessions                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.user_permissions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ auth.users                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.families                | 6 | e3db80929e63e31f5d28ae7dd5e674a7
+ catalog.lens_references         | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_models          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.product_variants        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.suppliers               | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_lens_treatments | 0 | d41d8cd98f00b204e9800998ecf8427e
+ catalog.variant_suppliers       | 0 | d41d8cd98f00b204e9800998ecf8427e
+ clients.clients                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.batches                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ imports.rows                    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurement_revisions   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.measurements            | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescription_revisions  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ optical.prescriptions           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.locations                   | 0 | d41d8cd98f00b204e9800998ecf8427e
+ org.stores                      | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.price_history           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.tax_categories          | 0 | d41d8cd98f00b204e9800998ecf8427e
+ pricing.variant_store_prices    | 0 | d41d8cd98f00b204e9800998ecf8427e
+ public.__EFMigrationsHistory    | 8 | 5697915b42768204c0f316d56db9433c
+ stock.balances                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_lines           | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.inventory_sessions        | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.movements                 | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipt_lines             | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.receipts                  | 0 | d41d8cd98f00b204e9800998ecf8427e
+ stock.variant_store_settings    | 0 | d41d8cd98f00b204e9800998ecf8427e
+(34 rows)
+
+           objects_md5            | objects 
+----------------------------------+---------
+ d776fde0f0ad0b2c6739166b54405c38 |     200
+(1 row)
+
+           columns_md5            | columns 
+----------------------------------+---------
+ e9b3e7eeb58e1b9310972dee00b7f547 |     432
+(1 row)
+
+         constraints_md5          | constraints 
+----------------------------------+-------------
+ 38e064f9d1c728bdb5ffe94c59bb1d55 |         507
+(1 row)
+
+           triggers_md5           | triggers 
+----------------------------------+----------
+ 08383cfdd5301a047f48d28322bc0426 |       50
+(1 row)
+
+          functions_md5           | functions 
+----------------------------------+-----------
+ 6e075809a63bdfcc577ea1f2f90c74cb |        11
+(1 row)
+
+EXIT 0
+
+## Lecture
+mmv_v2_dev : seule différence = public.__EFMigrationsHistory 7 -> 8 lignes. 34 tables (dont imports.batches hachée sans la colonne ajoutée),
+  200 relations, 432 colonnes, 507 contraintes, 50 déclencheurs, 11 fonctions préexistants : empreintes IDENTIQUES => données et objets préservés.
+mmv_v2_test : idem (seule différence : __EFMigrationsHistory 7 -> 8). Après bancs + purge finale : IDENTIQUE à l'état post-0008 (résidu 0).
+Aucune écriture de l'agent sur mmv_v2_dev hors du script 0008 (sauvegarde et contrôles en lecture seule).

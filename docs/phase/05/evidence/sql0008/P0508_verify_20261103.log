@@ -1,0 +1,55 @@
+# psql -X -A -t -f docs/phase/05/sql/0008_CatalogCorrections.verify.sql (session lecture seule, ROLLBACK final) — mmv_v2_dev
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+migrations (8, dernière 0008)|8|20261102183203_CatalogCorrections|8|20261102183203_CatalogCorrections|OK
+0007 toujours présente|1|1|OK
+tables catalog (nouvelles)|lens_offer_revisions,lens_offer_treatments,lens_offers|lens_offer_revisions,lens_offer_treatments,lens_offers|OK
+tables imports|batches,rows,supplier_profiles|batches,rows,supplier_profiles|OK
+colonne imports.batches.supplier_id (nullable)|uuid|YES|uuid|YES|OK
+ck_batches_store inchangée|CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))|CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))|OK
+contraintes CHECK lens_offers|8|8|OK
+clés étrangères nouvelles (lens_offers 6, treatments 2, revisions 2, profiles 3, batches +1)|14|14|OK
+déclencheurs de garde 0008|6|6|OK
+fonctions de garde réutilisées (aucune nouvelle fonction)|0|0|OK
+index uniques nouveaux|catalog.ux_lens_offer_revisions_offer_revision,catalog.ux_lens_offers_creation_request_id,imports.ux_supplier_profiles_supplier_kind|catalog.ux_lens_offer_revisions_offer_revision,catalog.ux_lens_offers_creation_request_id,imports.ux_supplier_profiles_supplier_kind|OK
+propriétaire des nouvelles tables = propriétaire de catalog.product_models|true|true|OK
+lignes existantes : aucune donnée créée par 0008|0|0|0|0|0|0|0|0|OK
+ROLLBACK
+EXIT 0
+
+# — mmv_v2_test
+SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+migrations (8, dernière 0008)|8|20261102183203_CatalogCorrections|8|20261102183203_CatalogCorrections|OK
+0007 toujours présente|1|1|OK
+tables catalog (nouvelles)|lens_offer_revisions,lens_offer_treatments,lens_offers|lens_offer_revisions,lens_offer_treatments,lens_offers|OK
+tables imports|batches,rows,supplier_profiles|batches,rows,supplier_profiles|OK
+colonne imports.batches.supplier_id (nullable)|uuid|YES|uuid|YES|OK
+ck_batches_store inchangée|CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))|CHECK ((((kind)::text = 'prices'::text) = (store_id IS NOT NULL)))|OK
+contraintes CHECK lens_offers|8|8|OK
+clés étrangères nouvelles (lens_offers 6, treatments 2, revisions 2, profiles 3, batches +1)|14|14|OK
+déclencheurs de garde 0008|6|6|OK
+fonctions de garde réutilisées (aucune nouvelle fonction)|0|0|OK
+index uniques nouveaux|catalog.ux_lens_offer_revisions_offer_revision,catalog.ux_lens_offers_creation_request_id,imports.ux_supplier_profiles_supplier_kind|catalog.ux_lens_offer_revisions_offer_revision,catalog.ux_lens_offers_creation_request_id,imports.ux_supplier_profiles_supplier_kind|OK
+propriétaire des nouvelles tables = propriétaire de catalog.product_models|true|true|OK
+lignes existantes : aucune donnée créée par 0008|0|0|0|0|0|0|0|0|OK
+ROLLBACK
+EXIT 0
+
+# Résultat : 14 / 14 OK sur chaque base, 0 ECART.
+# Schéma exact après application (MMV.PostgreSql.Tests, lecture seule) :
+  Réussi MMV.PostgreSql.Tests.Phase05SchemaTests.Phase05Schemas_MatchTheReviewedInventory_AndPreviousStagesAreUnchanged [89 ms]
+  Réussi MMV.PostgreSql.Tests.Phase05SchemaTests.ReviewedInventory_DiffersOnlyByTheFunctionBodiesLineEndings [5 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_ContainsOnlyAKnownState [22 ms]
+  Échoué MMV.PostgreSql.Tests.SchemaStateTests.TestDatabase_AllMigrationsApplied [802 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_AllMigrationsApplied [55 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.Assembly_DeclaresExactlyTheReviewedMigrations [39 ms]
+  Réussi MMV.PostgreSql.Tests.SchemaStateTests.DevDatabase_ContainsOnlyAKnownState [13 ms]
+Nombre total de tests : 14
+     Réussi(s) : 13
+     Non réussi(s) : 1
+#   DevDatabase_AllMigrationsApplied PASS (8 migrations, rien en attente, inventaire 0001–0006 inchangé, schémas Phase 05 conformes) ;
+#   TestDatabase_AllMigrationsApplied échouait alors par construction (test pas encore migré) — PASS ensuite dans les suites complètes ;
+#   Phase05SchemaTests (mmv_v2_test, inventaire exact comparé à 0008_CatalogCorrections.schema-inventory.txt) PASS dans les suites complètes.

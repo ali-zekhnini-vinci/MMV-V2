@@ -14,6 +14,7 @@ namespace MMV.PostgreSql.Tests;
 /// à lancer après l'exécution des scripts approuvés.
 /// Phase 04-C (O-04-50) : inventaire exact attendu = OpticalModuleDifferences (0001 à 0006) ; l'assertion était
 /// restée sur AuditJournalDifferences (0005) en 04-B et échouait sur une base correctement migrée.
+/// Phase 05 : inventaire attendu = CatalogStockModuleDifferences (0001 à 0007) + Phase05SchemaTests (détail exact).
 /// Historique : en 01B, ces tests exigeaient la baseline seule (voir docs/phase/01b/QA_MATRIX.md).
 /// </summary>
 public sealed class SchemaStateTests(ITestOutputHelper output)
@@ -61,7 +62,7 @@ public sealed class SchemaStateTests(ITestOutputHelper output)
 
         var state = await SchemaInspection.ReadAsync(target, timeout.Token);
         output.WriteLine(state.ToString());
-        Assert.Empty(state.OpticalModuleDifferences(target.Role));
+        Assert.Empty(state.CatalogStockModuleDifferences(target.Role));
 
         // Vue EF Core (lecture seule) : toutes les migrations de l'assembly appliquées, rien en attente.
         var options = new DbContextOptionsBuilder<MmvDbContext>().UseNpgsql(target.ReadOnlyConnectionString()).Options;

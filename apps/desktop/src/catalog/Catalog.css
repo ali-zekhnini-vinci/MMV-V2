@@ -1,0 +1,2176 @@
+/* ============================================================
+   MMV V2 — Catalogue, stock & fournisseurs (Phase 05, refonte G05-DESIGN)
+   Cotes reprises du Lot 6 Claude Design (MMV-Lot6-Catalogue-Stock-Fournisseurs.dc.html : .phead, .toolbar,
+   .tb-search, .chipbtn, .tbl, table.dt, .tbl-foot, .card, .card-h, .form-grid, .fs-t, .field, .inp, .modal, .banner,
+   .refbar, .statmini, .sm-card, .kv2, .cat, .stockcell, .marg, .lock, .seg, .qtybox, .diff, .toast). Le vocabulaire
+   commun aux Lots 2–6 (en-tête, barre d'outils, recherche, puces, panneau de table, badges, états, bandeaux,
+   champs) est RÉUTILISÉ depuis Clients.css ; ce fichier n'ajoute que ce qui est propre au Lot 6 et aux règles V2
+   (magasin actif, variantes, coefficient, emplacements, réservé). Couleurs : jetons MMV (styles/tokens.css),
+   clair et sombre ; seules les teintes de famille absentes des jetons reprennent les valeurs du Lot 6 (catMeta).
+   ============================================================ */
+
+/* Teintes de famille (pastilles .cat) : définies à la racine car les modales sont rendues hors du module (portail). */
+:root {
+  --cat-family-optical_frames: var(--accent);
+  --cat-family-sunglasses: #7a5cff;
+  --cat-family-ophthalmic_lenses: var(--brand-teal);
+  --cat-family-contact_lenses_solutions: var(--brand-secondary);
+  --cat-family-accessories: #667085;
+  --cat-family-services: #98a2b3;
+}
+
+/* Le module occupe la zone de contenu du shell : les listes du Lot 6 gardent leur table en carte à hauteur d'écran
+   (défilement INTERNE, pied de table visible) ; les fiches et formulaires plus hauts défilent avec la zone du shell. */
+.cat-module {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cat-screen {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  min-height: 0;
+}
+
+.cat-screen > .clients-panel:not(.cat-panel) {
+  min-height: 320px;
+}
+
+/* ---------- Barre de contexte du module : sections (.seg) + magasin actif ---------- */
+.cat-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 18px;
+}
+
+.cat-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-sunken);
+}
+
+.cat-seg__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cat-seg__item:hover {
+  color: var(--text-primary);
+}
+
+.cat-seg__item.is-active,
+.cat-seg__item[aria-pressed="true"],
+.cat-seg__item[aria-selected="true"] {
+  background: var(--surface-card);
+  color: var(--accent);
+  box-shadow: var(--shadow-1);
+}
+
+.cat-seg__item:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.cat-store {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 10px 0 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font-size: 13.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.cat-store__name {
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.cat-store__currency {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  font-size: 12px;
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+}
+
+/* ---------- En-tête (.phead) : lien retour, extra du titre ---------- */
+.cat-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-bottom: -6px;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.cat-back:hover {
+  color: var(--text-primary);
+}
+
+.cat-title-extra {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: 2px;
+}
+
+/* ---------- Barre d'outils (.toolbar, .chipbtn) ---------- */
+.cat-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.cat-toolbar__spacer {
+  flex: 1;
+}
+
+.cat-toolbar .clients-search {
+  max-width: 440px;
+}
+
+.cat-chip__count {
+  margin-left: 2px;
+}
+
+.cat-chip--icon-only {
+  padding: 0 11px;
+}
+
+.cat-menu-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  margin-bottom: var(--space-2);
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+}
+
+.cat-menu-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: var(--text-primary);
+}
+
+.cat-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+.cat-menu-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cat-menu-option:hover,
+.cat-menu-option:focus-visible {
+  outline: none;
+  background: var(--surface-hover);
+}
+
+.cat-menu-option[aria-pressed="true"] {
+  font-weight: var(--weight-semibold);
+  color: var(--accent);
+}
+
+/* ---------- Table (.tbl, table.dt) : compléments Lot 6 ---------- */
+.cat-panel {
+  flex: 0 0 auto;
+}
+
+.cat-panel--fill {
+  flex: 1 1 0;
+  min-height: 300px;
+}
+
+.cat-panel .clients-panel__scroll {
+  overflow-x: auto;
+}
+
+.cat-table td.cat-num,
+.cat-table th.cat-num {
+  text-align: right;
+}
+
+.cat-table tbody tr.is-selected {
+  background: var(--surface-selected);
+}
+
+.cat-table tbody tr.is-archived td {
+  opacity: 0.6;
+}
+
+.cat-table tbody tr.is-warning {
+  background: var(--warning-soft);
+}
+
+.cat-table tbody tr[data-href] {
+  cursor: pointer;
+}
+
+.cat-table tbody tr[data-href]:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--border-focus);
+}
+
+.cat-table--compact tbody td {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.cat-table--inner thead th {
+  position: static;
+}
+
+.cat-group-row td {
+  padding: 8px 18px !important;
+  background: var(--surface-sunken);
+}
+
+.cat-group-row__inner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--text-secondary);
+}
+
+.cat-ref {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+}
+
+.cat-sub {
+  margin-top: 1px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.cat-mono {
+  font-family: var(--font-mono);
+}
+
+.cat-strong {
+  font-weight: var(--weight-bold);
+}
+
+.cat-num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cat-secondary {
+  color: var(--text-secondary);
+}
+
+.cat-pos {
+  color: var(--success-text);
+}
+
+.cat-neg {
+  color: var(--error-text);
+}
+
+.cat-thumb {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+}
+
+.cat-thumb--round {
+  border-radius: 10px;
+}
+
+.cat-ract {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cat-ract:hover:enabled {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+.cat-ract:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.cat-ract--boxed {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.cat-foot__pager {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---------- Badges Lot 6 (.badge.b-*) et pastille de famille (.cat) ---------- */
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+}
+
+.cat-badge--sm {
+  padding: 2px 8px;
+  font-size: var(--text-2xs);
+}
+
+.cat-badge--ok {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.cat-badge--warn {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.cat-badge--err {
+  background: var(--error-soft);
+  color: var(--error-text);
+}
+
+.cat-badge--info {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+.cat-badge--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cat-badge--arch {
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+}
+
+.cat-badge--teal {
+  background: color-mix(in srgb, var(--brand-teal) 14%, transparent);
+  color: var(--brand-teal);
+}
+
+.cat-family {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  color: var(--text-secondary);
+}
+
+.cat-family__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 3px;
+}
+
+.cat-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.cat-stock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-tone-ok {
+  color: var(--success-text);
+}
+
+.cat-tone-warn {
+  color: var(--warning-text);
+}
+
+.cat-tone-err {
+  color: var(--error-text);
+}
+
+.cat-tone-muted {
+  color: var(--text-tertiary);
+}
+
+.cat-bg-ok {
+  background: var(--success);
+}
+
+.cat-bg-warn {
+  background: var(--warning);
+}
+
+.cat-bg-err {
+  background: var(--error);
+}
+
+.cat-bg-muted {
+  background: var(--text-tertiary);
+}
+
+.cat-marg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--brand-teal) 14%, transparent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--brand-teal);
+}
+
+.cat-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  font-size: 11.5px;
+  font-weight: var(--weight-bold);
+  color: var(--text-tertiary);
+}
+
+.cat-lock--lg {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Cartes (.card, .card-h, .card-b) ---------- */
+.cat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-1);
+}
+
+.cat-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.cat-card__title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-card__title svg {
+  color: var(--text-tertiary);
+}
+
+.cat-card__body {
+  padding: var(--space-4) 18px;
+}
+
+.cat-card__body--flush {
+  padding: 0;
+}
+
+.cat-card__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+.cat-card__link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.cat-card__link:hover {
+  text-decoration: underline;
+}
+
+.cat-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Détail : colonne principale + colonne latérale 380 px (productDetail : grid 1fr 380px, gap 20). */
+.cat-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  align-items: start;
+  gap: 20px;
+}
+
+.cat-detail--side-left {
+  grid-template-columns: 380px minmax(0, 1fr);
+}
+
+/* ---------- Formulaire (.fcard, .fs-t, .form-grid, .field, .inp) ---------- */
+.cat-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cat-form__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1120px;
+}
+
+.cat-form__body--narrow {
+  max-width: 900px;
+}
+
+.cat-fsec__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 14px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cat-fsec__title-spacer {
+  flex: 1;
+}
+
+.cat-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4) 20px;
+}
+
+.cat-grid > * {
+  min-width: 0;
+}
+
+.cat-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cat-span2 {
+  grid-column: 1 / -1;
+}
+
+.cat-input-suffix {
+  margin-left: auto;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+}
+
+.clients-input select {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-body);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.clients-input select option {
+  background: var(--surface-card);
+  color: var(--text-primary);
+}
+
+.clients-input:has(:disabled) {
+  background: var(--surface-sunken);
+}
+
+.clients-input input:disabled,
+.clients-input select:disabled,
+.clients-input textarea:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.cat-input-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* Bloc variante dans le formulaire produit : sous-carte enfoncée, deux colonnes. */
+.cat-variant {
+  padding: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+}
+
+.cat-variant + .cat-variant {
+  margin-top: var(--space-3);
+}
+
+.cat-variant__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: 14px;
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-variant .clients-input {
+  background: var(--surface-card);
+}
+
+.cat-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cat-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font-size: 13.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.cat-check:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cat-check input {
+  accent-color: var(--accent);
+}
+
+.cat-check--plain {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.cat-check--plain:has(input:checked) {
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* Choix exclusif en carte (inventoryNewModal, csvModal : radio 18 px, bordure accent). */
+.cat-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cat-radios--row {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.cat-radios--row .cat-radio {
+  flex: 1 1 200px;
+}
+
+.cat-radio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cat-radio:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cat-radio:has(input:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
+
+.cat-radio input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.cat-radio__label {
+  font-size: 13.5px;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-radio__sub {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+/* Interrupteur (switchField). */
+.cat-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cat-switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cat-switch__track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  background: var(--border-strong);
+  transition: background 0.12s;
+}
+
+.cat-switch__track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--mmv-white);
+  transition: left 0.12s;
+}
+
+.cat-switch input:checked + .cat-switch__track {
+  background: var(--accent);
+}
+
+.cat-switch input:checked + .cat-switch__track::after {
+  left: 21px;
+}
+
+.cat-switch input:focus-visible + .cat-switch__track {
+  box-shadow: var(--shadow-focus);
+}
+
+/* Pied de formulaire contextualisé (productForm footer : sticky, bordure haute). */
+.cat-formbar {
+  position: sticky;
+  bottom: calc(-1 * var(--space-6));
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 1120px;
+  margin-top: 6px;
+  padding: var(--space-4) 0 var(--space-6);
+  border-top: 1px solid var(--border);
+  background: var(--surface-page);
+}
+
+.cat-formbar--narrow {
+  max-width: 900px;
+}
+
+.cat-formbar__hint {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.cat-formbar__spacer {
+  flex: 1;
+}
+
+/* ---------- Bandeau d'actualisation (.refbar) et cartes KPI (.statmini, .sm-card) ---------- */
+.cat-refbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 11px 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.cat-refbar__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.cat-refbar__dot--warn {
+  background: var(--warning);
+}
+
+.cat-refbar__spacer {
+  flex: 1;
+}
+
+.cat-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.cat-kpi {
+  padding: 15px 17px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-1);
+}
+
+.cat-kpi--button {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cat-kpi--button:hover {
+  border-color: var(--border-strong);
+}
+
+.cat-kpi--button:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.cat-kpi--on {
+  border-color: var(--accent);
+}
+
+.cat-kpi__key {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.cat-kpi__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+}
+
+.cat-kpi__value {
+  margin-top: 10px;
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cat-kpi__note {
+  margin-top: 2px;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+/* ---------- Valeurs clés (.kv2) ---------- */
+.cat-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px 22px;
+  margin: 0;
+  font-size: var(--text-body);
+}
+
+.cat-kv dt {
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  color: var(--text-tertiary);
+}
+
+.cat-kv dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: var(--weight-semibold);
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.cat-kv--left dd {
+  text-align: left;
+}
+
+.cat-kv--compact {
+  gap: 9px 16px;
+  font-size: 13.5px;
+}
+
+.cat-sep {
+  height: 1px;
+  margin: 14px 0;
+  background: var(--border);
+}
+
+/* ---------- Bloc Prix & disponibilité (priceCard) ---------- */
+.cat-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 4px;
+}
+
+.cat-price__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+}
+
+.cat-price__value {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cat-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.cat-line + .cat-line {
+  margin-top: var(--space-2);
+}
+
+.cat-line__value {
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.cat-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+}
+
+.cat-editor .clients-input {
+  height: 40px;
+  background: var(--surface-card);
+}
+
+.cat-editor .cat-grid {
+  gap: var(--space-3) var(--space-3);
+}
+
+.cat-editor__title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.cat-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cat-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px 12px;
+  border: 1px dashed var(--accent-soft-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.cat-preview__value {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* ---------- Aperçu de mouvement (stock actuel → nouveau stock) ---------- */
+.cat-delta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+}
+
+.cat-delta__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+}
+
+.cat-delta__value {
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cat-delta__end {
+  margin-left: auto;
+}
+
+/* ---------- Inventaire : progression, quantité, écart ---------- */
+.cat-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+}
+
+.cat-progress__main {
+  flex: 1;
+}
+
+.cat-progress__head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.cat-progress__track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--border);
+}
+
+.cat-progress__bar {
+  height: 100%;
+  background: var(--accent);
+}
+
+.cat-qty {
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.cat-qty:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.cat-qty__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 38px;
+  border: 0;
+  background: var(--surface-sunken);
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cat-qty__btn:disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+.cat-qty input {
+  width: 64px;
+  height: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.cat-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.cat-diff {
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+}
+
+.cat-diff--pos {
+  color: var(--success-text);
+}
+
+.cat-diff--neg {
+  color: var(--error-text);
+}
+
+.cat-diff--zero {
+  color: var(--text-tertiary);
+}
+
+.cat-inline-select {
+  height: 36px;
+  min-width: 180px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.cat-inline-select:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.cat-difflist {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.cat-difflist__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 11px 14px;
+  font-size: 13.5px;
+}
+
+.cat-difflist__row + .cat-difflist__row {
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Modales (.modal, .modal.wide) ---------- */
+.cat-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: var(--space-6) var(--space-6) 26px;
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-3);
+  color: var(--text-primary);
+  transform: translate(-50%, -50%);
+}
+
+.cat-modal--wide {
+  width: min(660px, calc(100vw - 32px));
+}
+
+.cat-modal--xl {
+  width: min(860px, calc(100vw - 32px));
+}
+
+.cat-modal:focus-visible {
+  outline: none;
+}
+
+.cat-modal__icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+}
+
+.cat-modal__title {
+  margin: 0 0 10px;
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-modal__text {
+  margin: 0 0 var(--space-4);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.cat-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cat-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.cat-modal__actions-spacer {
+  flex: 1;
+}
+
+/* ---------- Bandeaux (.banner) : compléments, bouton d'action ---------- */
+.cat-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+}
+
+.cat-banner__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+}
+
+.cat-banner__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-banner__title {
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-banner__text {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.cat-banner--warn {
+  border: 1px solid var(--warning);
+  background: var(--warning-soft);
+}
+
+.cat-banner--info {
+  border: 1px solid color-mix(in srgb, var(--info) 40%, transparent);
+  background: var(--info-soft);
+}
+
+.cat-banner--accent {
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+}
+
+.cat-banner--err {
+  border: 1px solid color-mix(in srgb, var(--error) 40%, transparent);
+  background: var(--error-soft);
+}
+
+.cat-banner--ok {
+  border: 1px solid color-mix(in srgb, var(--success) 40%, transparent);
+  background: var(--success-soft);
+}
+
+.cat-banner--neutral {
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+}
+
+.cat-banner--compact {
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.cat-banner--compact .cat-banner__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.cat-ic--ok {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.cat-ic--warn {
+  background: var(--warning-soft);
+  color: var(--warning-text);
+}
+
+.cat-ic--err {
+  background: var(--error-soft);
+  color: var(--error-text);
+}
+
+.cat-ic--info {
+  background: var(--info-soft);
+  color: var(--info-text);
+}
+
+.cat-ic--accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cat-ic--neutral {
+  background: var(--surface-sunken);
+  color: var(--text-tertiary);
+}
+
+.cat-banner .cat-ic--warn,
+.cat-banner .cat-ic--info,
+.cat-banner .cat-ic--err,
+.cat-banner .cat-ic--ok,
+.cat-banner .cat-ic--accent {
+  background: var(--surface-card);
+}
+
+/* Bouton « avertissement » du Lot 6 (.btn-warn) et danger plein (.btn-danger-solid) sur le bouton V2. */
+.cat-btn-warn {
+  border-color: transparent !important;
+  background: var(--warning) !important;
+  color: var(--mmv-white) !important;
+}
+
+.cat-btn-danger-solid {
+  border-color: transparent !important;
+  background: var(--error) !important;
+  color: var(--mmv-white) !important;
+}
+
+.cat-btn-danger-solid:disabled {
+  opacity: 0.55;
+}
+
+/* ---------- Toast (.toast) ---------- */
+.cat-toast {
+  position: fixed;
+  right: 28px;
+  bottom: 52px;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  max-width: 440px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--success);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-3);
+}
+
+.cat-toast--err {
+  border-left-color: var(--error);
+}
+
+.cat-toast__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
+
+.cat-toast__title {
+  font-size: var(--text-body);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-toast__text {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ---------- Divers : menu d'actions, liste de lignes, étapes d'import, référentiel ---------- */
+.cat-menu-danger {
+  color: var(--error-text) !important;
+}
+
+.cat-empty-mini {
+  padding: 26px 8px;
+  text-align: center;
+}
+
+.cat-empty-mini .cat-thumb {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+}
+
+.cat-empty-mini__title {
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-empty-mini__text {
+  max-width: 380px;
+  margin: 0 auto;
+  font-size: 13.5px;
+  color: var(--text-tertiary);
+}
+
+.cat-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cat-step {
+  display: inline-flex;
+  flex: 1 1 180px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-card);
+  font-size: 13.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+}
+
+.cat-step__n {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  color: var(--text-tertiary);
+}
+
+.cat-step--done .cat-step__n {
+  background: var(--success-soft);
+  color: var(--success-text);
+}
+
+.cat-step--current {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cat-step--current .cat-step__n {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.cat-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 132px;
+  padding: var(--space-5);
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-sunken);
+  text-align: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cat-drop:hover,
+.cat-drop:focus-within {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* UX-IA : pictogramme en tête d'une phrase d'aide ou d'information — sur la ligne du texte, jamais seul au-dessus. */
+.cat-screen .clients-field__hint > svg,
+.cat-screen p.clients-muted > svg {
+  display: inline;
+  vertical-align: -2px;
+}
+
+/* UX-IA : analyse en cours (serveur, assistant IA local) — même zone, bordure d'accent, curseur d'attente. */
+.cat-drop.is-busy {
+  border-color: var(--accent);
+  color: var(--accent);
+  cursor: progress;
+}
+
+.cat-drop__title {
+  font-size: 15px;
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.cat-counters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cat-counter {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-sunken);
+}
+
+.cat-counter__label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-tertiary);
+}
+
+.cat-counter__value {
+  margin-top: 4px;
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: var(--weight-heavy);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cat-refgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.cat-addrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.cat-addrow .clients-field {
+  flex: 1 1 160px;
+}
+
+.cat-addrow .clients-input {
+  height: 40px;
+}
+
+/* ---------- Fenêtres réduites et zoom (groupes 103–106 : colonnes prioritaires) ---------- */
+@media (max-width: 1440px) {
+  .cat-hide-md {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  /* Fenêtre réduite (cadres 103–106) : en-tête sur une ligne, libellé du magasin replié, cellules resserrées. */
+  .cat-screen .clients-head {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .cat-store__label {
+    display: none;
+  }
+
+  .cat-table thead th,
+  .cat-table tbody td {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .cat-detail,
+  .cat-detail--side-left,
+  .cat-refgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cat-kpis,
+  .cat-counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cat-hide-sm {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .cat-grid,
+  .cat-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cat-toolbar .clients-search {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-switch__track,
+  .cat-switch__track::after {
+    transition: none;
+  }
+}
+
+/* ---------- COR-05-07 : recherche en cours (même champ que Clients) ---------- */
+.cat-search-busy {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent, var(--border-focus));
+  border-radius: 50%;
+  animation: clients-rotate 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cat-search-busy {
+    animation: none;
+  }
+}
+
+/* ---------- COR-05-02 : indicateur temps réel (discret, aligné sur .refbar) ---------- */
+.cat-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.cat-live--compact {
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+}
+
+.cat-live__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.cat-live--ok .cat-live__dot {
+  background: var(--success);
+}
+
+.cat-live--warn .cat-live__dot {
+  background: var(--warning);
+}
+
+.cat-live--warn {
+  color: var(--warning-text);
+}
+
+.cat-live--err .cat-live__dot {
+  background: var(--error);
+}
+
+.cat-live--err {
+  color: var(--error-text);
+}
+
+/* ---------- COR-05-08 : combobox fournisseur (champ .inp du Lot 6 + liste de suggestions) ---------- */
+.cat-combo {
+  position: relative;
+}
+
+.cat-combo__box input {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-combo__chosen {
+  gap: var(--space-2);
+}
+
+.cat-combo__name {
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-combo__chosen .cat-combo__name {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-combo__list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% - 2px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 4px 0 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-3);
+}
+
+.cat-combo--compact .cat-combo__list {
+  min-width: 320px;
+}
+
+.cat-combo__option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.cat-combo__option.is-active {
+  background: var(--surface-selected);
+}
+
+.cat-combo__create {
+  align-items: center;
+  color: var(--accent);
+  font-weight: var(--weight-semibold);
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  border-radius: 0 0 6px 6px;
+}
+
+.cat-combo__state {
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cat-combo--compact {
+  width: 230px;
+  flex: none;
+}
+
+.cat-combo--compact .clients-input {
+  height: 40px;
+}
+
+/* ---------- COR-05-03 : tableaux contenus dans leur carte ---------- */
+.cat-card,
+.cat-card__body {
+  min-width: 0;
+}
+
+.cat-tscroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+}
+
+.cat-tscroll:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+}
+
+.cat-tscroll > table {
+  min-width: 100%;
+}
+
+/* Colonne latérale (380 px) : cellules resserrées, en-têtes sans espacement de lettres superflu. */
+.cat-table--side thead th,
+.cat-table--side tbody td {
+  padding: 8px 10px;
+}
+
+.cat-table--side thead th {
+  letter-spacing: 0.02em;
+}
+
+.cat-nowrap {
+  white-space: nowrap;
+}
+
+/* Cellule « reste » : prend la largeur restante sans jamais élargir le tableau (texte coupé, détail au clic). */
+.cat-td-fill {
+  width: 100%;
+  max-width: 0;
+}
+
+.cat-clip {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.cat-clip[aria-expanded="true"] {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cat-clip:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+/* ---------- COR-05-06 : assistant de création produit (étapes .cat-steps du Lot 6, cliquables) ---------- */
+.cat-steps--wizard .cat-step {
+  padding: 0;
+}
+
+.cat-step__btn {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cat-step__btn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.cat-step__btn:disabled {
+  cursor: default;
+}
+
+.cat-seg--sm .cat-seg__item {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+
+.cat-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 4px 0 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 1180px) {
+  .cat-steps--wizard .cat-step {
+    flex-basis: 140px;
+  }
+}
+
+/* ---------- COR-05-04 : corrections dans le rapport d'import ---------- */
+.cat-fix {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 2px 0;
+}
+
+.cat-fix__input {
+  height: 30px;
+  min-width: 140px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.cat-fix__input:focus-visible {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ---------- COR-05-05 : offres de verres (détail dépliable, testeur, mode avancé) ---------- */
+.cat-row-detail > td {
+  padding: 0 !important;
+  background: var(--surface-sunken);
+}
+
+.cat-lens-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-4) 18px;
+}
+
+.cat-tester {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.cat-rule-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.cat-advanced {
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surface-sunken);
+}
+
+@media (max-width: 1180px) {
+  .cat-lens-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -6,6 +6,7 @@
 // optiques » interrogent les routes réelles /api/optical (refus et erreurs affichés tels quels). Le banc reste une page
 // isolée, hors de `vite build`, jamais importée par l'application. Double node:http des Phases 02/03, clients FICTIFS.
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -37,6 +38,21 @@ function sourceFiles(dir: string): string[] {
     const path = join(dir, name);
     return statSync(path).isDirectory() ? sourceFiles(path) : /\.(ts|tsx)$/.test(name) ? [path] : [];
   });
+}
+
+/** `.env*` de apps/desktop tels qu'indexés par Git ; hors dépôt Git (archive), les fichiers présents sur le disque. */
+function versionedEnvFiles(): { name: string; content: string }[] {
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: DESKTOP, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  try {
+    return git("ls-files", "--full-name", "--", ".env*")
+      .split("\n")
+      .filter(Boolean)
+      .map((path) => ({ name: path.slice(path.lastIndexOf("/") + 1), content: git("show", `:${path}`) }));
+  } catch {
+    return readdirSync(DESKTOP)
+      .filter((name) => name.startsWith(".env"))
+      .map((name) => ({ name, content: readFileSync(join(DESKTOP, name), "utf8") }));
+  }
 }
 
 async function openClientCard(permissions: readonly string[]) {
@@ -80,7 +96,13 @@ describe("activation contrôlée du dossier optique (O-04-16, 04-B)", () => {
     const config = readFileSync(join(DESKTOP, "vite.config.ts"), "utf8");
     assert.doesNotMatch(config, /optical-bench|rollupOptions|input\s*:/);
     assert.match(readFileSync(join(DESKTOP, "optical-bench.html"), "utf8"), /BANC DE DÉMONSTRATION 04-A/);
-    assert.doesNotMatch(readFileSync(join(DESKTOP, ".env.development"), "utf8"), /VITE_MMV_OPTICAL_MODULE/);
+    // Fichiers d'environnement VERSIONNÉS (index Git), pas la copie de travail : une modification locale non
+    // indexée du poste (ex. activation personnelle) ne fait ni échouer ni réussir ce contrôle (O-05-11).
+    const versioned = versionedEnvFiles();
+    assert.ok(versioned.some(({ name }) => name === ".env.development"), "apps/desktop/.env.development versionné");
+    for (const { name, content } of versioned) {
+      assert.doesNotMatch(content, /VITE_MMV_(OPTICAL|CATALOG)_MODULE/, name);
+    }
   });
 
   test("interrupteur ET droits : sans l'un des deux, « Ordonnances » reste `later` et aucune route /optique", () => {

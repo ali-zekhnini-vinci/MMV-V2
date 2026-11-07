@@ -1,0 +1,10 @@
+# MMV V2 — G05-SQL-0009 (migration 0009_CsvImportAssistant, lot CSV-IMPORT-AI-01) — manifeste SHA-256
+# Fichiers du depot (LF, sans BOM pour les scripts SQL, tels que Git les stocke). Verification depuis la racine : sha256sum -c docs/phase/05/sql/0009_MANIFEST.sha256 (Git Bash).
+# NON APPLIQUE : aucune execution sur mmv_v2_dev / mmv_v2_test avant le GO SQL explicite du proprietaire (mandat du 06/11/2026, section 5).
+30dc6e0a4b3184e31e9afc12147aeb5df3e9d5901eabb4e85e5d94a16fa2e7e0  docs/phase/05/sql/0009_CsvImportAssistant.idempotent.sql
+61ed4627e6d7f45ed995b55a3b8c6d4694606867e1fe1bd183916ebfa95fe029  docs/phase/05/sql/0009_CsvImportAssistant.sql
+a945b5df7ed4c3cd1e7ee2b68d4da8aacd6971cb64bff3288e6af96eb2129696  docs/phase/05/sql/0009_CsvImportAssistant.verify.sql
+34748014838a9997c38729835d9dfafb0857928f67d4e4bfbd3d0a40cadc8a7a  docs/phase/05/sql/0009_CsvImportAssistant.schema-inventory.txt
+eeab475f82d63253982d32ff801be110f29e8bdf3703db63a6d34bd8e3826f93  src/MMV.Infrastructure/Persistence/Migrations/20261106154105_CsvImportAssistant.cs
+cce025f9b0e196c0dc8f3764dbc2d295ab56a48e9ad51275d61989f94de5faaf  src/MMV.Infrastructure/Persistence/Migrations/20261106154105_CsvImportAssistant.Designer.cs
+a18a7067abc774707ff40c7cfb132acdd30aeac2dcdf8f82c5310ecb163deb76  src/MMV.Infrastructure/Persistence/Migrations/MmvDbContextModelSnapshot.cs

@@ -1,0 +1,131 @@
+--- 0007 (appliquée)
++++ 0008 (cluster jetable)
++catalog.ix_lens_offer_revisions_changed_by_user_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offer_treatments_treatment_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_archived_by_user_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_created_by_user_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_index_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_range_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_supplier_id kind=i owner_is_db_owner=t acl=default
++catalog.ix_lens_offers_updated_by_user_id kind=i owner_is_db_owner=t acl=default
++catalog.lens_offer_revisions kind=r owner_is_db_owner=t acl=default
++catalog.lens_offer_treatments kind=r owner_is_db_owner=t acl=default
++catalog.lens_offers kind=r owner_is_db_owner=t acl=default
++catalog.pk_lens_offer_revisions kind=i owner_is_db_owner=t acl=default
++catalog.pk_lens_offer_treatments kind=i owner_is_db_owner=t acl=default
++catalog.pk_lens_offers kind=i owner_is_db_owner=t acl=default
++catalog.ux_lens_offer_revisions_offer_revision kind=i owner_is_db_owner=t acl=default
++catalog.ux_lens_offers_creation_request_id kind=i owner_is_db_owner=t acl=default
++imports.ix_batches_supplier_id kind=i owner_is_db_owner=t acl=default
++imports.ix_supplier_profiles_created_by_user_id kind=i owner_is_db_owner=t acl=default
++imports.ix_supplier_profiles_updated_by_user_id kind=i owner_is_db_owner=t acl=default
++imports.pk_supplier_profiles kind=i owner_is_db_owner=t acl=default
++imports.supplier_profiles kind=r owner_is_db_owner=t acl=default
++imports.ux_supplier_profiles_supplier_kind kind=i owner_is_db_owner=t acl=default
++catalog.lens_offer_revisions.changed_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions.changed_by_user_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions.id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions.offer_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions.reason character varying(500) notnull=f default=- identity=- generated=-
++catalog.lens_offer_revisions.revision integer notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions.snapshot jsonb notnull=t default=- identity=- generated=-
++catalog.lens_offer_treatments.offer_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offer_treatments.treatment_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.addition_max numeric(4,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.addition_min numeric(4,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.archive_reason character varying(500) notnull=f default=- identity=- generated=-
++catalog.lens_offers.archived_at_utc timestamp with time zone notnull=f default=- identity=- generated=-
++catalog.lens_offers.archived_by_user_id uuid notnull=f default=- identity=- generated=-
++catalog.lens_offers.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
++catalog.lens_offers.created_by_user_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.creation_request_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.cylinder_max numeric(5,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.cylinder_min numeric(5,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.diameters jsonb notnull=t default=- identity=- generated=-
++catalog.lens_offers.id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.index_id uuid notnull=f default=- identity=- generated=-
++catalog.lens_offers.last_request_id uuid notnull=f default=- identity=- generated=-
++catalog.lens_offers.lead_time_days integer notnull=f default=- identity=- generated=-
++catalog.lens_offers.lens_type character varying(16) notnull=t default=- identity=- generated=-
++catalog.lens_offers.material character varying(60) notnull=f default=- identity=- generated=-
++catalog.lens_offers.notes character varying(1000) notnull=f default=- identity=- generated=-
++catalog.lens_offers.price_currency character(3) notnull=f default=- identity=- generated=-
++catalog.lens_offers.price_ht numeric(12,4) notnull=f default=- identity=- generated=-
++catalog.lens_offers.production character varying(16) notnull=t default=- identity=- generated=-
++catalog.lens_offers.range_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.revision integer notnull=t default=- identity=- generated=-
++catalog.lens_offers.rules jsonb notnull=t default=- identity=- generated=-
++catalog.lens_offers.rules_complete boolean notnull=t default=- identity=- generated=-
++catalog.lens_offers.source_reference character varying(200) notnull=f default=- identity=- generated=-
++catalog.lens_offers.sphere_max numeric(5,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.sphere_min numeric(5,2) notnull=f default=- identity=- generated=-
++catalog.lens_offers.supplier_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
++catalog.lens_offers.updated_by_user_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offers.valid_from date notnull=f default=- identity=- generated=-
++catalog.lens_offers.valid_until date notnull=f default=- identity=- generated=-
++imports.batches.supplier_id uuid notnull=f default=- identity=- generated=-
++imports.supplier_profiles.created_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
++imports.supplier_profiles.created_by_user_id uuid notnull=t default=- identity=- generated=-
++imports.supplier_profiles.headers jsonb notnull=t default=- identity=- generated=-
++imports.supplier_profiles.id uuid notnull=t default=- identity=- generated=-
++imports.supplier_profiles.kind character varying(16) notnull=t default=- identity=- generated=-
++imports.supplier_profiles.last_request_id uuid notnull=f default=- identity=- generated=-
++imports.supplier_profiles.mapping jsonb notnull=t default=- identity=- generated=-
++imports.supplier_profiles.supplier_id uuid notnull=t default=- identity=- generated=-
++imports.supplier_profiles.updated_at_utc timestamp with time zone notnull=t default=- identity=- generated=-
++imports.supplier_profiles.updated_by_user_id uuid notnull=t default=- identity=- generated=-
++catalog.lens_offer_revisions ck_lens_offer_revisions_revision CHECK ((revision >= 1))
++catalog.lens_offer_revisions ck_lens_offer_revisions_snapshot CHECK ((jsonb_typeof(snapshot) = 'object'::text))
++catalog.lens_offer_revisions fk_lens_offer_revisions_changed_by_users FOREIGN KEY (changed_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++catalog.lens_offer_revisions fk_lens_offer_revisions_offers FOREIGN KEY (offer_id) REFERENCES catalog.lens_offers(id) ON DELETE RESTRICT
++catalog.lens_offer_revisions pk_lens_offer_revisions PRIMARY KEY (id)
++catalog.lens_offer_treatments fk_lens_offer_treatments_offers FOREIGN KEY (offer_id) REFERENCES catalog.lens_offers(id) ON DELETE CASCADE
++catalog.lens_offer_treatments fk_lens_offer_treatments_treatment FOREIGN KEY (treatment_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
++catalog.lens_offer_treatments pk_lens_offer_treatments PRIMARY KEY (offer_id, treatment_id)
++catalog.lens_offers ck_lens_offers_json CHECK (((jsonb_typeof(diameters) = 'array'::text) AND (jsonb_typeof(rules) = 'array'::text)))
++catalog.lens_offers ck_lens_offers_lead_time CHECK (((lead_time_days IS NULL) OR ((lead_time_days >= 0) AND (lead_time_days <= 365))))
++catalog.lens_offers ck_lens_offers_price CHECK ((((price_ht IS NULL) = (price_currency IS NULL)) AND ((price_ht IS NULL) OR (price_ht >= (0)::numeric)) AND ((price_currency IS NULL) OR (price_currency ~ '^[A-Z]{3}$'::text))))
++catalog.lens_offers ck_lens_offers_production CHECK (((production)::text = ANY ((ARRAY['stocked'::character varying, 'on_order'::character varying])::text[])))
++catalog.lens_offers ck_lens_offers_ranges CHECK ((((sphere_min IS NULL) = (sphere_max IS NULL)) AND ((sphere_min IS NULL) OR (sphere_min <= sphere_max)) AND ((cylinder_min IS NULL) = (cylinder_max IS NULL)) AND ((cylinder_min IS NULL) OR (cylinder_min <= cylinder_max)) AND ((addition_min IS NULL) = (addition_max IS NULL)) AND ((addition_min IS NULL) OR ((addition_min >= (0)::numeric) AND (addition_min <= addition_max)))))
++catalog.lens_offers ck_lens_offers_revision CHECK ((revision >= 1))
++catalog.lens_offers ck_lens_offers_type CHECK (((lens_type)::text = ANY ((ARRAY['single_vision'::character varying, 'progressive'::character varying, 'degressive'::character varying, 'bifocal'::character varying, 'other'::character varying])::text[])))
++catalog.lens_offers ck_lens_offers_validity CHECK (((valid_from IS NULL) OR (valid_until IS NULL) OR (valid_from <= valid_until)))
++catalog.lens_offers fk_lens_offers_archived_by_users FOREIGN KEY (archived_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++catalog.lens_offers fk_lens_offers_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++catalog.lens_offers fk_lens_offers_index FOREIGN KEY (index_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
++catalog.lens_offers fk_lens_offers_range FOREIGN KEY (range_id) REFERENCES catalog.lens_references(id) ON DELETE RESTRICT
++catalog.lens_offers fk_lens_offers_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
++catalog.lens_offers fk_lens_offers_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++catalog.lens_offers pk_lens_offers PRIMARY KEY (id)
++imports.batches fk_batches_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
++imports.supplier_profiles ck_supplier_profiles_json CHECK (((jsonb_typeof(mapping) = 'object'::text) AND (jsonb_typeof(headers) = 'array'::text)))
++imports.supplier_profiles ck_supplier_profiles_kind CHECK (((kind)::text = ANY ((ARRAY['catalog'::character varying, 'prices'::character varying])::text[])))
++imports.supplier_profiles fk_supplier_profiles_created_by_users FOREIGN KEY (created_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++imports.supplier_profiles fk_supplier_profiles_suppliers FOREIGN KEY (supplier_id) REFERENCES catalog.suppliers(id) ON DELETE RESTRICT
++imports.supplier_profiles fk_supplier_profiles_updated_by_users FOREIGN KEY (updated_by_user_id) REFERENCES auth.users(id) ON DELETE RESTRICT
++imports.supplier_profiles pk_supplier_profiles PRIMARY KEY (id)
++CREATE INDEX ix_batches_supplier_id ON imports.batches USING btree (supplier_id)
++CREATE INDEX ix_lens_offer_revisions_changed_by_user_id ON catalog.lens_offer_revisions USING btree (changed_by_user_id)
++CREATE INDEX ix_lens_offer_treatments_treatment_id ON catalog.lens_offer_treatments USING btree (treatment_id)
++CREATE INDEX ix_lens_offers_archived_by_user_id ON catalog.lens_offers USING btree (archived_by_user_id)
++CREATE INDEX ix_lens_offers_created_by_user_id ON catalog.lens_offers USING btree (created_by_user_id)
++CREATE INDEX ix_lens_offers_index_id ON catalog.lens_offers USING btree (index_id)
++CREATE INDEX ix_lens_offers_range_id ON catalog.lens_offers USING btree (range_id)
++CREATE INDEX ix_lens_offers_supplier_id ON catalog.lens_offers USING btree (supplier_id)
++CREATE INDEX ix_lens_offers_updated_by_user_id ON catalog.lens_offers USING btree (updated_by_user_id)
++CREATE INDEX ix_supplier_profiles_created_by_user_id ON imports.supplier_profiles USING btree (created_by_user_id)
++CREATE INDEX ix_supplier_profiles_updated_by_user_id ON imports.supplier_profiles USING btree (updated_by_user_id)
++CREATE UNIQUE INDEX pk_lens_offer_revisions ON catalog.lens_offer_revisions USING btree (id)
++CREATE UNIQUE INDEX pk_lens_offer_treatments ON catalog.lens_offer_treatments USING btree (offer_id, treatment_id)
++CREATE UNIQUE INDEX pk_lens_offers ON catalog.lens_offers USING btree (id)
++CREATE UNIQUE INDEX pk_supplier_profiles ON imports.supplier_profiles USING btree (id)
++CREATE UNIQUE INDEX ux_lens_offer_revisions_offer_revision ON catalog.lens_offer_revisions USING btree (offer_id, revision)
++CREATE UNIQUE INDEX ux_lens_offers_creation_request_id ON catalog.lens_offers USING btree (creation_request_id)
++CREATE UNIQUE INDEX ux_supplier_profiles_supplier_kind ON imports.supplier_profiles USING btree (supplier_id, kind)
++CREATE TRIGGER trg_lens_offer_revisions_append_only BEFORE DELETE OR UPDATE ON catalog.lens_offer_revisions FOR EACH ROW EXECUTE FUNCTION catalog.reject_change()
++CREATE TRIGGER trg_lens_offer_revisions_no_truncate BEFORE TRUNCATE ON catalog.lens_offer_revisions FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_change()
++CREATE TRIGGER trg_lens_offers_no_delete BEFORE DELETE ON catalog.lens_offers FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
++CREATE TRIGGER trg_lens_offers_no_truncate BEFORE TRUNCATE ON catalog.lens_offers FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()
++CREATE TRIGGER trg_supplier_profiles_no_delete BEFORE DELETE ON imports.supplier_profiles FOR EACH ROW EXECUTE FUNCTION catalog.reject_delete()
++CREATE TRIGGER trg_supplier_profiles_no_truncate BEFORE TRUNCATE ON imports.supplier_profiles FOR EACH STATEMENT EXECUTE FUNCTION catalog.reject_delete()

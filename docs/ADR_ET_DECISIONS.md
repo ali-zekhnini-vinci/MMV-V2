@@ -159,3 +159,90 @@ Les maquettes sont **DRAFT** ; aucun écran `APPROVED` par défaut. Les proposit
 
 - Mandat : [`prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md`](../prompts/MMV_V2_PHASE04_DERNIERS_CORRECTIFS_2026-10-29.md). Synchronisation transactionnelle par **verrous de ligne PostgreSQL** (ADR-003 : PostgreSQL seul, aucune extension) : écriture optique `FOR SHARE` sur le client et sur le compte / droit du collaborateur désigné ; archivage `FOR NO KEY UPDATE` sur le client avant lecture ; ordre unique client → collaborateur → en-tête. Décision technique réversible, sans nouvel ADR ; aucune migration (0006 inchangée).
 - ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` ; aucune dépendance ajoutée.
+
+## Note datée — 29/10/2026 (Phase 05-00, cadrage)
+
+- Phase 04 **fusionnée** (`origin/main` = `0a83a57`, PR #5, `dcc6f0d` inclus, vérifié par `git fetch`).
+- Mandat : [`prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md`](../prompts/MMV_V2_PHASE05_00_DEMARRAGE_2026-10-29.md). Registre court **D-05-01 à D-05-13 `PROPOSED`** (statut du Lot 6, trois politiques d'article, stock négatif, variantes, catégories, fournisseurs, archivage, prix et coûts, mouvements, inventaires, permissions, hors périmètre, découpage) — [`docs/phase/05/DECISIONS_05_METIER_PROPOSED.md`](phase/05/DECISIONS_05_METIER_PROPOSED.md). Aucune n'est ratifiée.
+- **D-000 / `NEW_RULES_ONLY`** : la maquette Lot 6 déclare dériver du code de l'ancien logiciel (O-05-01) ; proposée comme référence d'interface seulement (D-05-01).
+- Aucun ADR modifié. Proposition conforme à ADR-001 (monolithe modulaire) et ADR-003 (PostgreSQL 18 seul, aucune extension ; verrous de ligne et `xmin`) ; **ADR-010 reste `OPEN DECISION`** : catégorie fiscale prévue vide, bloque la première vente réelle, pas la Phase 05 ; **ADR-014** : aucune dépendance ajoutée ni proposée. ADR-001, ADR-007, ADR-014 restent `PROPOSED`.
+
+## Note datée — 30/10/2026 (Phase 05-00, validation métier et clôture du cadrage)
+
+- Mandat : [`prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md`](../prompts/MMV_V2_PHASE05_00_VALIDATION_METIER_2026-10-30.md). Réponses du propriétaire Q01–Q20 → registre [`docs/phase/05/DECISIONS_05_METIER_PROPOSED.md`](phase/05/DECISIONS_05_METIER_PROPOSED.md) : **APPROVED** D-05-01, 02 (par variante), 03, 04 (modèle + variantes), 05 (six familles), 06, 10 et 11 (principes), 12 (corrigée), nouvelles **D-05-14 à D-05-21** (identifiants ; magasins, emplacements, devise et fiscalité par magasin ; prix HT = achat HT × coefficient ; réservation à la validation ; import CSV contrôlé ; alertes ; pilotes fictifs Belgique EUR / Maroc MAD ; catalogue des verres configurable). D-05-08 **SUPERSEDED** en partie (prix TTC et devise unique de l'installation non retenus). **PROPOSED** : D-05-07, D-05-09, D-05-13, QR-01 à QR-13. Historique du 29/10 conservé (commit `6c207f9`).
+- **ADR-010 reste `OPEN DECISION`.** Précisé par le propriétaire : devise et fiscalité **configurables par magasin**, devise portée par le magasin (EUR pour la Belgique, MAD pour le Maroc), **aucune conversion automatique**. Non ratifiés : régimes, taux, catégories fiscales, arrondi de la taxe ; aucun taux n'est inventé ; TTC et ventes réelles bloqués tant que la fiscalité du magasin n'est pas validée.
+- **ADR-003** respecté (montants en `numeric`, aucun flottant, aucune extension) ; **ADR-014** : aucune dépendance proposée (calcul décimal serveur natif, le poste ne calcule aucun montant). ADR-001, ADR-007, ADR-014 restent `PROPOSED`. Aucun ADR modifié.
+- **D-000 / `NEW_RULES_ONLY`** : D-05-01 `APPROVED` — Lot 6 référence visuelle et ergonomique seulement ; ancien dépôt jamais consulté.
+
+## Note datée — 30/10/2026 (Phase 05, G05-SQL accordée, intégration finale)
+
+- Mandat : [`prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md`](../prompts/MMV_V2_G05_SQL_GO_INTEGRATION_FINALE_2026-10-30.md). Migration `0007_CatalogStockModule` **appliquée** (`mmv_v2_dev` puis `mmv_v2_test`) par le seul script approuvé (`39c9c224…1eb6`), `lock_timeout` 5 s ; retour arrière = restauration de la sauvegarde prise avant application (aucun `Down` exécutable ; restauration complète non éprouvée, BL-04-05). Rapport : [`docs/phase/05/LIVRAISON_05_FINAL.md`](phase/05/LIVRAISON_05_FINAL.md).
+- Contrat de l'API inchangé ; correctif du poste seulement (O-05-14 : l'aperçu de prix part sans `requestId`, conformément au contrat). Aucun ADR modifié, aucune dépendance ajoutée.
+- ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; **ADR-010 `OPEN DECISION`** (fiscalité EUR / MAD, TTC indisponible) ; rôle SQL applicatif distinct toujours au backlog (BL-04-04, R-F-03).
+
+## Note datée — 02–03/11/2026 (Phase 05, corrections COR-05-01 à COR-05-08)
+
+- Mandat : [`prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md`](../prompts/MMV_V2_MANDAT_CORRECTIONS_PHASE05_2026-11-02.md). Décisions du propriétaire appliquées : **un serveur local = un magasin** (architecture multi-magasins conservée dans les données ; magasin choisi par la configuration du serveur, jamais par le poste) ; **temps réel ASP.NET Core SignalR** (pas de sondage présenté comme équivalent).
+- Dépendances ajoutées : `@microsoft/signalr` 10.0.11 (poste), `Microsoft.AspNetCore.SignalR.Client` 10.0.13 (tests). Aucune IA, aucun service payant (import CSV par règles, synonymes et profils).
+- Migration additive `0008_CatalogCorrections` préparée, **non appliquée** (revue SQL du propriétaire). ADR-001, ADR-007, ADR-014 restent `PROPOSED` ; ADR-010 `OPEN DECISION` inchangé.
+
+
+## Note datée — 03/11/2026 (Phase 05, G05-SQL-0008)
+
+- GO conditionnel du propriétaire ; migration `0008_CatalogCorrections` **appliquée** à `mmv_v2_dev` puis `mmv_v2_test` ([`prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md`](../prompts/MMV_V2_G05_SQL_0008_GO_APPLICATION_2026-11-03.md), preuves `docs/phase/05/evidence/sql0008/`). Aucune nouvelle décision d'architecture ; ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`.
+
+## Note datée — 03/11/2026 (Phase 05, lot UX-IA)
+
+- Mandat [`prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md`](../prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md) : décisions métier APPROVED par le propriétaire (magasin unique par installation, tarification obligatoire à la création, seuil d'alerte par variante et par magasin — option A). Décision technique du lot : **IA locale** (Ollama sur le serveur du magasin, point d'accès limité à la boucle locale, modèle configurable, `llama3.2` retenu après banc) **en assistance seulement** — l'IA propose une correspondance de colonnes, le serveur valide (colonnes, champs, valeurs), les montants restent confirmés par l'utilisateur, l'import reste possible sans IA. Aucun service en ligne, aucune nouvelle dépendance de base de données, PostgreSQL seul. Détail : `docs/phase/05/UX_IA_05.md`. ADR-001, ADR-007, ADR-014 restent `PROPOSED`, ADR-010 `OPEN DECISION`.
+
+## Note datée — 04/11/2026 (Phase 05, lot CSV-IMPORT-AI-01, Lot A)
+
+- **ADR-CSVAI-01 — Modèle local de l'import CSV intelligent : `PROPOSED`** (validation du propriétaire requise, Gate A). Banc comparatif ([`docs/phase/05/evidence/csvai/RAPPORT_BENCHMARK.md`](phase/05/evidence/csvai/RAPPORT_BENCHMARK.md)) de `llama3.2`, `qwen3.5:2b` et `qwen3.5:4b` : mêmes 15 fichiers synthétiques, même consigne, même schéma, mêmes paramètres, 5 passages mesurés chacun. Proposition : **`qwen3.5:4b`** (`d8b0f5e9760c`), seul à ne perdre aucun article et à reconnaître les familles (98,6 %). Ce choix ne vaut qu'avec une architecture où **le serveur reste maître** : montants toujours confirmés, contrôles déterministes des références, fichier sans en-têtes confirmé, variantes regroupées par le serveur, alignement établi par le lecteur, analyse sur un échantillon borné. Raison : même ce modèle fait 6 affectations commerciales incorrectes par passage et suit une consigne injectée de regroupement. Coût : 42 s médians par fichier sur le poste de développement, 2,5 fois plus que les deux autres. Conception du Lot B à l'état de brouillon (`docs/phase/05/CSV_IA_05_CONCEPTION.md`). D-UX-03 (`llama3.2`, assistant de colonnes) reste **en vigueur** jusqu'à la livraison d'un Lot B validé. Aucun code ni schéma modifié.
+
+## Note datée — 04/11/2026 (Phase 05, lot CSV-IMPORT-AI-01, après le Lot B0)
+
+- **ADR-CSVAI-01 — décision du propriétaire** (Gate A, GO conditionnel) : `qwen3.5:4b` **retenu comme candidat principal** de l'import catalogue ; activation subordonnée à B0 et à la validation serveur. D-UX-03 (`llama3.2`) reste en vigueur dans l'application. L'entrée `PROPOSED` ci-dessus est conservée telle quelle.
+- **ADR-CSVAI-02 — Contrat `mmv.csvai.v2` et validateur monotone : `PROPOSED`** (Gate B). L'IA ne rend que la présence d'en-têtes, le champ de chaque colonne et une règle de famille ; aucune sortie par ligne. Le serveur décide de tout le reste ; une proposition de l'IA peut ajouter un doute, jamais rendre importable ce que les règles seules ne rendent pas importable. Preuve : [`docs/phase/05/evidence/csvai/b0/RAPPORT_B0.md`](phase/05/evidence/csvai/b0/RAPPORT_B0.md) (0 erreur critique sur 100 appels et 21 080 mutations). Coût mesuré : sur le corpus synthétique, +30 % de confirmations et aucune erreur des règles rattrapée ; apport à mesurer sur catalogues réels.
+- **ADR-CSVAI-03 — Analyse IA asynchrone : `PROPOSED`** (réponse à Q-CSVAI-02) : récapitulatif immédiat par les règles, analyse IA en file (une à la fois), état suivi, annulation, repli tracé ; aucun SLA fixé.
+- **ADR-CSVAI-04 — Persistance des originaux et des analyses (`0009`) : `PROPOSED`** (option B retenue sur le principe, Q-CSVAI-03) : tables séparées `imports.batch_originals` et `imports.batch_analyses` plutôt que des colonnes sur `imports.batches` ; `file_sha256` (texte) inchangé pour l'idempotence, empreinte des octets ajoutée ; rétention des octets à décider (Q-CSVAI-07). **Aucun SQL** : schéma exact au dossier G05-SQL.
+
+## Note datée — 04/11/2026 (Phase 05, lot CSV-IMPORT-AI-01, Gate B — mandat de refonte)
+
+Les entrées précédentes sont conservées telles quelles. Dossier : [`docs/phase/05/CSV_IA_05_GATE_B.md`](phase/05/CSV_IA_05_GATE_B.md).
+
+- **ADR-CSVAI-05 — Assistant d'import en cinq étapes, état calculé par le serveur : `PROPOSED`** (Gate B). Déposer · Analyse IA · Vérifier et corriger · Vérification avant import · Confirmer et importer ; étape et décisions restituées par `GET /api/imports/{id}/assistant` ; aucune règle métier côté React ; historique replié par défaut.
+- **ADR-CSVAI-06 — Dépôt tolérant : `PROPOSED`**. Seules les limites techniques (taille, lignes, contenu non textuel, octets indécodables, droits) refusent un fichier ; toute anomalie métier devient un point à résoudre dans l'assistant ; l'import reste tout ou rien.
+- **ADR-CSVAI-07 — Corrections dans l'assistant en révisions append-only : `PROPOSED`**. Décisions typées (auteur, horodatage, révision de base), revalidées par le serveur, priorité décision utilisateur > règle > IA ; octets d'origine intacts ; garde `examplesDigest` contre la confirmation aveugle des montants. Amende la conception B0 (correction par nouveau fichier).
+- **ADR-CSVAI-08 — Modèle de l'import catalogue : configuration séparée `CatalogInterpreter` (`qwen3.5:4b`) : `PROPOSED`**. Le parcours actuel garde `ImportAssistant` (`llama3.2`, D-UX-03) jusqu'à acceptation du nouveau ; « modèle actif » affiché seulement sur confirmation par la réponse d'Ollama.
+- **ADR-CSVAI-04 — complément `PROPOSED`** : `0009` complétée de `imports.batch_assistant` et `imports.batch_analysis_events` (§ 12 du dossier). **Aucun SQL** ; dossier G05-SQL distinct, application soumise à GO SQL.
+- Décisions de travail du propriétaire (mandat de refonte) : Q-CSVAI-07 (purge contrôlée possible, aucune purge automatique, durée à valider), Q-CSVAI-08 (aucune application pendant une analyse demandée ; sans IA sur choix explicite), Q-CSVAI-09 (IA par défaut, limitable par configuration, gains à mesurer), Q-CSVAI-10 (aucune famille sur supposition).
+
+## Note datée — 06/11/2026 (Phase 05, lot CSV-IMPORT-AI-01, implémentation)
+
+- GO conditionnel du propriétaire sur le dossier Gate B ([`prompts/MMV_V2_GO_CONDITIONNEL_GATE_B_CSV_IMPORT_AI_01_2026-11-06.md`](../prompts/MMV_V2_GO_CONDITIONNEL_GATE_B_CSV_IMPORT_AI_01_2026-11-06.md)). Décisions du propriétaire (§ 7 du mandat) : aucune purge automatique des originaux ; texte décodé historique inchangé ; délai Ollama 120 s provisoire, configurable, sans SLA ; **SKU porté par un autre modèle : aucune association automatique** (correction ou exclusion seulement, Q-CSVAI-14 tranchée) ; IA déclenchée par défaut, mode règles seules configurable ; priorité utilisateur > règle > IA sans contournement d'une règle obligatoire ; aucun téléchargement de modèle ; pile et SGBD inchangés.
+- ADR-CSVAI-08 (configuration séparée `CatalogInterpreter`) : **mise en œuvre** (reste `PROPOSED` jusqu'à l'acceptation du parcours) ; ADR-CSVAI-04 (`0009`) : migration **préparée** ([`docs/phase/05/SQL_0009_REVUE.md`](phase/05/SQL_0009_REVUE.md)), **non appliquée**, GO SQL distinct requis.
+- Q-CSVAI-11 tranchée par le mandat : référentiel des verres intégré dans ce cycle (C3). Restent ouvertes : Q-CSVAI-07 (durée de rétention), Q-CSVAI-12 (texte des lots, hors périmètre), devise des prix d'offres de verres sans colonne devise.
+- Règle de livraison : archive par `git archive` d'un arbre temporaire (index isolé) ; aucune copie manuelle.
+
+## Note datée — 06/11/2026 (Phase 05, lot CSV-IMPORT-AI-01, corrections post-audit)
+
+- Mandat post-audit ([`prompts/MMV_V2_MANDAT_POST_AUDIT_CSV_IMPORT_AI_01_2026-11-06.md`](../prompts/MMV_V2_MANDAT_POST_AUDIT_CSV_IMPORT_AI_01_2026-11-06.md)) ; rapport [`docs/phase/05/LIVRAISON_05_CSVAI_POST_AUDIT.md`](phase/05/LIVRAISON_05_CSVAI_POST_AUDIT.md).
+- **ADR-CSVAI-09 — Identité d'une offre de verres importée : `PROPOSED`.** Contrat COR-05-05 (« capacités d'UN fournisseur pour UNE gamme ») : identité = fournisseur + gamme + type + indice + matériau + traitements + **approvisionnement** (stocké / sur commande = deux circuits distincts) ; diamètres, plages SPH / CYL / ADD, restriction combinée, délai, prix et note = **caractéristiques** (les variations de géométrie relèvent des règles avancées). Deux lignes d'une même identité aux caractéristiques différentes : bloquées (`lens_offer_conflict`), jamais fusionnées ni créées deux fois. Mise à jour : seules les caractéristiques fournies et différentes ; aucune valeur effacée par omission ; règles avancées conservées ; fiche complète repassée incomplète si une capacité change (COR-CSVAI-02).
+- Devise (COR-CSVAI-03) : une devise absente du fichier n'est jamais tenue pour fournie ; la devise du magasin est proposée et confirmée par fichier (décision `file_default`, aucune évolution de schéma) ; aucune conversion ; jamais d'EUR par défaut. Traite la question ouverte « devise des prix d'offres de verres sans colonne devise » (approbation du propriétaire attendue).
+- Retour arrière SQL (COR-CSVAI-05) : jamais `pg_restore --clean` sur la base active ; restauration sur base neuve distincte, empreinte de cohérence comparée, bascule explicite par renommage, base écartée conservée ([`docs/phase/05/SQL_0009_REVUE.md`](phase/05/SQL_0009_REVUE.md) § 6.1–6.2).
+- ADR-CSVAI-04 (`0009`) : script **inchangé**, statut `READY_FOR_G05_SQL_0009` (pas une autorisation d'application).
+
+## Note datée — 07/11/2026 (Phase 05, GO conditionnel G05-SQL-0009 et GATE D)
+
+- Mandat [`prompts/MMV_V2_GO_CONDITIONNEL_G05_SQL_0009_GATE_D_2026-11-07.md`](../prompts/MMV_V2_GO_CONDITIONNEL_G05_SQL_0009_GATE_D_2026-11-07.md) ; rapport [`docs/phase/05/LIVRAISON_05_CSVAI_GATE_D.md`](phase/05/LIVRAISON_05_CSVAI_GATE_D.md).
+- ADR-CSVAI-04 (`0009`) : migration **appliquée** à `mmv_v2_dev` et `mmv_v2_test` sur GO conditionnel du propriétaire (verify 14/14 ×2) ; le statut de l'ADR reste `PROPOSED` jusqu'à l'acceptation du parcours.
+- Protection contre les plans périmés : l'application exige que le plan métier (valeurs écrites et état actuel des champs fournis) soit identique à celui du contrôle confirmé ; verrous pris avant la relecture ; sinon `409 check_stale`. Une modification d'un champ non fourni par le fichier n'impose pas de nouveau contrôle. Aucune migration.
+- Politique CORS du poste inchangée (jamais `DELETE`) : l'annulation d'une analyse passe par `POST …/assistant/analysis/cancel`.
+- Décisions métier du mandat § 5 conservées **à titre provisoire** (pas des validations de production) ; ADR-CSVAI-09 reste `PROPOSED`.
+
+## Note datée — 07/11/2026 (Phase 05, clôture contrôlée)
+
+- Mandat [`prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md`](../prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md) ; rapport [`docs/phase/05/RAPPORT_CLOTURE_PHASE05.md`](phase/05/RAPPORT_CLOTURE_PHASE05.md).
+- Décisions du propriétaire CL-05-01 à CL-05-06 : assistant CSV techniquement terminé, **validation UX refusée**, refonte reportée, ancien import conservé en repli, aucun GO de déploiement commercial sans nouvelle recette, contrôles non réalisés reportés sans être déclarés PASS.
+- ADR-CSVAI-04 (`0009`, appliquée) et ADR-CSVAI-09 (identité des offres) restent **`PROPOSED`** : le parcours n'est pas accepté. Aucune migration nouvelle.
+- **ADR-010 (`OPEN DECISION`) inchangé** : il conditionne désormais directement la Phase 06 (Ventes et paiements) — aucune vente réelle sans fiscalité ratifiée. ADR-011 (concurrence, idempotence, intégrité du stock et du paiement) reste `PROPOSED` et sera instruit au cadrage de la Phase 06.

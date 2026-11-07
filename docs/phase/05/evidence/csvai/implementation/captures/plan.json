@@ -1,0 +1,216 @@
+[
+ {
+  "name": "C01_depot_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=depot",
+  "width": 1440,
+  "height": 1300,
+  "waitMs": 3500
+ },
+ {
+  "name": "C02_analyse-cours_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=analyse-cours",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "name": "C03_analyse-cours_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=analyse-cours&theme=dark",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "name": "C04_analyse-indispo_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=analyse-indispo",
+  "width": 1440,
+  "height": 1500,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "name": "C05_verif-liste_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=verif",
+  "width": 1440,
+  "height": 1700,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "name": "C06_verif-montant_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=verif",
+  "width": 1440,
+  "height": 1900,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   },
+   {
+    "click": "Ouvrir",
+    "wait": 1000
+   },
+   {
+    "eval": "(()=>{const r=[...document.querySelectorAll('input[type=radio]')].find(x=>x.closest('label')?.textContent.includes('achat HT'));if(!r)return 'NOT FOUND radio';r.click();return 'ok'})()",
+    "wait": 600
+   }
+  ]
+ },
+ {
+  "name": "C07_verif-montant_sombre_1366",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=verif&theme=dark",
+  "width": 1366,
+  "height": 1900,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   },
+   {
+    "click": "Ouvrir",
+    "wait": 1000
+   }
+  ]
+ },
+ {
+  "name": "C08_verif-doublon_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=verif",
+  "width": 1440,
+  "height": 1900,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   },
+   {
+    "eval": "(()=>{const b=[...document.querySelectorAll('button')].filter(x=>x.textContent.trim()==='Corriger');if(b.length<3)return 'NOT FOUND corriger';b[2].click();return 'ok'})()",
+    "wait": 1200
+   }
+  ]
+ },
+ {
+  "name": "C09_controle_clair_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=controle",
+  "width": 1440,
+  "height": 1800,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   },
+   {
+    "click": "Vérification avant import",
+    "wait": 1000
+   }
+  ]
+ },
+ {
+  "name": "C10_confirmation_clair_1280",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=controle",
+  "width": 1280,
+  "height": 1100,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   },
+   {
+    "click": "Importer…",
+    "wait": 900
+   }
+  ]
+ },
+ {
+  "name": "C11_importe_sombre_1440",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=importe&theme=dark",
+  "width": 1440,
+  "height": 1300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 700
+   },
+   {
+    "click": "Reprendre",
+    "wait": 1500
+   }
+  ]
+ },
+ {
+  "name": "C12_historique-deplie_clair_1024",
+  "url": "http://127.0.0.1:1520/import-wizard-real.html?state=verif",
+  "width": 1024,
+  "height": 1300,
+  "waitMs": 2500,
+  "actions": [
+   {
+    "click": "Imports récents",
+    "wait": 900
+   }
+  ]
+ }
+]

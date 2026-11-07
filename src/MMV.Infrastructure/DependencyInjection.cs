@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MMV.Application.Appointments;
 using MMV.Application.Audit;
+using MMV.Application.Catalog;
+using MMV.Application.Catalog.Assisted;
+using MMV.Infrastructure.Catalog;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
 using MMV.Application.Optical;
@@ -74,6 +77,33 @@ public static class DependencyInjection
         services.TryAddScoped<PrescriptionService>();
         services.TryAddScoped<MeasurementService>();
         services.TryAddScoped<OpticalQueryService>();
+
+        // Phase 05 : catalogue, tarifs, fournisseurs, stock, inventaires, import CSV — même contexte EF (même transaction que l'audit).
+        services.TryAddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
+        services.TryAddScoped<ICatalogStore, CatalogStore>();
+        services.TryAddScoped<IPricingStore, PricingStore>();
+        services.TryAddScoped<IStockStore, StockStore>();
+        services.TryAddScoped<IInventoryStore, InventoryStore>();
+        services.TryAddScoped<IImportStore, ImportStore>();
+        services.TryAddScoped<ICatalogReadStore, CatalogReadStore>();
+        services.TryAddScoped<CatalogService>();
+        services.TryAddScoped<SupplierService>();
+        services.TryAddScoped<PricingService>();
+        services.TryAddScoped<ProductCreationService>();
+        // Corrections Phase 05 (0008) : offres de verres, modèles d'import fournisseur.
+        services.TryAddScoped<ILensOfferStore, LensOfferStore>();
+        services.TryAddScoped<IImportProfileStore, ImportProfileStore>();
+        services.TryAddScoped<LensOfferService>();
+        services.TryAddScoped<LensCatalogService>();
+        services.TryAddScoped<StockService>();
+        services.TryAddScoped<InventoryService>();
+        services.TryAddScoped<ImportService>();
+        // CSV-IMPORT-AI-01 (0009) : persistance de l'assistant d'import, planificateur du référentiel des verres.
+        services.TryAddScoped<IImportAssistantStore, ImportAssistantStore>();
+        services.TryAddScoped<AssistedLensPlanner>();
+        services.TryAddScoped<ICatalogQuery, CatalogQuery>();
+        services.TryAddScoped<IStoreAdministrationStore, StoreAdministrationStore>();
+        services.TryAddScoped<StoreAdministrationService>();
 
         return services;
     }

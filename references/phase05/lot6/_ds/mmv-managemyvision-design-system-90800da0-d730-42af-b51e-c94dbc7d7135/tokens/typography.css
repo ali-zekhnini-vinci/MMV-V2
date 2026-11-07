@@ -1,0 +1,39 @@
+/* ============================================================
+   MMV — Typography tokens
+   Inter for titles (Titres), Source Sans 3 for running text.
+   ============================================================ */
+:root{
+  --font-heading:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-body:'Source Sans 3','Segoe UI',system-ui,-apple-system,sans-serif;
+  --font-mono:ui-monospace,'SF Mono','Consolas',monospace;
+
+  /* Type scale — desktop app, body baseline 14px */
+  --text-display:32px;   /* Heading 1 / login hero  */
+  --text-h1:28px;        /* page titles             */
+  --text-h2:22px;        /* section titles          */
+  --text-h3:18px;        /* card / group titles     */
+  --text-body-lg:16px;   /* lead paragraph          */
+  --text-body:14px;      /* default body            */
+  --text-sm:13px;        /* labels, secondary       */
+  --text-xs:12px;        /* captions, meta          */
+  --text-2xs:11px;       /* badges, table micro     */
+
+  /* Line heights */
+  --leading-tight:1.15;
+  --leading-snug:1.3;
+  --leading-normal:1.5;
+  --leading-relaxed:1.6;
+
+  /* Weights */
+  --weight-regular:400;
+  --weight-medium:500;
+  --weight-semibold:600;
+  --weight-bold:700;
+  --weight-heavy:800;
+
+  /* Tracking */
+  --tracking-tight:-0.02em;   /* display / large headings */
+  --tracking-normal:0;
+  --tracking-wide:0.04em;     /* eyebrow / overline caps  */
+  --tracking-wider:0.12em;    /* section labels (MENU…)   */
+}

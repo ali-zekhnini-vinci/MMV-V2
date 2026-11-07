@@ -1,0 +1,58 @@
+# Premiere execution (06/11/2026) : version de 0009_restore_check.sql AVANT normalisation des definitions de contraintes (voir RESTAURATION_essai2_20261106.log pour la version finale).
+
+=== 0. Précontrôles de la base source (identité exacte, version, migrations, sessions) (2026-11-06T22:22:59Z)
+version=18.6 port=55434 base=mmv_v2_scratch role=postgres cluster=7705084675292865480
+migrations=9 derniere=20261106154105_CsvImportAssistant
+autres_sessions_sur_la_base=0
+donnees_assistant originals=10 etats=10 analyses=11 evenements=95 decisions=16 lots_appliques=3 resultats_enregistres=3 offres_verres=5
+
+=== 1. Sauvegarde (format personnalisé), empreinte, lisibilité (2026-11-06T22:22:59Z)
+pg_dump exit=0
+541aad5a275166bb239dc39b6f5923b1324cab5a64f2e30ac7b07f18efc2e179 *mmv_v2_scratch_postaudit_20261106_222259.dump
+taille_octets=278242
+pg_restore --list exit=0 entrees=511 donnees_de_table=43
+contient TABLE DATA imports.batch_originals
+contient TABLE DATA imports.batch_assistant
+contient TABLE DATA imports.batch_analyses
+contient TABLE DATA imports.batch_analysis_events
+contient TABLE DATA imports.batch_decisions
+declencheurs_dans_la_sauvegarde=67
+
+=== 2. Empreinte de cohérence de la source (2026-11-06T22:23:00Z)
+check source exit=0 lignes=1034
+
+=== 3. Base NEUVE distincte (jamais la base active), même propriétaire, encodage et collation (2026-11-06T22:23:00Z)
+existe_deja=0
+CREATE DATABASE
+base neuve mmv_v2_scratch_rest_pa creee (proprietaire=mmv_v2_scratch, collation=C)
+
+=== 4. Restauration dans la base neuve : transaction unique, arrêt à la première erreur, propriétaires et droits conservés (2026-11-06T22:23:00Z)
+pg_restore exit=0
+
+=== 5. Contrôles de cohérence : empreinte de la base restaurée comparée à la source (2026-11-06T22:23:01Z)
+check restauree exit=0 lignes=1034
+COMPARAISON : IDENTIQUE (43 tables, 67 declencheurs, 9 migrations)
+declencheurs_inactifs_apres_restauration=0
+4ac83a413b6d8860fa0df6513af918702c9a146549a3240433281e302f1c7d37 *source.check.txt
+4ac83a413b6d8860fa0df6513af918702c9a146549a3240433281e302f1c7d37 *restored.check.txt
+
+=== 6. Bascule explicite (décision du propriétaire en réel) : aucune session, renommage, ancienne base CONSERVÉE (2026-11-06T22:23:01Z)
+sessions_source=0 sessions_neuve=0
+ALTER DATABASE
+renomme mmv_v2_scratch -> mmv_v2_scratch_avant_pa
+ALTER DATABASE
+renomme mmv_v2_scratch_rest_pa -> mmv_v2_scratch
+APRES BASCULE : IDENTIQUE a la source
+bases=mmv_v2_scratch,mmv_v2_scratch_avant_pa
+FIN
+
+=== 7. Base basculée : suite de l'assistant (écritures, gardes 42501, rejeu) (2026-11-06T22:23:14Z)
+  Échoué MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_PostAudit_IdentityGeometry_CompletenessRevalidated_NothingErased_CurrencyConfirmed_ReplayIdentical [2 s]
+  Échoué MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_OffersOfSeveralSuppliers_ReferencesDecided_RangesNeverCompleted_CombinedRestriction_ToVerify [1 s]
+Échoué!  - échec :     2, réussite :     5, ignorée(s) :     0, total :     7, durée : 24 s - MMV.PostgreSql.Tests.dll (net10.0)
+donnees_restaurees_toujours_presentes originals=10 decisions=16 resultats_enregistres=3
+(échecs ci-dessus : indices 1,74 / 1,67 des données fictives CONSERVÉES pour l'essai — unicité de la valeur d'indice ; pas un défaut de restauration)
+
+=== 8. Purge des données fictives conservées (cluster jetable), puis suite complète de l'assistant sur la base basculée (2026-11-06T22:24:53Z)
+apres_purge originals=0 declencheurs_inactifs=0
+Réussi!  - échec :     0, réussite :     7, ignorée(s) :     0, total :     7, durée : 24 s - MMV.PostgreSql.Tests.dll (net10.0)

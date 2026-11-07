@@ -1,0 +1,9 @@
+# Suites sur l'arbre livré (03/11/2026, lot UX-IA). PostgreSQL : cluster jetable 55433 (MMV_PG05_SCRATCH), aucune base réelle.
+MMV.Api.Tests : Réussi!  - échec :     0, réussite :   561, ignorée(s) :     0, total :   561, durée : 1 m 32 s - MMV.Api.Tests.dll (net10.0)
+MMV.Maintenance.Tests : Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50 (relancée après le dernier changement)
+MMV.PostgreSql.Tests : Réussi!  - échec :     0, réussite :    96, ignorée(s) :     1, total :    97, durée : 1 m 4 s - MMV.PostgreSql.Tests.dll (net10.0) — l'ignoré : RealProcess_ServesTheBench_AndRefusesPlainHttp_NothingWritten (processus réel non désigné, NOT_TESTED)
+Vitest : Tests 326 passed (326)
+npm run check : exit 0
+ESLint : 0 erreur, 1 avertissement préexistant (src/clients/ClientsTable.tsx, react-hooks/incompatible-library)
+vite build : OK
+Natif deux postes : 33 / 33 PASS (UXAI_native_run_20261103.log)

@@ -1,0 +1,21 @@
+/* ============================================================
+   MMV — Elevation / shadow tokens.
+   4 levels. Use light elevation to keep a modern, calm feel;
+   elevation separates planes and guides attention.
+   Light values are tuned to the brand navy; dark values follow
+   the DS-extension spec (rgba black at 0.25 / 0.35 / 0.45).
+   ============================================================ */
+:root{
+  --shadow-0:none;
+  --shadow-1:0 1px 2px rgba(11,29,58,0.06), 0 1px 3px rgba(11,29,58,0.05);
+  --shadow-2:0 4px 12px rgba(11,29,58,0.10);
+  --shadow-3:0 8px 24px rgba(11,29,58,0.14);
+  --shadow-focus:0 0 0 3px rgba(0,102,255,0.22);   /* focus ring */
+}
+:root[data-theme="dark"],.theme-dark{
+  --shadow-0:none;
+  --shadow-1:0 1px 2px rgba(0,0,0,0.25);
+  --shadow-2:0 4px 12px rgba(0,0,0,0.35);
+  --shadow-3:0 8px 24px rgba(0,0,0,0.45);
+  --shadow-focus:0 0 0 3px rgba(51,133,255,0.35);
+}

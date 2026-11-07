@@ -1,0 +1,122 @@
+# Contre-épreuves de CsvAssistantDisabledGateTests (07/11/2026)
+# Fichier de test modifié TEMPORAIREMENT puis restauré ; SHA-256 avant = après = 0c0562d18003c88e4752d101da0fd3d783bfceaaaf5cc62e5b0be77a8a83c68d
+
+## Contre-épreuve 1 : CatalogInterpreter:WizardEnabled = true dans l'hôte de test -> 13 échecs (précondition Assert.False)
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "DELETE", pattern: "/api/imports/{id:guid}/assistant/analysis") [1 s]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/assistant") [319 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/issues/{key}") [266 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/assistant/inspect") [285 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/check") [270 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant") [266 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/apply") [264 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/analysis/cancel") [282 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/analysis") [262 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/rows") [264 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/summary") [259 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/analysis") [267 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/decisions") [278 ms]
+  Message d'erreur :
+   Assert.False() Failure
+Expected: False
+Actual:   True
+
+## Contre-épreuve 2 : WizardEnabled = true ET précondition retirée -> 13 échecs : 6 réponses != 404, 7 accès à la base (injoignable)
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "DELETE", pattern: "/api/imports/{id:guid}/assistant/analysis") [2 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/assistant") [356 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/issues/{key}") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/assistant/inspect") [277 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/check") [278 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/apply") [354 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/analysis/cancel") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/analysis") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/{id:guid}/assistant/rows") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "GET", pattern: "/api/imports/summary") [1 s]
+  Message d'erreur :
+   System.InvalidOperationException : An exception has been raised that is likely due to a transient failure.
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/analysis") [332 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400
+  Échoué MMV.Api.Tests.Catalog.Assisted.CsvAssistantDisabledGateTests.WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog(method: "POST", pattern: "/api/imports/{id:guid}/assistant/decisions") [315 ms]
+  Message d'erreur :
+   Assert.Equal() Failure: Values differ
+Expected: 404
+Actual:   400

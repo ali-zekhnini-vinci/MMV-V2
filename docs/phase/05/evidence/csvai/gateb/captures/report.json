@@ -1,0 +1,430 @@
+[
+  {
+    "name": "L01_depot-vide_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "L02_depot-fichier_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "L03_depot-refus_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "L04_analyse-attente_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré · analyse en cours"
+    },
+    "errors": []
+  },
+  {
+    "name": "L05_analyse-cours_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré · analyse en cours"
+    },
+    "errors": []
+  },
+  {
+    "name": "L06_analyse-terminee_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L07_analyse-indispo_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale indisponible · règles seules possibles"
+    },
+    "errors": []
+  },
+  {
+    "name": "L08_verif-liste_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L09_verif-sku_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L09_verif-sku-choix_clair_1440",
+    "notes": [
+      "ok",
+      "typed"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L10_verif-commercial_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L10_verif-commercial-choix_clair_1440",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L11_controle-bloque_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L12_controle-pret_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L13_import-confirmation_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L14_import-cours_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L15_import-reussi_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "L16_historique-deplie_clair_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "D17_depot-fichier_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "D18_analyse-cours_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré · analyse en cours"
+    },
+    "errors": []
+  },
+  {
+    "name": "D19_analyse-terminee_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D20_analyse-indispo_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale indisponible · règles seules possibles"
+    },
+    "errors": []
+  },
+  {
+    "name": "D21_verif-sku_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D21_verif-sku-choix_sombre_1440",
+    "notes": [
+      "ok",
+      "typed"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D22_verif-commercial_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D22_verif-commercial-choix_sombre_1440",
+    "notes": [
+      "ok"
+    ],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D23_controle-pret_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D24_import-confirmation_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D25_import-reussi_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "D26_historique-deplie_sombre_1440",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  },
+  {
+    "name": "R27_analyse-cours_1366x768",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré · analyse en cours"
+    },
+    "errors": []
+  },
+  {
+    "name": "R28_verif-sku_1366x768",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "R29_controle-pret_1280x720",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "R30_analyse-terminee_1920x1080",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "R31_verif-liste_1920x1080",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "R32_verif-commercial_1366x768_zoom125",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVAnalyse IA terminée · qwen3.5:4b (confirmé)"
+    },
+    "errors": []
+  },
+  {
+    "name": "R33_analyse-cours_1024x768",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré · analyse en cours"
+    },
+    "errors": []
+  },
+  {
+    "name": "R34_depot-fichier_1024x768",
+    "notes": [],
+    "metrics": {
+      "hScroll": false,
+      "contentH": false,
+      "title": "MMV V2 — BANC GATE B : assistant d'import CSV (maquette, données fictives)",
+      "h1": "Import CSVIA locale · qwen3.5:4b configuré"
+    },
+    "errors": []
+  }
+]

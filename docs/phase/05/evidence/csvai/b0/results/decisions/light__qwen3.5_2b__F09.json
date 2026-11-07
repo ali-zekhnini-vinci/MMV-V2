@@ -1,0 +1,445 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 5,
+    "sampled": 5,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 3,
+  "blockers": {
+    "header": 0,
+    "columns": 3,
+    "familyClasses": 0,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Désignation",
+      "field": "modelName",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "familyCode",
+      "suggestion": "familyCode",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation",
+        "l'IA propose « familyCode » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Coloris",
+      "field": "color",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": "brand",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris",
+        "l'IA propose « brand » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Réf. fabricant",
+      "field": "manufacturerReference",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "manufacturerReference",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": "modelName",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence fabricant",
+        "l'IA propose « modelName » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Prix d'achat HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Prix de vente HT",
+      "field": "salePriceHt",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "salePriceHt",
+      "ruleAlternatives": [],
+      "ai": "salePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente HT"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Matière",
+      "field": "material",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "material",
+      "ruleAlternatives": [],
+      "ai": "material",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : matière"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2,
+        3
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        5
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "accessories",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Étui « Prestige »",
+          "value": "Étui « Prestige »",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "color",
+          "raw": "Bordeaux",
+          "value": "Bordeaux",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "manufacturerReference",
+          "raw": "ETP-001",
+          "value": "ETP-001",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "3,20",
+          "value": "3.20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "salePriceHt",
+          "raw": "14,90",
+          "value": "14.90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "material",
+          "raw": "Cuir",
+          "value": "Cuir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "accessories",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Étui « Prestige »",
+          "value": "Étui « Prestige »",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "color",
+          "raw": "Vert forêt",
+          "value": "Vert forêt",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "manufacturerReference",
+          "raw": "ETP-002",
+          "value": "ETP-002",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "3,20",
+          "value": "3.20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "salePriceHt",
+          "raw": "14,90",
+          "value": "14.90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "material",
+          "raw": "Cuir",
+          "value": "Cuir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "accessories",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Chiffon microfibre",
+          "value": "Chiffon microfibre",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "color",
+          "raw": "Gris",
+          "value": "Gris",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "manufacturerReference",
+          "raw": "CMF-010",
+          "value": "CMF-010",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "0,45",
+          "value": "0.45",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "salePriceHt",
+          "raw": "3,00",
+          "value": "3.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "material",
+          "raw": "Microfibre",
+          "value": "Microfibre",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "accessories",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Cordon sport",
+          "value": "Cordon sport",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "color",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "manufacturerReference",
+          "raw": "CRD-020",
+          "value": "CRD-020",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "1,10",
+          "value": "1.10",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "salePriceHt",
+          "raw": "6,50",
+          "value": "6.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "material",
+          "raw": "Silicone",
+          "value": "Silicone",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    }
+  ]
+}

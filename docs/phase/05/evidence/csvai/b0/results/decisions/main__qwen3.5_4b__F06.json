@@ -1,0 +1,909 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 6,
+    "sampled": 6,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 2,
+  "blockers": {
+    "header": 0,
+    "columns": 2,
+    "familyClasses": 0,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Fabricant",
+      "field": "lensManufacturer",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "lensManufacturer",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": "brand",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : nom du fabricant",
+        "l'IA propose « brand » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Gamme",
+      "field": "lensRange",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "lensRange",
+      "ruleAlternatives": [],
+      "ai": "lensRange",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : gamme"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Type",
+      "field": "lensType",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "lensType",
+      "ruleAlternatives": [],
+      "ai": "lensType",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : type = géométrie de verre"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Indice",
+      "field": "lensIndex",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "lensIndex",
+      "ruleAlternatives": [],
+      "ai": "lensIndex",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : indice"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Matériau",
+      "field": "lensMaterial",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "lensMaterial",
+      "ruleAlternatives": [],
+      "ai": "lensMaterial",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : matière"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Traitement",
+      "field": "lensTreatments",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "lensTreatments",
+      "ruleAlternatives": [],
+      "ai": "lensTreatments",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : traitements"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "Sph min",
+      "field": "sphereMin",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "sphereMin",
+      "ruleAlternatives": [],
+      "ai": "sphereMin",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sphère minimale"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "Sph max",
+      "field": "sphereMax",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "sphereMax",
+      "ruleAlternatives": [],
+      "ai": "sphereMax",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sphère maximale"
+      ]
+    },
+    {
+      "c": 8,
+      "header": "Cyl max",
+      "field": "cylinderMax",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "cylinderMax",
+      "ruleAlternatives": [],
+      "ai": "cylinderMax",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : cylindre maximal"
+      ]
+    },
+    {
+      "c": 9,
+      "header": "Add max",
+      "field": "additionMax",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "additionMax",
+      "ruleAlternatives": [],
+      "ai": "additionMax",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : addition maximale"
+      ]
+    },
+    {
+      "c": 10,
+      "header": "Ø (mm)",
+      "field": "diameter",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "diameter",
+      "ruleAlternatives": [],
+      "ai": "diameter",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : diamètre"
+      ]
+    },
+    {
+      "c": 11,
+      "header": "Prix net HT",
+      "field": "purchasePriceHt",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "salePriceHt",
+      "suggestion": "salePriceHt",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat",
+        "l'IA propose « salePriceHt » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 12,
+      "header": "Délai (j)",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "unknown",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : intitulé sans champ MMV connu"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        3,
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        5
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    },
+    {
+      "id": 3,
+      "lines": [
+        6
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "ophthalmic_lenses",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "lensManufacturer",
+          "raw": "Visionis",
+          "value": "Visionis",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "lensRange",
+          "raw": "Precisa",
+          "value": "Precisa",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "lensType",
+          "raw": "Unifocal",
+          "value": "Unifocal",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "lensIndex",
+          "raw": "1,5",
+          "value": "1.5",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "lensMaterial",
+          "raw": "Organique",
+          "value": "Organique",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "lensTreatments",
+          "raw": "Durci",
+          "value": "Durci",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "sphereMin",
+          "raw": "-6,00",
+          "value": "-6.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 7,
+          "field": "sphereMax",
+          "raw": "+6,00",
+          "value": "6.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 8,
+          "field": "cylinderMax",
+          "raw": "-2,00",
+          "value": "-2.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 9,
+          "field": "additionMax",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 10,
+          "field": "diameter",
+          "raw": "65",
+          "value": "65",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 11,
+          "field": "purchasePriceHt",
+          "raw": "18,00",
+          "value": "18.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "ophthalmic_lenses",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "lensManufacturer",
+          "raw": "Visionis",
+          "value": "Visionis",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "lensRange",
+          "raw": "Precisa",
+          "value": "Precisa",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "lensType",
+          "raw": "Unifocal",
+          "value": "Unifocal",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "lensIndex",
+          "raw": "1,6",
+          "value": "1.6",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "lensMaterial",
+          "raw": "Organique",
+          "value": "Organique",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "lensTreatments",
+          "raw": "HMC antireflet",
+          "value": "HMC antireflet",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "sphereMin",
+          "raw": "-8,00",
+          "value": "-8.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 7,
+          "field": "sphereMax",
+          "raw": "+6,00",
+          "value": "6.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 8,
+          "field": "cylinderMax",
+          "raw": "-4,00",
+          "value": "-4.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 9,
+          "field": "additionMax",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 10,
+          "field": "diameter",
+          "raw": "65",
+          "value": "65",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 11,
+          "field": "purchasePriceHt",
+          "raw": "34,00",
+          "value": "34.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "ophthalmic_lenses",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "lensManufacturer",
+          "raw": "Visionis",
+          "value": "Visionis",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "lensRange",
+          "raw": "Precisa",
+          "value": "Precisa",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "lensType",
+          "raw": "Unifocal",
+          "value": "Unifocal",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "lensIndex",
+          "raw": "1,6",
+          "value": "1.6",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "lensMaterial",
+          "raw": "Organique",
+          "value": "Organique",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "lensTreatments",
+          "raw": "HMC antireflet",
+          "value": "HMC antireflet",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "sphereMin",
+          "raw": "-8,00",
+          "value": "-8.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 7,
+          "field": "sphereMax",
+          "raw": "+6,00",
+          "value": "6.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 8,
+          "field": "cylinderMax",
+          "raw": "-4,00",
+          "value": "-4.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 9,
+          "field": "additionMax",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 10,
+          "field": "diameter",
+          "raw": "70",
+          "value": "70",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 11,
+          "field": "purchasePriceHt",
+          "raw": "36,00",
+          "value": "36.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "ophthalmic_lenses",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "lensManufacturer",
+          "raw": "Visionis",
+          "value": "Visionis",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "lensRange",
+          "raw": "Progressa Plus",
+          "value": "Progressa Plus",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "lensType",
+          "raw": "Progressive",
+          "value": "Progressive",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "lensIndex",
+          "raw": "1,67",
+          "value": "1.67",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "lensMaterial",
+          "raw": "Organique",
+          "value": "Organique",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "lensTreatments",
+          "raw": "Blue Control",
+          "value": "Blue Control",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "sphereMin",
+          "raw": "-10,00",
+          "value": "-10.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 7,
+          "field": "sphereMax",
+          "raw": "+6,00",
+          "value": "6.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 8,
+          "field": "cylinderMax",
+          "raw": "-4,00",
+          "value": "-4.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 9,
+          "field": "additionMax",
+          "raw": "3,50",
+          "value": "3.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 10,
+          "field": "diameter",
+          "raw": "70",
+          "value": "70",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 11,
+          "field": "purchasePriceHt",
+          "raw": "112,00",
+          "value": "112.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "ophthalmic_lenses",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": [
+        {
+          "c": 0,
+          "field": "lensManufacturer",
+          "raw": "Visionis",
+          "value": "Visionis",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 1,
+          "field": "lensRange",
+          "raw": "Progressa Plus",
+          "value": "Progressa Plus",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 2,
+          "field": "lensType",
+          "raw": "Progressive",
+          "value": "Progressive",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 3,
+          "field": "lensIndex",
+          "raw": "1,74",
+          "value": "1.74",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 4,
+          "field": "lensMaterial",
+          "raw": "Organic",
+          "value": "Organic",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 5,
+          "field": "lensTreatments",
+          "raw": "Blue Control",
+          "value": "Blue Control",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 6,
+          "field": "sphereMin",
+          "raw": "-12,00",
+          "value": "-12.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 7,
+          "field": "sphereMax",
+          "raw": "+4,00",
+          "value": "4.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 8,
+          "field": "cylinderMax",
+          "raw": "-4,00",
+          "value": "-4.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 9,
+          "field": "additionMax",
+          "raw": "3,50",
+          "value": "3.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 10,
+          "field": "diameter",
+          "raw": "65",
+          "value": "65",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 11,
+          "field": "purchasePriceHt",
+          "raw": "158,00",
+          "value": "158.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        }
+      ]
+    }
+  ]
+}

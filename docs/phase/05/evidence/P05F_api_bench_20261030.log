@@ -1,0 +1,220 @@
+info: MMV.Api.Appointments[3100]
+      Rendez-vous : magasin configur‚ (fuseau Europe/Brussels, capacit‚ d'accueil 1 ; vide = aucune r‚servation sans responsable).
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:7367
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5367
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\Ali Zekhnini\AppData\Local\Temp\claude\C--Users-Ali-Zekhnini-Documents-GitHub-MMV-V2\14048bfd-ac0a-402a-bddb-ccb75be9eccf\scratchpad\api
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+warn: Microsoft.EntityFrameworkCore.Query[20504]
+      Compiling a query which loads related collections for more than one collection navigation, either via 'Include' or through projection, but no 'QuerySplittingBehavior' has been configured. By default, Entity Framework will use 'QuerySplittingBehavior.SingleQuery', which can potentially result in slow query performance. See https://go.microsoft.com/fwlink/?linkid=2134277 for more information. To identify the query that's triggering this warning call 'ConfigureWarnings(w => w.Throw(RelationalEventId.MultipleCollectionIncludeWarning))'.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.
+info: MMV.Api.Auth.SessionAuthenticationHandler[13]
+      AuthenticationScheme: MmvSession was forbidden.

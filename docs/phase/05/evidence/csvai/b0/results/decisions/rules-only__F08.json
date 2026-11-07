@@ -1,0 +1,538 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": null
+  },
+  "aiUsed": false,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": null,
+  "applicable": false,
+  "confirmations": 4,
+  "blockers": {
+    "header": 0,
+    "columns": 0,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 3,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Marque",
+      "field": "brand",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "brand",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : marque"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Modèle",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : modèle"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Coloris",
+      "field": "color",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : code-barres"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Prix achat HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Prix vente TTC",
+      "field": "salePriceTtc",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "salePriceTtc",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente TTC"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : en-tête vide"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        7
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "c3 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-12",
+          "value": "VR-12",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "barcode",
+          "raw": "3760000000301",
+          "value": "3760000000301",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "purchasePriceHt",
+          "raw": "35,00",
+          "value": "35.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "salePriceTtc",
+          "raw": "109,00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne mal alignée (fewer_cells) : aucune cellule décalée",
+        "famille sans preuve déterministe : à confirmer",
+        "c3 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-12",
+          "value": "VR-12",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Écaille",
+          "value": "Écaille",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "barcode",
+          "raw": "3760000000318",
+          "value": "3760000000318",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "purchasePriceHt",
+          "raw": "35,00",
+          "value": "35.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "salePriceTtc",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne mal alignée (fewer_cells) : aucune cellule décalée",
+        "famille sans preuve déterministe : à confirmer",
+        "c3 barcode : code-barres : 8 à 14 chiffres attendus"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-12",
+          "value": "VR-12",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "3760000000325",
+          "value": "3760000000325",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "barcode",
+          "raw": "35,00",
+          "value": null,
+          "status": "INVALIDE",
+          "reason": "code-barres : 8 à 14 chiffres attendus",
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "purchasePriceHt",
+          "raw": "109,00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "salePriceTtc",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne mal alignée (more_cells) : aucune cellule décalée",
+        "famille sans preuve déterministe : à confirmer",
+        "c3 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-14",
+          "value": "VR-14",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Bleu",
+          "value": "Bleu",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "barcode",
+          "raw": "3760000000332",
+          "value": "3760000000332",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "purchasePriceHt",
+          "raw": "37,00",
+          "value": "37.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "salePriceTtc",
+          "raw": "115,00",
+          "value": "115.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "kind": "empty",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 7,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer",
+        "c3 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-14",
+          "value": "VR-14",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Gris",
+          "value": "Gris",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 3,
+          "field": "barcode",
+          "raw": "3760000000349",
+          "value": "3760000000349",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 7
+        },
+        {
+          "c": 4,
+          "field": "purchasePriceHt",
+          "raw": "37,00",
+          "value": "37.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 5,
+          "field": "salePriceTtc",
+          "raw": "115,00",
+          "value": "115.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        }
+      ]
+    }
+  ]
+}
