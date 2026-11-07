@@ -1,0 +1,2 @@
+# Fixtures CSV synthetiques : octets exacts (encodages, fins de ligne CRLF), jamais normalises par Git.
+*.csv -text

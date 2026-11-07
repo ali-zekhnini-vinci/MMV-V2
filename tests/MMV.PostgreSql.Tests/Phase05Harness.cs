@@ -51,6 +51,26 @@ internal static class Phase05Target
     /// <summary>Migration 0008 (corrections COR-05-04 / COR-05-05) présente sur la cible.</summary>
     public static bool HasCorrections => CorrectionsApplied.Value;
 
+    private static readonly Lazy<bool> AssistantApplied = new(() =>
+    {
+        if (Resolved.Value.ConnectionString is not { } connectionString)
+        {
+            return false;
+        }
+
+        using var connection = new NpgsqlConnection(connectionString);
+        connection.Open();
+        using var command = new NpgsqlCommand("SELECT to_regclass('imports.batch_assistant') IS NOT NULL", connection);
+        return (bool)command.ExecuteScalar()!;
+    });
+
+    /// <summary>Migration 0009 (assistant d'import CSV-IMPORT-AI-01) présente sur la cible.</summary>
+    public static bool HasAssistant => AssistantApplied.Value;
+
+    /// <summary>Tests de 0009 : NOT_TESTED tant que 0009 n'est pas appliquée à la cible (GO SQL distinct du propriétaire).</summary>
+    public static string? AssistantSkipReason =>
+        SkipReason ?? (HasAssistant ? null : "NOT_TESTED : migration 0009_CsvImportAssistant non appliquée à la cible (GO SQL G05-SQL-0009 requis).");
+
     /// <summary>Tests des fonctions de 0008 : NOT_TESTED tant que 0008 n'est pas appliquée à la cible (revue SQL du propriétaire).</summary>
     public static string? CorrectionsSkipReason =>
         SkipReason ?? (HasCorrections ? null : "NOT_TESTED : migration 0008_CatalogCorrections non appliquée à la cible (revue SQL du propriétaire requise).");
@@ -94,6 +114,12 @@ internal static class Phase05Target
 public sealed class Phase05FactAttribute : FactAttribute
 {
     public Phase05FactAttribute() => Skip = Phase05Target.SkipReason;
+}
+
+/// <summary>Test du nouvel assistant d'import : exige 0009 sur la cible (cluster jetable ou, après GO SQL, mmv_v2_test).</summary>
+public sealed class Phase05AssistantFactAttribute : FactAttribute
+{
+    public Phase05AssistantFactAttribute() => Skip = Phase05Target.AssistantSkipReason;
 }
 
 public sealed class Phase05TheoryAttribute : TheoryAttribute
@@ -359,6 +385,10 @@ internal sealed class Phase05Bench : IAsyncDisposable
 
     private static readonly string[] CorrectionTables = ["catalog.lens_offers", "catalog.lens_offer_revisions", "imports.supplier_profiles"];
 
+    /// <summary>Tables de 0009 (assistant d'import) : purgées seulement si 0009 est présente sur la cible (cluster jetable).</summary>
+    private static readonly string[] AssistantTables =
+        ["imports.batch_decisions", "imports.batch_analysis_events", "imports.batch_analyses", "imports.batch_assistant", "imports.batch_originals"];
+
     private static readonly string[] GuardedTables =
     [
         "audit.events", "imports.rows", "imports.batches", "stock.inventory_lines", "stock.inventory_sessions", "stock.receipt_lines", "stock.receipts",
@@ -370,8 +400,24 @@ internal sealed class Phase05Bench : IAsyncDisposable
     /// Purge en UNE transaction : déclencheurs utilisateur des tables gardées désactivés (droit du propriétaire des tables,
     /// procédé de <c>CommittedAuditCleanup</c>), suppression des seules lignes du banc, réactivation, contrôle de résidu.
     /// </summary>
+    /// <summary>
+    /// Essai de sauvegarde / restauration (COR-CSVAI-05) : <c>MMV_PG05_KEEP_SYNTHETIC=1</c> conserve les données FICTIVES
+    /// du banc au lieu de les nettoyer — admis sur le cluster JETABLE seulement (jamais sur la cible officielle).
+    /// </summary>
+    public const string KeepSyntheticVariable = "MMV_PG05_KEEP_SYNTHETIC";
+
     public async ValueTask DisposeAsync()
     {
+        if (Environment.GetEnvironmentVariable(KeepSyntheticVariable) == "1" && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(Phase05Target.ScratchVariable)))
+        {
+            _output.WriteLine($"{KeepSyntheticVariable}=1 : données fictives conservées sur le cluster jetable ({Phase05Target.Name}).");
+            Client.Dispose();
+            ClientMa.Dispose();
+            await Factory.DisposeAsync();
+            await FactoryMa.DisposeAsync();
+            return;
+        }
+
         await using var connection = new NpgsqlConnection(Phase05Target.ConnectionString);
         await connection.OpenAsync();
         await using var transaction = await connection.BeginTransactionAsync();
@@ -385,6 +431,10 @@ internal sealed class Phase05Bench : IAsyncDisposable
         }
 
         var tables = Phase05Target.HasCorrections ? [.. CorrectionTables, .. GuardedTables] : GuardedTables;
+        if (Phase05Target.HasAssistant)
+        {
+            tables = [.. AssistantTables, .. tables];
+        }
         foreach (var table in tables)
         {
             await Run($"ALTER TABLE {table} DISABLE TRIGGER USER");
@@ -396,6 +446,16 @@ internal sealed class Phase05Bench : IAsyncDisposable
             await Run("DELETE FROM catalog.lens_offer_treatments WHERE offer_id IN (SELECT id FROM catalog.lens_offers WHERE created_by_user_id = ANY(@u))");
             await Run("DELETE FROM catalog.lens_offers WHERE created_by_user_id = ANY(@u)");
             await Run("DELETE FROM imports.supplier_profiles WHERE created_by_user_id = ANY(@u)");
+        }
+
+        if (Phase05Target.HasAssistant)
+        {
+            const string Batches = "SELECT id FROM imports.batches WHERE uploaded_by_user_id = ANY(@u)";
+            await Run($"DELETE FROM imports.batch_decisions WHERE batch_id IN ({Batches})");
+            await Run($"DELETE FROM imports.batch_analysis_events WHERE batch_id IN ({Batches})");
+            await Run($"DELETE FROM imports.batch_analyses WHERE batch_id IN ({Batches})");
+            await Run($"DELETE FROM imports.batch_assistant WHERE batch_id IN ({Batches})");
+            await Run($"DELETE FROM imports.batch_originals WHERE batch_id IN ({Batches})");
         }
 
         await Run("DELETE FROM imports.rows WHERE batch_id IN (SELECT id FROM imports.batches WHERE uploaded_by_user_id = ANY(@u))");

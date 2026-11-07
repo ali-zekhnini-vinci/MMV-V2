@@ -214,6 +214,12 @@ public static class AuditActions
     public const string LensOfferReactivated = "lens_offer.reactivated";
     public const string ImportProfileSaved = "import_profile.saved";
 
+    // CSV-IMPORT-AI-01 (assistant d'import, migration 0009).
+    public const string ImportAnalysisRequested = "import.analysis_requested";
+    public const string ImportAnalysisCancelled = "import.analysis_cancelled";
+    public const string ImportDecisionRecorded = "import.decision_recorded";
+    public const string ImportRulesOnlyChosen = "import.rules_only_chosen";
+
     public static IReadOnlyList<string> Phase05 { get; } =
     [
         ModelCreated, ModelUpdated, ModelArchived, ModelReactivated,
@@ -226,6 +232,7 @@ public static class AuditActions
         InventoryOpened, InventoryValidated, InventoryAbandoned,
         ImportUploaded, ImportChecked, ImportApplied, ImportCancelled,
         LensOfferCreated, LensOfferUpdated, LensOfferArchived, LensOfferReactivated, ImportProfileSaved,
+        ImportAnalysisRequested, ImportAnalysisCancelled, ImportDecisionRecorded, ImportRulesOnlyChosen,
     ];
 
     public static IReadOnlyList<string> All { get; } =
@@ -260,6 +267,9 @@ public static class AuditFieldPolicy
         "lineCount", "status", "kind",
         // UX-IA : moteur de correspondance d'un import (statut borné de l'assistant local, nom du modèle local).
         "assistantStatus", "assistantModel",
+        // CSV-IMPORT-AI-01 : traçabilité de l'assistant (parcours, destination, révision, tentative, modèle, types de décision,
+        // empreinte de l'original) — aucun montant, aucune valeur de cellule.
+        "pipeline", "target", "revision", "attempt", "analysisAttempt", "decisions", "model", "types", "originalSha256",
     };
 
     public static AuditChange Change(string field, string? oldValue, string? newValue) =>

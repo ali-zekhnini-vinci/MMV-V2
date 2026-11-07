@@ -11,7 +11,7 @@ import { ForbiddenView } from "../views/ForbiddenView.tsx";
 import { CatalogAccessContext, catalogAccess } from "./catalogAccess.ts";
 import { CatalogListView } from "./CatalogListView.tsx";
 import { RealtimeIndicator, StoreBadge, StoreProvider, ToastProvider } from "./CatalogUi.tsx";
-import { ImportView } from "./ImportView.tsx";
+import { ImportEntry } from "./importWizard/ImportEntry.tsx";
 import { InventoriesView, InventorySessionView } from "./InventoryViews.tsx";
 import { LensRangeWizard } from "./LensRangeWizard.tsx";
 import { LensReferencesView } from "./LensReferencesView.tsx";
@@ -67,7 +67,7 @@ export function ProductsModule({ permissions }: { permissions: readonly string[]
           <Route path="fournisseurs/:id/modifier" element={access.suppliersWrite ? <SupplierEditView /> : <ForbiddenView reason="Droit suppliers.write requis." />} />
           <Route path="verres" element={<LensReferencesView />} />
           <Route path="verres/nouvelle" element={access.catalogConfigure && access.suppliersRead ? <LensRangeWizard /> : <ForbiddenView reason="Droits catalog.configure et suppliers.read requis." />} />
-          <Route path="import" element={access.catalogImport ? <ImportView /> : <ForbiddenView reason="Droit catalog.import requis." />} />
+          <Route path="import" element={access.catalogImport ? <ImportEntry /> : <ForbiddenView reason="Droit catalog.import requis." />} />
         </Routes>
       </ModuleFrame>
     </CatalogAccessContext.Provider>

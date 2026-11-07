@@ -25,6 +25,18 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
     /// <summary>Inventaire 0001–0008 relevé sur cluster jetable (revue SQL des corrections, COR-05-04 / COR-05-05).</summary>
     public const string CorrectionsSnapshotRelativePath = "docs/phase/05/sql/0008_CatalogCorrections.schema-inventory.txt";
 
+    /// <summary>Inventaire 0001–0009 (assistant d'import, CSV-IMPORT-AI-01), relevé sur le cluster jetable.</summary>
+    public const string AssistantSnapshotRelativePath = "docs/phase/05/sql/0009_CsvImportAssistant.schema-inventory.txt";
+
+    /// <summary>
+    /// Inventaire 0001–0009 tel que produit par le script APPROUVÉ (LF, tel que Git le stocke) — ajout post-audit du
+    /// 06/11/2026 : l'inventaire de revue ci-dessus porte l'empreinte des 4 corps de fonctions de garde en CRLF (relevé sur
+    /// une base bâtie avant la mise en LF des scripts), comme l'inventaire de revue 0007 (O-05-13).
+    /// </summary>
+    public const string AssistantAppliedSnapshotRelativePath = "docs/phase/05/sql/0009_CsvImportAssistant.schema-inventory.applied.txt";
+
+    public const string AssistantScriptRelativePath = "docs/phase/05/sql/0009_CsvImportAssistant.idempotent.sql";
+
     public const string ReviewedSnapshotRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.schema-inventory.txt";
 
     public const string ApprovedScriptRelativePath = "docs/phase/05/sql/0007_CatalogStockModule.idempotent.sql";
@@ -46,7 +58,8 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
 
         var actual = string.Join("\n", await InventoryAsync(connection)) + "\n";
         // 0008 (corrections) appliquée à la cible : instantané 0001–0008 ; sinon instantané 0007 (inchangé).
-        var snapshot = Phase05Target.HasCorrections ? CorrectionsSnapshotRelativePath : SnapshotRelativePath;
+        // 0009 appliquée : instantané 0001–0009 (les instantanés 0007 et 0008 restent inchangés).
+        var snapshot = Phase05Target.HasAssistant ? AssistantAppliedSnapshotRelativePath : Phase05Target.HasCorrections ? CorrectionsSnapshotRelativePath : SnapshotRelativePath;
         var path = Path.Combine(FindRepositoryRoot(), snapshot);
         if (Environment.GetEnvironmentVariable("MMV_UPDATE_PHASE05_SCHEMA") == "1")
         {
@@ -94,6 +107,43 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
         }
 
         Assert.Equal(8, differing);
+    }
+
+    /// <summary>
+    /// Sans connexion (post-audit 06/11/2026) : l'inventaire 0009 appliqué et l'inventaire 0009 de revue ne diffèrent que
+    /// par les 4 fonctions de garde de 0009 ; empreinte LF du corps <c>$fn$…$fn$</c> du script approuvé d'un côté, CRLF
+    /// de l'autre. Le script approuvé n'est pas modifié.
+    /// </summary>
+    [Fact]
+    public void AssistantReviewedInventory_DiffersOnlyByTheGuardFunctionBodiesLineEndings()
+    {
+        var root = FindRepositoryRoot();
+        var applied = File.ReadAllLines(Path.Combine(root, AssistantAppliedSnapshotRelativePath));
+        var reviewed = File.ReadAllLines(Path.Combine(root, AssistantSnapshotRelativePath));
+        var script = File.ReadAllText(Path.Combine(root, AssistantScriptRelativePath)).ReplaceLineEndings("\n");
+        var bodies = Regex.Matches(script, @"CREATE FUNCTION (\S+)\(\) RETURNS trigger LANGUAGE plpgsql AS \$fn\$(.*?)\$fn\$", RegexOptions.Singleline)
+            .ToDictionary(m => m.Groups[1].Value, m => m.Groups[2].Value);
+#pragma warning disable CA5351
+        static string Md5(string text) => Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(text)));
+#pragma warning restore CA5351
+
+        Assert.Equal(reviewed.Length, applied.Length);
+        Assert.Equal(4, bodies.Count);
+        var differing = new List<string>();
+        for (var i = 0; i < applied.Length; i++)
+        {
+            if (applied[i] == reviewed[i])
+            {
+                continue;
+            }
+
+            var name = applied[i].Split(' ')[0];
+            differing.Add(name);
+            Assert.Equal($"{name} returns=trigger md5={Md5(bodies[name])}", applied[i]);
+            Assert.Equal($"{name} returns=trigger md5={Md5(bodies[name].Replace("\n", "\r\n"))}", reviewed[i]);
+        }
+
+        Assert.Equal(bodies.Keys.Order(), differing.Order());
     }
 
     internal static async Task<List<string>> InventoryAsync(NpgsqlConnection connection)
@@ -157,7 +207,7 @@ public sealed class Phase05SchemaTests(ITestOutputHelper output)
         return lines;
     }
 
-    private static string FindRepositoryRoot()
+    internal static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "MMV.slnx")))

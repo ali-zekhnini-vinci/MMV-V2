@@ -25,6 +25,17 @@ internal sealed class LensOfferStore(MmvDbContext context) : ILensOfferStore
     public async Task<IReadOnlyList<LensOfferRevision>> RevisionsAsync(Guid offerId, CancellationToken cancellationToken) =>
         await context.LensOfferRevisions.AsNoTracking().Where(r => r.OfferId == offerId).OrderByDescending(r => r.Revision).Take(50).ToListAsync(cancellationToken);
 
+    public async Task LockAsync(IReadOnlyCollection<Guid> offerIds, CancellationToken cancellationToken)
+    {
+        if (offerIds.Count == 0)
+        {
+            return;
+        }
+
+        var ids = offerIds.Distinct().ToArray();
+        await context.Database.SqlQuery<Guid>($"SELECT id AS \"Value\" FROM catalog.lens_offers WHERE id = ANY({ids}) ORDER BY id FOR NO KEY UPDATE").ToListAsync(cancellationToken);
+    }
+
     public void Add(LensOffer offer) => context.LensOffers.Add(offer);
 
     public void Add(LensOfferRevision revision) => context.LensOfferRevisions.Add(revision);

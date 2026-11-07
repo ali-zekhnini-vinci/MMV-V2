@@ -62,6 +62,7 @@ internal static class CatalogStockModel
         ConfigureInventory(modelBuilder);
         ConfigureImports(modelBuilder);
         ConfigureCorrections(modelBuilder);
+        AssistantModel.Configure(modelBuilder);
         ApplySnakeCase(modelBuilder);
     }
 

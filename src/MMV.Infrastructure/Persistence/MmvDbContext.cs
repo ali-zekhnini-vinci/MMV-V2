@@ -90,6 +90,17 @@ public sealed class MmvDbContext(DbContextOptions<MmvDbContext> options) : DbCon
 
     public DbSet<LensOfferRevision> LensOfferRevisions => Set<LensOfferRevision>();
 
+    // CSV-IMPORT-AI-01 (migration 0009) : assistant d'import.
+    public DbSet<BatchOriginal> BatchOriginals => Set<BatchOriginal>();
+
+    public DbSet<BatchAssistant> BatchAssistants => Set<BatchAssistant>();
+
+    public DbSet<BatchAnalysis> BatchAnalyses => Set<BatchAnalysis>();
+
+    public DbSet<BatchAnalysisEvent> BatchAnalysisEvents => Set<BatchAnalysisEvent>();
+
+    public DbSet<BatchDecision> BatchDecisions => Set<BatchDecision>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         IdentityModel.Configure(modelBuilder);

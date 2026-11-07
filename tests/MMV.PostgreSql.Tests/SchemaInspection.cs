@@ -50,6 +50,9 @@ public sealed record SchemaState(
     /// <summary>Corrections de la Phase 05 (COR-05-04 / COR-05-05) : objets dans les schémas de la Phase 05 uniquement.</summary>
     public const string CatalogCorrectionsMigrationId = "20261102183203_CatalogCorrections";
 
+    /// <summary>CSV-IMPORT-AI-01 (G05-SQL-0009, préparée, NON appliquée aux bases du propriétaire) : schéma imports seulement.</summary>
+    public const string CsvImportAssistantMigrationId = "20261106154105_CsvImportAssistant";
+
     /// <summary>Schémas créés par 0007_CatalogStockModule (Phase 05) ; leur inventaire exact est contrôlé par <see cref="Phase05Schema"/>.</summary>
     public static readonly string[] Phase05Schemas = ["catalog", "imports", "org", "pricing", "stock"];
 
@@ -61,7 +64,7 @@ public sealed record SchemaState(
     public static readonly string[] AllMigrationIds =
     [
         BaselineMigrationId, AuthIdentityMigrationId, ClientsModuleMigrationId, AppointmentsModuleMigrationId, AuditJournalMigrationId, OpticalModuleMigrationId,
-        CatalogStockModuleMigrationId, CatalogCorrectionsMigrationId,
+        CatalogStockModuleMigrationId, CatalogCorrectionsMigrationId, CsvImportAssistantMigrationId,
     ];
 
     /// <summary>
@@ -105,7 +108,7 @@ public sealed record SchemaState(
             Routines = [.. Routines.Where(r => !InPhase05(r))],
             Decorations = [.. Decorations.Where(d => !InPhase05(d))],
             HistoryRows = [.. HistoryRows.Where(h => !h.StartsWith(CatalogStockModuleMigrationId, StringComparison.Ordinal)
-                && !h.StartsWith(CatalogCorrectionsMigrationId, StringComparison.Ordinal))],
+                && !h.StartsWith(CatalogCorrectionsMigrationId, StringComparison.Ordinal) && !h.StartsWith(CsvImportAssistantMigrationId, StringComparison.Ordinal))],
         };
         differences.AddRange(previous.OpticalModuleDifferences(role));
         return differences;

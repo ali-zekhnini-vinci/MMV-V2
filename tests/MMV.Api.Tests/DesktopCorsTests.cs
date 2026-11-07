@@ -53,6 +53,25 @@ public sealed class DesktopCorsTests(WebApplicationFactory<Program> factory)
         Assert.DoesNotContain(allowed, m => m.Contains("POST", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// GATE D (07/11/2026, recette native) : l'annulation d'une analyse de l'assistant d'import passe par POST, admis par la
+    /// politique du poste ; DELETE n'y est jamais admis (le navigateur de Tauri refusait l'ancien appel avant le serveur).
+    /// </summary>
+    [Fact]
+    public async Task Preflight_AssistantAnalysisCancel_AllowsPost_NeverDelete()
+    {
+        using var client = factory.CreateClient();
+        var batch = Guid.NewGuid();
+
+        using var post = await client.SendAsync(Preflight($"/api/imports/{batch}/assistant/analysis/cancel", "http://tauri.localhost", "POST"));
+        using var delete = await client.SendAsync(Preflight($"/api/imports/{batch}/assistant/analysis", "http://tauri.localhost", "DELETE"));
+
+        Assert.Equal("http://tauri.localhost", Assert.Single(post.Headers.GetValues("Access-Control-Allow-Origin")));
+        Assert.Contains(post.Headers.GetValues("Access-Control-Allow-Methods"), m => m.Contains("POST", StringComparison.OrdinalIgnoreCase));
+        var allowed = delete.Headers.TryGetValues("Access-Control-Allow-Methods", out var methods) ? methods : [];
+        Assert.DoesNotContain(allowed, m => m.Contains("DELETE", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Fact]
     public async Task SimpleGet_FromAllowedOrigin_ReturnsAllowOrigin()
     {

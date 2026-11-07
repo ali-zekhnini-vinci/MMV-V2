@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using MMV.Application.Appointments;
 using MMV.Application.Audit;
 using MMV.Application.Catalog;
+using MMV.Application.Catalog.Assisted;
 using MMV.Infrastructure.Catalog;
 using MMV.Application.Clients;
 using MMV.Application.Identity;
@@ -97,6 +98,9 @@ public static class DependencyInjection
         services.TryAddScoped<StockService>();
         services.TryAddScoped<InventoryService>();
         services.TryAddScoped<ImportService>();
+        // CSV-IMPORT-AI-01 (0009) : persistance de l'assistant d'import, planificateur du référentiel des verres.
+        services.TryAddScoped<IImportAssistantStore, ImportAssistantStore>();
+        services.TryAddScoped<AssistedLensPlanner>();
         services.TryAddScoped<ICatalogQuery, CatalogQuery>();
         services.TryAddScoped<IStoreAdministrationStore, StoreAdministrationStore>();
         services.TryAddScoped<StoreAdministrationService>();

@@ -20,6 +20,13 @@ public interface ILensOfferStore
 
     Task<IReadOnlyList<LensOfferRevision>> RevisionsAsync(Guid offerId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// GATE D : verrouille ces offres (<c>FOR NO KEY UPDATE</c>, ordre croissant des identifiants) dans la transaction en
+    /// cours, avant la relecture du plan d'import : une modification concurrente attend la fin de l'import, ou l'import
+    /// relit la valeur qu'elle a validée.
+    /// </summary>
+    Task LockAsync(IReadOnlyCollection<Guid> offerIds, CancellationToken cancellationToken);
+
     void Add(LensOffer offer);
 
     void Add(LensOfferRevision revision);
@@ -239,6 +246,10 @@ public sealed class LensOfferService(ICatalogUnitOfWork unitOfWork, ICatalogStor
     }
 
     // ---------- validation ----------
+
+    /// <summary>Validation SANS écriture d'une saisie d'offre (import du référentiel des verres, contrôle à blanc).</summary>
+    public Task<LensOfferDetails?> ValidateInputAsync(LensOfferInput input, Dictionary<string, string[]> errors, CancellationToken cancellationToken) =>
+        ValidateAsync(input, errors, cancellationToken);
 
     private async Task<LensOfferDetails?> ValidateAsync(LensOfferInput input, Dictionary<string, string[]> errors, CancellationToken cancellationToken)
     {
@@ -464,7 +475,13 @@ public sealed class LensOfferService(ICatalogUnitOfWork unitOfWork, ICatalogStor
         Check("indexId", before.IndexId, after.IndexId);
         Check("production", before.Production, after.Production);
         Check("leadTimeDays", before.LeadTimeDays, after.LeadTimeDays);
-        Check("priceHt", (before.PriceHt, before.PriceCurrency), (after.PriceHt, after.PriceCurrency));
+        // Paires comparées champ par champ : un ValueTuple se sérialise en « {} » (champs ignorés par System.Text.Json),
+        // si bien qu'un changement du seul prix ou de la seule validité passait inaperçu (correction post-audit 06/11/2026).
+        if (before.PriceHt != after.PriceHt || !string.Equals(before.PriceCurrency, after.PriceCurrency, StringComparison.Ordinal))
+        {
+            fields.Add("priceHt");
+        }
+
         Check("diameters", before.Diameters, after.Diameters);
         Check("sphere", before.Sphere, after.Sphere);
         Check("cylinder", before.Cylinder, after.Cylinder);
@@ -473,7 +490,11 @@ public sealed class LensOfferService(ICatalogUnitOfWork unitOfWork, ICatalogStor
         Check("rules", before.Rules, after.Rules);
         Check("rulesComplete", before.RulesComplete, after.RulesComplete);
         Check("sourceReference", before.SourceReference, after.SourceReference);
-        Check("validity", (before.ValidFrom, before.ValidUntil), (after.ValidFrom, after.ValidUntil));
+        if (before.ValidFrom != after.ValidFrom || before.ValidUntil != after.ValidUntil)
+        {
+            fields.Add("validity");
+        }
+
         Check("notes", before.Notes, after.Notes);
         return fields;
     }

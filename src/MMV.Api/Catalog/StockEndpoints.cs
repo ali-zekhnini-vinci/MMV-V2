@@ -5,6 +5,7 @@ using MMV.Api.Clients;
 using MMV.Api.Installation;
 using MMV.Api.Realtime;
 using MMV.Application.Catalog;
+using MMV.Application.Catalog.Assisted;
 using MMV.Domain.CsvImport;
 using MMV.Domain.Identity;
 using MMV.Domain.Pricing;
@@ -102,7 +103,10 @@ internal sealed record ImportPreviewResponse(
 internal sealed record ImportBatchResponse(
     Guid Id, string Kind, Guid? StoreId, string FileName, string FileSha256, int RowCount, string Status, int? ErrorCount, bool ContainsCosts, bool ContainsManualPrices,
     DateTimeOffset UploadedAtUtc, string UploadedBy, DateTimeOffset? CheckedAtUtc, DateTimeOffset? AppliedAtUtc, IReadOnlyDictionary<string, string> Mapping, uint Version,
-    Guid? SupplierId);
+    Guid? SupplierId, string? Pipeline = null, ImportAnalysisSummaryResponse? Analysis = null);
+
+/// <summary>Colonne « Analyse » de l'historique (additive) : statut et modèle de la dernière tentative du nouveau parcours.</summary>
+internal sealed record ImportAnalysisSummaryResponse(string Status, string? Model, int Attempt);
 
 internal sealed record ImportRowResponse(int LineNo, string Outcome, IReadOnlyList<ImportError> Errors, IReadOnlyDictionary<string, string>? Values);
 
@@ -153,6 +157,8 @@ internal static class StockEndpoints
         imports.MapPost("/{id:guid}/cancel", CancelAsync);
         imports.MapGet("/profiles/{supplierId:guid}/{kind}", GetProfileAsync).RequireAuthorization(P(Permissions.SuppliersRead));
         imports.MapPut("/profiles/{supplierId:guid}/{kind}", SaveProfileAsync).RequireAuthorization(P(Permissions.SuppliersRead));
+        // CSV-IMPORT-AI-01 : routes additives du nouvel assistant (mêmes filtres et droits que le groupe).
+        AssistedImportEndpoints.Map(imports);
     }
 
     // ---------- soldes, alertes, seuils ----------
@@ -564,8 +570,20 @@ internal static class StockEndpoints
         batch.UploadedAtUtc, uploadedBy, batch.CheckedAtUtc, batch.AppliedAtUtc,
         JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [], batch.Version, batch.SupplierId);
 
-    private static async Task<IResult> ListImportsAsync(HttpContext context, ICatalogReadStore reads, CancellationToken cancellationToken) =>
-        Results.Ok((await reads.ListImportsAsync(50, cancellationToken)).Where(b => Visible(context, b.Batch)).Select(b => ToBatch(b.Batch, b.UploadedByName)));
+    private static async Task<IResult> ListImportsAsync(HttpContext context, ICatalogReadStore reads, AssistedImportOptions options, CancellationToken cancellationToken)
+    {
+        var batches = (await reads.ListImportsAsync(50, cancellationToken)).Where(b => Visible(context, b.Batch)).ToList();
+        // Tables de 0009 lues seulement si le nouvel écran est activé (bases sans 0009 : liste inchangée).
+        var assisted = batches.Where(b => ImportService.IsAssistedBatch(b.Batch)).Select(b => b.Batch.Id).ToList();
+        var analyses = options.WizardEnabled && assisted.Count > 0
+            ? await context.RequestServices.GetRequiredService<IImportAssistantStore>().LatestAnalysesAsync(assisted, cancellationToken)
+            : new Dictionary<Guid, BatchAnalysis>();
+        return Results.Ok(batches.Select(b => ToBatch(b.Batch, b.UploadedByName) with
+        {
+            Pipeline = ImportService.IsAssistedBatch(b.Batch) ? AssistantPipelines.AssistantV2 : null,
+            Analysis = analyses.TryGetValue(b.Batch.Id, out var a) ? new ImportAnalysisSummaryResponse(a.Status, a.Model, a.Attempt) : null,
+        }));
+    }
 
     private static async Task<IResult> UploadAsync(HttpRequest request, ClaimsPrincipal principal, ImportService service, CancellationToken cancellationToken)
     {

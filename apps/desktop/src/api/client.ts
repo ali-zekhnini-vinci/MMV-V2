@@ -91,7 +91,7 @@ export function apiError(kind: ApiErrorKind, status?: number): ApiError {
 }
 
 export interface RequestOptions<T> {
-  method?: "GET" | "POST" | "PUT";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   /** Corps JSON (POST). */
   body?: unknown;
   /** Jeton de session opaque, envoyé en `Authorization: Bearer`. */

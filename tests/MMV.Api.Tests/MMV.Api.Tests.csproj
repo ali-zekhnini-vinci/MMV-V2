@@ -15,4 +15,8 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- CSV-IMPORT-AI-01 : corpus synthétique des bancs Lot A / B0 (octets exacts) et consigne v2 du banc B0. -->
+    <None Include="Catalog\Assisted\Fixtures\*.csv;Catalog\Assisted\Fixtures\*.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

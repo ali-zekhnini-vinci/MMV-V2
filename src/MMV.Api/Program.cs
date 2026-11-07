@@ -23,6 +23,8 @@ builder.Services.AddAppointmentSettings(builder.Configuration);
 // Un serveur local = un magasin (COR-05-01) : Installation:StoreCode, résolu à la première requête magasin.
 builder.Services.AddInstallation(builder.Configuration);
 builder.Services.AddImportAssistant();
+// CSV-IMPORT-AI-01 : interpréteur de catalogue (qwen3.5:4b), file d'analyse, assistant en cinq étapes (désactivé par défaut).
+builder.Services.AddCatalogInterpreter();
 // Temps réel (COR-05-02) : hub SignalR /hubs/changes, notifications après écriture confirmée.
 builder.Services.AddRealtime();
 // Journal d'audit (03-D2) : session et corrélation de la requête, enregistrés avant MMV.Infrastructure.

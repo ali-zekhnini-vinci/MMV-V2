@@ -45,7 +45,7 @@ public sealed record ImportSummary(Guid BatchId, string Status, int Total, int C
 /// indisponible, en échec ou hors schéma : le moteur déterministe seul s'applique, sans erreur pour l'utilisateur.
 /// Modèle d'import du fournisseur APPRIS à chaque application réussie (même transaction).
 /// </summary>
-public sealed class ImportService(
+public sealed partial class ImportService(
     ICatalogUnitOfWork unitOfWork, ICatalogStore store, IPricingStore pricing, IImportStore imports, IImportProfileStore profiles, TimeProvider clock, IAuditRecorder audit,
     IImportMappingAssistant? assistant = null)
 {
@@ -323,8 +323,14 @@ public sealed class ImportService(
             return Outcome.Conflict<ImportSummary>("import_closed");
         }
 
+        if (IsAssistedBatch(batch))
+        {
+            // Lot du nouveau parcours : contrôlé et appliqué par ses routes (/api/imports/{id}/assistant/…) seulement.
+            return Outcome.Conflict<ImportSummary>("pipeline_mismatch");
+        }
+
         var table = CsvTable.Parse(batch.Content, ImportBatch.MaxRows).Table!;
-        var effective = mapping ?? JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [];
+        var effective =mapping ?? JsonSerializer.Deserialize<Dictionary<string, string>>(batch.MappingJson, Json) ?? [];
         if (CheckMapping(batch.Kind, effective, table.Headers) is { Count: > 0 } mappingErrors)
         {
             return Outcome.Invalid<ImportSummary>(mappingErrors);
@@ -373,6 +379,11 @@ public sealed class ImportService(
         if (batch.Status != ImportStatuses.Checked)
         {
             return batch.Status == ImportStatuses.Uploaded ? Outcome.Refuse<ImportSummary>("import_not_checked") : Outcome.Conflict<ImportSummary>("import_closed");
+        }
+
+        if (IsAssistedBatch(batch))
+        {
+            return Outcome.Conflict<ImportSummary>("pipeline_mismatch");
         }
 
         if ((batch.ContainsCosts && !actor.Has(Permissions.CostsWrite)) || (batch.ContainsManualPrices && !actor.Has(Permissions.PricingManual)))
@@ -759,8 +770,17 @@ public sealed class ImportService(
         return new(plans, actions, costs, manual);
     }
 
-    private async Task<Plan> PlanCatalogAsync(Supplier? fileSupplier, List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken)
+    /// <summary>
+    /// Plan du catalogue. Parcours actuel : inchangé. Nouveau parcours (CSV-IMPORT-AI-01) : clés préfixées SEULEMENT
+    /// produites par <c>CatalogMaterializer</c> — attributs de variante <c>attr:</c>, attributs de modèle <c>modelattr:</c>
+    /// (modèle créé), montants confirmés <c>price:</c> écrits au tarif du magasin <paramref name="priceStoreId"/>.
+    /// </summary>
+    private async Task<Plan> PlanCatalogAsync(
+        Supplier? fileSupplier, List<(int LineNo, Dictionary<string, string> Values)> rows, CancellationToken cancellationToken, Guid? priceStoreId = null)
     {
+        var shop = priceStoreId is { } psid ? await store.GetStoreAsync(psid, cancellationToken) : null;
+        var costs = false;
+        var manual = false;
         var variants = (await imports.VariantsBySkuAsync([.. rows.Select(r => CatalogKeys.Normalize(r.Values.GetValueOrDefault("sku") ?? string.Empty))], cancellationToken))
             .ToDictionary(StringComparer.Ordinal);
         // Lignes sans SKU (COR-05-04) : rapprochement par référence fournisseur (fournisseur du fichier ou de la ligne), puis par
@@ -856,10 +876,19 @@ public sealed class ImportService(
                 errors.Add(new("color", CatalogFieldErrors.NotAllowed));
             }
 
+            // Nouveau parcours : attributs de famille (valeurs dérivées des cellules), contrôlés par CatalogInputValidator.
+            foreach (var (key, value) in values.Where(v => v.Key.StartsWith("attr:", StringComparison.Ordinal)))
+            {
+                attributeInput ??= new Dictionary<string, string?>(StringComparer.Ordinal);
+                attributeInput[key[5..]] = value;
+            }
+
+            var modelAttributes = values.Where(v => v.Key.StartsWith("modelattr:", StringComparison.Ordinal)).ToDictionary(v => v.Key[10..], v => (string?)v.Value, StringComparer.Ordinal);
             var modelDetails = CatalogInputValidator.Model(
                 new ModelInput(familyCode ?? values.GetValueOrDefault("familyCode"), values.GetValueOrDefault("brand"), values.GetValueOrDefault("modelName"),
-                    values.GetValueOrDefault("modelDescription"), rangeId, null),
+                    values.GetValueOrDefault("modelDescription"), rangeId, modelAttributes.Count > 0 ? modelAttributes : null),
                 fieldErrors);
+            var (purchase, sale) = AssistedPrices(values, shop, priceStoreId, errors);
             var policy = Policy(values.GetValueOrDefault("stockPolicy"));
             var (variantDetails, variantPolicy) = family is null
                 ? (null, null)
@@ -962,13 +991,31 @@ public sealed class ImportService(
                     mergedAttributes[attribute] = value;
                 }
 
-                var merged = variantDetails with { Attributes = mergedAttributes };
-                var same = existing.Snapshot().SameAs(merged);
+                // GATE D (07/11/2026, décision « aucun effacement d'une valeur existante lorsqu'une colonne est absente ») :
+                // référence fabricant, code-barres et traitements que le fichier ne fournit pas conservent la valeur de la fiche
+                // (avant correction, une colonne absente effaçait la valeur existante lors d'une mise à jour).
+                var current = existing.Snapshot();
+                var merged = variantDetails with
+                {
+                    Attributes = mergedAttributes,
+                    ManufacturerReference = values.ContainsKey("manufacturerReference") ? variantDetails.ManufacturerReference : current.ManufacturerReference,
+                    Barcode = values.ContainsKey("barcode") ? variantDetails.Barcode : current.Barcode,
+                    TreatmentIds = values.ContainsKey("lensTreatments") ? variantDetails.TreatmentIds : current.TreatmentIds,
+                };
+                var same = current.SameAs(merged);
                 // Rattachement inchangé (même fournisseur, même référence, même rôle) : la ligne reste « inchangée ».
                 var linkChange = supplier is not null && !(await store.LinksForVariantAsync(existing.Id, cancellationToken)).Any(l =>
                     l.SupplierId == supplier.Id && !l.IsRemoved && l.SupplierReference == (supplierReference ?? l.SupplierReference) && (primary is null || l.IsPrimary == primary));
-                plans.Add(new(lineNo, values, same && !linkChange ? ImportOutcomes.Unchanged : ImportOutcomes.Update, [], skuKey));
+                var priceChange = shop is not null && (purchase is not null || sale is not null) && await AssistedPriceDiffersAsync(existing.Id, shop.Id, purchase, sale, cancellationToken);
+                plans.Add(new(lineNo, values, same && !linkChange && !priceChange ? ImportOutcomes.Unchanged : ImportOutcomes.Update, [], skuKey));
                 var existingId = existing.Id;
+                if (priceChange)
+                {
+                    costs |= purchase is not null;
+                    manual |= sale is not null;
+                    actions.Add(AssistedPriceAction(existingId, shop!, purchase, sale));
+                }
+
                 if (!same)
                 {
                     actions.Add(async (userId, now, requestId, ct) =>
@@ -999,6 +1046,9 @@ public sealed class ImportService(
             var generate = generatedSku;
             var familyForSku = familyCode;
             var policyValue = variantPolicy!.Value;
+            var priceShop = shop is not null && (purchase is not null || sale is not null) ? shop : null;
+            costs |= priceShop is not null && purchase is not null;
+            manual |= priceShop is not null && sale is not null;
             actions.Add(async (userId, now, requestId, ct) =>
             {
                 Guid modelId;
@@ -1046,10 +1096,22 @@ public sealed class ImportService(
 
                     await LinkAction(variant.Id, sid, supplierReference, primary)(userId, now, requestId, ct);
                 }
+
+                if (priceShop is not null)
+                {
+                    // Tarif du magasin : la variante doit exister avant son prix (même transaction).
+                    var saved = await unitOfWork.SaveAsync(ct);
+                    if (!saved.Saved)
+                    {
+                        throw new InvalidOperationException("Import : enregistrement intermédiaire refusé.");
+                    }
+
+                    await AssistedPriceAction(variant.Id, priceShop, purchase, sale)(userId, now, requestId, ct);
+                }
             });
         }
 
-        return new(plans, actions, false, false);
+        return new(plans, actions, costs, manual);
     }
 
     /// <summary>
