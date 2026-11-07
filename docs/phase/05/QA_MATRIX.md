@@ -342,3 +342,5 @@ Rapport [`RAPPORT_CLOTURE_PHASE05.md`](RAPPORT_CLOTURE_PHASE05.md) § 4 ; journa
 | CSV-N2 / N3 / N4, non-régression native | deux machines, catalogues réels anonymisés, Échap natif, modules antérieurs en natif | — | **NOT_TESTED → DEFERRED** (BL-05-14) |
 | UX-PERF | performances de Qwen sur le matériel des magasins | — | **NOT_TESTED → DEFERRED** (BL-05-U2) |
 | UX-OWNER | validation UX de l'assistant CSV par le propriétaire | essai du propriétaire, 07/11/2026 | **REFUSÉE** (`OWNER_UX_REJECTED`) |
+| CL-QA-07 | suites dans un worktree extrait du commit `db0467c` : build 0/0, Api 685/685, Maintenance 50/50, PostgreSQL Phase 05 38/38 (×3) | [post-consolidation](evidence/cloture/CLOTURE_post_consolidation_20261107.txt) | PASS — avec 1 échec PostgreSQL intermittent non caractérisé, non reproduit (réserve) |
+| CL-QA-08 | manifestes SHA-256 sur le contenu commité : 0009 7/7 et 2/2, corpus 35/35 ; 0007 / 0008 écarts attendus préexistants | idem | PASS |

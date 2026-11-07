@@ -91,6 +91,14 @@ Journal : [`evidence/cloture/CLOTURE_suites_20261107.txt`](evidence/cloture/CLOT
 
 Les 23 fichiers de code, de tests et SQL de l'archive GATE D (arbre `be60f20f3dca760b11a28bd132aa68e71439f904`) ont le **même blob** dans l'arbre de livraison. Fichiers de code modifiés depuis l'archive GATE D : `tests/MMV.Api.Tests/Catalog/Assisted/CsvAssistantDisabledGateTests.cs` (nouveau, test seulement) ; `src/MMV.Api/appsettings.json` (horodatage seul : contenu identique, blob `014e990`, à celui de l'archive d'implémentation `1d5cfd4e…`, `WizardEnabled: false`).
 
+### 4.4 Après consolidation Git
+
+Journal : [`evidence/cloture/CLOTURE_post_consolidation_20261107.txt`](evidence/cloture/CLOTURE_post_consolidation_20261107.txt).
+
+- Worktree temporaire extrait du commit `db0467c` (retiré ensuite) : build 0/0, **Api 685/685**, **Maintenance 50/50**, **PostgreSQL Phase 05 38/38** sur 3 exécutions consécutives — le commit est autonome.
+- Incidents consignés : une première exécution avec les sorties de build **hors** du worktree a échoué (Api 11, PostgreSQL 3) parce que des tests existants cherchent `MMV.slnx` depuis le dossier de sortie (artefact d'environnement, résolu en plaçant les sorties dans le worktree) ; **un échec PostgreSQL intermittent non caractérisé** (journal détaillé non conservé) n'a pas été reproduit sur les trois exécutions suivantes — réserve non bloquante, à surveiller.
+- Manifestes sur le contenu **commité** : 0009 (7/7 et 2/2) et corpus CSV (35/35) valides ; écarts de 0007 et 0008 attendus et préexistants (fichiers source vivants modifiés par les migrations suivantes).
+
 ## 5. Contrôles non réalisés — `DEFERRED` (jamais PASS)
 
 | Contrôle | État | Backlog |
@@ -149,7 +157,7 @@ Revérifié le 07/11/2026 en **lecture seule** (`default_transaction_read_only=o
 ## 9. État Git
 
 - **Précontrôle** : `spike/csv-import-ollama-benchmark` et `feat/phase-05-catalogue-stock` pointaient sur le **même** commit `55f021d` ; `main` = `origin/main` = `0a83a57`, ancêtre (19 commits Phase 05, 0 en retard) ; index vide ; tout le lot CSVAI (06–07/11) n'existait que dans l'arbre de travail. Aucune divergence, aucun conflit.
-- **Consolidation** : passage sur `feat/phase-05-catalogue-stock` (même commit : arbre de travail et fichiers personnels inchangés), puis deux commits **locaux** : (1) `3528137f70c6a40d313baee31a06d281aef16904` — code, tests, migration 0009 et poste (79 fichiers sous `src/`, `tests/`, `apps/desktop/`) ; (2) documentation, scripts SQL 0009, preuves CSVAI et de clôture, mandats (`docs/`, `prompts/`, `README.md`) — son empreinte figure dans le rapport final du mandat et dans l'archive de clôture (un commit ne peut citer sa propre empreinte).
+- **Consolidation** : passage sur `feat/phase-05-catalogue-stock` (même commit : arbre de travail et fichiers personnels inchangés), puis deux commits **locaux** : (1) `3528137f70c6a40d313baee31a06d281aef16904` — code, tests, migration 0009 et poste (79 fichiers sous `src/`, `tests/`, `apps/desktop/`) ; (2) `db0467c88d90104decf55ff390c075e4054e4441` — documentation, scripts SQL 0009, preuves CSVAI et de clôture, mandats (365 fichiers sous `docs/`, `prompts/`, `README.md`) ; (3) preuves post-consolidation (§ 4.4) et mise à jour de ce rapport — son empreinte figure dans le rapport final du mandat et dans l'archive de clôture (un commit ne peut citer sa propre empreinte).
 - **Jamais indexés** : `apps/desktop/.env.development` du propriétaire (SHA-256 `a215e1f0…d2e4e`, inchangé), `.claude/`, `.serena/`, archives `*.zip`, `references/phase02..04/`, pack `docs/phase/04/` du propriétaire (O-05-07), `apps/desktop/tsconfig.tsbuildinfo`.
 - Aucun `reset --hard`, `clean`, `stash`, push, PR ni merge ; `main` non modifiée. La branche `spike/csv-import-ollama-benchmark` reste en place sur `55f021d` (sans commit propre) : la supprimer après fusion relève du propriétaire.
 - Contrôle de secrets avant commit : PASS ([précontrôle](evidence/cloture/CLOTURE_precontrole_20261107.txt)).

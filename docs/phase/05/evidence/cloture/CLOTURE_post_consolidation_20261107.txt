@@ -1,0 +1,32 @@
+# Clôture Phase 05 — contrôles APRÈS consolidation Git (07/11/2026)
+# Commits locaux sur feat/phase-05-catalogue-stock :
+#   3528137f70c6a40d313baee31a06d281aef16904  feat — code, tests, migration 0009, poste (79 fichiers)
+#   db0467c88d90104decf55ff390c075e4054e4441  docs — documentation, SQL 0009, preuves, mandats (365 fichiers)
+# Arbre de travail vs HEAD (db0467c) : seule différence apps/desktop/.env.development (propriétaire, jamais indexé).
+
+## 1. Suites dans un worktree temporaire extrait du commit db0467c (git worktree add --detach ; retiré ensuite)
+# Preuve que le commit est autonome (aucun fichier non suivi requis).
+dotnet build MMV.slnx                         : 0 avertissement, 0 erreur
+MMV.Api.Tests                                 : PASS 685/685
+MMV.Maintenance.Tests                         : PASS 50/50
+MMV.PostgreSql.Tests Stage=Phase05 (jetable)  : PASS 38/38 (+2 NotExecuted par conception) sur 3 exécutions consécutives
+# Incidents consignés :
+# - 1re exécution avec les sorties de build HORS du worktree (--artifacts-path dans le dossier temporaire) : Api 11 échecs, PostgreSQL 3 échecs.
+#   Cause : des tests existants (contrats OpenAPI, règles de références, CsvAssistantDisabledGateTests, inventaires de schéma) remontent
+#   depuis le dossier de sortie jusqu'à MMV.slnx. Relancés avec les sorties DANS le worktree : Api 685/685. Artefact d'environnement, pas un défaut du commit.
+# - 2e exécution PostgreSQL (sorties dans le worktree) : 1 échec INTERMITTENT non caractérisé (journal détaillé non conservé), puis
+#   3 exécutions consécutives 38/38 dont 2 avec journal TRX (0 échec). Classé : réserve non bloquante, à surveiller (tests de concurrence
+#   connus pour leur sensibilité à la charge, cf. O-05-11 / phase 05 30/10).
+# Poste (tsc, Vitest 341/341, ESLint) : non rejoué dans le worktree (node_modules absent) ; contenu de apps/desktop identique
+# au commit (git diff HEAD = .env.development seulement, que Vitest lit dans l'index : O-05-11) -> résultats de CLOTURE_suites_20261107.txt valables.
+
+## 2. Manifestes SHA-256 vérifiés sur le contenu COMMITÉ (git archive HEAD, extraction complète)
+docs/phase/05/sql/0009_MANIFEST.sha256                       : OK (7/7)
+docs/phase/05/sql/0009_POST_AUDIT_MANIFEST.sha256            : OK (2/2)
+docs/phase/05/evidence/csvai/corpus/MANIFEST.json            : OK 15/15 (octets exacts, .gitattributes -text)
+docs/phase/05/evidence/csvai/b0/corpus/MANIFEST_B0.json      : OK 5/5
+docs/phase/05/evidence/csvai/b0/v1-control/corpus/MANIFEST.json : OK 15/15
+docs/phase/05/sql/0007_MANIFEST.sha256 : 10/12 — écarts ATTENDUS et préexistants (déjà à 55f021d) : MmvDbContextModelSnapshot.cs et
+  CatalogStockModel.cs, fichiers source vivants modifiés par 0008 ; le manifeste fige leur état au 30/10.
+docs/phase/05/sql/0008_MANIFEST.sha256 : 7/8 — écart ATTENDU : MmvDbContextModelSnapshot.cs modifié par 0009 (OK à 55f021d) ;
+  l'état courant du snapshot est couvert par le manifeste 0009 (OK).
