@@ -1,0 +1,24 @@
+{
+  "id": "F12",
+  "header_line": "L1",
+  "file_family": ["contact_lenses_solutions"],
+  "columns": {
+    "c0": {"accept": ["modelName"]},
+    "c1": {"accept": ["modelDescription", "replacement", "familyCode", "unknown", "notes"], "flag_optional": true},
+    "c2": {"accept": ["diameter"], "must_flag": true, "flag_codes": ["mixed_units", "mixed_content", "values_mismatch_header"]},
+    "c3": {"accept": ["volumeMl"], "must_flag": true, "flag_codes": ["mixed_units", "mixed_content", "values_mismatch_header"]},
+    "c4": {"accept": ["packSize"], "flag_optional": true},
+    "c5": {"accept": ["purchasePriceHt"], "flag_optional": true},
+    "c6": {"accept": ["barcode"], "flag_optional": true}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["contact_lenses_solutions"], "flag_optional": true},
+    "L3": {"kind": "data", "family": ["contact_lenses_solutions"], "flag_optional": true},
+    "L4": {"kind": "data", "family": ["contact_lenses_solutions"], "flag_optional": true},
+    "L5": {"kind": "data", "family": ["contact_lenses_solutions"], "flag_optional": true},
+    "L6": {"kind": "data", "family": ["contact_lenses_solutions"], "flag_optional": true}
+  },
+  "groups": [["L2"], ["L3"], ["L4"], ["L5"], ["L6"]],
+  "dontcare_pairs": [["L2", "L3"], ["L4", "L5"]]
+}

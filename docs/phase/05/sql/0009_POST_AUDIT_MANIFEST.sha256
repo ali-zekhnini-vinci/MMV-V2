@@ -1,0 +1,6 @@
+# MMV V2 — G05-SQL-0009 : ajouts du 06/11/2026 (mandat post-audit), HORS manifeste 0009 — le script de migration 0009 et 0009_MANIFEST.sha256 sont inchangés.
+# 0009_restore_check.sql : contrôle de cohérence en LECTURE SEULE (COR-CSVAI-05). schema-inventory.applied.txt : inventaire 0001–0009 produit par le script APPROUVÉ (LF) ;
+# l'inventaire de revue porte les 4 corps de fonctions de garde en CRLF (Phase05SchemaTests.AssistantReviewedInventory_DiffersOnlyByTheGuardFunctionBodiesLineEndings).
+# Vérification depuis la racine : sha256sum -c docs/phase/05/sql/0009_POST_AUDIT_MANIFEST.sha256 (Git Bash).
+47197a4a68021aaaf3540089e2e83a9863f96acaabd38c345e3d00e04488ce7a  docs/phase/05/sql/0009_restore_check.sql
+1cdb101c3ead22cbdbc7ebe15a27a73f7fb65f13d67cfffa4708ca3040ec4e49  docs/phase/05/sql/0009_CsvImportAssistant.schema-inventory.applied.txt

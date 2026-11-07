@@ -201,3 +201,99 @@ Mandat [`prompts/MMV_V2_MANDAT_UX_IA_PHASE05_2026-11-03.md`](../../../prompts/MM
 | Décisions métier du mandat | APPROVED (propriétaire) : magasin unique, tarification obligatoire, seuil option A — appliquées (D-UX-01, D-UX-02). |
 | Décisions techniques du lot | D-UX-03 à D-UX-10 (`UX_IA_05.md` § 2), dont IA locale Ollama `llama3.2` sur le serveur, boucle locale seulement, validation serveur et confirmation des montants. |
 | Questions ouvertes | Q-UX-01 (tarif aussi obligatoire hors assistant ?), Q-UX-02 (droit du seuil), Q-UX-03 (performances sur le matériel des magasins). |
+
+## Mise à jour des gates — 04/11/2026 (lot CSV-IMPORT-AI-01, branche `spike/csv-import-ollama-benchmark`)
+
+Mandat [`prompts/MMV_V2_MANDAT_CSV_IMPORT_AI_01_2026-11-04.md`](../../../prompts/MMV_V2_MANDAT_CSV_IMPORT_AI_01_2026-11-04.md) ; registre [`CSV_IA_05.md`](CSV_IA_05.md). Les gates du 03/11 ci-dessus sont inchangées.
+
+| Gate | État au 04/11/2026 |
+| --- | --- |
+| Gate 0 — préconditions | **PASS avec réserve consignée** : seule modification suivie `apps/desktop/.env.development` du propriétaire (empreinte `a215e1f0…` inchangée, non touchée) ; non suivis connus laissés en place. |
+| Gate A — banc Ollama | **Résultats remis, validation du propriétaire requise** : `llama3.2`, `qwen3.5:2b`, `qwen3.5:4b`, 15 fichiers synthétiques, 5 passages mesurés chacun (225 appels) — [`evidence/csvai/RAPPORT_BENCHMARK.md`](evidence/csvai/RAPPORT_BENCHMARK.md). Recommandation : `qwen3.5:4b` sous conditions (aucun modèle ne satisfait seul le critère commercial). |
+| Gate B — architecture | **Non ouverte** : brouillon [`CSV_IA_05_CONCEPTION.md`](CSV_IA_05_CONCEPTION.md). |
+| Gates C, D | **NOT_STARTED**. Aucun code applicatif modifié. |
+| G05-SQL | **Non sollicitée** : besoin éventuel d'une migration additive `0009` signalé (Q-CSVAI-03), à traiter en lot de revue distinct. |
+| Questions ouvertes | Q-CSVAI-01 à Q-CSVAI-06 (`CSV_IA_05.md` § 5). |
+
+## Mise à jour des gates — 04/11/2026, après le Lot B0 (lot CSV-IMPORT-AI-01)
+
+Décision du propriétaire : [`prompts/MMV_V2_GO_CONDITIONNEL_GATE_A_CSV_IMPORT_AI_01_B0_2026-11-04.md`](../../../prompts/MMV_V2_GO_CONDITIONNEL_GATE_A_CSV_IMPORT_AI_01_B0_2026-11-04.md). Rapport : [`evidence/csvai/b0/RAPPORT_B0.md`](evidence/csvai/b0/RAPPORT_B0.md). Le tableau précédent (même jour) est conservé.
+
+| Gate | État au 04/11/2026 (après B0) |
+| --- | --- |
+| Gate 0 B0 — précontrôle | **PASS** : `.env.development` `a215e1f0…` intact ; corpus, consigne et harnais du Lot A conformes ; modèles aux mêmes empreintes ; écart expliqué : Ollama 0.40.14 (0.40.11 au Lot A). |
+| Gate A — banc Ollama | **GO CONDITIONNEL du propriétaire** : `qwen3.5:4b` candidat principal (Q-CSVAI-01) ; B0 autorisé ; ni implémentation, ni migration, ni activation de Qwen, ni fusion. |
+| Gate B0 — contrat v2 + validateur | **PASS** (prototype hors application, corpus synthétique) : 100/100 JSON valides ; 0 affectation commerciale fausse atteignant le catalogue (25 proposées, 25 bloquées) ; 0 valeur inventée, 0 article perdu, 0 famille ou regroupement faux accepté ; injections : 0 divergence dangereuse ; 21 080 mutations sans erreur critique. Réserves : règles écrites sur le corpus du banc ; apport de l'IA non démontré (+30 % de confirmations). |
+| Gate B — architecture | **Validation de la conception révisée attendue** ([`CSV_IA_05_CONCEPTION.md`](CSV_IA_05_CONCEPTION.md)). |
+| Gates C, D | **NOT_STARTED**. Aucun code applicatif modifié. |
+| G05-SQL | **Non sollicitée** : `0009` proposée sans SQL (conception § 7), à traiter en dossier distinct après Gate B. |
+| Décisions | Q-CSVAI-01 à 06 tranchées (registre § 5) ; questions ouvertes Q-CSVAI-07 à 10. |
+
+## Mise à jour des gates — 04/11/2026, Gate B (lot CSV-IMPORT-AI-01, mandat de refonte)
+
+Mandat [`prompts/MMV_V2_MANDAT_REFONTE_CSV_IMPORT_AI_01_GATE_B_2026-11-04.md`](../../../prompts/MMV_V2_MANDAT_REFONTE_CSV_IMPORT_AI_01_GATE_B_2026-11-04.md) : l'écran d'import actuel est refusé par le propriétaire. Dossier [`CSV_IA_05_GATE_B.md`](CSV_IA_05_GATE_B.md). Les tableaux précédents (même jour) sont conservés.
+
+| Gate | État au 04/11/2026 (Gate B) |
+| --- | --- |
+| Gate 0 — audit | **PASS avec réserve consignée** : HEAD `55f021d`, worktree unique, `.env.development` `a215e1f0…` intact ; corpus B0 5/5 conformes ; sorties B0 gelées ce jour (aucune empreinte antérieure : intégrité antérieure NOT_TESTED). |
+| Gate B — conception visuelle et technique | **DOSSIER REMIS — validation du propriétaire requise** : assistant en cinq étapes, historique replié, contrats API additifs, transitions, protection contre les résultats tardifs, modèle configuré / actif distingués, `0009` révisée sans SQL ; maquette isolée, 38 états capturés (simulation navigateur). |
+| Gates C1, C2 | **NOT_STARTED** (après validation du dossier). |
+| G05-SQL-0009 | **NOT_STARTED** : préparation à autoriser ; application sur `mmv_v2_dev` / `mmv_v2_test` soumise à un GO SQL distinct. |
+| Gate D | **NOT_STARTED**. |
+| Décisions | Q-CSVAI-07 à 10 consignées comme décisions de travail du mandat ; nouvelles questions Q-CSVAI-11 à 14 ([`CSV_IA_05.md`](CSV_IA_05.md) § 5). |
+
+## Mise à jour des gates — 06/11/2026 (lot CSV-IMPORT-AI-01, implémentation)
+
+Mandat [`prompts/MMV_V2_GO_CONDITIONNEL_GATE_B_CSV_IMPORT_AI_01_2026-11-06.md`](../../../prompts/MMV_V2_GO_CONDITIONNEL_GATE_B_CSV_IMPORT_AI_01_2026-11-06.md). Statut : `CSVAI_C1_C2_C3_IMPLEMENTED — G05-SQL-0009 PREPARED, NOT APPLIED — OWNER_SQL_GO_AND_REVIEW_REQUIRED`.
+
+| Gate | État au 06/11/2026 |
+| --- | --- |
+| Gate 0 — précontrôle | **PASS** : branche `spike/csv-import-ollama-benchmark`, HEAD `55f021d` inchangé, `.env.development` `a215e1f0…` intact, PostgreSQL 18 et Ollama 0.40.14 (`qwen3.5:4b`) présents. |
+| Gate B | **GO CONDITIONNEL du propriétaire** (architecture recevable avec réserves). |
+| Gates C1, C2, C3 | **IMPLÉMENTÉS ET TESTÉS** — [`LIVRAISON_05_CSVAI.md`](LIVRAISON_05_CSVAI.md) ; tests : API 656/656 (dont 95 du lot), Maintenance 50/50, PostgreSQL 101 PASS + 2 BLOCKED (`*_AllMigrationsApplied` : 0009 absente des bases du propriétaire) + 1 NOT_TESTED (processus HTTPS réel), Ollama réel `qwen3.5:4b` PASS, Vitest 331/331, TypeScript PASS, ESLint 0 erreur. |
+| G05-SQL-0009 | **PRÉPARÉE, NON APPLIQUÉE** — dossier [`SQL_0009_REVUE.md`](SQL_0009_REVUE.md) ; essais sur cluster jetable PASS ; **GO SQL distinct requis**. |
+| Gate D | **NON DÉCLARÉE** (0009 sur `mmv_v2_test`, natif deux postes, catalogues réels anonymisés manquants). |
+| Livraison | Règle du 06/11/2026 : archive produite **exclusivement par `git archive`** d'un arbre temporaire (index isolé), empreintes de l'archive et de l'arbre fournies ; preuves antérieures référencées par leurs manifestes. |
+| Décisions appliquées | rétention sans purge automatique ; texte historique inchangé ; délai 120 s configurable sans SLA ; aucune association automatique d'un SKU d'un autre modèle ; IA par défaut, mode règles seules configurable ; priorité utilisateur > règle > IA ; aucun téléchargement de modèle ; pile inchangée. |
+| Décisions demandées | GO SQL 0009 ; activation de l'écran ; revue visuelle ; Q-CSVAI-07 ; devise des prix d'offres de verres sans colonne devise ; retrait de l'ancien parcours ; autorisation de commit. |
+
+## Mise à jour des gates — 06/11/2026 (lot CSV-IMPORT-AI-01, corrections post-audit)
+
+| Point | État |
+| --- | --- |
+| Audit externe | ZIP `MMV-V2-CSVAI-IMPLEMENTATION.zip` conforme (109 fichiers, 109 empreintes) ; SQL favorable sous conditions ; mandat [`prompts/MMV_V2_MANDAT_POST_AUDIT_CSV_IMPORT_AI_01_2026-11-06.md`](../../../prompts/MMV_V2_MANDAT_POST_AUDIT_CSV_IMPORT_AI_01_2026-11-06.md). |
+| COR-CSVAI-01 à 05 | **RÉALISÉS ET TESTÉS** — [`LIVRAISON_05_CSVAI_POST_AUDIT.md`](LIVRAISON_05_CSVAI_POST_AUDIT.md) ; défaut préexistant corrigé dans `LensOfferService.ChangedFields` (prix / validité seuls ignorés). |
+| G05-SQL-0009 | **`READY_FOR_G05_SQL_0009`** — script **inchangé** (`30dc6e0a…a2e7e0`) ; dossier révisé (inventaire appliqué ajouté : l’inventaire de revue porte les corps de fonctions de garde en CRLF) ; procédure de restauration révisée (base neuve, contrôle, bascule) et éprouvée ; bases du propriétaire contrôlées en lecture seule. **Ne vaut pas autorisation d'application : GO SQL distinct requis.** |
+| Gate D | **NON DÉCLARÉE** (0009 non appliquée ; natif deux postes NOT_TESTED ; scénarios prêts, rapport § 9). |
+| Décisions demandées | GO SQL 0009 ; arrêt des écrivains et sauvegardes définitives au GO ; ADR-CSVAI-09 (identité des offres) ; activation de l'écran ; Q-CSVAI-07 ; retrait de l'ancien parcours ; revue visuelle ; sort des sauvegardes de prévalidation ; autorisation de commit. |
+
+### GO conditionnel G05-SQL-0009 et GATE D (07/11/2026)
+
+Mandat [`prompts/MMV_V2_GO_CONDITIONNEL_G05_SQL_0009_GATE_D_2026-11-07.md`](../../../prompts/MMV_V2_GO_CONDITIONNEL_G05_SQL_0009_GATE_D_2026-11-07.md) ; rapport [`LIVRAISON_05_CSVAI_GATE_D.md`](LIVRAISON_05_CSVAI_GATE_D.md). Les lignes ci-dessus restent l'historique du 06/11.
+
+| Point | État |
+| --- | --- |
+| G05-SQL-0009 | **APPLIQUÉE** : `mmv_v2_dev` (23:10:21 UTC) puis `mmv_v2_test` (23:10:59 UTC, 06/11) ; précontrôles PASS (écrivains arrêtés par le propriétaire) ; sauvegardes définitives + restauration sur base distincte IDENTIQUE ; verify 14/14 ×2 ; 9 migrations ; données antérieures conservées. |
+| Correctif `check_stale` | **RÉALISÉ ET DÉMONTRÉ** : empreinte du plan métier + verrous avant relecture ; 2 tests de concurrence (après le contrôle, pendant l'application) ; contre-épreuves ; aucune migration. |
+| Défauts trouvés en recette | GD-01 valeurs effacées par une colonne absente, GD-02 annulation bloquée par CORS dans Tauri, GD-03 contrastes : **corrigés et testés**. |
+| Activation | `CatalogInterpreter:WizardEnabled=true` sur l'API **de banc** seulement ; défaut `false` et `.env.development` inchangés. |
+| Gate D | **`GATE_D — READY_FOR_OWNER_FINAL_REVIEW`** — natif 58/58 sur un poste ; NOT_TESTED : deux machines, catalogues réels anonymisés, Échap natif, non-régression native des autres modules (suites automatisées PASS). |
+| Règle de livraison | Archive d'audit unique par `git archive` d'un arbre construit avec un index Git isolé (aucun commit), SHA-256 du ZIP et SHA de l'arbre fournis séparément (règle en vigueur depuis le 06/11, consignée ici). |
+| Décisions demandées | revue finale GATE D ; essais deux machines et catalogues réels anonymisés ; activation sur l'installation du propriétaire ; ADR-CSVAI-09 ; jeton global `--text-tertiary` ; libellé de la devise ; retrait de l'ancien import ; sort des sauvegardes ; Q-CSVAI-07 ; autorisation de commit. |
+
+## Mise à jour des gates — 07/11/2026 (clôture contrôlée de la Phase 05)
+
+Mandat [`prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md`](../../../prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md) ; rapport [`RAPPORT_CLOTURE_PHASE05.md`](RAPPORT_CLOTURE_PHASE05.md). Le propriétaire a activé et essayé le nouvel assistant sur son installation locale : **interface et conception refusées**. Les tableaux précédents restent l'historique.
+
+| Gate / point | État au 07/11/2026 (clôture) |
+| --- | --- |
+| Assistant CSV (CSV-IMPORT-AI-01) | `TECHNICALLY_IMPLEMENTED` ; GATE D réalisé avec ses limites ; **`OWNER_UX_REJECTED`** ; refonte `DEFERRED` (BL-05-13) ; ancien import conservé en repli ; **aucun GO de déploiement commercial** sans nouvelle recette (BL-05-14) — décisions CL-05-01 à CL-05-06 ([rapport](RAPPORT_CLOTURE_PHASE05.md) § 3.2) |
+| Garde d'exploitation | `WizardEnabled = false` (versionné) : 13 routes du nouveau parcours → `404 assistant_disabled`, prouvé par `CsvAssistantDisabledGateTests` (15 cas) et contre-épreuves ([journal](evidence/cloture/CLOTURE_contre_epreuves_assistant_desactive_20261107.log)) ; activation locale du propriétaire dans sa copie de build non modifiée |
+| Contrôles non réalisés | deux machines, catalogues réels anonymisés, Échap natif, non-régression native des modules antérieurs : **`DEFERRED`** (BL-05-14) ; performances de Qwen sur le matériel des magasins : **`DEFERRED`** (BL-05-U2) — aucun déclaré PASS |
+| Offres de verres de même identité créées en concurrence | **non bloquant** (aucune corruption, aucune règle commerciale contournée, chemin fermé par défaut) ; correction sans migration reportée (BL-05-15) |
+| G05-SQL | aucune migration nouvelle ; 0007, 0008, 0009 revérifiées en lecture seule sur `mmv_v2_dev` et `mmv_v2_test` (9 migrations) |
+| G05-DESIGN | **OPEN** — acceptation visuelle non donnée (Lot 6, UX-IA) |
+| G05-FISCAL / ADR-010, G05-LEGAL | **OPEN** — inchangés ; bloquent toute vente réelle |
+| Conservation des originaux CSV, rétention des sauvegardes, contrastes globaux | **OPEN** — Q-CSVAI-07 / BL-05-12 ; décision du propriétaire ; BL-05-16 |
+| G05-FINAL | **`PHASE05_TECHNICALLY_CLOSED — CSV_ASSISTANT_OWNER_UX_REJECTED — READY_FOR_MANUAL_MERGE`** (sous réserve de la validation finale du propriétaire) ; Phase 05 **non déclarée entièrement approuvée** ; commits locaux sur `feat/phase-05-catalogue-stock` ; aucun push, PR ni merge |
+| Phase 06 | non commencée ; cadrage documentaire préparé **hors** de la branche Phase 05 (aucune modification Phase 06 engagée sur une branche non fusionnée) |

@@ -1,0 +1,26 @@
+{
+  "id": "F07",
+  "header_line": "L1",
+  "file_family": ["mixed"],
+  "columns": {
+    "c0": {"accept": ["familyCode"]},
+    "c1": {"accept": ["brand", "lensManufacturer"]},
+    "c2": {"accept": ["modelName"]},
+    "c3": {"accept": ["supplierReference", "manufacturerReference"]},
+    "c4": {"accept": ["color", "power", "variantLabel", "unknown"], "must_flag": true, "flag_codes": ["mixed_content", "ambiguous_meaning"]},
+    "c5": {"accept": ["eyeSize", "diameter", "unknown"], "must_flag": true, "flag_codes": ["mixed_content", "ambiguous_meaning", "mixed_units"]},
+    "c6": {"accept": ["purchasePriceHt"]},
+    "c7": {"accept": ["salePriceTtc"]}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["optical_frames"]},
+    "L3": {"kind": "data", "family": ["optical_frames"]},
+    "L4": {"kind": "data", "family": ["contact_lenses_solutions"]},
+    "L5": {"kind": "data", "family": ["contact_lenses_solutions"]},
+    "L6": {"kind": "data", "family": ["ophthalmic_lenses"], "flag_optional": true},
+    "L7": {"kind": "data", "family": ["accessories"]},
+    "L8": {"kind": "data", "family": ["services"], "flag_optional": true}
+  },
+  "groups": [["L2", "L3"], ["L4", "L5"], ["L6"], ["L7"], ["L8"]]
+}

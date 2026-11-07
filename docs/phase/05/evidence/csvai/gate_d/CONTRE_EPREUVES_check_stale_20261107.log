@@ -1,0 +1,18 @@
+# Contre-épreuves du correctif check_stale (07/11/2026, cluster JETABLE 55434) : tests GATE D rejoués avec la protection NEUTRALISÉE
+# temporairement dans AssistedImportService.cs (fichier restauré ensuite, SHA-256 vérifié identique).
+
+## 1. Sans empreinte du plan ni verrous : les deux tests échouent — l'application passe (HTTP 200) et écrase la valeur de l'autre poste
+  Échoué MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_GateD_PriceChangedAfterCheckOrDuringApply_CheckStale_NeverOverwritten [3 s]
+  Message d'erreur :
+   {"productsCreated":0,"variantsCreated":0,"updated":1,"prices":1,"offersCreated":0,"offersUpdated":0,"referencesCreated":0,"appliedAtUtc":"2026-11-07T01:46:46.617537+00:00","elapsedMs":31}
+  Échoué MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_GateD_CharacteristicChangedAfterCheckOrDuringApply_CheckStale_UnrelatedChangeKept [1 s]
+  Message d'erreur :
+   {"productsCreated":0,"variantsCreated":0,"updated":0,"prices":0,"offersCreated":0,"offersUpdated":1,"referencesCreated":0,"appliedAtUtc":"2026-11-07T01:46:48.164469+00:00","elapsedMs":13}
+
+## 2. Empreinte conservée, verrous retirés : le cas « pendant l'application » écrase le prix (articles) ; les offres restent protégées par la version xmin
+  Échoué MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_GateD_PriceChangedAfterCheckOrDuringApply_CheckStale_NeverOverwritten [5 s]
+  Message d'erreur :
+   {"productsCreated":0,"variantsCreated":0,"updated":1,"prices":1,"offersCreated":0,"offersUpdated":0,"referencesCreated":0,"appliedAtUtc":"2026-11-07T01:47:08.023382+00:00","elapsedMs":2001}
+  Réussi MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_GateD_CharacteristicChangedAfterCheckOrDuringApply_CheckStale_UnrelatedChangeKept [3 s]
+
+## 3. Correctif restauré : 2/2 PASS (voir PG_suite_mmv_v2_test_20261107.txt)

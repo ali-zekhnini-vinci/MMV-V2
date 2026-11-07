@@ -1,0 +1,943 @@
+{
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "string",
+      "enum": [
+        "present",
+        "absent"
+      ]
+    },
+    "columns": {
+      "type": "object",
+      "properties": {
+        "c0": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c1": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c2": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c3": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c4": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c5": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c6": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c7": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c8": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        },
+        "c9": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "familyCode",
+                "brand",
+                "modelName",
+                "modelDescription",
+                "variantLabel",
+                "color",
+                "sku",
+                "manufacturerReference",
+                "supplierReference",
+                "barcode",
+                "stockPolicy",
+                "supplierCode",
+                "supplierName",
+                "purchasePriceHt",
+                "salePriceHt",
+                "salePriceTtc",
+                "priceUnqualified",
+                "currency",
+                "vatRate",
+                "eyeSize",
+                "bridgeSize",
+                "templeLength",
+                "frameDimensions",
+                "material",
+                "shape",
+                "lensTint",
+                "replacement",
+                "power",
+                "cylinder",
+                "axis",
+                "baseCurve",
+                "diameter",
+                "packSize",
+                "volumeMl",
+                "lensManufacturer",
+                "lensRange",
+                "lensType",
+                "lensIndex",
+                "lensMaterial",
+                "lensTreatments",
+                "sphereMin",
+                "sphereMax",
+                "cylinderMax",
+                "additionMin",
+                "additionMax",
+                "quantity",
+                "unit",
+                "notes",
+                "unknown"
+              ]
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "issue": {
+              "type": "string",
+              "enum": [
+                "none",
+                "ambiguous_meaning",
+                "ambiguous_price",
+                "mixed_units",
+                "mixed_content",
+                "composite_value",
+                "duplicate_column",
+                "values_mismatch_header",
+                "suspicious_instruction"
+              ]
+            }
+          },
+          "required": [
+            "field",
+            "confidence",
+            "issue"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "c0",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+        "c6",
+        "c7",
+        "c8",
+        "c9"
+      ],
+      "additionalProperties": false
+    },
+    "family": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "single",
+            "by_column",
+            "unknown"
+          ]
+        },
+        "single": {
+          "type": "string",
+          "enum": [
+            "optical_frames",
+            "sunglasses",
+            "ophthalmic_lenses",
+            "contact_lenses_solutions",
+            "accessories",
+            "services",
+            "unknown"
+          ]
+        },
+        "column": {
+          "type": "string",
+          "enum": [
+            "none"
+          ]
+        }
+      },
+      "required": [
+        "mode",
+        "single",
+        "column"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "header",
+    "columns",
+    "family"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,80 @@
+# Clôture Phase 05 — suites rejouées le 07/11/2026 (après le dernier changement de code : ajout de CsvAssistantDisabledGateTests)
+# Poste : DESKTOP-BPS3B6T ; build --artifacts-path bin/closure -p:NuGetAudit=false ; aucune base du propriétaire écrite.
+
+## dotnet build MMV.slnx + MMV.Api.Tests + MMV.Maintenance.Tests
+La génération a réussi.
+    0 Avertissement(s)
+    0 Erreur(s)
+
+Temps écoulé 00:00:04.10
+=== API
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :   685, ignorée(s) :     0, total :   685, durée : 1 m 30 s - MMV.Api.Tests.dll (net10.0)
+=== MAINT
+Au total, 1 fichiers de test ont correspondu au modèle spécifié.
+
+Réussi!  - échec :     0, réussite :    50, ignorée(s) :     0, total :    50, durée : 7 s - MMV.Maintenance.Tests.dll (net10.0)
+
+## Poste (apps/desktop) : tsc -b --noEmit (aucune sortie = aucune erreur), vitest run, eslint .
+=== TSC
+tsc exit=0
+=== VITEST
+ RUN  v5.0.3 C:/Users/Ali Zekhnini/Documents/GitHub/MMV V2/apps/desktop
+
+
+ Test Files  32 passed (32)
+      Tests  341 passed (341)
+   Start at  14:38:25
+   Duration  62.72s (tests 65%, environment 17%, import 12%, transform 6%)
+
+=== ESLINT
+  154 |     data: rows,
+  155 |     columns,
+  156 |     getRowId: (row) => row.id,  react-hooks/incompatible-library
+
+✖ 1 problem (0 errors, 1 warning)
+
+## MMV.PostgreSql.Tests --filter Stage=Phase05 sur le cluster JETABLE (127.0.0.1:55434, PostgreSQL 18.6, base mmv_v2_scratch, migrations 0001 -> 0009)
+## NotExecuted par conception : processus HTTPS réel (banc MMV_PG05_API_BASE absent) et Ollama réel (MMV_CSVAI_REAL_OLLAMA absent) -> NOT_RERUN, PASS à GATE D.
+Counters: total=40 executed=38 passed=38 failed=0 error=0
+NotExecuted	00:00:00.0010000	MMV.PostgreSql.Tests.Phase05AssistedRealOllamaTests.RealQwen_AnalysesCorpusFiles_ModelConfirmed_ProposalRevalidated_NothingWrittenBeforeConfirmation
+NotExecuted	00:00:00.0010000	MMV.PostgreSql.Tests.Phase05RealHttpsTests.RealProcess_ServesTheBench_AndRefusesPlainHttp_NothingWritten
+Passed	00:00:04.6025438	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Analysis_LateResultAfterCancel_IsDiscarded_ThenRulesOnlyChoice_ThenRetry
+Passed	00:00:12.5205264	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Analysis_Unavailable_InvalidOutput_ModelMismatch_NeverSilentFallback
+Passed	00:00:01.5056078	MMV.PostgreSql.Tests.Phase05AssistedImportTests.ConcurrentDecisions_OnTheSameRevision_OnlyOneWins
+Passed	00:00:03.6435930	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_GateD_CharacteristicChangedAfterCheckOrDuringApply_CheckStale_UnrelatedChangeKept
+Passed	00:00:01.6090338	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_OffersOfSeveralSuppliers_ReferencesDecided_RangesNeverCompleted_CombinedRestriction_ToVerify
+Passed	00:00:01.6774966	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Lenses_PostAudit_IdentityGeometry_CompletenessRevalidated_NothingErased_CurrencyConfirmed_ReplayIdentical
+Passed	00:00:01.6349133	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_DuplicateSkuAccepted_Diagnosed_Corrected_MoneyConfirmed_Checked_Applied
+Passed	00:00:04.0827327	MMV.PostgreSql.Tests.Phase05AssistedImportTests.Products_GateD_PriceChangedAfterCheckOrDuringApply_CheckStale_NeverOverwritten
+Passed	00:00:01.5171279	MMV.PostgreSql.Tests.Phase05AssistedImportTests.TechnicalRefusalsOnly_BusinessAnomaliesAccepted_AndInjectionNeverObeyed
+Passed	00:00:01.7133478	MMV.PostgreSql.Tests.Phase05CorrectionsSchemaTests.CsvImport_DetectsFormats_MapsSynonyms_SupplierProfile_NoDuplicates
+Passed	00:00:01.6948713	MMV.PostgreSql.Tests.Phase05CorrectionsSchemaTests.LensOffers_SimpleAndAdvancedRules_ThreeOutcomes_Revisions_Costs
+Passed	00:00:01.4433725	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.Inventories_Full_And_Partial_UncountedRules
+Passed	00:00:01.2075518	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.ReservedStock_CannotBeTakenOut_NorAdjustedBelow
+Passed	00:00:03.7684131	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.SixFamilies_ModelsAndVariants_LensCatalog
+Passed	00:00:03.9103282	MMV.PostgreSql.Tests.Phase05FinalIntegrationTests.SixteenPermissions_EachIsRequiredByItsRoute
+Passed	00:00:07.0028523	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.AssistantDown_OrInvalidOutput_FallsBackToRules_ImportStillWorks
+Passed	00:00:01.5001193	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.InjectionInFile_CannotMapPricesWithoutConfirmation_NorReachTheDatabase
+Passed	00:00:01.4420564	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.MissingValues_AndDuplicateRows_AreReported_PerLine_NothingApplied
+Passed	00:00:01.5649841	MMV.PostgreSql.Tests.Phase05ImportAssistantTests.UnusualSupplierFile_MappedByAssistant_LearnedProfile_ReusedWithoutInference_ReimportRefused
+Passed	00:00:01.8567500	MMV.PostgreSql.Tests.Phase05LensCatalogTests.NewRange_WithSeveralSuppliers_OwnRangesPerSupplier_AllOrNothing_History
+Passed	00:00:02.2589100	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Catalog_Pricing_CostsProjection_EurAndMad
+Passed	00:00:02.1988267	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Import_CheckApply_AllOrNothing_Replay_Permissions
+Passed	00:00:01.5818954	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Inventory_CountValidate_ConcurrentMovement_Permissions_Blind
+Passed	00:00:01.5710029	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Permissions_EachRoute_RequiresItsOwnRight_AndSystemAdminGivesNone
+Passed	00:00:01.5162838	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Stock_ConcurrentOutputs_NeverOversell
+Passed	00:00:01.6866844	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Stock_NegativeForbidden_Receipts_Partial_Adjustments_Policies
+Passed	00:00:01.5946480	MMV.PostgreSql.Tests.Phase05PostgreSqlTests.Suppliers_Links_Primary_Incomplete_And_ArchivedSupplier
+Passed	00:00:01.6656711	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_CreatesEverything_InOneTransaction_OrNothing
+Passed	00:00:01.5044741	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_RefusesAnyUnpricedVariant_AndPricesEachVariantIndependently
+Passed	00:00:01.5823186	MMV.PostgreSql.Tests.Phase05ProductWizardTests.Wizard_SetsThresholdPerStore_AlertOnAggregatedAvailable
+Passed	00:00:05.1615232	MMV.PostgreSql.Tests.Phase05RealtimeTests.Stations_ReceiveConfirmedChanges_FilteredByRightsAndStore_WithoutAmounts
+Passed	00:00:00.0143703	MMV.PostgreSql.Tests.Phase05SchemaTests.AssistantReviewedInventory_DiffersOnlyByTheGuardFunctionBodiesLineEndings
+Passed	00:00:00.1256184	MMV.PostgreSql.Tests.Phase05SchemaTests.Phase05Schemas_MatchTheReviewedInventory_AndPreviousStagesAreUnchanged
+Passed	00:00:00.0234975	MMV.PostgreSql.Tests.Phase05SchemaTests.ReviewedInventory_DiffersOnlyByTheFunctionBodiesLineEndings
+Passed	00:00:03.4182458	MMV.PostgreSql.Tests.Phase05SearchTests.Search_Catalog_Stock_Suppliers_AreServerSide_AccentAndCaseInsensitive
+Passed	00:00:02.3270186	MMV.PostgreSql.Tests.Phase05StoreContextTests.Server_WithoutStoreCode_AndSeveralStores_FailsSafely
+Passed	00:00:01.4658726	MMV.PostgreSql.Tests.Phase05StoreContextTests.Store_IsTheInstallationStore_AndAnotherStoreIsNeverServed
+Passed	00:00:01.1113454	MMV.PostgreSql.Tests.Phase05StoreContextTests.UxAiRoutes_RefuseAnotherStore_NothingWritten

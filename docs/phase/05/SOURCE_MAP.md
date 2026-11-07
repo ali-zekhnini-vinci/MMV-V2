@@ -102,3 +102,59 @@ Rendus des 107 cadres (Edge sans interface, [`evidence/design/G05D_render-lot6.m
 - Poste : `apps/desktop/src/catalog/ProductWizard.tsx`, `ImportView.tsx`, `LensRangeWizard.tsx` (nouveau), `LensReferencesView.tsx`, `LensOffersView.tsx`, `lensOffers.ts`, `ModelViews.tsx`, `StockViews.tsx`, `productForm.ts`, `csvFile.ts`, `CatalogModules.tsx`, `Catalog.css`, `apps/desktop/src/api/catalog.ts`.
 - Tests : `tests/MMV.Api.Tests/Catalog/ImportAssistantTests.cs`, `SingleStoreRoutesTests.cs` ; `tests/MMV.PostgreSql.Tests/Phase05ImportAssistantTests.cs`, `Phase05LensCatalogTests.cs`, `Phase05ProductWizardTests.cs`, `Phase05StoreContextTests.cs`, `Phase05CorrectionsSchemaTests.cs` (inchangé), `Phase05Harness.cs` ; `apps/desktop/src/catalog/corrections.test.ts`.
 - Preuves : scénario natif `apps/desktop/e2e/native-uxai.mjs` ; `docs/phase/05/evidence/uxai/` (journal natif, banc Ollama, amorçage du banc sans secret, 26 captures JPEG réduites).
+
+## Mise à jour 04/11/2026 (lot CSV-IMPORT-AI-01, Lot A)
+
+- Mandat : [`prompts/MMV_V2_MANDAT_CSV_IMPORT_AI_01_2026-11-04.md`](../../../prompts/MMV_V2_MANDAT_CSV_IMPORT_AI_01_2026-11-04.md) ; registre `docs/phase/05/CSV_IA_05.md` ; conception du Lot B (brouillon) `docs/phase/05/CSV_IA_05_CONCEPTION.md`.
+- Code applicatif : **aucun changement**.
+- Banc : `docs/phase/05/evidence/csvai/` — harnais `bench/CsvAiBench.cs` (fichier unique .NET 10), consigne `bench/system_prompt.txt`, options `bench/inference_options.json`, exemples `bench/example_*_F01.*` ; corpus synthétique `corpus/F01.csv` à `F15.csv` + `MANIFEST.json` (empreintes) + `.gitattributes` (`-text`) ; attendus `expected/F01.json` à `F15.json` ; sorties brutes `runs/llama3.2_latest.jsonl`, `runs/qwen3.5_2b.jsonl`, `runs/qwen3.5_4b.jsonl`, console `runs/RUN_CONSOLE_20261104.log`, environnement `runs/ENV_before_run_20261104.txt`, pilote exclu `runs/pilot-v0/` ; résultats `results/RESULTS.md`, `results/scores_by_call.csv`, `results/summary.json` ; rapport `RAPPORT_BENCHMARK.md`.
+
+## Mise à jour 04/11/2026 (lot CSV-IMPORT-AI-01, Lot B0)
+
+- Décision du propriétaire : [`prompts/MMV_V2_GO_CONDITIONNEL_GATE_A_CSV_IMPORT_AI_01_B0_2026-11-04.md`](../../../prompts/MMV_V2_GO_CONDITIONNEL_GATE_A_CSV_IMPORT_AI_01_B0_2026-11-04.md) ; registre `docs/phase/05/CSV_IA_05.md` (décisions, gates) ; conception révisée `docs/phase/05/CSV_IA_05_CONCEPTION.md`.
+- Code applicatif : **aucun changement**. Preuves du Lot A sous `docs/phase/05/evidence/csvai/` : **inchangées**.
+- B0 : `docs/phase/05/evidence/csvai/b0/` — rapport `RAPPORT_B0.md` ; harnais `bench/CsvAiBenchV2.cs` ; consigne `bench/system_prompt_v2.txt` ; options `bench/inference_options_v2.json` ; exemples `bench/example_user_message_F01.txt`, `bench/example_user_message_F17.txt`, `bench/example_schema_F01.json`, `bench/example_schema_F17.json` ; corpus `corpus/F16.csv` à `F20.csv` + `MANIFEST_B0.json` + `.gitattributes` ; attendus `expected/F16.json` à `F20.json` ; sorties `runs/main__qwen3.5_4b.jsonl`, `runs/light__qwen3.5_2b.jsonl`, `runs/light__llama3.2_latest.jsonl`, consoles `runs/RUN_CONSOLE_B0_main_20261104.log`, `runs/RUN_CONSOLE_B0_light_20261104.log`, gel `runs/ENV_before_B0_20261104.txt`, pilotes exclus `runs/pilot-b0/` ; contrôle v1 `v1-control/` (copie du corpus et des attendus du Lot A, sorties `v1-control/runs/qwen3.5_4b.jsonl`, résultats `v1-control/results/`) ; résultats `results/RESULTS_B0.md`, `results/summary_b0.json`, `results/scores_by_call_b0.csv`, `results/selfcheck_b0.json`, `results/decisions/`.
+
+## Mise à jour 04/11/2026 (lot CSV-IMPORT-AI-01, Gate B)
+
+- Mandat de refonte : [`prompts/MMV_V2_MANDAT_REFONTE_CSV_IMPORT_AI_01_GATE_B_2026-11-04.md`](../../../prompts/MMV_V2_MANDAT_REFONTE_CSV_IMPORT_AI_01_GATE_B_2026-11-04.md) ; dossier `docs/phase/05/CSV_IA_05_GATE_B.md` ; registre `docs/phase/05/CSV_IA_05.md` ; conception `docs/phase/05/CSV_IA_05_CONCEPTION.md` (notes datées).
+- Code applicatif : **aucun changement** (`ImportView.tsx`, API, Application, Infrastructure, `appsettings.json`, migrations inchangés).
+- Banc isolé (développement seulement, hors `vite build`) : `apps/desktop/import-wizard-bench.html` → `apps/desktop/src/bench/importWizard/main.tsx`, `ImportWizardBench.tsx` (maquette des cinq étapes et de l'historique), `fixtures.ts` (données fictives typées selon les contrats proposés), `importWizard.css` (jetons MMV). Servi par `apps/desktop/e2e/bench-04a/serve.mjs`, capturé par `apps/desktop/e2e/bench-04a/shoot.mjs`.
+- Preuves : `docs/phase/05/evidence/csvai/gateb/` — `captures/` (38 JPEG, `plan.json`, `report.json`), `B0_FREEZE_SHA256_20261104.txt`.
+
+## Mise à jour 06/11/2026 (lot CSV-IMPORT-AI-01, implémentation)
+
+- Domaine : `src/MMV.Domain/CsvImport/ImportAssistant.cs` (original, état de l'assistant, tentatives, événements, décisions) ; `src/MMV.Domain/Audit/AuditEvent.cs` (actions et champs d'audit de l'assistant).
+- Application : `src/MMV.Application/Catalog/Assisted/` — `TolerantCsvReader.cs`, `CatalogLexicon.cs`, `CatalogInterpretationContract.cs`, `CatalogInterpretationValidator.cs`, `AssistantUserLayer.cs`, `CatalogMaterializer.cs`, `AssistedAnalysis.cs`, `AssistedLensPlanner.cs`, `AssistedImportService.cs`, `InterpretationCache.cs` ; `src/MMV.Application/Catalog/ImportService.Assisted.cs` (+ `ImportService.cs` partiel, garde `pipeline_mismatch`) ; `LensOfferService.cs` (validation à blanc exposée).
+- Infrastructure : `src/MMV.Infrastructure/Catalog/AssistantModel.cs`, `AssistantStores.cs` ; migration `src/MMV.Infrastructure/Persistence/Migrations/20261106154105_CsvImportAssistant.cs` (+ `.Designer.cs`, instantané).
+- API : `src/MMV.Api/Installation/CatalogInterpreterService.cs` (interpréteur Ollama, file d'analyse), `src/MMV.Api/Catalog/AssistedImportEndpoints.cs` ; `StockEndpoints.cs` (routes additives, colonne d'historique) ; `appsettings.json` (section `CatalogInterpreter`, écran désactivé par défaut) ; `Program.cs`.
+- Poste : `apps/desktop/src/catalog/importWizard/` (`assistantApi.ts`, `ImportWizard.tsx`, `ImportEntry.tsx`, `importWizard.css`, `importWizard.test.tsx`) ; `CatalogModules.tsx` (route « Import ») ; `src/api/client.ts` (`DELETE`) ; page de captures `apps/desktop/import-wizard-real.html` → `src/bench/importWizard/realMain.tsx` (développement seulement).
+- SQL : `docs/phase/05/sql/0009_CsvImportAssistant.{sql,idempotent.sql,verify.sql,schema-inventory.txt}`, `0009_MANIFEST.sha256` ; dossier `docs/phase/05/SQL_0009_REVUE.md`.
+- Tests : `tests/MMV.Api.Tests/Catalog/Assisted/` (+ `Fixtures/`, octets exacts, `.gitattributes`) ; `tests/MMV.PostgreSql.Tests/Phase05AssistedImportTests.cs`, `Phase05AssistedRealOllamaTests.cs` ; harnais (`Phase05Harness.cs`, `SchemaInspection.cs`, `Phase05SchemaTests.cs`).
+- Preuves : `docs/phase/05/evidence/csvai/implementation/` ; rapport `docs/phase/05/LIVRAISON_05_CSVAI.md`.
+
+## Mise à jour 06/11/2026 (lot CSV-IMPORT-AI-01, corrections post-audit)
+
+- Application : `src/MMV.Application/Catalog/Assisted/AssistedLensPlanner.cs` (identité d'offre, fusion sans effacement, complétude, devise), `CatalogMaterializer.cs` (`ConfirmedCurrency`, `LinesWithoutCurrency`, confirmation `default:currency`), `AssistedImportService.cs` (devise sans EUR par défaut, décision `file_default` « currency », garde « plan = contrôle », résultat d'application enregistré, rejeu) ; `src/MMV.Application/Catalog/LensOfferService.cs` (`ChangedFields`).
+- Domaine : `src/MMV.Domain/CsvImport/ImportAssistant.cs` (`BatchAssistant.RecordApplied`).
+- Poste : `apps/desktop/src/catalog/importWizard/` (`assistantApi.ts`, `ImportWizard.tsx`, `importWizard.css`, `importWizard.test.tsx`, `importWizard.contrast.test.ts`).
+- Tests : `tests/MMV.Api.Tests/Catalog/Assisted/CsvAssistantPostAuditTests.cs` ; `tests/MMV.PostgreSql.Tests/Phase05AssistedImportTests.cs`, `Phase05Harness.cs` (`MMV_PG05_KEEP_SYNTHETIC`).
+- SQL : `docs/phase/05/sql/0009_restore_check.sql`, `0009_CsvImportAssistant.schema-inventory.applied.txt`, `0009_POST_AUDIT_MANIFEST.sha256` ; scripts 0009, inventaire de revue et manifeste 0009 inchangés ; `tests/MMV.PostgreSql.Tests/Phase05SchemaTests.cs` (inventaire appliqué).
+- Preuves : `docs/phase/05/evidence/csvai/postaudit/` ; rapport `docs/phase/05/LIVRAISON_05_CSVAI_POST_AUDIT.md`.
+
+## GO conditionnel G05-SQL-0009 et GATE D (07/11/2026)
+
+- Application : `src/MMV.Application/Catalog/Assisted/AssistedImportService.cs` (`PlanFingerprintKey`, `LensFingerprint`, `ProductFingerprint`, `CheckedFingerprint`, verrous et relecture dans `ApplyAsync`), `AssistedLensPlanner.cs` (`Basis`, `LockExistingAsync`), `src/MMV.Application/Catalog/ImportService.Assisted.cs` (`BasisAsync`, `LockAssistedTargetsAsync`), `ImportService.cs` (champs non fournis conservés), `LensOfferService.cs` (`ILensOfferStore.LockAsync`).
+- Infrastructure : `src/MMV.Infrastructure/Catalog/CorrectionStores.cs` (`LensOfferStore.LockAsync`).
+- API : `src/MMV.Api/Catalog/AssistedImportEndpoints.cs` (`POST /{id}/assistant/analysis/cancel`).
+- Poste : `apps/desktop/src/catalog/importWizard/` (`assistantApi.ts` GET / POST seulement, `ImportWizard.tsx` classe `iw-screen`, `importWizard.css` contrastes, `importWizard.contrast.test.ts`, `assistantApi.cors.test.ts`) ; recette native `apps/desktop/e2e/native-csvai.mjs`.
+- Tests : `tests/MMV.PostgreSql.Tests/Phase05AssistedImportTests.cs` (`Products_GateD_…`, `Lenses_GateD_…`) ; `tests/MMV.Api.Tests/DesktopCorsTests.cs` (`Preflight_AssistantAnalysisCancel_AllowsPost_NeverDelete`).
+- Preuves : `docs/phase/05/evidence/csvai/gate_d/` (sauvegardes, application, verify, empreintes, banc, journal natif, contre-épreuves, suites, captures) ; mandat `prompts/MMV_V2_GO_CONDITIONNEL_G05_SQL_0009_GATE_D_2026-11-07.md` ; rapport `docs/phase/05/LIVRAISON_05_CSVAI_GATE_D.md`.
+
+## Clôture contrôlée (07/11/2026)
+
+- Mandat : `prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md` ; rapport consolidé `docs/phase/05/RAPPORT_CLOTURE_PHASE05.md`.
+- Code relu (aucune modification) : `src/MMV.Api/Catalog/AssistedImportEndpoints.cs` (garde `WizardEnabled`, `Disabled()`), `src/MMV.Api/Catalog/StockEndpoints.cs` (groupe `/api/imports`), `src/MMV.Api/Installation/ActiveStore.cs` (`ActiveStoreFilter`, `InstallationStoreResolver`), `src/MMV.Api/Installation/CatalogInterpreterService.cs` (`TryEnqueue`), `src/MMV.Application/Catalog/Assisted/AssistedLensPlanner.cs` (identité, `LockExistingAsync`, `lens_offer_ambiguous_existing`), `src/MMV.Application/Catalog/ImportService.cs` (aucune création d'offre de verres), `src/MMV.Api/appsettings.json`.
+- Test ajouté : `tests/MMV.Api.Tests/Catalog/Assisted/CsvAssistantDisabledGateTests.cs`.
+- Preuves : `docs/phase/05/evidence/cloture/` (`CLOTURE_precontrole_20261107.txt`, `CLOTURE_suites_20261107.txt`, `CLOTURE_contre_epreuves_assistant_desactive_20261107.log`).
+- Arbre de comparaison : archive GATE D `be60f20f3dca760b11a28bd132aa68e71439f904` (23 fichiers de code, tests et SQL : blobs identiques).

@@ -1,0 +1,355 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 4,
+    "sampled": 4,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 3,
+  "blockers": {
+    "header": 0,
+    "columns": 2,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Code",
+      "field": "supplierReference",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "supplierReference",
+        "manufacturerReference"
+      ],
+      "ai": "supplierReference",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence non qualifiée",
+        "intitulé ambigu : choix de l'utilisateur requis"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Désignation",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Coloris",
+      "field": "color",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "color",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Divers",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "unknown",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : intitulé sans champ MMV connu"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Remise %",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "priceUnqualified",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : pourcentage (remise, taux) : jamais un montant",
+        "proposition IA « priceUnqualified » refusée : pourcentage, pas un montant"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Px",
+      "field": "purchasePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "priceUnqualified",
+        "purchasePriceHt",
+        "salePriceHt",
+        "salePriceTtc"
+      ],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : montant non qualifié",
+        "intitulé ambigu : choix de l'utilisateur requis"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "Zone",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "unknown",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : intitulé sans champ MMV connu"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        3
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "X1-0045",
+          "value": "X1-0045",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041 Écaille",
+          "value": "LU-2041 Écaille",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Écaille",
+          "value": "Écaille",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "42,50",
+          "value": "42.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "X1-0046",
+          "value": "X1-0046",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041 Noir",
+          "value": "LU-2041 Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "42,50",
+          "value": "42.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "X2-0101",
+          "value": "X2-0101",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-77 Or",
+          "value": "VR-77 Or",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Or",
+          "value": "Or",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "38,00",
+          "value": "38.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    }
+  ]
+}

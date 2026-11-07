@@ -1,0 +1,4086 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": true,
+  "coverage": {
+    "mode": "échantillon",
+    "lines": 320,
+    "sampled": 40,
+    "début": "6/6",
+    "positions réparties": "10/10",
+    "valeurs de famille": "0/0",
+    "structures de ligne": "5/5",
+    "anomalies": "9/9",
+    "mots-clés de famille": "3/3",
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 11,
+  "blockers": {
+    "header": 0,
+    "columns": 1,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 1,
+    "invalidRows": 7,
+    "ambiguousCells": 1
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Marque",
+      "field": "brand",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "brand",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : marque"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Modèle",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : modèle"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Désignation",
+      "field": "modelDescription",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelDescription",
+      "ruleAlternatives": [],
+      "ai": "modelDescription",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation (une colonne modèle existe)"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Coloris",
+      "field": "color",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "color",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Calibre",
+      "field": "eyeSize",
+      "status": "AMBIGU",
+      "origin": "règle+ia",
+      "rule": "eyeSize",
+      "ruleAlternatives": [],
+      "ai": "eyeSize",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : calibre",
+        "valeurs composites dans une colonne de mesure",
+        "réserve sur la suggestion : valeurs composites dans une colonne de mesure"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Pont",
+      "field": "bridgeSize",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "bridgeSize",
+      "ruleAlternatives": [],
+      "ai": "bridgeSize",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : pont"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "Branche",
+      "field": "templeLength",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "templeLength",
+      "ruleAlternatives": [],
+      "ai": "templeLength",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : branche"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "Matière",
+      "field": "material",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "material",
+      "ruleAlternatives": [],
+      "ai": "material",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : matière"
+      ]
+    },
+    {
+      "c": 8,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": "barcode",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : code-barres"
+      ]
+    },
+    {
+      "c": 9,
+      "header": "Réf. fournisseur",
+      "field": "supplierReference",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "supplierReference",
+      "ruleAlternatives": [],
+      "ai": "supplierReference",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence fournisseur"
+      ]
+    },
+    {
+      "c": 10,
+      "header": "Prix achat HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat"
+      ]
+    },
+    {
+      "c": 11,
+      "header": "PV TTC conseillé",
+      "field": "salePriceTtc",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "salePriceTtc",
+      "ruleAlternatives": [],
+      "ai": "salePriceTtc",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente TTC"
+      ]
+    },
+    {
+      "c": 12,
+      "header": "Remarque",
+      "field": "notes",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "notes",
+      "ruleAlternatives": [],
+      "ai": "notes",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : remarque"
+      ]
+    },
+    {
+      "c": 13,
+      "header": "",
+      "field": "unknown",
+      "status": "NON_RECONNU",
+      "origin": "none",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "unknown",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : en-tête vide"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        3,
+        4,
+        5,
+        6
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 1,
+      "lines": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 2,
+      "lines": [
+        12,
+        13,
+        14,
+        15
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 3,
+      "lines": [
+        16,
+        17,
+        18,
+        19,
+        20
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 4,
+      "lines": [
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 5,
+      "lines": [
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 6,
+      "lines": [
+        32,
+        33,
+        34,
+        35
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 7,
+      "lines": [
+        36,
+        37,
+        38,
+        39
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 8,
+      "lines": [
+        40,
+        41,
+        42,
+        43,
+        44
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 9,
+      "lines": [
+        45,
+        46,
+        47,
+        48
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 10,
+      "lines": [
+        49,
+        50,
+        51,
+        52
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 11,
+      "lines": [
+        53,
+        54,
+        55,
+        56,
+        57,
+        58
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 12,
+      "lines": [
+        59,
+        60,
+        61,
+        62,
+        63
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 13,
+      "lines": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 14,
+      "lines": [
+        70,
+        71,
+        72,
+        73,
+        74,
+        75
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 15,
+      "lines": [
+        76,
+        77,
+        78,
+        79
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 16,
+      "lines": [
+        80,
+        81,
+        82,
+        83,
+        84
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 17,
+      "lines": [
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 18,
+      "lines": [
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 19,
+      "lines": [
+        96,
+        97,
+        98,
+        99,
+        100,
+        101
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 20,
+      "lines": [
+        102,
+        103,
+        104,
+        105,
+        106
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 21,
+      "lines": [
+        107,
+        108,
+        109,
+        110,
+        111
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 22,
+      "lines": [
+        112,
+        113,
+        114,
+        115,
+        116,
+        117
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 23,
+      "lines": [
+        119,
+        120,
+        121,
+        122
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 24,
+      "lines": [
+        123,
+        124,
+        125,
+        126
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 25,
+      "lines": [
+        127,
+        128,
+        129,
+        130,
+        131,
+        132
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 26,
+      "lines": [
+        133,
+        134,
+        135,
+        136,
+        137
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 27,
+      "lines": [
+        138,
+        139,
+        140,
+        141
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 28,
+      "lines": [
+        142,
+        143,
+        144,
+        145,
+        146,
+        147
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 29,
+      "lines": [
+        148,
+        150,
+        151,
+        152
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 30,
+      "lines": [
+        153,
+        154,
+        155,
+        156
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 31,
+      "lines": [
+        157,
+        158,
+        159,
+        160,
+        161,
+        162
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 32,
+      "lines": [
+        163,
+        164,
+        165,
+        166
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 33,
+      "lines": [
+        167,
+        168,
+        169,
+        170,
+        171,
+        172
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 34,
+      "lines": [
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "doublon potentiel : mêmes déclinaisons"
+      ]
+    },
+    {
+      "id": 35,
+      "lines": [
+        180,
+        181,
+        182,
+        183,
+        184
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 36,
+      "lines": [
+        185,
+        186,
+        187,
+        188,
+        189
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 37,
+      "lines": [
+        190,
+        191,
+        192,
+        193,
+        194
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 38,
+      "lines": [
+        195,
+        196,
+        197,
+        198,
+        199
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 39,
+      "lines": [
+        200,
+        201,
+        202,
+        203,
+        204
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 40,
+      "lines": [
+        205,
+        206,
+        207,
+        208,
+        209,
+        210
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 41,
+      "lines": [
+        211,
+        212,
+        213,
+        214,
+        215
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 42,
+      "lines": [
+        216,
+        217,
+        218,
+        219,
+        220,
+        221
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 43,
+      "lines": [
+        222,
+        223,
+        224,
+        225,
+        226,
+        227
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 44,
+      "lines": [
+        228,
+        229,
+        230,
+        231
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 45,
+      "lines": [
+        232,
+        233,
+        234,
+        235
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 46,
+      "lines": [
+        236,
+        237,
+        238,
+        239,
+        240
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 47,
+      "lines": [
+        241,
+        242,
+        243,
+        244,
+        245
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 48,
+      "lines": [
+        246,
+        247,
+        248,
+        249
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 49,
+      "lines": [
+        250,
+        251,
+        252,
+        253,
+        254
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 50,
+      "lines": [
+        256,
+        257,
+        258,
+        259,
+        260
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 51,
+      "lines": [
+        261,
+        262,
+        263,
+        264
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 52,
+      "lines": [
+        265,
+        266,
+        267,
+        268
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 53,
+      "lines": [
+        269,
+        270,
+        271,
+        272
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 54,
+      "lines": [
+        273,
+        274,
+        276
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 55,
+      "lines": [
+        277,
+        278,
+        279,
+        280
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 56,
+      "lines": [
+        281,
+        282,
+        283,
+        284,
+        285
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 57,
+      "lines": [
+        286,
+        287,
+        288,
+        289
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 58,
+      "lines": [
+        290,
+        291,
+        292,
+        293
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 59,
+      "lines": [
+        294,
+        295,
+        296,
+        297,
+        298
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 60,
+      "lines": [
+        300,
+        301,
+        302
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 61,
+      "lines": [
+        303,
+        304,
+        305,
+        306
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 62,
+      "lines": [
+        307,
+        308
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 63,
+      "lines": [
+        309,
+        310,
+        311,
+        312
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 64,
+      "lines": [
+        313,
+        314,
+        315,
+        316
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 65,
+      "lines": [
+        317,
+        318,
+        319,
+        320
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 2,
+      "kind": "comment",
+      "status": "AVERTISSEMENT",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne de commentaire ou de section : affichée, non importée"
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 6,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 7,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 8,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 9,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 10,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 11,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 12,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 13,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 14,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 15,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 16,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 17,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 18,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 19,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 20,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 21,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 22,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 23,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 24,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 25,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 26,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 27,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 28,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 29,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 30,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 31,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 5,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 32,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 6,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 33,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 6,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 34,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 6,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 35,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 6,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 36,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 7,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 37,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 7,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 38,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 7,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 39,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 7,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 40,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 8,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 41,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 8,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 42,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 8,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 43,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 8,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 44,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 8,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 45,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 9,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 46,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 9,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 47,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 9,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 48,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 9,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 49,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 10,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 50,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 10,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 51,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 10,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 52,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 10,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 53,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 54,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 55,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 56,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 57,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 58,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 11,
+      "continuationOf": null,
+      "reasons": [
+        "c10 purchasePriceHt : symbole monétaire retiré"
+      ]
+    },
+    {
+      "line": 59,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 12,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 60,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 12,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 61,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 12,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 62,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 12,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 63,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 12,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 64,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 65,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 66,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 67,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 68,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 69,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 13,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 70,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 71,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 72,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 73,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 74,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 75,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 14,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 76,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 15,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 77,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 15,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 78,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 15,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 79,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 15,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 80,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 16,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 81,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 16,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 82,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 16,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 83,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 16,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 84,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 16,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 85,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 17,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 86,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 17,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 87,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 17,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 88,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 17,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 89,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 17,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 90,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 91,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 92,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 93,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": [
+        "c8 barcode : code-barres de 11 chiffres"
+      ]
+    },
+    {
+      "line": 94,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 95,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 18,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 96,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 97,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 98,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 99,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 100,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 101,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 19,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 102,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 20,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 103,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 20,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 104,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 20,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 105,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 20,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 106,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 20,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 107,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 21,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 108,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 21,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 109,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 21,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 110,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 21,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 111,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 21,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 112,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 113,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 114,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 115,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 116,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 117,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 22,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 118,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne mal alignée (fewer_cells) : aucune cellule décalée"
+      ]
+    },
+    {
+      "line": 119,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 23,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 120,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 23,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 121,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 23,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 122,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 23,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 123,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 24,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 124,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 24,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 125,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 24,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 126,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 24,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 127,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 128,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 129,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 130,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 131,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 132,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 25,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 133,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 26,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 134,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 26,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 135,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 26,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 136,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 26,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 137,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 26,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 138,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 27,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 139,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 27,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 140,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 27,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 141,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 27,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 142,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 143,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 144,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 145,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 146,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 147,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 28,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 148,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 29,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 149,
+      "kind": "empty",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 150,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 29,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 151,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 29,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 152,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 29,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 153,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 30,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 154,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 30,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 155,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 30,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 156,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 30,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 157,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 158,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 159,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 160,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 161,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 162,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 31,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 163,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 32,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 164,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 32,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 165,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 32,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 166,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 32,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 167,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 168,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 169,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 170,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 171,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 172,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 33,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 173,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": [
+        "c8 barcode : EAN en double dans le fichier",
+        "c9 supplierReference : référence en double dans le fichier"
+      ]
+    },
+    {
+      "line": 174,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 175,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": [
+        "c8 barcode : EAN en double dans le fichier",
+        "c9 supplierReference : référence en double dans le fichier"
+      ]
+    },
+    {
+      "line": 176,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 177,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 178,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 179,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 34,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 180,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 35,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 181,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 35,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 182,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 35,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 183,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 35,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 184,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 35,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 185,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 36,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 186,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 36,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 187,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 36,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 188,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 36,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 189,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 36,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 190,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 37,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 191,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 37,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 192,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 37,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 193,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 37,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 194,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 37,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 195,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 38,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 196,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 38,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 197,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 38,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 198,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 38,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 199,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 38,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 200,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 39,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 201,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 39,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 202,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 39,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 203,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 39,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 204,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 39,
+      "continuationOf": null,
+      "reasons": [
+        "c12 notes : consigne suspecte conservée comme simple texte"
+      ]
+    },
+    {
+      "line": 205,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 206,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 207,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 208,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 209,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 210,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 40,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 211,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 41,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 212,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 41,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 213,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 41,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 214,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 41,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 215,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 41,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 216,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 217,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 218,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 219,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 220,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 221,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 42,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 222,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 223,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 224,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 225,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 226,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 227,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 43,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 228,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 44,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 229,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 44,
+      "continuationOf": null,
+      "reasons": [
+        "c11 salePriceTtc : séparateur de milliers : montant non deviné"
+      ]
+    },
+    {
+      "line": 230,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 44,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 231,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 44,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 232,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 45,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 233,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 45,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 234,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 45,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 235,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 45,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 236,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 46,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 237,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 46,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 238,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 46,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 239,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 46,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 240,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 46,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 241,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 47,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 242,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 47,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 243,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 47,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 244,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 47,
+      "continuationOf": null,
+      "reasons": [
+        "c12 notes : consigne suspecte conservée comme simple texte"
+      ]
+    },
+    {
+      "line": 245,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 47,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 246,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 48,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 247,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 48,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 248,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 48,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 249,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 48,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 250,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 49,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 251,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 49,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 252,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 49,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 253,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 49,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 254,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "VALIDE",
+      "group": 49,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 255,
+      "kind": "comment",
+      "status": "AVERTISSEMENT",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne de commentaire ou de section : affichée, non importée"
+      ]
+    },
+    {
+      "line": 256,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 50,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 257,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 50,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 258,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 50,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 259,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 50,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 260,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 50,
+      "continuationOf": null,
+      "reasons": [
+        "c9 supplierReference : référence contenant une consigne"
+      ]
+    },
+    {
+      "line": 261,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 51,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 262,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 51,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 263,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 51,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 264,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 51,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 265,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 52,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 266,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 52,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 267,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 52,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 268,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 52,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 269,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 53,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 270,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 53,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 271,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 53,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 272,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 53,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 273,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 54,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ]
+    },
+    {
+      "line": 274,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 54,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ]
+    },
+    {
+      "line": 275,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne mal alignée (more_cells) : aucune cellule décalée",
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ]
+    },
+    {
+      "line": 276,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 54,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ]
+    },
+    {
+      "line": 277,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 55,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 278,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 55,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 279,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 55,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 280,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 55,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 281,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 56,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 282,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 56,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 283,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 56,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 284,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 56,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 285,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 56,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 286,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 57,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 287,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 57,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 288,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 57,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 289,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 57,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 290,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 58,
+      "continuationOf": null,
+      "reasons": [
+        "c12 notes : formule de tableur refusée"
+      ]
+    },
+    {
+      "line": 291,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 58,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 292,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 58,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 293,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 58,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 294,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 59,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 295,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 59,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 296,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 59,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 297,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 59,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 298,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "VALIDE",
+      "group": 59,
+      "continuationOf": null,
+      "reasons": []
+    },
+    {
+      "line": 299,
+      "kind": "comment",
+      "status": "AVERTISSEMENT",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [
+        "ligne de commentaire ou de section : affichée, non importée"
+      ]
+    }
+  ]
+}

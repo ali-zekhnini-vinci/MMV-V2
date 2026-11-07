@@ -1,0 +1,646 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 6,
+    "sampled": 6,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 4,
+  "blockers": {
+    "header": 0,
+    "columns": 3,
+    "familyClasses": 0,
+    "continuation": 1,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Référence",
+      "field": "supplierReference",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": null,
+      "ruleAlternatives": [
+        "supplierReference",
+        "manufacturerReference"
+      ],
+      "ai": "supplierCode",
+      "suggestion": "supplierCode",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence non qualifiée",
+        "intitulé ambigu : choix de l'utilisateur requis"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Désignation",
+      "field": "modelName",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "supplierName",
+      "suggestion": "supplierName",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation",
+        "l'IA propose « supplierName » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Renouvellement",
+      "field": "replacement",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "replacement",
+      "ruleAlternatives": [],
+      "ai": "supplierReference",
+      "suggestion": "supplierReference",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : renouvellement",
+        "l'IA propose « supplierReference » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Rayon",
+      "field": "baseCurve",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "baseCurve",
+      "ruleAlternatives": [],
+      "ai": "eyeSize",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : rayon",
+        "proposition IA « eyeSize » refusée : valeurs hors plage 20–80"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Diamètre",
+      "field": "diameter",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "diameter",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : diamètre",
+        "proposition IA « brand » refusée : valeurs numériques"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Sphère",
+      "field": "power",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "power",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : puissance",
+        "proposition IA « modelName » refusée : valeurs numériques"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": "priceUnqualified",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : code-barres",
+        "proposition IA « priceUnqualified » refusée : valeurs non monétaires"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "Prix net HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2,
+        3,
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "lignes de continuation : reprise de l'identité à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        5,
+        6
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "lignes de continuation : reprise de l'identité à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "HF-M30",
+          "value": "HF-M30",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "Hydrafil Month 30",
+          "value": "Hydrafil Month 30",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "replacement",
+          "raw": "Mensuelle",
+          "value": "Mensuelle",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "baseCurve",
+          "raw": "8,7",
+          "value": "8.7",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "diameter",
+          "raw": "14,5",
+          "value": "14.5",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "power",
+          "raw": "-0,75",
+          "value": "-0.75",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000001010",
+          "value": "4010000001010",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 7,
+          "field": "purchasePriceHt",
+          "raw": "18,40",
+          "value": "18.40",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": 2,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "Hydrafil Month 30",
+          "value": "Hydrafil Month 30",
+          "status": "AMBIGU",
+          "reason": "reprise de L2 (à confirmer)",
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "replacement",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "baseCurve",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "power",
+          "raw": "-1,00",
+          "value": "-1.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000001027",
+          "value": "4010000001027",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 7,
+          "field": "purchasePriceHt",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": 2,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "Hydrafil Month 30",
+          "value": "Hydrafil Month 30",
+          "status": "AMBIGU",
+          "reason": "reprise de L2 (à confirmer)",
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "replacement",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "baseCurve",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "power",
+          "raw": "-1,25",
+          "value": "-1.25",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000001034",
+          "value": "4010000001034",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        },
+        {
+          "c": 7,
+          "field": "purchasePriceHt",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "CL-D90",
+          "value": "CL-D90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "Clarilens Day 90",
+          "value": "Clarilens Day 90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "replacement",
+          "raw": "Journalière",
+          "value": "Journalière",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "baseCurve",
+          "raw": "8,5",
+          "value": "8.5",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "diameter",
+          "raw": "14,1",
+          "value": "14.1",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "power",
+          "raw": "+1,00",
+          "value": "1.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000002017",
+          "value": "4010000002017",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        },
+        {
+          "c": 7,
+          "field": "purchasePriceHt",
+          "raw": "41,00",
+          "value": "41.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": 5,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "supplierReference",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "Clarilens Day 90",
+          "value": "Clarilens Day 90",
+          "status": "AMBIGU",
+          "reason": "reprise de L5 (à confirmer)",
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "replacement",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 3,
+          "field": "baseCurve",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 4,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 5,
+          "field": "power",
+          "raw": "+1,50",
+          "value": "1.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000002024",
+          "value": "4010000002024",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 6
+        },
+        {
+          "c": 7,
+          "field": "purchasePriceHt",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        }
+      ]
+    }
+  ]
+}

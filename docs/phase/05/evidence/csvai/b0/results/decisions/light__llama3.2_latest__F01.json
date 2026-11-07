@@ -1,0 +1,877 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 7,
+    "sampled": 7,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 5,
+  "blockers": {
+    "header": 0,
+    "columns": 3,
+    "familyClasses": 2,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Marque",
+      "field": "brand",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "brand",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : marque"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Modèle",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : modèle"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Coloris",
+      "field": "color",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "color",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Calibre",
+      "field": "eyeSize",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "eyeSize",
+      "ruleAlternatives": [],
+      "ai": "eyeSize",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : calibre"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Pont",
+      "field": "bridgeSize",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "bridgeSize",
+      "ruleAlternatives": [],
+      "ai": "bridgeSize",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : pont"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Branche",
+      "field": "templeLength",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "templeLength",
+      "ruleAlternatives": [],
+      "ai": "templeLength",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : branche"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": "frameDimensions",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": true,
+      "reasons": [
+        "règle : code-barres",
+        "proposition IA « frameDimensions » refusée : pas de motif calibre-pont-branche",
+        "l'IA signale « mixed_content »"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "Réf. fournisseur",
+      "field": "supplierReference",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "supplierReference",
+      "ruleAlternatives": [],
+      "ai": "material",
+      "suggestion": "material",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence fournisseur",
+        "l'IA propose « material » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 8,
+      "header": "Prix achat HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "shape",
+      "suggestion": null,
+      "aiRejected": true,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat",
+        "proposition IA « shape » refusée : valeurs numériques"
+      ]
+    },
+    {
+      "c": 9,
+      "header": "PV TTC conseillé",
+      "field": "salePriceTtc",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "salePriceTtc",
+      "ruleAlternatives": [],
+      "ai": "notes",
+      "suggestion": "notes",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente TTC",
+        "l'IA propose « notes » : désaccord à trancher"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2,
+        3,
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        5,
+        6
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        7
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041",
+          "value": "LU-2041",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Écaille",
+          "value": "Écaille",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "52",
+          "value": "52",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "18",
+          "value": "18",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "140",
+          "value": "140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000011",
+          "value": "3760000000011",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "LUN2041-C01",
+          "value": "LUN2041-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "42,50",
+          "value": "42.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "139,00",
+          "value": "139.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041",
+          "value": "LU-2041",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Noir mat",
+          "value": "Noir mat",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "52",
+          "value": "52",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "18",
+          "value": "18",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "140",
+          "value": "140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000028",
+          "value": "3760000000028",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "LUN2041-C02",
+          "value": "LUN2041-C02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "42,50",
+          "value": "42.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "139,00",
+          "value": "139.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041",
+          "value": "LU-2041",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Bleu transparent",
+          "value": "Bleu transparent",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "54",
+          "value": "54",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "18",
+          "value": "18",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "145",
+          "value": "145",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000035",
+          "value": "3760000000035",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "LUN2041-C03",
+          "value": "LUN2041-C03",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "44,00",
+          "value": "44.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "145,00",
+          "value": "145.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-77",
+          "value": "VR-77",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Or rose",
+          "value": "Or rose",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "50",
+          "value": "50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "20",
+          "value": "20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "140",
+          "value": "140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000042",
+          "value": "3760000000042",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "VER77-01",
+          "value": "VER77-01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "38,00",
+          "value": "38.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "119,00",
+          "value": "119.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille non tranchée par les règles (optical_frames/sunglasses)"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-77",
+          "value": "VR-77",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Argent",
+          "value": "Argent",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "50",
+          "value": "50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "20",
+          "value": "20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "140",
+          "value": "140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000059",
+          "value": "3760000000059",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 6
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "VER77-02",
+          "value": "VER77-02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "38,00",
+          "value": "38.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "119,00",
+          "value": "119.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        }
+      ]
+    },
+    {
+      "line": 7,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "sunglasses",
+      "familyStatus": "AMBIGU",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [
+        "famille : règle « sunglasses », IA « optical_frames »"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VR-80 Solaire",
+          "value": "VR-80 Solaire",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Havane / verres verts",
+          "value": "Havane / verres verts",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 3,
+          "field": "eyeSize",
+          "raw": "56",
+          "value": "56",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 4,
+          "field": "bridgeSize",
+          "raw": "17",
+          "value": "17",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 5,
+          "field": "templeLength",
+          "raw": "145",
+          "value": "145",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "3760000000066",
+          "value": "3760000000066",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 7
+        },
+        {
+          "c": 7,
+          "field": "supplierReference",
+          "raw": "VER80-01",
+          "value": "VER80-01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 8,
+          "field": "purchasePriceHt",
+          "raw": "51,00",
+          "value": "51.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        },
+        {
+          "c": 9,
+          "field": "salePriceTtc",
+          "raw": "169,00",
+          "value": "169.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 7
+        }
+      ]
+    }
+  ]
+}

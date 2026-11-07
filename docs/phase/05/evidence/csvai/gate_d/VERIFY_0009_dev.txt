@@ -1,0 +1,18 @@
+﻿SET
+BEGIN
+server_version_num >= 180000|true|true|OK
+migrations (9, dernière 0009)|9|20261106154105_CsvImportAssistant|9|20261106154105_CsvImportAssistant|OK
+0007 et 0008 toujours présentes|2|2|OK
+tables imports|batch_analyses,batch_analysis_events,batch_assistant,batch_decisions,batch_originals,batches,rows,supplier_profiles|batch_analyses,batch_analysis_events,batch_assistant,batch_decisions,batch_originals,batches,rows,supplier_profiles|OK
+colonnes imports.batches inchangées (21, inventaire 0008)|21|21|OK
+ux_batches_applied_file inchangé|CREATE UNIQUE INDEX ux_batches_applied_file ON imports.batches USING btree (file_sha256, kind, store_id) NULLS NOT DISTINCT WHERE ((status)::text = 'applied'::text)|CREATE UNIQUE INDEX ux_batches_applied_file ON imports.batches USING btree (file_sha256, kind, store_id) NULLS NOT DISTINCT WHERE ((status)::text = 'applied'::text)|OK
+ck_batches_kind inchangée (catalog, suppliers, prices seulement)|true|true|OK
+contraintes CHECK des nouvelles tables (originals 6, assistant 5, analyses 8, events 2, decisions 4)|6|5|8|2|4|6|5|8|2|4|OK
+clés étrangères nouvelles (originals 2, assistant 3, analyses 2, events 2, decisions 3)|12|12|OK
+déclencheurs de garde 0009|11|11|OK
+fonctions de garde nouvelles (4, schéma imports)|guard_batch_analysis,guard_batch_assistant,guard_batch_original,reject_closed_batch_decision|guard_batch_analysis,guard_batch_assistant,guard_batch_original,reject_closed_batch_decision|OK
+index uniques nouveaux|imports.ux_batch_analyses_active,imports.ux_batch_analyses_batch_attempt,imports.ux_batch_decisions_batch_request,imports.ux_batch_decisions_batch_revision|imports.ux_batch_analyses_active,imports.ux_batch_analyses_batch_attempt,imports.ux_batch_decisions_batch_request,imports.ux_batch_decisions_batch_revision|OK
+propriétaire des nouvelles tables = propriétaire de imports.batches|true|true|OK
+lignes : aucune donnée créée par 0009|0|0|0|0|0|0|0|0|0|0|OK
+ROLLBACK
+exit=0

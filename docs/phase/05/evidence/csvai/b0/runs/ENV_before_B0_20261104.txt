@@ -1,0 +1,80 @@
+# Gel avant passages B0 — 2026-11-04T13:04:48Z
+## Empreintes SHA-256
+084ed3ad4ed1a9fddd69a1dcfc8c1b982eaf7dc2b0a7087f6fcdb9e2b6a54905 *bench/CsvAiBenchV2.cs
+64ff593f95a45a78c294bb5bef9ef3bcd446a500c1908c1c86c3b3ad3cd52f16 *bench/system_prompt_v2.txt
+e8bcc52325074d812a1bae8e3d77e1735cee67db05fb9887b5ddc869a6945a91 *bench/inference_options_v2.json
+19a22be9c6bb260e072b7ebae49b2533b482217cfbbecf633c12fe5d43098aac *corpus/F16.csv
+8bbf524e49ac21da05fba2163d32b90178cc66c2741db652c6114565bdde828a *corpus/F17.csv
+0663573a42a6c969de5351964f7ff9a43a9c448a74473186301e56c6921699c0 *corpus/F18.csv
+c1bac1e27760967a83c82f2f03b5b6fad886ef675b8fd4c0df8c955770b7b806 *corpus/F19.csv
+7b2a5214249a17466dd6c32550fdf1f8c01a81942237782644feb21a77d98769 *corpus/F20.csv
+2430738cbed3feb706affc629fbcdde21c3bfd66f7413018cae457072c26b623 *corpus/MANIFEST_B0.json
+cda1a09728a18000d51c6335384e6488886a99e73b60f278203245f0b8afe636 *expected/F16.json
+d79ace635ef32c5cdffd29f0f979de6b44df682b0bc55c4f89a504dd8c0d8fdf *expected/F17.json
+67ebf26d346abe47e36d0d3d3651a0fee3c415a0dc26c6371a9df20087bea8e4 *expected/F18.json
+370daea6bee350fa585ff501a8b3e268b12986246b22ac90aad4fdfccb4fff09 *expected/F19.json
+97342341dd63903160444b9f0d94bceee685e513e86e155db15a31a7b92f7cc7 *expected/F20.json
+12d84cddff94903fdd1d939bfddb147987fb1d05ae1c3433d853d4fc8840105b *../corpus/F01.csv
+1a49cd54e02e905d36c2cedf41b621a466974e772913c6e4a335bd763440ec4f *../corpus/F02.csv
+eff6de9d8a48a76a43072434cf5edd73be73096270452bcf4b20c496ee88dad0 *../corpus/F03.csv
+0ed41ac582415c2f61127ea420f52a766cd98943ad19945c855285d2c4e2c3ac *../corpus/F04.csv
+1db0c1200f8e3e7b2fbbe4cc8365b1ad5b19737252832bc018c5495b15a1f90b *../corpus/F05.csv
+55a109b1345cf5e995d112b225d02dfd3afeaaee592f47912f9ce22c774e7520 *../corpus/F06.csv
+47076868bb9e91cfdefe0742aa42592879fa36b6aeeed886a9fef35ae9008741 *../corpus/F07.csv
+f5cb9087cccc644233b4b3b2ad8eedf30e71fc7865827c042a10ddf93a2add72 *../corpus/F08.csv
+29b3853c603ddd0993404782d8b8f015ab26a1c78fc96b1eb7820736c93fdcbf *../corpus/F09.csv
+ed8dba5239f779bbefce3122394b0a9409034aa4fce84ac1f59b7e9483850162 *../corpus/F10.csv
+b4f6c577d8e582dee66a40297592308290fd578770d0a4b670651fa21934e49a *../corpus/F11.csv
+eac30741b4d391bd8205c18b1f3174212b04e0ef650933c8b17a90371e64b958 *../corpus/F12.csv
+97c08f1d7ca4f0eba8e263b2db8c5825c74ef8115c46e6a6c88227dded40030f *../corpus/F13.csv
+5215905edf58ef15b144e5a52e8193c20dc2f2a5645403ac1fc25a77085bede7 *../corpus/F14.csv
+63d6c0fa473ecfac7bb2981841a1d1179310c8992ff8e427489db27e02202f3f *../corpus/F15.csv
+301f2150c168afc7e74605619d447f48160201f54fa0bb85c4032a507b08b7e0 *../corpus/MANIFEST.json
+011e25343538d1d914a2850a518a2d5358b4eee6a1c38bca9817755bde343f64 *../expected/F01.json
+8ad5585d24e05d29e499b4bb4345b44b5cd9d437b6809a62db4d8b65d41a696e *../expected/F02.json
+f298193060a8ceb1d341eb514c63b0a9c99a26c39ec58aada1c0a2c6a3dd2730 *../expected/F03.json
+51768cc328dc2f11022b20ecaa039275f8e99252de37090ece11c75695d2239c *../expected/F04.json
+ed4f9c6cd1b61ab64b117c3be2e24f6116852dfbd08a5e94de9f96adc61c8a33 *../expected/F05.json
+140661bf23462db64a81b5cb16c72e520b85994f9b7499f80c5b5565d58ea916 *../expected/F06.json
+43a6b2208bf030bbf409a0bcb58d08e63dd864ab99bda7ee5d8e739c69bd11c8 *../expected/F07.json
+e6cf279600ce9e8654cdfff80bea7cc113fe4541e3f6ae1abf29cb198e9fd3f6 *../expected/F08.json
+c9461e95c7a7dc0a7f0b09c43b40082032d4abd8edc591c3e0faec2d3d162715 *../expected/F09.json
+56c9d0652ba9b569651fae986c61112918f6ebf598d63d1c78b23758d6ba037e *../expected/F10.json
+220e8ef981210497a82cad78fc64ed073308ce4a4a74a02b05faae354f3c1e77 *../expected/F11.json
+d6fd35aced24654eeb0f4923e5f53892b207064891fe420a04e022d621625ca1 *../expected/F12.json
+2d0d44db7f242d5965576c96e40cd61d85bc963fc4afdb1754f8c1b7cb376c8e *../expected/F13.json
+c401ea05a457e150c26d26f19faa0ab17ea0e0f60bccd1076e138c02de31bd30 *../expected/F14.json
+c55e27af0bab040ac04c154b92358e1eca4634de07c5124153c2a8d19623bf01 *../expected/F15.json
+2f24f8a061db3807698b73b91016b56e7dc88b47e12641be06d7e3048f288cb0 *../bench/CsvAiBench.cs
+b1dea6c18eed094f2a33c9ee3ad31c9ba261c270150fceed6719edf903ba0f3f *../bench/system_prompt.txt
+ecaab6316a9a7eef2c6013f52e5a8d41369c1f206ca557c96e6f3442f4948b06 *../runs/llama3.2_latest.jsonl
+5492ed5203faaa419478ffe6e30f5d3d436cc7ca22e479c69262731398a45013 *../runs/qwen3.5_2b.jsonl
+acabd6645beaad632ed9785ecfdd1a40157b71ea9b2505d4fb681de58acf722a *../runs/qwen3.5_4b.jsonl
+25e56756c28e2bd740f899eab343568e3906a032feb7ec7388c02f217d18ec4f *../results/RESULTS.md
+b1edc8ce5912aaec01e0ec33f265514d6165c2c64ddfacd8a5f7dad3e0dc84a0 *../results/scores_by_call.csv
+af1ca6cf0cf725f4f8c731ee62fe708a3bc068afd288e0c3f6409795f61d43df *../results/summary.json
+## .env.development (non lu, empreinte seule)
+sha256sum: ../../../../../apps/desktop/.env.development: No such file or directory
+## Ollama
+{"version":"0.40.14"}
+qwen3.5:2b 0689d44085e06d165161a8a9a1731344278cfb5aade63a3c3dbdb48ab54b130a 2683396812
+qwen3.5:4b d8b0f5e9760cd1682034f292d7ef72ec46f432149be0df7574bf2d6e92e38c04 3324173934
+llama3.2:latest a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72 2019393189
+sqlcoder:latest 77ac143483877b043ed3da36ce3e00a8f707645a2f1b769e9827313e5f8f0015 4108916695
+llama3:latest 365c0bd3c000a25d28ddbf732fe1c6add414de7275464c4e4d1c3b5fcb5d8ad1 4661224676
+## /api/ps
+{"models":[{"name":"llama3.2:latest","model":"llama3.2:latest","size":2901273475,"digest":"a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72","details":{"parent_model":"","format":"gguf","family":"llama","families":["llama"],"parameter_size":"3.2B","quantization_level":"Q4_K_M"},"expires_at":"2026-11-04T14:07:17.8269177+01:00","size_vram":2675504578,"context_length":8192,"runner":"llamacpp"}]}
+## GPU
+NVIDIA GeForce GTX 1650, 472.80, 3735 MiB, 4096 MiB, 4 %
+## Processus (nom, pid, début)
+llama-server 16180 04-11-26 13:31:38
+MMV.Api 35960 04-11-26 13:18:34
+mmv-desktop 16472 04-11-26 13:18:09
+ollama 25552 04-11-26 13:20:13
+ollama app 17736 04-11-26 13:20:12
+## Mémoire
+RAM libre 10,8 Go / 31,9 Go
+084ed3ad4ed1a9fddd69a1dcfc8c1b982eaf7dc2b0a7087f6fcdb9e2b6a54905 *bench/CsvAiBenchV2.cs
+64ff593f95a45a78c294bb5bef9ef3bcd446a500c1908c1c86c3b3ad3cd52f16 *bench/system_prompt_v2.txt
+## 2026-11-04T14:21:55Z après passages : correction de la notation des jumeaux (Scorer.Twin), validateur inchangé
+5bff836ab4f27014e5ad581d962045d12d30fdae79497b632964dd113522ffde *bench/CsvAiBenchV2.cs

@@ -1,0 +1,21 @@
+{
+  "id": "F14",
+  "header_line": "L1",
+  "file_family": ["optical_frames", "sunglasses", "unknown"],
+  "columns": {
+    "c0": {"accept": ["supplierReference", "manufacturerReference", "unknown"], "flag_optional": true},
+    "c1": {"accept": ["modelName", "variantLabel", "modelDescription"], "flag_optional": true},
+    "c2": {"accept": ["color", "variantLabel"]},
+    "c3": {"accept": ["unknown"], "truth_unknown": true, "flag_optional": true},
+    "c4": {"accept": ["unknown", "notes"], "truth_unknown": true, "flag_optional": true},
+    "c5": {"accept": ["priceUnqualified", "purchasePriceHt", "salePriceHt", "salePriceTtc", "unknown"], "must_flag": true, "flag_codes": ["ambiguous_price", "ambiguous_meaning"]},
+    "c6": {"accept": ["unknown", "notes"], "truth_unknown": true, "flag_optional": true}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["optical_frames", "sunglasses", "unknown"]},
+    "L3": {"kind": "data", "family": ["optical_frames", "sunglasses", "unknown"]},
+    "L4": {"kind": "data", "family": ["optical_frames", "sunglasses", "unknown"]}
+  },
+  "groups": [["L2", "L3"], ["L4"]]
+}

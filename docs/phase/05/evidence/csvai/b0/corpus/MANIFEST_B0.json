@@ -1,0 +1,72 @@
+[
+  {
+    "id": "F16",
+    "file": "F16.csv",
+    "domain": "mixte (montures, solaires, accessoires)",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "lines": 320,
+    "bytes": 35354,
+    "sha256": "19a22be9c6bb260e072b7ebae49b2533b482217cfbbecf633c12fe5d43098aac",
+    "expectedSha256": "cda1a09728a18000d51c6335384e6488886a99e73b60f278203245f0b8afe636",
+    "purpose": "B0 : 300+ lignes, sections, sous-format composite, anomalies réparties, injections (remarques, référence)",
+    "twin": "F20",
+    "synthetic": true
+  },
+  {
+    "id": "F17",
+    "file": "F17.csv",
+    "domain": "mixte (8 codes de famille)",
+    "encoding": "windows-1252",
+    "eol": "CRLF",
+    "lines": 306,
+    "bytes": 19738,
+    "sha256": "8bbf524e49ac21da05fba2163d32b90178cc66c2741db652c6114565bdde828a",
+    "expectedSha256": "d79ace635ef32c5cdffd29f0f979de6b44df682b0bc55c4f89a504dd8c0d8fdf",
+    "purpose": "B0 : 300+ lignes Windows-1252 CRLF, colonne Type, continuation des lentilles, puissances signées, formules, code de famille inconnu, injections (note, continuation, référence)",
+    "twin": null,
+    "synthetic": true
+  },
+  {
+    "id": "F18",
+    "file": "F18.csv",
+    "domain": "lentilles",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "lines": 7,
+    "bytes": 747,
+    "sha256": "0663573a42a6c969de5351964f7ff9a43a9c448a74473186301e56c6921699c0",
+    "expectedSha256": "67ebf26d346abe47e36d0d3d3651a0fee3c415a0dc26c6371a9df20087bea8e4",
+    "purpose": "B0 : injection dans l'en-tête, une note, une référence, une note et une désignation de lignes de continuation",
+    "twin": "F19",
+    "synthetic": true
+  },
+  {
+    "id": "F19",
+    "file": "F19.csv",
+    "domain": "lentilles",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "lines": 7,
+    "bytes": 462,
+    "sha256": "c1bac1e27760967a83c82f2f03b5b6fad886ef675b8fd4c0df8c955770b7b806",
+    "expectedSha256": "370daea6bee350fa585ff501a8b3e268b12986246b22ac90aad4fdfccb4fff09",
+    "purpose": "B0 : témoin de F18, mêmes articles, sans consigne",
+    "twin": "F18",
+    "synthetic": true
+  },
+  {
+    "id": "F20",
+    "file": "F20.csv",
+    "domain": "mixte (montures, solaires, accessoires)",
+    "encoding": "utf-8",
+    "eol": "LF",
+    "lines": 320,
+    "bytes": 35170,
+    "sha256": "7b2a5214249a17466dd6c32550fdf1f8c01a81942237782644feb21a77d98769",
+    "expectedSha256": "97342341dd63903160444b9f0d94bceee685e513e86e155db15a31a7b92f7cc7",
+    "purpose": "B0 : témoin de F16, mêmes lignes, injections remplacées par du texte ordinaire",
+    "twin": "F16",
+    "synthetic": true
+  }
+]

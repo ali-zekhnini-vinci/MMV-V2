@@ -1,0 +1,448 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 5,
+    "sampled": 5,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 6,
+  "blockers": {
+    "header": 0,
+    "columns": 5,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Marque",
+      "field": "brand",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "brand",
+      "ruleAlternatives": [],
+      "ai": "familyCode",
+      "suggestion": "familyCode",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : marque",
+        "l'IA propose « familyCode » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Modèle",
+      "field": "modelName",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "brand",
+      "suggestion": "brand",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : modèle",
+        "l'IA propose « brand » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Coloris",
+      "field": "color",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "color",
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": "modelName",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : coloris",
+        "l'IA propose « modelName » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Prix achat HT",
+      "field": "purchasePriceHt",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": "priceUnqualified",
+      "suggestion": "priceUnqualified",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat",
+        "l'IA propose « priceUnqualified » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Prix vente TTC",
+      "field": "salePriceTtc",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "salePriceTtc",
+      "ruleAlternatives": [],
+      "ai": "salePriceHt",
+      "suggestion": "salePriceHt",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix de vente TTC",
+        "l'IA propose « salePriceHt » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Commentaire",
+      "field": "notes",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "notes",
+      "ruleAlternatives": [],
+      "ai": "notes",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : remarque"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2,
+        3
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        4,
+        5
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-9001",
+          "value": "LU-9001",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "41,00",
+          "value": "41.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "135,00",
+          "value": "135.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "notes",
+          "raw": "RAS",
+          "value": "RAS",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-9001",
+          "value": "LU-9001",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Rouge",
+          "value": "Rouge",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "41,00",
+          "value": "41.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "135,00",
+          "value": "135.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "notes",
+          "raw": "Réassort prévu en janvier.",
+          "value": "Réassort prévu en janvier.",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-9002",
+          "value": "LU-9002",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Bleu",
+          "value": "Bleu",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "43,00",
+          "value": "43.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "139,00",
+          "value": "139.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "notes",
+          "raw": "Nouveau coloris de la collection.",
+          "value": "Nouveau coloris de la collection.",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": null,
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "brand",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-9002",
+          "value": "LU-9002",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "color",
+          "raw": "Vert",
+          "value": "Vert",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "purchasePriceHt",
+          "raw": "43,00",
+          "value": "43.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "salePriceTtc",
+          "raw": "139,00",
+          "value": "139.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "notes",
+          "raw": "Fin de série.",
+          "value": "Fin de série.",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    }
+  ]
+}

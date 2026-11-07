@@ -223,3 +223,122 @@ Exigences du mandat (§ 7) → preuves. `PASS` = exécuté sur l'arbre livré ; 
 | Thèmes clair et sombre, fenêtre réduite, clavier | natif 07, 08, 14, 23 ; Tab / Entrée dans l'assistant, combobox au clavier | PASS (contrôles du scénario) |
 | Parcours réel entre deux postes | deux fenêtres Tauri, API de banc réelle (produit et gamme vus du vendeur) | PASS |
 | Vérification visuelle des nouveaux écrans | auto-revue des captures par l'agent (défauts corrigés, `UX_IA_05.md` journal) | **Revue du propriétaire requise** |
+
+## Lot CSV-IMPORT-AI-01 — banc et matrice prévue (04/11/2026)
+
+Registre [`CSV_IA_05.md`](CSV_IA_05.md). Les résultats du lot UX-IA ci-dessus sont inchangés ; **aucune suite applicative n'a été relancée** dans ce lot (aucun code modifié) : `MMV.Api.Tests`, `MMV.Maintenance.Tests`, `MMV.PostgreSql.Tests`, Vitest et le natif sont `NOT_RERUN`.
+
+| Contrôle | Preuve | Résultat |
+| --- | --- | --- |
+| Banc : lecture, attendus, oracle | `CsvAiBench.cs selfcheck` (15 fichiers) | PASS |
+| Banc : 3 modèles × 5 passages × 15 fichiers | [`evidence/csvai/results/RESULTS.md`](evidence/csvai/results/RESULTS.md) | exécuté — 225/225 réponses, JSON 100 % ; critères éliminatoires non satisfaits par un modèle seul (rapport § 6) |
+| CSV-01 à CSV-16, CSV-F1 à F3, CSV-N1 | matrice prévue, [`CSV_IA_05_CONCEPTION.md` § 9](CSV_IA_05_CONCEPTION.md#9-matrice-qa-du-lot-prévue--not_tested) | **NOT_TESTED** (Lot B non implémenté) |
+
+## Lot CSV-IMPORT-AI-01 — B0 (04/11/2026)
+
+Prototype hors application ([`evidence/csvai/b0/RAPPORT_B0.md`](evidence/csvai/b0/RAPPORT_B0.md)). Aucune suite applicative relancée : `MMV.Api.Tests`, `MMV.Maintenance.Tests`, `MMV.PostgreSql.Tests`, Vitest et le natif restent `NOT_RERUN`. Matrice du lot révisée : [`CSV_IA_05_CONCEPTION.md` § 9](CSV_IA_05_CONCEPTION.md#9-matrice-qa-du-lot-prévue--application-not_tested) (application : `NOT_TESTED`).
+
+| Contrôle | Preuve | Résultat |
+| --- | --- | --- |
+| Précontrôle B0 (empreintes Lot A, modèles, `.env.development`) | `RAPPORT_B0.md` § 2 | PASS |
+| `CsvAiBenchV2.cs selfcheck` : lecture de 20 fichiers, attendus, couverture d'échantillon, lexique 70 cas, oracle, 21 080 mutations, déterminisme | [`evidence/csvai/b0/results/selfcheck_b0.json`](evidence/csvai/b0/results/selfcheck_b0.json) | PASS (0 critique, 0 violation de monotonie) |
+| Série `qwen3.5:4b`, contrat v2, 1 chauffe + 5 × 20 appels | [`evidence/csvai/b0/results/RESULTS_B0.md`](evidence/csvai/b0/results/RESULTS_B0.md) | exécutée — 100/100 JSON valides, 0 erreur critique après validation |
+| Injections F13/F15, F18/F19, F16/F20 | `RAPPORT_B0.md` § 7 | 0 divergence dangereuse |
+| CSV-01 à CSV-20, CSV-F1 à F3, CSV-N1 dans l'application | conception § 9 | **NOT_TESTED** |
+
+## Lot CSV-IMPORT-AI-01 — Gate B (04/11/2026)
+
+Dossier [`CSV_IA_05_GATE_B.md`](CSV_IA_05_GATE_B.md) § 14–15. Aucun code applicatif modifié : `MMV.Api.Tests`, `MMV.Maintenance.Tests`, `MMV.PostgreSql.Tests`, Vitest et le natif restent `NOT_RERUN`.
+
+| Contrôle | Preuve | Résultat |
+| --- | --- | --- |
+| Intégrité du corpus B0 (manifeste) | `CSV_IA_05_GATE_B.md` § 1 | PASS (5/5) |
+| Sorties B0 (`runs/`, `results/`) avant gel | aucune empreinte antérieure | NOT_TESTED ; gelées : [`evidence/csvai/gateb/B0_FREEZE_SHA256_20261104.txt`](evidence/csvai/gateb/B0_FREEZE_SHA256_20261104.txt) |
+| TypeScript (application + banc) | `npx tsc -p tsconfig.json --noEmit` | PASS |
+| ESLint du banc | `npx eslint src/bench/importWizard` | PASS |
+| Maquette : 38 états, clair / sombre, 1024×768 à 1920×1080, zoom 125 % | [`evidence/csvai/gateb/captures/report.json`](evidence/csvai/gateb/captures/report.json) | PASS (0 erreur console, 0 débordement horizontal ; simulation navigateur, pas Tauri) |
+| Navigation clavier (historique, étapes), contrastes du thème sombre | — | NOT_TESTED |
+| Critères prioritaires 1 à 15 du mandat de refonte | plan de recette § 14 | NOT_TESTED (Gates C/D) |
+
+## Lot CSV-IMPORT-AI-01 — implémentation (06/11/2026, lot CSV-IMPORT-AI-01, implémentation)
+
+Rapport [`LIVRAISON_05_CSVAI.md`](LIVRAISON_05_CSVAI.md) § 3–4 ; synthèse [`evidence/csvai/implementation/TESTS_SYNTHESE.md`](evidence/csvai/implementation/TESTS_SYNTHESE.md).
+
+| ID | Scénario | Preuve | Résultat |
+| --- | --- | --- | --- |
+| CSV-01…10 | lecture, en-têtes, familles, variantes, montants, valeurs et colonnes inconnues | `CsvAssistantCoreTests` (F01–F20, comparaison au prototype B0) ; `Phase05AssistedImportTests` | PASS |
+| CSV-11 | injection | `TechnicalRefusalsOnly_BusinessAnomaliesAccepted_AndInjectionNeverObeyed` ; mutations | PASS |
+| CSV-12 / 13 | Ollama indisponible, sortie invalide, modèle différent | `Analysis_Unavailable_InvalidOutput_ModelMismatch_NeverSilentFallback` ; `CsvAssistantServiceTests` | PASS |
+| CSV-14 | import interrompu (tout ou rien) | refus `blocking_remaining` / `apply_refused` sans écriture | PASS (API, PostgreSQL jetable) |
+| CSV-15 | réimport du même fichier | `ux_batches_applied_file` inchangé ; rejeu `requestId` | PASS |
+| CSV-16 | corrections (révisions append-only) | `Products_…_Applied` ; `ConcurrentDecisions_…` | PASS |
+| CSV-17 | monotonie | mutations sur 20 fichiers, 0 violation | PASS |
+| CSV-18 | nombres signés / formules | `Signed_numbers_are_numbers_and_formulas_are_refused` | PASS |
+| CSV-19 | analyse asynchrone, annulation, résultat tardif, interruption | `Analysis_LateResultAfterCancel_…` | PASS (natif NOT_TESTED) |
+| CSV-20 | échantillonnage | `Sampler_*` | PASS |
+| CSV-F1 / F2 | montures, lentilles | corpus + `Product_rows_…` | PASS |
+| CSV-F3 | verres (offres, références, plages, restriction combinée, compatibilité) | `Lenses_OffersOfSeveralSuppliers_…` | PASS |
+| CSV-N1 | parcours natif deux postes, Ollama réel | — | NOT_TESTED (0009 non appliquée aux bases servies) |
+| Ollama réel | `qwen3.5:4b`, F01 / F07 / F17 | `Phase05AssistedRealOllamaTests` | PASS (28–53 s, poste de développement) |
+| SQL 0009 | idempotent ×2, verify 14/14, restauration 14/14 | [`evidence/csvai/implementation/SQL_0009_ESSAIS.md`](evidence/csvai/implementation/SQL_0009_ESSAIS.md) | PASS (cluster jetable) ; bases du propriétaire BLOCKED |
+| Poste | historique replié, étapes du serveur, montant sans présélection, modale | `importWizard.test.tsx` (5) ; captures 12/12 | PASS (simulation navigateur) |
+| Accessibilité clavier, contrastes mesurés | — | — | NOT_TESTED |
+
+## Lot CSV-IMPORT-AI-01 — corrections post-audit (06/11/2026)
+
+Rapport [`LIVRAISON_05_CSVAI_POST_AUDIT.md`](LIVRAISON_05_CSVAI_POST_AUDIT.md) § 3. Statuts du 06/11 « implémentation » ci-dessus inchangés (historique) ; les lignes ci-dessous les complètent.
+
+| ID | Scénario | Preuve | Résultat |
+| --- | --- | --- | --- |
+| COR-CSVAI-01 | identité d'offre (approvisionnement inclus, géométrie = caractéristique) ; conflit / doublon dans le fichier jamais fusionnés ; départage par géométrie ; aucune caractéristique effacée par omission ; règles avancées conservées | `CsvAssistantPostAuditTests` ; `Lenses_PostAudit_IdentityGeometry_…` | PASS (unitaire, PostgreSQL jetable) |
+| LensOfferService (défaut 0008) | modification du seul prix / de la seule validité enregistrée | `Lenses_PostAudit_…` (PUT du seul prix → révision 2) | PASS |
+| COR-CSVAI-02 | fiche complète repassée « à revalider » si une capacité change ; conservée si seuls prix / délai changent | `Capability_update_turns_a_complete_sheet_back_to_incomplete` (×3), `Price_or_lead_time_update_keeps_a_complete_sheet_complete` ; PG | PASS |
+| COR-CSVAI-03 | devise absente jamais supposée ; devise du magasin proposée puis confirmée (droit des montants) ; autre devise refusée ; devise introuvable sans EUR par défaut | 5 tests unitaires ; `Products_…MoneyConfirmed…` ; `Lenses_*` ; Vitest « devise introuvable » | PASS |
+| COR-CSVAI-04 | rejeu = même résultat (produits, verres créés et modifiés) ; plan d'application identique au contrôle sinon `check_stale` | `AssertSameApplied` (produits, verres ×2) ; garde `catalog_changed` | PASS |
+| COR-CSVAI-05 | sauvegarde / restauration sur base neuve avec données de l'assistant, bascule, base basculée fonctionnelle | `restore_trial.sh` ; [journal](evidence/csvai/postaudit/RESTAURATION_essai2_20261106.log) | PASS (cluster jetable) |
+| SQL 0009 — prévalidation | sauvegardes réelles `mmv_v2_dev` / `mmv_v2_test` (lecture seule) restaurées sur base neuve jetable | [sortie](evidence/csvai/postaudit/BASES_PROPRIETAIRE_lecture_seule_20261106.txt) | PASS (IDENTIQUE) |
+| SQL 0009 — bases du propriétaire | 18.6 / 5433 / identité ; 0001–0008, 0009 absente ; aucune dérive ; aucune écriture en 5 s | idem | PASS (lecture seule) ; application BLOCKED (GO SQL) |
+| Suites | build 0/0, API 669, Maintenance 50, PostgreSQL 103 PASS + 2 BLOCKED (`*_AllMigrationsApplied`) + 1 NOT_TESTED (HTTPS réel) sur 106, Vitest 337, tsc, ESLint 0 erreur | [`LIVRAISON_05_CSVAI_POST_AUDIT.md`](LIVRAISON_05_CSVAI_POST_AUDIT.md) § 3 | PASS (sauf BLOCKED / NOT_TESTED listés au § 6 du rapport) |
+| Ollama réel | `qwen3.5:4b` (43 s, 36 s, 52 s) | [preuve](evidence/csvai/postaudit/OLLAMA_REEL_qwen3.5-4b_postaudit_20261106.txt) | PASS |
+| Accessibilité | clavier seul (jsdom) ; contrastes WCAG calculés sur les jetons (clair, sombre) | `importWizard.test.tsx`, `importWizard.contrast.test.ts` | PASS (non natif) ; natif NOT_TESTED |
+| CSV-N1 | parcours natif deux postes, Ollama réel | — | NOT_TESTED (0009 non appliquée aux bases servies) |
+
+## GO conditionnel G05-SQL-0009 et GATE D (07/11/2026)
+
+Rapport [`LIVRAISON_05_CSVAI_GATE_D.md`](LIVRAISON_05_CSVAI_GATE_D.md). Les statuts du 06/11 ci-dessus restent l'historique ; les lignes ci-dessous les complètent.
+
+| ID | Scénario | Preuve | Résultat |
+| --- | --- | --- | --- |
+| G05-SQL-0009 — précontrôles | manifestes 7/7 + 2/2, script additif, 18.6 / 5433 / cluster, 0009 absente, aucune dérive, 0 session (après arrêt des écrivains par le propriétaire) | rapport § 1 | PASS |
+| G05-SQL-0009 — sauvegardes | `pg_dump` exit 0, SHA-256, `pg_restore --list`, empreinte de cohérence, restauration sur base neuve distincte | [journal](evidence/csvai/gate_d/SAUVEGARDES_avant_0009_20261106_231005.log) | PASS (IDENTIQUE ×2) |
+| G05-SQL-0009 — application | COMMIT, verify 14/14, 9 migrations, données antérieures conservées, DEV puis TEST | [dev](evidence/csvai/gate_d/VERIFY_0009_dev.txt), [test](evidence/csvai/gate_d/VERIFY_0009_test.txt), [empreintes](evidence/csvai/gate_d/EMPREINTES_avant_apres_0009.txt) | PASS |
+| GD-STALE-1 | prix modifié par un autre acteur après le contrôle, puis pendant l'application ; modification sans conséquence acceptée | `Products_GateD_PriceChangedAfterCheckOrDuringApply_CheckStale_NeverOverwritten` | PASS |
+| GD-STALE-2 | caractéristique (SPH) d'une offre modifiée après le contrôle ; prix modifié pendant l'application ; note non fournie modifiée acceptée | `Lenses_GateD_CharacteristicChangedAfterCheckOrDuringApply_CheckStale_UnrelatedChangeKept` | PASS |
+| GD-STALE-contre-épreuve | protection neutralisée : les deux tests échouent (écrasement) ; verrous retirés : écrasement pendant l'application | [journal](evidence/csvai/gate_d/CONTRE_EPREUVES_check_stale_20261107.log) | PASS (défaut démontré puis corrigé) |
+| GD-01 | colonne absente : référence fabricant, code-barres, traitements conservés | test GD-STALE-1 étape 3 | PASS (défaut corrigé) |
+| GD-02 | annulation d'une analyse depuis Tauri (CORS : POST, jamais DELETE) | `DesktopCorsTests` ; `assistantApi.cors.test.ts` ; natif « running → cancelled » | PASS (défaut corrigé) |
+| GD-03 | contrastes mesurés nativement (clair 5,29:1, sombre 8,29:1) | `importWizard.contrast.test.ts` ; journal natif | PASS (défaut corrigé, portée de l'assistant) |
+| CSV-N1 / R1–R9 | Tauri → HTTPS → MMV.Api → PostgreSQL 18 → Ollama `qwen3.5:4b`, deux fenêtres sur UN poste | [journal](evidence/csvai/gate_d/GD_native_run_20261107.log) ; `captures/` | PASS (58/58) |
+| CSV-N2 | deux machines Windows distinctes | — | NOT_TESTED |
+| CSV-N3 | catalogues fournisseurs réels anonymisés | — | NOT_TESTED (non fournis) |
+| CSV-N4 | Échap sur la modale de confirmation, en natif | `importWizard.test.tsx` (jsdom) | NOT_TESTED (natif) |
+| Suites | build 0/0, Api 670, Maintenance 50, PostgreSQL 107 + 1 NotExecuted puis HTTPS réel 8/8, Vitest 341, tsc, ESLint 0 erreur | [synthèse](evidence/csvai/gate_d/PG_suite_mmv_v2_test_20261107.txt) | PASS (`*_AllMigrationsApplied` : BLOCKED → PASS) |
+| Résidus | `mmv_v2_test` purgée = état post-0009 hors séquences ; `mmv_v2_dev` = état post-0009 hors une session du propriétaire | rapport § 7 | PASS |
+
+## Clôture contrôlée — 07/11/2026
+
+Rapport [`RAPPORT_CLOTURE_PHASE05.md`](RAPPORT_CLOTURE_PHASE05.md) § 4 ; journaux [`evidence/cloture/`](evidence/cloture/). Les résultats ci-dessus restent ceux de leurs dates.
+
+| ID | Contrôle | Preuve | Résultat |
+| --- | --- | --- | --- |
+| CL-QA-01 | valeur versionnée `CatalogInterpreter:WizardEnabled = false` | `CsvAssistantDisabledGateTests.VersionedDefault_KeepsTheWizardDisabled` | PASS |
+| CL-QA-02 | 13 routes du nouveau parcours → `404 assistant_disabled`, base injoignable, aucun accès au catalogue hors lecture du magasin | `WizardDisabled_EveryRoute_Returns404AssistantDisabled_WithoutTouchingTheCatalog` (13 cas) | PASS |
+| CL-QA-03 | inventaire des routes `/assistant` entièrement couvert par la garde | `EveryAssistantRoute_IsCoveredByTheGateTest` | PASS |
+| CL-QA-04 | contre-épreuves : garde ouverte → 13/13 échecs (6 réponses ≠ 404, 7 accès à la base) ; fichier restauré (SHA-256 identique) | [journal](evidence/cloture/CLOTURE_contre_epreuves_assistant_desactive_20261107.log) | PASS (détection démontrée) |
+| CL-QA-05 | migrations 0001 → 0009 sur `mmv_v2_dev` et `mmv_v2_test`, lecture seule | [précontrôle](evidence/cloture/CLOTURE_precontrole_20261107.txt) | PASS |
+| CL-QA-06 | secrets dans les fichiers destinés au commit | [précontrôle](evidence/cloture/CLOTURE_precontrole_20261107.txt) | PASS |
+| Suites | build 0/0 ; Api **685/685** ; Maintenance 50/50 ; PostgreSQL `Stage=Phase05` cluster jetable **38/38** (+2 NotExecuted par conception) ; `tsc` ; Vitest **341/341** ; ESLint 0 erreur | [suites](evidence/cloture/CLOTURE_suites_20261107.txt) | PASS |
+| — | PostgreSQL complète sur `mmv_v2_test`, HTTPS réel, Ollama réel, natif 58/58 | GATE D (code produit inchangé depuis) | **NOT_RERUN** |
+| CSV-N2 / N3 / N4, non-régression native | deux machines, catalogues réels anonymisés, Échap natif, modules antérieurs en natif | — | **NOT_TESTED → DEFERRED** (BL-05-14) |
+| UX-PERF | performances de Qwen sur le matériel des magasins | — | **NOT_TESTED → DEFERRED** (BL-05-U2) |
+| UX-OWNER | validation UX de l'assistant CSV par le propriétaire | essai du propriétaire, 07/11/2026 | **REFUSÉE** (`OWNER_UX_REJECTED`) |

@@ -1,0 +1,20 @@
+{
+  "id": "F10",
+  "header_line": "L1",
+  "file_family": ["optical_frames"],
+  "columns": {
+    "c0": {"accept": ["modelName"]},
+    "c1": {"accept": ["modelDescription"]},
+    "c2": {"accept": ["color", "variantLabel"]},
+    "c3": {"accept": ["eyeSize"]},
+    "c4": {"accept": ["salePriceTtc"]},
+    "c5": {"accept": ["barcode"]}
+  },
+  "rows": {
+    "L1": {"kind": "header"},
+    "L2": {"kind": "data", "family": ["optical_frames"]},
+    "L3": {"kind": "data", "family": ["optical_frames"]},
+    "L4": {"kind": "data", "family": ["optical_frames"]}
+  },
+  "groups": [["L2", "L3"], ["L4"]]
+}

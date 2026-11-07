@@ -1,0 +1,668 @@
+{
+  "header": {
+    "present": false,
+    "status": "AMBIGU",
+    "rules": "absent",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 5,
+    "sampled": 5,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 10,
+  "blockers": {
+    "header": 1,
+    "columns": 8,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "",
+      "field": "barcode",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "barcode"
+      ],
+      "ai": "barcode",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs au format code-barres",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "",
+      "field": "modelName",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "modelName",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "",
+      "field": "variantLabel",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "variantLabel",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "",
+      "field": "manufacturerReference",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "manufacturerReference",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "",
+      "field": "color",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "color",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "",
+      "field": "frameDimensions",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "frameDimensions"
+      ],
+      "ai": "frameDimensions",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : valeurs composites calibre-pont-branche",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "",
+      "field": "purchasePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    },
+    {
+      "c": 7,
+      "header": "",
+      "field": "salePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [],
+      "ai": "salePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : sans en-tête : aucun sens déduit des seules valeurs",
+        "présence d'en-têtes à confirmer : colonne à confirmer"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        1
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        2
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        3
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 3,
+      "lines": [
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 4,
+      "lines": [
+        5
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "en-tête ou article : à confirmer",
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000110",
+          "value": "3760000000110",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 1
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LUN3010-C01",
+          "value": "LUN3010-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 2,
+          "field": "variantLabel",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 3,
+          "field": "manufacturerReference",
+          "raw": "LU-3010",
+          "value": "LU-3010",
+          "status": "INVALIDE",
+          "reason": "référence en double dans le fichier",
+          "from": 1
+        },
+        {
+          "c": 4,
+          "field": "color",
+          "raw": "Noir",
+          "value": "Noir",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 6,
+          "field": "purchasePriceHt",
+          "raw": "45.00",
+          "value": "45.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        },
+        {
+          "c": 7,
+          "field": "salePriceHt",
+          "raw": "149.00",
+          "value": "149.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 1
+        }
+      ]
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000127",
+          "value": "3760000000127",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LUN3010-C02",
+          "value": "LUN3010-C02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "variantLabel",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "manufacturerReference",
+          "raw": "LU-3010",
+          "value": "LU-3010",
+          "status": "INVALIDE",
+          "reason": "référence en double dans le fichier",
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "color",
+          "raw": "Rouge cerise",
+          "value": "Rouge cerise",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "52-18-140",
+          "value": "52-18-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "purchasePriceHt",
+          "raw": "45.00",
+          "value": "45.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 7,
+          "field": "salePriceHt",
+          "raw": "149.00",
+          "value": "149.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000134",
+          "value": "3760000000134",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LUN3011-C01",
+          "value": "LUN3011-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "variantLabel",
+          "raw": "Lunetta",
+          "value": "Lunetta",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "manufacturerReference",
+          "raw": "LU-3011",
+          "value": "LU-3011",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "color",
+          "raw": "Gris acier",
+          "value": "Gris acier",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "55-17-145",
+          "value": "55-17-145",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "purchasePriceHt",
+          "raw": "47.50",
+          "value": "47.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 7,
+          "field": "salePriceHt",
+          "raw": "155.00",
+          "value": "155.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000141",
+          "value": "3760000000141",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VER91-01",
+          "value": "VER91-01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "variantLabel",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "manufacturerReference",
+          "raw": "VR-91",
+          "value": "VR-91",
+          "status": "INVALIDE",
+          "reason": "référence en double dans le fichier",
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "color",
+          "raw": "Vert sapin",
+          "value": "Vert sapin",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "purchasePriceHt",
+          "raw": "36.00",
+          "value": "36.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 7,
+          "field": "salePriceHt",
+          "raw": "109.00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "barcode",
+          "raw": "3760000000158",
+          "value": "3760000000158",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "VER91-02",
+          "value": "VER91-02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "variantLabel",
+          "raw": "Verano",
+          "value": "Verano",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "manufacturerReference",
+          "raw": "VR-91",
+          "value": "VR-91",
+          "status": "INVALIDE",
+          "reason": "référence en double dans le fichier",
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "color",
+          "raw": "Bordeaux",
+          "value": "Bordeaux",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "frameDimensions",
+          "raw": "49-19-140",
+          "value": "49-19-140",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "purchasePriceHt",
+          "raw": "36.00",
+          "value": "36.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 7,
+          "field": "salePriceHt",
+          "raw": "109.00",
+          "value": "109.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,589 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": null
+  },
+  "aiUsed": false,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": null,
+  "applicable": false,
+  "confirmations": 2,
+  "blockers": {
+    "header": 0,
+    "columns": 0,
+    "familyClasses": 0,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 1,
+    "ambiguousCells": 1
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Produit",
+      "field": "modelName",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Type",
+      "field": "familyCode",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "familyCode",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : type = codes de famille"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Diamètre",
+      "field": "diameter",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "diameter",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : diamètre"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Contenance",
+      "field": "volumeMl",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "volumeMl",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : contenance"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Conditionnement",
+      "field": "packSize",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "packSize",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : conditionnement"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Prix achat HT",
+      "field": "purchasePriceHt",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "purchasePriceHt",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : prix d'achat"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "EAN",
+      "field": "barcode",
+      "status": "VALIDE",
+      "origin": "règle",
+      "rule": "barcode",
+      "ruleAlternatives": [],
+      "ai": null,
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : code-barres"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 1,
+      "lines": [
+        3
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 2,
+      "lines": [
+        4
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 3,
+      "lines": [
+        5
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    },
+    {
+      "id": 4,
+      "lines": [
+        6
+      ],
+      "status": "VALIDE",
+      "reasons": []
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "c2 diameter : unité mm retirée",
+        "c4 packSize : libellé d'unité retiré",
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Hydrafil Daily",
+          "value": "Hydrafil Daily",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "familyCode",
+          "raw": "Lentille journalière",
+          "value": "Lentille journalière",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "diameter",
+          "raw": "14,2 mm",
+          "value": "14.2",
+          "status": "AVERTISSEMENT",
+          "reason": "unité mm retirée",
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "volumeMl",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "packSize",
+          "raw": "30 lentilles",
+          "value": "30",
+          "status": "AVERTISSEMENT",
+          "reason": "libellé d'unité retiré",
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "12,00",
+          "value": "12.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000000013",
+          "value": "4010000000013",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "INVALIDE",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "c6 barcode : code-barres de 11 chiffres"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Hydrafil Daily 90",
+          "value": "Hydrafil Daily 90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "familyCode",
+          "raw": "Lentille journalière",
+          "value": "Lentille journalière",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "diameter",
+          "raw": "14.2",
+          "value": "14.2",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "volumeMl",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "packSize",
+          "raw": "90",
+          "value": "90",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "31,50",
+          "value": "31.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "40100000000",
+          "value": null,
+          "status": "INVALIDE",
+          "reason": "code-barres de 11 chiffres",
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [
+        "c3 volumeMl : unité ml retirée",
+        "c4 packSize : libellé d'unité retiré",
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Clarisol",
+          "value": "Clarisol",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "familyCode",
+          "raw": "Solution multifonction",
+          "value": "Solution multifonction",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "volumeMl",
+          "raw": "360ml",
+          "value": "360",
+          "status": "AVERTISSEMENT",
+          "reason": "unité ml retirée",
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "packSize",
+          "raw": "1 flacon",
+          "value": "1",
+          "status": "AVERTISSEMENT",
+          "reason": "libellé d'unité retiré",
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "4,10",
+          "value": "4.10",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000003014",
+          "value": "4010000003014",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        }
+      ]
+    },
+    {
+      "line": 5,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 3,
+      "continuationOf": null,
+      "reasons": [
+        "c3 volumeMl : unité différente de ml : aucune conversion",
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Clarisol Voyage",
+          "value": "Clarisol Voyage",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 1,
+          "field": "familyCode",
+          "raw": "Solution multifonction",
+          "value": "Solution multifonction",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 2,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 3,
+          "field": "volumeMl",
+          "raw": "0,1 L",
+          "value": null,
+          "status": "AMBIGU",
+          "reason": "unité différente de ml : aucune conversion",
+          "from": 5
+        },
+        {
+          "c": 4,
+          "field": "packSize",
+          "raw": "1",
+          "value": "1",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "2,20",
+          "value": "2.20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 5
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000003021",
+          "value": "4010000003021",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 5
+        }
+      ]
+    },
+    {
+      "line": 6,
+      "kind": "data",
+      "status": "AVERTISSEMENT",
+      "family": "contact_lenses_solutions",
+      "familyStatus": "VALIDE",
+      "group": 4,
+      "continuationOf": null,
+      "reasons": [
+        "c6 barcode : clé de contrôle GTIN incorrecte"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "modelName",
+          "raw": "Hydrafil Month",
+          "value": "Hydrafil Month",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 1,
+          "field": "familyCode",
+          "raw": "Lentille mensuelle",
+          "value": "Lentille mensuelle",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 2,
+          "field": "diameter",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 3,
+          "field": "volumeMl",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 4,
+          "field": "packSize",
+          "raw": "6",
+          "value": "6",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 5,
+          "field": "purchasePriceHt",
+          "raw": "",
+          "value": null,
+          "status": "VALIDE",
+          "reason": null,
+          "from": 6
+        },
+        {
+          "c": 6,
+          "field": "barcode",
+          "raw": "4010000000044",
+          "value": "4010000000044",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 6
+        }
+      ]
+    }
+  ]
+}

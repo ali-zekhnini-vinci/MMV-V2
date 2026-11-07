@@ -1,0 +1,26 @@
+﻿cluster jetable : 55434|18.6
+=== mmv_v2_dev : sauvegarde definitive avant 0009 (2026-11-06T23:10:05Z)
+identite=mmv_v2_dev|mmv_v2_dev|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+pg_dump exit=0
+check source exit=0
+apres sauvegarde : identite=mmv_v2_dev|mmv_v2_dev|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+sha256=1d2470783a56cc9941e4f2edee9694d3c8f3f57893f2dc33844600459040cf7f fichier=mmv_v2_dev_avant_0009_20261106_231005.dump octets=256270
+empreinte de coherence (fichier .check.txt) sha256=1a8f6f8943353191ca58610478d70c52d927763a9550b0de9924e9398a61dda7
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable 55434, base neuve gd_mmv_v2_dev) exit=0
+comparaison source / restauree : IDENTIQUE (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree gd_mmv_v2_dev supprimee du cluster jetable
+=== mmv_v2_test : sauvegarde definitive avant 0009 (2026-11-06T23:10:07Z)
+identite=mmv_v2_test|mmv_v2_test|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+pg_dump exit=0
+check source exit=0
+apres sauvegarde : identite=mmv_v2_test|mmv_v2_test|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+sha256=bc7859744615293b26c2c6a8922e052bf448e2ed1bef73eca93492681300cbee fichier=mmv_v2_test_avant_0009_20261106_231005.dump octets=219587
+empreinte de coherence (fichier .check.txt) sha256=7c6986f37760151ed6c888a2579ee520215c10858ffbf7fe4c953b8d37c8583f
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable 55434, base neuve gd_mmv_v2_test) exit=0
+comparaison source / restauree : IDENTIQUE (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree gd_mmv_v2_test supprimee du cluster jetable
+roles miroirs supprimes du cluster jetable ; sauvegardes definitives conservees dans C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes (horodatage 20261106_231005)

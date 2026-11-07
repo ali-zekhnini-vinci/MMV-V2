@@ -1,0 +1,137 @@
+# GATE D — recette NATIVE FINALE (07/11/2026) : apps/desktop/e2e/native-csvai.mjs (toutes étapes : depot, stale, verres, historique, clavier, annulation, pannes).
+# Deux fenêtres Tauri/WebView2 du MÊME poste Windows (mmv-gda / mmv-gdb ; ce n'est PAS une preuve sur deux machines), build de banc du front livré
+# (VITE_MMV_API_BASE_URL=https://localhost:7367, interrupteurs catalogue et ordonnances activés, exe sha256 77104f7379bd8325…), API MMV.Api de banc RÉELLE en HTTPS
+# (GD_bench_start-api.ps1, build final de ce lot) sur PostgreSQL 18.6 mmv_v2_test (0001→0009), CatalogInterpreter:WizardEnabled=true pour ce seul processus, Ollama réel qwen3.5:4b
+# (empreinte d8b0f5e9760c, Ollama 0.40.14). Banc purgé puis amorcé (GD_harness_seed.cs.txt) ; données et comptes fictifs purgés après la recette (GD_purge-test.ps1).
+# Coupure API et Ollama indisponible : GD_bench_control.ps1 (-Stop/-Start ; -Down = API relancée vers un point de terminaison injoignable, l'Ollama du propriétaire n'est pas arrêté).
+# Captures : captures/GD_native_*_20261107.jpg. État de la base après la recette, avant purge : voir la fin de ce journal.
+
+2026-11-07T02:45:28.844Z ÉTAPE — depot
+2026-11-07T02:45:30.522Z PASS — serveur de banc : assistant activé, qwen3.5:4b configuré et installé (d8b0f5e9760c)
+2026-11-07T02:45:30.524Z PASS — badge « IA locale · qwen3.5:4b configuré » affiché
+2026-11-07T02:45:30.689Z PASS — R1 : encodage Windows-1252 reconnu par le serveur
+2026-11-07T02:45:30.689Z PASS — R1 : aperçu du texte d'origine (SKU en double accepté au dépôt)
+2026-11-07T02:45:32.185Z CAPTURE — <PREUVES>\GD_native_01_depot_apercu_A_light_20261107.png 1366x768
+2026-11-07T02:45:36.029Z CAPTURE — <PREUVES>\GD_native_02_analyse_en-cours_A_light_20261107.png 1366x768
+2026-11-07T02:45:50.338Z PASS — R2 : analyse IA réelle terminée (done) en 17.7 s
+2026-11-07T02:45:50.338Z PASS — R2 : modèle CONFIRMÉ par la réponse d'Ollama = qwen3.5:4b (configuré qwen3.5:4b)
+2026-11-07T02:45:50.338Z PASS — R2 : activité réelle horodatée (file, envoi, réception, validation)
+2026-11-07T02:45:50.973Z PASS — R2 : l'interface affiche le modèle réellement exécuté
+2026-11-07T02:45:52.463Z CAPTURE — <PREUVES>\GD_native_03_analyse_terminee_modele-confirme_A_light_20261107.png 1366x768
+2026-11-07T02:45:52.478Z GROUPES — col:3, col:4, family:none, default:stockPolicy
+2026-11-07T02:45:52.497Z PASS — R4 : colonne de montant non qualifiée présentée à confirmer
+2026-11-07T02:45:52.660Z PASS — R4 : aucune présélection du montant
+2026-11-07T02:45:52.661Z PASS — R4 : aucune conversion monétaire annoncée
+2026-11-07T02:45:54.125Z CAPTURE — <PREUVES>\GD_native_04_montant_a-confirmer_exemples_A_light_20261107.png 1366x768
+2026-11-07T02:45:55.250Z DÉCISION — col:4 → « Prix d'achat HT pour les 3 lignes lisibles »
+2026-11-07T02:45:55.758Z PASS — R3 : décision de A enregistrée en révision 2 (append-only)
+2026-11-07T02:45:58.152Z PASS — R3 : poste B sur une révision périmée → aucune écriture (409 revision_conflict), vue rechargée
+2026-11-07T02:45:59.730Z CAPTURE — <PREUVES>\GD_native_05_poste-B_revision-perimee_B_light_20261107.png 1366x768
+2026-11-07T02:45:59.910Z DÉCISION — col:3 → « Importer comme « sku » »
+2026-11-07T02:46:00.583Z DÉCISION — family:none → « Montures optiques pour les 3 lignes »
+2026-11-07T02:46:01.241Z DÉCISION — default:stockPolicy → « Articles sur commande »
+2026-11-07T02:46:01.885Z DÉCISION — default:currency → « Les montants sont en EUR (devise du magasin) pour les 1 lignes »
+2026-11-07T02:46:02.367Z PASS — R4 : devise du magasin CONFIRMÉE explicitement (décision file_default), jamais supposée
+2026-11-07T02:46:02.527Z CORRECTION — ligne 4 → « Modifier la valeur de la ligne 4 »
+2026-11-07T02:46:04.228Z CAPTURE — <PREUVES>\GD_native_06_correction-individuelle_doublon-SKU_A_light_20261107.png 1366x768
+2026-11-07T02:46:04.510Z PASS — R3 : correction individuelle du SKU en double enregistrée et revalidée
+2026-11-07T02:46:05.333Z CONTRÔLE — {"create":3,"update":0,"blocking":0,"currency":"EUR"}
+2026-11-07T02:46:05.333Z PASS — R5 : contrôle à blanc : 3 variantes à créer, 0 bloquant
+2026-11-07T02:46:05.333Z PASS — R4 : montants en EUR (devise du magasin), prix d'achat écrits avec costs.write
+2026-11-07T02:46:05.333Z PASS — empreinte du plan métier jamais servie au client
+2026-11-07T02:46:06.787Z CAPTURE — <PREUVES>\GD_native_07_controle-a-blanc_A_light_20261107.png 1366x768
+2026-11-07T02:46:08.393Z CAPTURE — <PREUVES>\GD_native_08_confirmation_modale_A_light_20261107.png 1366x768
+2026-11-07T02:46:08.710Z PASS — R5 : import transactionnel : 3 variantes créées (nombres relus du serveur)
+2026-11-07T02:46:10.161Z CAPTURE — <PREUVES>\GD_native_09_import-enregistre_A_light_20261107.png 1366x768
+2026-11-07T02:46:10.197Z PASS — R5 : catalogue : exactement 3 variantes GD (aucun doublon)
+2026-11-07T02:46:10.644Z PASS — R2 : annulation de l'analyse IA en cours possible
+2026-11-07T02:46:10.964Z PASS — R9 : « Vérifier sans IA » : règles seules, choix tracé et affiché
+2026-11-07T02:46:12.936Z CAPTURE — <PREUVES>\GD_native_10_reimport_sans-IA_choix-trace_A_light_20261107.png 1366x768
+2026-11-07T02:46:13.160Z DÉCISION — col:4 → « Prix d'achat HT pour les 3 lignes lisibles »
+2026-11-07T02:46:13.830Z DÉCISION — family:none → « Montures optiques pour les 3 lignes »
+2026-11-07T02:46:14.528Z DÉCISION — default:stockPolicy → « Articles sur commande »
+2026-11-07T02:46:15.200Z DÉCISION — default:currency → « Les montants sont en EUR (devise du magasin) pour les 1 lignes »
+2026-11-07T02:46:16.594Z PASS — R5 : réimport du même fichier : 0 variante à créer (2 inchangée(s))
+2026-11-07T02:46:16.596Z PASS — R5 : réimport : « Aucune donnée nouvelle », étape d'import verrouillée par le serveur
+2026-11-07T02:46:16.616Z PASS — R5 : application forcée par l'API refusée (HTTP 409 already_applied)
+2026-11-07T02:46:16.624Z PASS — R5 : toujours 3 variantes GD (idempotence)
+2026-11-07T02:46:18.684Z CAPTURE — <PREUVES>\GD_native_11_reimport-refuse_sans-doublon_A_light_20261107.png 1366x768
+2026-11-07T02:46:18.684Z ÉTAPE — stale
+2026-11-07T02:46:43.138Z ANALYSE — done qwen3.5:4b 23.6 s
+2026-11-07T02:46:43.807Z DÉCISION — col:3 → « Importer comme « sku » »
+2026-11-07T02:46:44.465Z DÉCISION — col:4 → « Prix d'achat HT pour les 1 lignes lisibles »
+2026-11-07T02:46:45.107Z DÉCISION — family:none → « Montures optiques pour les 1 lignes »
+2026-11-07T02:46:45.768Z DÉCISION — default:stockPolicy → « Articles sur commande »
+2026-11-07T02:46:46.430Z DÉCISION — default:currency → « Les montants sont en EUR (devise du magasin) pour les 1 lignes »
+2026-11-07T02:46:47.746Z PASS — R5 : contrôle : 1 article modifié (prix d'achat 42,50 → 50,00)
+2026-11-07T02:46:49.351Z CAPTURE — <PREUVES>\GD_native_12_tarif_controle_avant-apres_A_light_20261107.png 1366x768
+2026-11-07T02:46:49.411Z PASS — autre poste : prix d'achat modifié à 45,00 après le contrôle (HTTP 200 )
+2026-11-07T02:46:49.755Z PASS — R5 : 409 check_stale : prix de l'autre poste (45,00) conservé, jamais écrasé
+2026-11-07T02:46:49.760Z PASS — R5 : lot non appliqué (rien n'est écrit)
+2026-11-07T02:46:51.456Z CAPTURE — <PREUVES>\GD_native_13_check-stale_refus_A_light_20261107.png 1366x768
+2026-11-07T02:46:51.970Z PASS — R5 : nouveau contrôle sur l'état relu (45,00 → 50,00)
+2026-11-07T02:46:52.311Z PASS — R5 : après nouveau contrôle, prix d'achat 50,00 importé
+2026-11-07T02:46:53.810Z CAPTURE — <PREUVES>\GD_native_14_tarif_importe_apres-recontrole_A_light_20261107.png 1366x768
+2026-11-07T02:46:53.810Z ÉTAPE — verres
+2026-11-07T02:46:55.403Z PASS — R6 : destination « Référentiel des verres » suggérée par le serveur
+2026-11-07T02:46:57.090Z CAPTURE — <PREUVES>\GD_native_15_verres_depot_destination-suggeree_A_light_20261107.png 1366x768
+2026-11-07T02:47:33.065Z PASS — R6 : analyse done (qwen3.5:4b)
+2026-11-07T02:47:33.250Z DÉCISION — default:currency → « Les montants sont en EUR (devise du magasin) pour les 2 lignes »
+2026-11-07T02:47:34.566Z CONTRÔLE VERRES — {"create":1,"update":1,"revalidate":1,"blocking":0,"remaining":[]}
+2026-11-07T02:47:34.566Z PASS — R6 : 1 offre sur commande à créer, 1 offre stockée à modifier (circuits distincts)
+2026-11-07T02:47:34.566Z PASS — R6 : fiche complète dont la capacité change → à revalider
+2026-11-07T02:47:36.124Z CAPTURE — <PREUVES>\GD_native_16_verres_controle_revalidation_A_light_20261107.png 1366x768
+2026-11-07T02:47:36.454Z PASS — R6 : 1 offre créée, 1 modifiée (relu du serveur)
+2026-11-07T02:47:36.479Z PASS — R6 : offre stockée : fiche repassée « à revalider » 
+2026-11-07T02:47:36.480Z PASS — R6 : note saisie à la main conservée (colonne absente du fichier)
+2026-11-07T02:47:37.956Z CAPTURE — <PREUVES>\GD_native_17_verres_importes_A_light_20261107.png 1366x768
+2026-11-07T02:47:37.956Z ÉTAPE — historique
+2026-11-07T02:47:38.423Z PASS — R7 : historique replié par défaut (liste non chargée)
+2026-11-07T02:47:38.513Z PASS — R7/R8 : historique ouvert au clavier (Entrée)
+2026-11-07T02:47:40.076Z CAPTURE — <PREUVES>\GD_native_18_historique_ouvert_A_light_20261107.png 1366x768
+2026-11-07T02:47:40.239Z PASS — R7 : reprise d'un lot importé : lecture seule
+2026-11-07T02:47:41.854Z CAPTURE — <PREUVES>\GD_native_19_lot-importe_lecture-seule_A_light_20261107.png 1366x768
+2026-11-07T02:47:41.855Z ÉTAPE — clavier
+2026-11-07T02:47:43.649Z TABULATION — BUTTON 1Déposer le fichier | INPUT Fichier CSV à importer | INPUT Fournisseur du fichier (facultatif) | INPUT Catalogue des produitsMontures, solaires, lentilles, accessoires, prestati | BUTTON Imports récents4 import(s) · dernier le 07/11/2026 03:46 · 1 à reprendre | BODY APrincipalAccueilClientsRendez-vousProduitsOrdonnancesCommandesVentesStock  | BUTTON Thème — passer en mode sombre | BUTTON Menu utilisateur — Admin GATE D | BUTTON Réduire le menu | BUTTON Accueil | BUTTON Clients | BUTTON Rendez-vous | BUTTON Produits | BUTTON Ordonnances — Disponible dans une phase suivante
+2026-11-07T02:47:43.650Z PASS — R8 : zone de dépôt atteinte au clavier (Tab)
+2026-11-07T02:47:43.650Z PASS — R8 : focus visible sur l'élément atteint
+2026-11-07T02:47:45.334Z CAPTURE — <PREUVES>\GD_native_20_assistant_1366x768_light_A_20261107.png 1366x768
+2026-11-07T02:47:45.335Z PASS — R8 : 1366×768 light : aucun défilement horizontal
+2026-11-07T02:47:47.050Z CAPTURE — <PREUVES>\GD_native_20_assistant_1920x1080_light_A_20261107.png 1920x1080
+2026-11-07T02:47:47.051Z PASS — R8 : 1920×1080 light : aucun défilement horizontal
+2026-11-07T02:47:47.052Z PASS — R8 : contraste minimal des textes de l'assistant en light = 5.29:1 (≥ 4,5)
+2026-11-07T02:47:48.812Z CAPTURE — <PREUVES>\GD_native_20_assistant_1366x768_dark_A_20261107.png 1366x768
+2026-11-07T02:47:48.813Z PASS — R8 : 1366×768 dark : aucun défilement horizontal
+2026-11-07T02:47:50.410Z CAPTURE — <PREUVES>\GD_native_20_assistant_1920x1080_dark_A_20261107.png 1920x1080
+2026-11-07T02:47:50.411Z PASS — R8 : 1920×1080 dark : aucun défilement horizontal
+2026-11-07T02:47:50.411Z PASS — R8 : contraste minimal des textes de l'assistant en dark = 8.29:1 (≥ 4,5)
+2026-11-07T02:47:50.729Z ÉTAPE — annulation
+2026-11-07T02:47:52.169Z ANNULATION — running → cancelled
+2026-11-07T02:47:52.169Z PASS — R2 : analyse en cours (running) annulée depuis le poste → cancelled
+2026-11-07T02:47:52.170Z PASS — R2/R9 : après annulation, relancer ou vérifier sans IA (aucune décision implicite)
+2026-11-07T02:47:53.759Z CAPTURE — <PREUVES>\GD_native_23_analyse-annulee_choix_A_light_20261107.png 1366x768
+2026-11-07T02:47:53.760Z ÉTAPE — pannes
+2026-11-07T02:48:01.766Z PASS — R9 : API coupée : état déconnecté affiché
+2026-11-07T02:48:03.849Z CAPTURE — <PREUVES>\GD_native_21_api-coupee_A_light_20261107.png 1366x768
+2026-11-07T02:48:15.181Z PASS — R9 : API rétablie : reconnexion automatique
+2026-11-07T02:48:25.081Z PASS — R9 : Ollama indisponible annoncé avant dépôt
+2026-11-07T02:48:25.599Z PASS — R9 : analyse « unavailable » : aucun repli silencieux
+2026-11-07T02:48:25.757Z PASS — R9 : choix explicite proposé (relancer ou vérifier sans IA)
+2026-11-07T02:48:27.447Z CAPTURE — <PREUVES>\GD_native_22_ollama-indisponible_choix_A_light_20261107.png 1366x768
+2026-11-07T02:48:27.608Z PASS — R9 : repli par règles seulement sur décision tracée
+2026-11-07T02:48:32.528Z RÉSULTAT — 58 contrôle(s) PASS
+2026-11-07T02:48:32.528Z NOTE — Échap sur la modale : couvert par le test Vitest importWizard ; non rejoué nativement
+
+## État de mmv_v2_test après la recette (lecture seule, avant purge) : offres (approvisionnement|SPH|prix|fiche complète|note|révision), prix d'achat, lots (fichier|statut|analyse|modèle configuré>confirmé)
+on_order|-10.00..6.00|89.9000|false|-|rev 1
+stocked|-6.00..4.00|31.0000|false|offre saisie à la main|rev 2
+GD28800-01|50.0000
+GD28800-02|44.0000
+GD28800-03|39.9000
+catalogue-gd-28800.csv|applied|done|qwen3.5:4b>qwen3.5:4b
+catalogue-gd-28800.csv|checked|cancelled|qwen3.5:4b>-
+tarif-gd-28800.csv|applied|done|qwen3.5:4b>qwen3.5:4b
+verres-gd-28800.csv|applied|done|qwen3.5:4b>qwen3.5:4b
+catalogue-gd-28800.csv|cancelled|cancelled|qwen3.5:4b>-
+tarif-gd-28800.csv|cancelled|unavailable|qwen3.5:4b>-
+exit=0

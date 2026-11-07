@@ -1,0 +1,43 @@
+# Empreintes de coherence (0009_restore_check.sql) avant / apres 0009 — lignes presentes AVANT et absentes APRES, puis decompte des lignes ajoutees
+## mmv_v2_dev
+avant: 911 lignes ; apres: 1034 lignes
+presentes avant, absentes apres :
+table|public.__EFMigrationsHistory|8|5697915b42768204c0f316d56db9433c
+ajoutees (par type) :
+     77 constraint
+      4 function
+     18 index
+      1 migration
+      6 owner
+      1 sequence
+      6 table
+     11 trigger
+ajoutees (tables, migrations) :
+migration|20261106154105_CsvImportAssistant|10.0.4
+table|imports.batch_analyses|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_analysis_events|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_assistant|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_decisions|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_originals|0|d41d8cd98f00b204e9800998ecf8427e
+table|public.__EFMigrationsHistory|9|750300f770a338485b120f527b31c0ab
+## mmv_v2_test
+avant: 911 lignes ; apres: 1034 lignes
+presentes avant, absentes apres :
+table|public.__EFMigrationsHistory|8|5697915b42768204c0f316d56db9433c
+ajoutees (par type) :
+     77 constraint
+      4 function
+     18 index
+      1 migration
+      6 owner
+      1 sequence
+      6 table
+     11 trigger
+ajoutees (tables, migrations) :
+migration|20261106154105_CsvImportAssistant|10.0.4
+table|imports.batch_analyses|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_analysis_events|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_assistant|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_decisions|0|d41d8cd98f00b204e9800998ecf8427e
+table|imports.batch_originals|0|d41d8cd98f00b204e9800998ecf8427e
+table|public.__EFMigrationsHistory|9|750300f770a338485b120f527b31c0ab

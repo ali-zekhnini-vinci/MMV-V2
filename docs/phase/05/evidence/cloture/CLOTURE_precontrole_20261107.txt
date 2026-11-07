@@ -1,0 +1,35 @@
+# Clôture contrôlée Phase 05 — précontrôle (07/11/2026, avant tout commit)
+# Mandat : prompts/MMV_V2_CLOTURE_CONTROLEE_PHASE05_TRANSITION_PHASE06_2026-11-07.md
+
+## Git
+branche courante                  : spike/csv-import-ollama-benchmark
+HEAD                              : 55f021d894e07452d882a85a461bbfc34052c41d
+feat/phase-05-catalogue-stock     : 55f021d (même commit que la branche spike)
+main = origin/main                : 0a83a57 (merge PR #5, Phase 04) ; ancêtre de 55f021d ; main..HEAD = 19 commits Phase 05, HEAD..main = 0
+index                             : vide (aucun fichier indexé)
+suivis modifiés                   : 27 (dont apps/desktop/.env.development du propriétaire)
+non suivis du lot CSVAI           : 413 fichiers projet (code, tests, migration 0009, scripts SQL 0009, documents, preuves, mandats)
+non suivis personnels conservés   : .claude/, .serena/, archives *.zip, references/phase02..04/, docs/phase/04/{CADRAGE_OFFICIEL_PHASE04_ORDONNANCES.md, PROMPT_CLAUDE_CODE_PHASE04_00.md, README_PACK.md}, apps/desktop/tsconfig.tsbuildinfo
+divergence                        : aucune (les deux branches Phase 05 pointent sur le même commit ; aucun commit propre à l'une ou à l'autre)
+conséquence                       : tout le lot CSVAI (06–07/11) n'existe QUE dans l'arbre de travail ; consolidation par commits locaux sur feat/phase-05-catalogue-stock
+
+## Fichier du propriétaire
+apps/desktop/.env.development SHA-256 : a215e1f012848afc5f5fb1dd87efadc718c20fb3316201713ef70a18bd7d2e4e (identique à GATE 0 du 04/11 et à GATE D) — jamais indexé
+
+## Migrations (lecture seule, default_transaction_read_only=on, script evidence/csvai/gate_d/readonly_sql.ps1)
+dépôt        : 0001 InitialBaseline … 0007 CatalogStockModule, 0008 CatalogCorrections, 0009 CsvImportAssistant (9 migrations)
+mmv_v2_dev   : 0001 → 0009 (9) ; 4 autres sessions (API 7267 et tauri dev du propriétaire en marche, non touchés)
+mmv_v2_test  : 0001 → 0009 (9) ; 0 autre session
+cluster jetable 127.0.0.1:55434 (PostgreSQL 18.6, mmv_v2_scratch) : 0001 → 0009 (9)
+
+## Configuration de l'assistant
+src/MMV.Api/appsettings.json (versionné)                 : CatalogInterpreter.WizardEnabled = false ; Model qwen3.5:4b ; Endpoint http://127.0.0.1:11434 ; Mode always
+src/MMV.Api/bin/Debug/net10.0/appsettings.json (sortie de build du propriétaire, ignorée par Git, modifiée le 07/11 14:03) : WizardEnabled = true — activation locale du propriétaire, NON modifiée
+garde serveur : les 13 routes du nouveau parcours répondent 404 assistant_disabled quand WizardEnabled = false (AssistedImportEndpoints.cs ; preuve automatisée ajoutée : CsvAssistantDisabledGateTests)
+
+## Processus du propriétaire (non touchés)
+MMV.Api 127.0.0.1:7267 (PID 39652) ; Vite tauri dev [::1]:1420 (PID 35228) ; PostgreSQL 5433 (service)
+
+## Secrets (fichiers destinés au commit : 26 suivis modifiés hors .env.development + 413 non suivis)
+motifs : password|pwd|passwd = …, PGPASSWORD=, clés privées PEM, jetons ghp_/github_pat_/sk-/xox, Bearer, AKIA
+résultat : PASS — aucune valeur réelle ; scripts de preuve lisant le mot de passe dans les user-secrets à l'exécution ($env:PGPASSWORD = & $get …) ; valeurs de banc fictives déjà présentes dans l'historique (Password=scratch du cluster jetable, Mot-de-passe-banc-05 des comptes de banc) ; aucun fichier creds.json, .pfx, .key, .pem

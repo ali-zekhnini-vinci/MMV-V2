@@ -126,3 +126,31 @@ Tests .NET unitaires (dont tests de propriétés du calcul de prix) et d'API ; P
 - Import : `IImportMappingAssistant` (Application), `OllamaImportAssistant` (API, `src/MMV.Api/Installation/ImportAssistantService.cs`), validation et fusion `ImportAssistantMerge` (`src/MMV.Application/Catalog/ImportAssistantAi.cs`) ; analyse au dépôt hors transaction ; apprentissage du modèle fournisseur à l'application ; `GET /api/imports/assistant`.
 - Verres : `LensCatalogService` + `POST /api/catalog/lens-catalog` (gamme et offres en une transaction) ; écrans `LensReferencesView` (« Catalogue des verres ») et `LensRangeWizard`.
 - Aucune migration. Détail : [`UX_IA_05.md`](UX_IA_05.md).
+
+## Note datée — 06/11/2026 (lot CSV-IMPORT-AI-01, implémentation)
+
+- Nouvel assistant d'import catalogue en cinq étapes (routes additives `/api/imports/assistant…`, `/api/imports/{id}/assistant…`, `/api/imports/summary`) ; contrats et transitions : [`CSV_IA_05_GATE_B.md`](CSV_IA_05_GATE_B.md) § 7–9 ; écarts : [`LIVRAISON_05_CSVAI.md`](LIVRAISON_05_CSVAI.md).
+- Configuration `CatalogInterpreter` (`qwen3.5:4b`, `Mode`, `TimeoutSeconds` 120, `WizardEnabled` faux par défaut) séparée de `ImportAssistant` (parcours actuel inchangé).
+- Migration `0009_CsvImportAssistant` préparée, **non appliquée** : [`SQL_0009_REVUE.md`](SQL_0009_REVUE.md).
+
+## Note datée — 06/11/2026 (lot CSV-IMPORT-AI-01, corrections post-audit)
+
+- Offres de verres importées : identité = fournisseur + gamme + type + indice + matériau + traitements + approvisionnement ; diamètres, plages, restriction combinée, délai, prix, note = caractéristiques ; mise à jour des seules caractéristiques fournies et différentes ; fiche complète repassée incomplète si une capacité change (ADR-CSVAI-09, `PROPOSED`).
+- Montants sans devise dans le fichier : confirmation de la devise du magasin (`file_default`, champ `currency`) exigée ; aucune conversion ; jamais d'EUR par défaut.
+- Application : résultat enregistré dans `check_summary.applied` avant la clôture du lot (rejeu identique) ; plan recalculé identique au contrôle, sinon `409 check_stale` (`catalog_changed`).
+- Détail : [`LIVRAISON_05_CSVAI_POST_AUDIT.md`](LIVRAISON_05_CSVAI_POST_AUDIT.md).
+
+## Note datée — 07/11/2026 (GO conditionnel G05-SQL-0009, GATE D)
+
+- Migration `0009_CsvImportAssistant` **appliquée** à `mmv_v2_dev` et `mmv_v2_test` (verify 14/14 ×2) ; la mention « préparée, non appliquée » ci-dessus est historique.
+- Plan périmé : empreinte SHA-256 du plan métier enregistrée au contrôle (`check_summary`, clé interne `planFingerprint`, jamais servie) et recalculée à l'application ; base = état actuel des champs **fournis** (articles : libellé, références, code-barres, attributs, rattachement, tarif achat / vente / coefficient / mode / devise ; offres : caractéristiques fournies, fiche complète, valeurs écrites) ; écart → `409 check_stale` (`catalog_changed`) ; contrôle sans empreinte → `check_stale` (`check_outdated`).
+- Verrous pris avant la relecture du plan d'application : variantes `FOR NO KEY UPDATE` + tarifs `FOR UPDATE`, offres de verres `FOR NO KEY UPDATE` ; conflit de version → `check_stale`.
+- Mise à jour d'un article existant : référence fabricant, code-barres et traitements non fournis par le fichier conservent la valeur de la fiche (GD-01).
+- Annulation d'une analyse depuis le poste : `POST /api/imports/{id}/assistant/analysis/cancel` (la politique CORS du poste n'admet jamais `DELETE`) ; `DELETE` conservé hors navigateur (GD-02).
+- Détail : [`LIVRAISON_05_CSVAI_GATE_D.md`](LIVRAISON_05_CSVAI_GATE_D.md).
+
+## Note datée — 07/11/2026 (clôture contrôlée de la Phase 05)
+
+- Nouvel assistant d'import : **validation UX refusée par le propriétaire** ; il reste fermé côté serveur tant que `CatalogInterpreter:WizardEnabled` vaut `false` (valeur versionnée) : les 13 routes du nouveau parcours répondent `404 assistant_disabled` avant tout accès aux données, la file d'analyse n'accepte rien, seul l'état du service est servi et le poste présente l'ancien import. Garde prouvée par `tests/MMV.Api.Tests/Catalog/Assisted/CsvAssistantDisabledGateTests.cs` (toute route `/assistant` ajoutée sans garde fait échouer le test).
+- Offres de verres : une offre **à créer** n'a pas de ligne à verrouiller ; deux applications concurrentes peuvent créer deux offres de même identité (état permis par 0008 pour la saisie manuelle ; import ultérieur refusé par `lens_offer_ambiguous_existing`). Correction sans migration reportée (BL-05-15).
+- Aucune modification du code produit, aucune migration. Détail : [`RAPPORT_CLOTURE_PHASE05.md`](RAPPORT_CLOTURE_PHASE05.md) §§ 6 et 7.

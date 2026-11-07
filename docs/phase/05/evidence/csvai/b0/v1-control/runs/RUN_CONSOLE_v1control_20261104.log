@@ -1,0 +1,16 @@
+qwen3.5:4b chauffe : 64776 ms (chargement 5969076400)
+qwen3.5:4b p1 F01 ok 48348 ms
+qwen3.5:4b p1 F02 ok 46028 ms
+qwen3.5:4b p1 F03 ok 41520 ms
+qwen3.5:4b p1 F04 ok 46775 ms
+qwen3.5:4b p1 F05 ok 42493 ms
+qwen3.5:4b p1 F06 ok 56224 ms
+qwen3.5:4b p1 F07 ok 48338 ms
+qwen3.5:4b p1 F08 ok 41368 ms
+qwen3.5:4b p1 F09 ok 31934 ms
+qwen3.5:4b p1 F10 ok 29338 ms
+qwen3.5:4b p1 F11 ok 31890 ms
+qwen3.5:4b p1 F12 ok 39019 ms
+qwen3.5:4b p1 F13 ok 33634 ms
+qwen3.5:4b p1 F15 ok 32300 ms
+qwen3.5:4b p1 F14 ok 31471 ms

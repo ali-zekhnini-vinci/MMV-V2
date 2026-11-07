@@ -1,0 +1,78 @@
+mmv_v2_dev|identite|mmv_v2_dev|mmv_v2_dev|port=5433|version=18.6|cluster=7696807267651395228|lecture_seule=on
+mmv_v2_dev|migrations|8|20261015125000_InitialBaseline,20261015223849_AuthIdentity,20261016230630_ClientsModule,20261017150504_AppointmentsModule,20261018163108_AuditJournal,20261027134615_OpticalModule,20261030005557_CatalogStockModule,20261102183203_CatalogCorrections
+mmv_v2_dev|migration_0009_presente|false
+mmv_v2_dev|tables_0009_presentes|0
+mmv_v2_dev|autres_sessions|2|actives=0|en_transaction=0|applications=?
+mmv_v2_dev|ecritures_cumulees|ins=6002|maj=943|sup=71|commits=139362
+mmv_v2_dev|taille|13 MB
+mmv_v2_dev|ecritures_cumulees_5s_plus_tard|ins=6002|maj=943|sup=71|commits=139372
+mmv_v2_dev|check_exit=0
+mmv_v2_test|identite|mmv_v2_test|mmv_v2_test|port=5433|version=18.6|cluster=7696807267651395228|lecture_seule=on
+mmv_v2_test|migrations|8|20261015125000_InitialBaseline,20261015223849_AuthIdentity,20261016230630_ClientsModule,20261017150504_AppointmentsModule,20261018163108_AuditJournal,20261027134615_OpticalModule,20261030005557_CatalogStockModule,20261102183203_CatalogCorrections
+mmv_v2_test|migration_0009_presente|false
+mmv_v2_test|tables_0009_presentes|0
+mmv_v2_test|autres_sessions|0|actives=0|en_transaction=0|applications=-
+mmv_v2_test|ecritures_cumulees|ins=59951|maj=37803|sup=24175|commits=261224
+mmv_v2_test|taille|12 MB
+mmv_v2_test|ecritures_cumulees_5s_plus_tard|ins=59951|maj=37803|sup=24175|commits=261232
+mmv_v2_test|check_exit=0
+
+# Comparaison de structure (migrations, déclencheurs, contraintes, index, fonctions) avec une base de référence 0001→0008 construite sur le cluster jetable (PGCLIENTENCODING=UTF8)
+187ea0022a98603f75346e7c9d70e59bace33533dc3f46704c6bbf813f6a74b4 *ref0008.struct.txt
+187ea0022a98603f75346e7c9d70e59bace33533dc3f46704c6bbf813f6a74b4 *mmv_v2_dev.struct.txt
+187ea0022a98603f75346e7c9d70e59bace33533dc3f46704c6bbf813f6a74b4 *mmv_v2_test.struct.txt
+mmv_v2_dev : 821 lignes, IDENTIQUE ; mmv_v2_test : 821 lignes, IDENTIQUE ; propriétaires et droits (rôles normalisés) : identiques
+Note : un premier jet de la référence, appliqué sans PGCLIENTENCODING=UTF8, différait sur audit.reject_event_mutation (message accentué mal encodé dans la RÉFÉRENCE) ; référence reconstruite en UTF-8, écart disparu. Le script 0009 idempotent est entièrement ASCII.
+
+# Sauvegardes de PRÉVALIDATION (06/11/2026, lecture seule sur les bases du propriétaire) — ne remplacent pas la sauvegarde définitive d'avant application
+## Passage 1 (0009_restore_check.sql avant normalisation des contraintes)
+=== mmv_v2_dev : sauvegarde de prévalidation (2026-11-06T22:36:01Z)
+identite=mmv_v2_dev|mmv_v2_dev|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=2
+pg_dump exit=0
+check source exit=0
+sha256=effd978ba46ae72401b66430835cd14dbd73edcd8d14959c93f56bb5228826f7 fichier=mmv_v2_dev_prevalidation_0009_20261106_223601.dump octets=256187
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable, base neuve pv_mmv_v2_dev) exit=0
+comparaison source / restauree : ECART 50 ligne(s) : constraint|appointments.appointments ; constraint|auth.user_permissions ; constraint|catalog.lens_offers ; constraint|catalog.lens_offers (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree pv_mmv_v2_dev supprimee du cluster jetable
+=== mmv_v2_test : sauvegarde de prévalidation (2026-11-06T22:36:03Z)
+identite=mmv_v2_test|mmv_v2_test|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+pg_dump exit=0
+check source exit=0
+sha256=574c50821176b80d1cca2551a34766030449b190bff3a32a61c1f4dc55c006d6 fichier=mmv_v2_test_prevalidation_0009_20261106_223601.dump octets=219587
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable, base neuve pv_mmv_v2_test) exit=0
+comparaison source / restauree : ECART 50 ligne(s) : constraint|appointments.appointments ; constraint|auth.user_permissions ; constraint|catalog.lens_offers ; constraint|catalog.lens_offers (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree pv_mmv_v2_test supprimee du cluster jetable
+roles miroirs supprimes du cluster jetable ; sauvegardes de prevalidation conservees dans C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes
+
+## Passage 2 (version finale du script ; mêmes sauvegardes, aucun nouveau pg_dump)
+=== mmv_v2_dev : sauvegarde de prévalidation (2026-11-06T22:38:40Z)
+identite=mmv_v2_dev|mmv_v2_dev|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=1
+sauvegarde de prevalidation existante reutilisee (aucun nouveau pg_dump) : mmv_v2_dev_prevalidation_0009_20261106_223601.dump
+check source exit=0
+sha256=effd978ba46ae72401b66430835cd14dbd73edcd8d14959c93f56bb5228826f7 fichier=mmv_v2_dev_prevalidation_0009_20261106_223601.dump octets=256187
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable, base neuve pv_mmv_v2_dev) exit=0
+comparaison source / restauree : IDENTIQUE (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree pv_mmv_v2_dev supprimee du cluster jetable
+=== mmv_v2_test : sauvegarde de prévalidation (2026-11-06T22:38:43Z)
+identite=mmv_v2_test|mmv_v2_test|5433|18.6|lecture_seule=on|migrations=8|0009=false|autres_sessions=0
+sauvegarde de prevalidation existante reutilisee (aucun nouveau pg_dump) : mmv_v2_test_prevalidation_0009_20261106_223601.dump
+check source exit=0
+sha256=574c50821176b80d1cca2551a34766030449b190bff3a32a61c1f4dc55c006d6 fichier=mmv_v2_test_prevalidation_0009_20261106_223601.dump octets=219587
+pg_restore --list exit=0 entrees=454 donnees_de_table=38
+restauration (cluster jetable, base neuve pv_mmv_v2_test) exit=0
+comparaison source / restauree : IDENTIQUE (tables=38, declencheurs=56, lignes=911)
+declencheurs inactifs apres restauration=0
+copie restauree pv_mmv_v2_test supprimee du cluster jetable
+roles miroirs supprimes du cluster jetable ; sauvegardes de prevalidation conservees dans C:\Users\Ali Zekhnini\Documents\MMV-V2-sauvegardes
+
+# Dérive de schéma — version finale du script (structure : migrations, déclencheurs, contraintes normalisées, index, fonctions)
+7c4200d5013f58a844ee852486ca981fa81759012be3680507e6ef69f2b07a99  ref0008.struct.txt
+7c4200d5013f58a844ee852486ca981fa81759012be3680507e6ef69f2b07a99  mmv_v2_dev.source.struct.txt
+7c4200d5013f58a844ee852486ca981fa81759012be3680507e6ef69f2b07a99  mmv_v2_test.source.struct.txt
+mmv_v2_dev : 821 lignes IDENTIQUES à la référence 0001→0008 ; mmv_v2_test : idem ; propriétaires et droits identiques

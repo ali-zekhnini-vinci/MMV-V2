@@ -1,0 +1,30 @@
+== mmv_v2_scratch
+server_version_num >= 180000 → OK
+migrations (9, dernière 0009) → OK
+0007 et 0008 toujours présentes → OK
+tables imports → OK
+colonnes imports.batches inchangées (21, inventaire 0008) → OK
+ux_batches_applied_file inchangé → OK
+ck_batches_kind inchangée (catalog, suppliers, prices seulement) → OK
+contraintes CHECK des nouvelles tables (originals 6, assistant 5, analyses 8, events 2, decisions 4) → OK
+clés étrangères nouvelles (originals 2, assistant 3, analyses 2, events 2, decisions 3) → OK
+déclencheurs de garde 0009 → OK
+fonctions de garde nouvelles (4, schéma imports) → OK
+index uniques nouveaux → OK
+propriétaire des nouvelles tables = propriétaire de imports.batches → OK
+lignes : aucune donnée créée par 0009 → OK
+== mmv_v2_restore
+server_version_num >= 180000 → OK
+migrations (9, dernière 0009) → OK
+0007 et 0008 toujours présentes → OK
+tables imports → OK
+colonnes imports.batches inchangées (21, inventaire 0008) → OK
+ux_batches_applied_file inchangé → OK
+ck_batches_kind inchangée (catalog, suppliers, prices seulement) → OK
+contraintes CHECK des nouvelles tables (originals 6, assistant 5, analyses 8, events 2, decisions 4) → OK
+clés étrangères nouvelles (originals 2, assistant 3, analyses 2, events 2, decisions 3) → OK
+déclencheurs de garde 0009 → OK
+fonctions de garde nouvelles (4, schéma imports) → OK
+index uniques nouveaux → OK
+propriétaire des nouvelles tables = propriétaire de imports.batches → OK
+lignes : aucune donnée créée par 0009 → OK

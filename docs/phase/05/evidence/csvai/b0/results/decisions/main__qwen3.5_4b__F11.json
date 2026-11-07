@@ -1,0 +1,449 @@
+{
+  "header": {
+    "present": true,
+    "status": "VALIDE",
+    "rules": "present",
+    "ai": "present"
+  },
+  "aiUsed": true,
+  "aiInvalid": null,
+  "injectionDetected": false,
+  "coverage": {
+    "mode": "fichier entier",
+    "lines": 4,
+    "sampled": 4,
+    "complete": true
+  },
+  "applicable": false,
+  "confirmations": 6,
+  "blockers": {
+    "header": 0,
+    "columns": 5,
+    "familyClasses": 1,
+    "continuation": 0,
+    "duplicateGroups": 0,
+    "invalidRows": 0,
+    "ambiguousCells": 0
+  },
+  "columns": [
+    {
+      "c": 0,
+      "header": "Réf",
+      "field": "manufacturerReference",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "supplierReference",
+        "manufacturerReference"
+      ],
+      "ai": "manufacturerReference",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence non qualifiée",
+        "en-tête en double"
+      ]
+    },
+    {
+      "c": 1,
+      "header": "Désignation",
+      "field": "modelName",
+      "status": "AMBIGU",
+      "origin": "règle",
+      "rule": "modelName",
+      "ruleAlternatives": [],
+      "ai": "modelDescription",
+      "suggestion": "modelDescription",
+      "aiRejected": false,
+      "aiConflict": true,
+      "aiFlag": false,
+      "reasons": [
+        "règle : désignation",
+        "l'IA propose « modelDescription » : désaccord à trancher"
+      ]
+    },
+    {
+      "c": 2,
+      "header": "Prix",
+      "field": "purchasePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "priceUnqualified",
+        "purchasePriceHt",
+        "salePriceHt",
+        "salePriceTtc"
+      ],
+      "ai": "purchasePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : montant non qualifié",
+        "en-tête en double"
+      ]
+    },
+    {
+      "c": 3,
+      "header": "Prix",
+      "field": "salePriceHt",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "priceUnqualified",
+        "purchasePriceHt",
+        "salePriceHt",
+        "salePriceTtc"
+      ],
+      "ai": "salePriceHt",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : montant non qualifié",
+        "en-tête en double"
+      ]
+    },
+    {
+      "c": 4,
+      "header": "Réf",
+      "field": "barcode",
+      "status": "AMBIGU",
+      "origin": "ia",
+      "rule": null,
+      "ruleAlternatives": [
+        "supplierReference",
+        "manufacturerReference"
+      ],
+      "ai": "barcode",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : référence non qualifiée",
+        "en-tête en double"
+      ]
+    },
+    {
+      "c": 5,
+      "header": "Devise",
+      "field": "currency",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "currency",
+      "ruleAlternatives": [],
+      "ai": "currency",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : devise"
+      ]
+    },
+    {
+      "c": 6,
+      "header": "TVA",
+      "field": "vatRate",
+      "status": "VALIDE",
+      "origin": "règle+ia",
+      "rule": "vatRate",
+      "ruleAlternatives": [],
+      "ai": "vatRate",
+      "suggestion": null,
+      "aiRejected": false,
+      "aiConflict": false,
+      "aiFlag": false,
+      "reasons": [
+        "règle : taux de TVA"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "id": 0,
+      "lines": [
+        2
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 1,
+      "lines": [
+        3
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    },
+    {
+      "id": 2,
+      "lines": [
+        4
+      ],
+      "status": "AMBIGU",
+      "reasons": [
+        "colonnes d'identité à confirmer",
+        "famille à confirmer"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "line": 1,
+      "kind": "header",
+      "status": "VALIDE",
+      "family": null,
+      "familyStatus": "-",
+      "group": -1,
+      "continuationOf": null,
+      "reasons": [],
+      "cells": []
+    },
+    {
+      "line": 2,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 0,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "manufacturerReference",
+          "raw": "LUN2041-C01",
+          "value": "LUN2041-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041 Écaille",
+          "value": "LU-2041 Écaille",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 2,
+          "field": "purchasePriceHt",
+          "raw": "42,50",
+          "value": "42.50",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 3,
+          "field": "salePriceHt",
+          "raw": "139,00",
+          "value": "139.00",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 4,
+          "field": "barcode",
+          "raw": "3760000000011",
+          "value": "3760000000011",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 2
+        },
+        {
+          "c": 5,
+          "field": "currency",
+          "raw": "EUR",
+          "value": "EUR",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        },
+        {
+          "c": 6,
+          "field": "vatRate",
+          "raw": "20%",
+          "value": "20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 2
+        }
+      ]
+    },
+    {
+      "line": 3,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 1,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "manufacturerReference",
+          "raw": "LUN2041-C02",
+          "value": "LUN2041-C02",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2041 Noir mat",
+          "value": "LU-2041 Noir mat",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 2,
+          "field": "purchasePriceHt",
+          "raw": "42,50 €",
+          "value": "42.50",
+          "status": "AVERTISSEMENT",
+          "reason": "symbole monétaire retiré",
+          "from": 3
+        },
+        {
+          "c": 3,
+          "field": "salePriceHt",
+          "raw": "139",
+          "value": "139",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 4,
+          "field": "barcode",
+          "raw": "3760000000028",
+          "value": "3760000000028",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 3
+        },
+        {
+          "c": 5,
+          "field": "currency",
+          "raw": "EUR",
+          "value": "EUR",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        },
+        {
+          "c": 6,
+          "field": "vatRate",
+          "raw": "20%",
+          "value": "20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 3
+        }
+      ]
+    },
+    {
+      "line": 4,
+      "kind": "data",
+      "status": "AMBIGU",
+      "family": "optical_frames",
+      "familyStatus": "AMBIGU",
+      "group": 2,
+      "continuationOf": null,
+      "reasons": [
+        "famille sans preuve déterministe : à confirmer"
+      ],
+      "cells": [
+        {
+          "c": 0,
+          "field": "manufacturerReference",
+          "raw": "LUN2050-C01",
+          "value": "LUN2050-C01",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 1,
+          "field": "modelName",
+          "raw": "LU-2050 Cristal",
+          "value": "LU-2050 Cristal",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 2,
+          "field": "purchasePriceHt",
+          "raw": "1.234,00",
+          "value": null,
+          "status": "AMBIGU",
+          "reason": "séparateur de milliers : montant non deviné",
+          "from": 4
+        },
+        {
+          "c": 3,
+          "field": "salePriceHt",
+          "raw": "1 290,00",
+          "value": null,
+          "status": "AMBIGU",
+          "reason": "séparateur de milliers : montant non deviné",
+          "from": 4
+        },
+        {
+          "c": 4,
+          "field": "barcode",
+          "raw": "3760000000035",
+          "value": "3760000000035",
+          "status": "AVERTISSEMENT",
+          "reason": "clé de contrôle GTIN incorrecte",
+          "from": 4
+        },
+        {
+          "c": 5,
+          "field": "currency",
+          "raw": "EUR",
+          "value": "EUR",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        },
+        {
+          "c": 6,
+          "field": "vatRate",
+          "raw": "20%",
+          "value": "20",
+          "status": "VALIDE",
+          "reason": null,
+          "from": 4
+        }
+      ]
+    }
+  ]
+}
